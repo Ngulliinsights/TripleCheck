@@ -18,13 +18,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Property } from "@shared/schema";
-import { cn } from "@/lib/utils";
 
-interface PropertySearchProps {
-  className?: string;
-}
-
-export default function PropertySearch({ className }: PropertySearchProps) {
+export default function PropertySearch() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [, setLocation] = useLocation();
@@ -36,18 +31,17 @@ export default function PropertySearch({ className }: PropertySearchProps) {
 
   const filteredProperties = properties?.filter(property =>
     property.title.toLowerCase().includes(search.toLowerCase()) ||
-    property.location.toLowerCase().includes(search.toLowerCase()) ||
-    property.neighborhood?.toLowerCase().includes(search.toLowerCase())
+    property.location.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className={cn("relative", className)}>
+    <div className="max-w-2xl mx-auto">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="Search by location, title, or neighborhood..."
+              placeholder="Search properties by location or title..."
               className="w-full pl-10 pr-4"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -56,47 +50,43 @@ export default function PropertySearch({ className }: PropertySearchProps) {
         </PopoverTrigger>
         <PopoverContent className="w-[500px] p-0" align="start">
           <Command>
-            <CommandInput placeholder="Type to search properties..." />
+            <CommandInput placeholder="Search properties..." />
             <CommandList>
               <CommandEmpty>No properties found.</CommandEmpty>
               <CommandGroup heading="Properties">
-                {isLoading ? (
-                  <CommandItem disabled>Loading...</CommandItem>
-                ) : (
-                  filteredProperties?.map((property) => (
-                    <CommandItem
-                      key={property.id}
-                      onSelect={() => {
-                        setLocation(`/property/${property.id}`);
-                        setOpen(false);
-                      }}
-                      className="flex items-start gap-2 p-2"
-                    >
-                      <img
-                        src={property.imageUrls[0]}
-                        alt={property.title}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                      <div className="flex-1">
-                        <p className="font-medium">{property.title}</p>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {property.location}
-                        </div>
-                        <p className="text-sm font-medium">
-                          KES {property.price.toLocaleString()}
-                        </p>
+                {filteredProperties?.map((property) => (
+                  <CommandItem
+                    key={property.id}
+                    onSelect={() => {
+                      setLocation(`/property/${property.id}`);
+                      setOpen(false);
+                    }}
+                    className="flex items-start gap-2 p-2"
+                  >
+                    <img
+                      src={property.imageUrls[0]}
+                      alt={property.title}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium">{property.title}</p>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {property.location}
                       </div>
-                    </CommandItem>
-                  ))
-                )}
+                      <p className="text-sm font-medium">
+                        KES {property.price.toLocaleString()}
+                      </p>
+                    </div>
+                  </CommandItem>
+                ))}
               </CommandGroup>
             </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
-
-      <div className="flex gap-2 mt-2">
+      
+      <div className="flex gap-2 mt-2 justify-center">
         <Button variant="outline" size="sm">
           Popular Locations
         </Button>
