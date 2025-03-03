@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="TripleCheck is your trusted partner in real estate verification, ensuring secure and transparent property transactions."
+    />
+    <title>TripleCheck - Secure Real Estate Verification</title>
+
+    <!-- Preload critical assets -->
+    <link rel="preload" href="css/critical.css" as="style" />
+    <link
+      rel="preload"
+      href="fonts/roboto-v20-latin-regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <!-- Animate.css for animations -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    />
+
+    <!-- Custom styles -->
+    <style>
+      :root {
+        --primary-color: #ff6f61;
+        --secondary-color: #008080;
+      }
+
+      .navbar,
+      .footer {
+        background: rgba(0, 0, 0, 0.9) !important;
+      }
+
+      .nav-link {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .nav-link:hover {
+        color: #fff !important;
+      }
+
+      .btn-primary {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+      }
+
+      .btn-primary:hover {
+        background-color: #006666;
+        border-color: #006666;
+      }
+
+      .btn-outline-primary {
+        color: var(--secondary-color);
+        border-color: var(--secondary-color);
+      }
+
+      .btn-outline-primary:hover {
+        background-color: var(--secondary-color);
+        color: #fff;
+      }
+
+      .text-primary {
+        color: var(--primary-color) !important;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: var(--primary-color);
+      }
+
+      .hero {
+        background: url("hero-bg.webp") no-repeat center center;
+        background-size: cover;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+      }
+
+      .hero h1 {
+        font-size: 4.5rem;
+        margin-bottom: 20px;
+        font-weight: 370;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      .hero p {
+        font-size: 2rem;
+        margin-bottom: 30px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+      }
+
+      .hero .container {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 20px;
+        border-radius: 10px;
+      }
+
+      .features .card,
+      .how-it-works .card,
+      .pricing .card {
+        transition: transform 0.3s ease;
+      }
+
+      .features .card:hover,
+      .how-it-works .card:hover,
+      .pricing .card:hover {
+        transform: scale(1.05);
+      }
+
+      .card-body i {
+        transition: transform 0.3s ease;
+      }
+
+      .card-body:hover i {
+        transform: scale(1.2);
+      }
+
+      @media (max-width: 768px) {
+        .hero h1 {
+          font-size: 3rem;
+          font-weight: 300;
+          margin-bottom: 15px;
+        }
+
+        .hero p {
+          font-size: 1.5rem;
+          margin-bottom: 20px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .hero h1 {
+          font-size: 2.5rem;
+          font-weight: 300;
+          margin-bottom: 10px;
+        }
+
+        .hero p {
+          font-size: 1.2rem;
+          margin-bottom: 15px;
+        }
+      }
+
+      @media (max-width: 575.98px) {
+        .navbar-brand .logo {
+          width: 50px;
+        }
+      }
+
+      .live-chat-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+      }
+      /* Dropdown menu styles */
+      .dropdown-menu {
+        border: none;
+        background-color: rgba(
+          0,
+          0,
+          0,
+          0.7
+        ); /* Semi-transparent black background */
+      }
+
+      /* Hover and focus styles for dropdown items */
+      .dropdown-item:hover,
+      .dropdown-item:focus {
+        color: #fff; /* Full white text on hover/focus */
+        background-color: rgba(
+          255,
+          255,
+          255,
+          0.6
+        ); /* darkening on hover/focus */
+      }
+
+      /* Specific styles for h5 headings in dropdown */
+      .dropdown-menu h5 {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+
+      /* Padding for dropdown items */
+      .dropdown-item {
+        padding: 0.25rem 1rem;
+      }
+
+      /* Mobile-specific styles (screens smaller than 992px) */
+      @media (max-width: 991.98px) {
+        /* Transparent background for mobile dropdown */
+        .dropdown-menu {
+          background-color: transparent;
+        }
+
+        /* Styles for h5 headings on mobile */
+        .dropdown-menu h5 {
+          color: rgba(255, 255, 255, 0.5); /* Semi-transparent white */
+          margin-top: 1rem;
+        }
+
+        /* Styles for dropdown items on mobile */
+        .dropdown-item {
+          color: rgba(255, 255, 255, 0.5); /* Semi-transparent white */
+        }
+
+        /* Hover and focus styles for dropdown items on mobile */
+        .dropdown-item:hover,
+        .dropdown-item:focus {
+          color: #fff; /* Full white on hover/focus */
+          background-color: transparent;
+        }
+      }
+
+      .form-inline .form-control {
+        width: 150px;
+      }
+
+      @media (max-width: 991.98px) {
+        .form-inline {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .form-inline .form-control {
+          width: 100%;
+          margin-bottom: 0.5rem;
+        }
+
+        .form-inline .btn {
+          width: 100%;
+        }
+        /* Customer logos */
+        .customer-logos {
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+        .customer-logos img {
+          max-width: 100px;
+          height: auto;
+          margin: 10px;
+        }
+
+        /* Newsletter form */
+        .newsletter-form {
+          background-color: #f8f9fa;
+          padding: 20px;
+          border-radius: 5px;
+        }
+      }
+    </style>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="Artmark.svg" />
+    <!-- Web app manifest -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- Open Graph tags -->
+    <meta
+      property="og:title"
+      content="TripleCheck - Secure Real Estate Verification"
+    />
+    <meta
+      property="og:description"
+      content="Your trusted partner in real estate verification."
+    />
+    <meta
+      property="og:image"
+      content="https://www.triplecheck.com/img/og-image.jpg"
+    />
+    <meta property="og:url" content="https://www.triplecheck.com" />
+
+    <!-- Twitter Card tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="TripleCheck - Secure Real Estate Verification"
+    />
+    <meta
+      name="twitter:description"
+      content="Your trusted partner in real estate verification."
+    />
+    <meta
+      name="twitter:image"
+      content="https://www.triplecheck.com/img/twitter-image.jpg"
+    />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <!-- Optimized Navbar with Enhanced Search -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+  <div class="container nav-container">
+    <!-- Logo with improved spacing -->
+    <a class="navbar-brand py-2" href="/">
+      <img src="Artmark.svg" alt="TripleCheck Logo" width="80" class="d-inline-block align-top logo" />
+    </a>
+
+    <!-- Navbar Toggler with increased touch target -->
+    <button class="navbar-toggler p-2" type="button" data-toggle="collapse" data-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Navbar Content with optimized spacing -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav mr-auto nav-spacing">
+        <li class="nav-item px-2">
+          <a class="nav-link py-3" href="#home">Home</a>
+        </li>
+
+        <!-- About Us Dropdown -->
+        <li class="nav-item dropdown px-2">
+          <a class="nav-link dropdown-toggle py-3" href="#" id="navbarDropdownAbout" data-toggle="dropdown">
+            About Us
+          </a>
+          <div class="dropdown-menu py-1">
+            <a class="dropdown-item py-2 px-4" href="#our-story">Our Story</a>
+            <a class="dropdown-item py-2 px-4" href="#team">Team</a>
+            <a class="dropdown-item py-2 px-4" href="#partners">Partners</a>
+            <a class="dropdown-item py-2 px-4" href="#press-media">Press and Media</a>
+          </div>
+        </li>
+
+        <!-- Services Mega Menu with improved grid spacing -->
+        <li class="nav-item dropdown position-static px-2">
+          <a class="nav-link dropdown-toggle py-3" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+            Services
+          </a>
+          <div class="dropdown-menu w-100 p-4" aria-labelledby="navbarDropdown">
+            <div class="container">
+              <div class="row g-4">
+                <div class="col-md-3">
+                  <h5 class="mb-3">Property Verification</h5>
+                  <ul class="list-unstyled">
+                    <li><a class="dropdown-item py-2" href="#">Basic Property Checks</a></li>
+                    <li><a class="dropdown-item py-2" href="#">Document Authentication</a></li>
+                    <li><a class="dropdown-item py-2" href="#">Fraud Detection</a></li>
+                  </ul>
+                </div>
+                <div class="col-md-3">
+                  <h5 class="mb-3">Community Trust Network</h5>
+                  <ul class="list-unstyled">
+                    <li><a class="dropdown-item py-2" href="#">User Reviews & Ratings</a></li>
+                    <li><a class="dropdown-item py-2" href="#">Trust Points System</a></li>
+                    <li><a class="dropdown-item py-2" href="#">Real Estate Karma Score</a></li>
+                  </ul>
+                </div>
+                <div class="col-md-3">
+                  <h5 class="mb-3">Market Insights</h5>
+                  <ul class="list-unstyled">
+                    <li><a class="dropdown-item py-2" href="#">Comprehensive Reports</a></li>
+                    <li><a class="dropdown-item py-2" href="#">Real-Time Alerts</a></li>
+                    <li><a class="dropdown-item py-2" href="#">Educational Resources</a></li>
+                  </ul>
+                </div>
+                <div class="col-md-3">
+                  <h5 class="mb-3">For Landlords & Agents</h5>
+                  <ul class="list-unstyled">
+                    <li><a class="dropdown-item py-2" href="#">List Your Property</a></li>
+                    <li><a class="dropdown-item py-2" href="#">Build Your Reputation</a></li>
+                    <li><a class="dropdown-item py-2" href="#">Access Verified Tenants</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </li>
+
+        <!-- Main Navigation Items with consistent spacing -->
+        <li class="nav-item px-2">
+          <a class="nav-link py-3" href="#features">Features</a>
+        </li>
+        <li class="nav-item px-2">
+          <a class="nav-link py-3" href="#pricing">Pricing</a>
+        </li>
+        <li class="nav-item px-2">
+          <a class="nav-link py-3" href="#testimonials">Testimonials</a>
+        </li>
+
+        <!-- Resources Dropdown -->
+        <li class="nav-item dropdown px-2">
+          <a class="nav-link dropdown-toggle py-3" href="#" id="resourcesDropdown" data-toggle="dropdown">
+            Resources
+          </a>
+          <div class="dropdown-menu py-1">
+            <a class="dropdown-item py-2 px-4" href="#blog">Blog</a>
+            <a class="dropdown-item py-2 px-4" href="#faq">FAQ</a>
+            <a class="dropdown-item py-2 px-4" href="#educational-resources">Educational Resources</a>
+          </div>
+        </li>
+
+        <li class="nav-item px-2">
+          <a class="nav-link py-3" href="#contact">Contact</a>
+        </li>
+      </ul>
+
+      <!-- Enhanced Search Form with improved spacing -->
+      <form class="form-inline search-form my-3 my-lg-0 ml-lg-4">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <button class="btn btn-outline-secondary px-3" type="button" id="searchTypeDropdown" data-toggle="dropdown">
+              <i class="fas fa-filter"></i>
+            </button>
+            <div class="dropdown-menu py-1">
+              <a class="dropdown-item py-2 px-4 search-filter active" data-type="all">All</a>
+              <a class="dropdown-item py-2 px-4 search-filter" data-type="properties">Properties</a>
+              <a class="dropdown-item py-2 px-4 search-filter" data-type="agents">Agents</a>
+              <a class="dropdown-item py-2 px-4 search-filter" data-type="blog">Blog</a>
+            </div>
+          </div>
+          <input type="search" class="form-control px-3" id="mainSearchInput" 
+                 placeholder="Search properties, agents, articles..." aria-label="Search" autocomplete="off">
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary px-3" type="submit">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<style>
+/* Enhanced Navigation Styles */
+.nav-container {
+  max-width: 1400px;
+  padding: 0 1.5rem;
+}
+
+.nav-spacing {
+  margin: 0 -0.5rem;
+}
+
+.navbar {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.navbar-nav .nav-link {
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.dropdown-menu {
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.dropdown-item {
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.mega-menu h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.search-form {
+  min-width: 320px;
+}
+
+.search-form .form-control {
+  height: 42px;
+}
+
+.search-form .btn {
+  min-width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 991.98px) {
+  .nav-spacing {
+    margin: 0;
+  }
+  
+  .search-form {
+    width: 100%;
+    margin: 1rem 0;
+  }
+  
+  .navbar-nav .nav-item {
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  .navbar-nav .nav-item:last-child {
+    border-bottom: none;
+  }
+  
+  .dropdown-menu {
+    border: none;
+    box-shadow: none;
+    padding: 0 1rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .navbar-nav .nav-link {
+    position: relative;
+  }
+  
+  .navbar-nav .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: currentColor;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+  }
+  
+  .navbar-nav .nav-link:hover::after {
+    width: 100%;
+  }
+}
+</style>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+      <div class="container text-center text-white">
+        <h1 class="display-4 font-weight animate__animated animate__fadeIn">
+          Verified. Transparent. Trusted.
+        </h1>
+        <p class="lead animate__animated animate__fadeIn animate__delay-1s">
+          Your trusted partner in real estate verification.
+        </p>
+        <div class="animate__animated animate__fadeIn animate__delay-2s">
+          <a href="#verify" class="btn btn-primary btn-lg m-2"
+            >Verify Property Now</a
+          >
+          <a
+            href="#demo"
+            class="btn btn-outline-primary btn-lg m-2"
+            data-toggle="modal"
+            data-target="#demoModal"
+            >Watch Demo Video</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5 bg-light">
+      <div class="container">
+        <h2 class="text-center mb-5">Our Key Features</h2>
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="fas fa-search fa-3x mb-3 text-primary"></i>
+                <h3 class="h4 mb-3">Real-Time Fraud Detection</h3>
+                <p>
+                  Advanced algorithms to identify and prevent fraudulent
+                  activities in real-time.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="fas fa-file-alt fa-3x mb-3 text-primary"></i>
+                <h3 class="h4 mb-3">Secure Document Authentication</h3>
+                <p>
+                  Verify ownership and lease agreements to protect yourself from
+                  fraudulent listings and ensure legal compliance.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="fas fa-star fa-3x mb-3 text-primary"></i>
+                <h3 class="h4 mb-3">Real Estate Karma Score</h3>
+                <p>
+                  Identify trustworthy landlords and agents based on their track
+                  record and promote ethical behavior in the market.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-5">
+      <div class="container">
+        <h2 class="text-center mb-5">How TripleCheck Works</h2>
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="fas fa-map-marker-alt fa-3x mb-3 text-primary"></i>
+                <h3 class="h4 mb-3">Step 1: Submit Property Details</h3>
+                <p>
+                  Provide the necessary details of the property you wish to
+                  verify through our platform.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="fas fa-cogs fa-3x mb-3 text-primary"></i>
+                <h3 class="h4 mb-3">Step 2: System Analysis</h3>
+                <p>
+                  Our advanced system analyzes the provided information using
+                  various verification techniques.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-3x mb-3 text-primary"></i>
+                <h3 class="h4 mb-3">Step 3: Receive Verification Report</h3>
+                <p>
+                  Get a comprehensive report detailing the verification results
+                  and property status.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-5 bg-light">
+      <div class="container">
+        <h2 class="text-center mb-5">Affordable Pricing Plans</h2>
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <h3 class="h4 mb-3">Basic Plan</h3>
+                <p class="h2 mb-4">$49/month</p>
+                <ul class="list-unstyled mb-4">
+                  <li>Verification of up to 5 properties</li>
+                  <li>Basic fraud detection</li>
+                  <li>Email support</li>
+                </ul>
+                <a href="#" class="btn btn-primary btn-block">Get Started</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <h3 class="h4 mb-3">Pro Plan</h3>
+                <p class="h2 mb-4">$99/month</p>
+                <ul class="list-unstyled mb-4">
+                  <li>Verification of up to 20 properties</li>
+                  <li>Advanced fraud detection</li>
+                  <li>Priority email support</li>
+                </ul>
+                <a href="#" class="btn btn-primary btn-block">Get Started</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <h3 class="h4 mb-3">Enterprise Plan</h3>
+                <p class="h2 mb-4">Custom Pricing</p>
+                <ul class="list-unstyled mb-4">
+                  <li>Unlimited property verifications</li>
+                  <li>Comprehensive fraud detection</li>
+                  <li>Dedicated account manager</li>
+                </ul>
+                <a href="#" class="btn btn-primary btn-block">Contact Us</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-5">
+      <div class="container">
+        <h2 class="text-center mb-5">What Our Clients Say</h2>
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="fas fa-quote-left fa-2x mb-3 text-primary"></i>
+                <p class="mb-4">
+                  "TripleCheck has transformed the way we handle property
+                  verifications. The accuracy and reliability are unparalleled."
+                </p>
+                <h5 class="font-weight-bold">Harrison Mumari</h5>
+                <p class="text-muted">Real Estate Agent</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="fas fa-quote-left fa-2x mb-3 text-primary"></i>
+                <p class="mb-4">
+                  "As a property buyer, TripleCheck gave me the peace of mind I
+                  needed to make informed decisions."
+                </p>
+                <h5 class="font-weight-bold">Jackline Kivisi</h5>
+                <p class="text-muted">Property Buyer</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="fas fa-quote-left fa-2x mb-3 text-primary"></i>
+                <p class="mb-4">
+                  "The comprehensive reports provided by TripleCheck are
+                  invaluable in my line of work. Highly recommend their
+                  services."
+                </p>
+                <h5 class="font-weight-bold">Michael Muchiri</h5>
+                <p class="text-muted">Real Estate Developer</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section id="blog" class="py-5 bg-light">
+      <div class="container">
+        <h2 class="text-center mb-5">Latest Blog Posts</h2>
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <img
+                src="blog1.webp"
+                class="card-img-top"
+                alt="Understanding Blockchain in Real Estate"
+              />
+              <div class="card-body">
+                <h5 class="card-title">
+                  Understanding Blockchain in Real Estate
+                </h5>
+                <p class="card-text">
+                  Explore how blockchain technology is revolutionizing the real
+                  estate industry.
+                </p>
+                <a href="#" class="btn btn-outline-primary">Read More</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <img
+                src="blog2.webp"
+                class="card-img-top"
+                alt="Tips for Verifying Property Legitimacy"
+              />
+              <div class="card-body">
+                <h5 class="card-title">
+                  Tips for Verifying Property Legitimacy
+                </h5>
+                <p class="card-text">
+                  Learn the essential steps to ensure the legitimacy of a
+                  property before purchasing.
+                </p>
+                <a href="#" class="btn btn-outline-primary">Read More</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <img
+                src="blog3.webp"
+                class="card-img-top"
+                alt="The Future of Real Estate Verification"
+              />
+              <div class="card-body">
+                <h5 class="card-title">
+                  The Future of Real Estate Verification
+                </h5>
+                <p class="card-text">
+                  Discover the latest trends and technologies shaping the future
+                  of property verification.
+                </p>
+                <a href="#" class="btn btn-outline-primary">Read More</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- FAQ Section -->
+    <section id="faq" class="faq mt-5 pt-5">
+      <div class="container mt-5">
+        <h2 class="text-center text-primary mb-4">
+          Frequently Asked Questions
+        </h2>
+        <div id="faqAccordion" class="accordion">
+          <div class="card">
+            <div class="card-header" id="headingOne">
+              <h5 class="mb-0">
+                <button
+                  class="btn btn-link"
+                  data-toggle="collapse"
+                  data-target="#collapseOne"
+                  aria-expanded="true"
+                  aria-controls="collapseOne"
+                >
+                  What is TripleCheck?
+                </button>
+              </h5>
+            </div>
+            <div
+              id="collapseOne"
+              class="collapse show"
+              aria-labelledby="headingOne"
+              data-parent="#faqAccordion"
+            >
+              <div class="card-body">
+                TripleCheck is a real estate technology company dedicated to
+                connecting users with verified and trustworthy property
+                listings.
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingTwo">
+              <h5 class="mb-0">
+                <button
+                  class="btn btn-link collapsed"
+                  data-toggle="collapse"
+                  data-target="#collapseTwo"
+                  aria-expanded="false"
+                  aria-controls="collapseTwo"
+                >
+                  How does TripleCheck work?
+                </button>
+              </h5>
+            </div>
+            <div
+              id="collapseTwo"
+              class="collapse"
+              aria-labelledby="headingTwo"
+              data-parent="#faqAccordion"
+            >
+              <div class="card-body">
+                TripleCheck verifies the authenticity of property listings by
+                cross-referencing records, tracking original image sources, and
+                providing alerts for potential scams.
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingThree">
+              <h5 class="mb-0">
+                <button
+                  class="btn btn-link collapsed"
+                  data-toggle="collapse"
+                  data-target="#collapseThree"
+                  aria-expanded="false"
+                  aria-controls="collapseThree"
+                >
+                  Is my data secure with TripleCheck?
+                </button>
+              </h5>
+            </div>
+            <div
+              id="collapseThree"
+              class="collapse"
+              aria-labelledby="headingThree"
+              data-parent="#faqAccordion"
+            >
+              <div class="card-body">
+                Yes, we prioritize your data security by implementing robust
+                security measures and utilizing blockchain technology to ensure
+                data integrity.
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingFour">
+              <h5 class="mb-0">
+                <button
+                  class="btn btn-link collapsed"
+                  data-toggle="collapse"
+                  data-target="#collapseFour"
+                  aria-expanded="false"
+                  aria-controls="collapseFour"
+                >
+                  What are the costs involved?
+                </button>
+              </h5>
+            </div>
+            <div
+              id="collapseFour"
+              class="collapse"
+              aria-labelledby="headingFour"
+              data-parent="#faqAccordion"
+            >
+              <div class="card-body">
+                TripleCheck offers various pricing plans to cater to different
+                needs. You can find detailed pricing information on our Pricing
+                page.
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingFive">
+              <h5 class="mb-0">
+                <button
+                  class="btn btn-link collapsed"
+                  data-toggle="collapse"
+                  data-target="#collapseFive"
+                  aria-expanded="false"
+                  aria-controls="collapseFive"
+                >
+                  Can I cancel my subscription anytime?
+                </button>
+              </h5>
+            </div>
+            <div
+              id="collapseFive"
+              class="collapse"
+              aria-labelledby="headingFive"
+              data-parent="#faqAccordion"
+            >
+              <div class="card-body">
+                Yes, you can cancel your subscription at any time through your
+                account settings. For more details, please refer to our
+                cancellation policy.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Contact Section -->
+    <section id="contact" class="py-5 bg-light">
+      <div class="container">
+        <h2 class="text-center mb-5">Get in Touch</h2>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Contact Information</h5>
+                <p class="card-text">
+                  <strong>Address:</strong> 456 Acacia Avenue, Nairobi, Kenya
+                  <br />
+                  <strong>Email:</strong> info@triplecheck.com<br />
+                  <strong>Phone:</strong> (+254) 712 345 678
+                </p>
+                <ul class="list-inline">
+                  <li class="list-inline-item">
+                    <a href="#" class="text-primary"
+                      ><i class="fab fa-twitter"></i
+                    ></a>
+                  </li>
+                  <li class="list-inline-item">
+                    <a href="#" class="text-primary"
+                      ><i class="fab fa-facebook"></i
+                    ></a>
+                  </li>
+                  <li class="list-inline-item">
+                    <a href="#" class="text-primary"
+                      ><i class="fab fa-linkedin"></i
+                    ></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">Send Us a Message</h5>
+                <form>
+                  <div class="form-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Your Name"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <input
+                      type="email"
+                      class="form-control"
+                      placeholder="Your Email"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <textarea
+                      class="form-control"
+                      rows="5"
+                      placeholder="Your Message"
+                      required
+                    ></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">
+                    Send Message
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Customer Logos Section -->
+    <section id="customers" class="py-5">
+      <div class="container">
+        <h2 class="text-center mb-5">Trusted by Industry Leaders</h2>
+        <div class="customer-logos">
+          <img src="customer1.png" alt="Customer 1" class="lazy-image" />
+          <img src="customer2.png" alt="Customer 2" class="lazy-image" />
+          <img src="customer3.png" alt="Customer 3" class="lazy-image" />
+          <!-- [Add more customer logos as needed] -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Newsletter Signup Section -->
+    <section id="newsletter" class="py-5 bg-light">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6 mx-auto">
+            <div class="newsletter-form">
+              <h3 class="text-center mb-4">Subscribe to Our Newsletter</h3>
+              <form id="newsletterForm">
+                <div class="form-group">
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="newsletterEmail"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                  Subscribe
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-5">
+      <div class="container text-center">
+        <p>&copy; 2023 TripleCheck. All Rights Reserved.</p>
+        <ul class="list-inline">
+          <li class="list-inline-item">
+            <a href="#" class="text-white">Privacy Policy</a>
+          </li>
+          <li class="list-inline-item">
+            <a href="#" class="text-white">Terms of Use</a>
+          </li>
+          <li class="list-inline-item">
+            <a href="#" class="text-white">Support</a>
+          </li>
+        </ul>
+      </div>
+    </footer>
+
+    <!-- Demo Modal -->
+    <div
+      class="modal fade"
+      id="demoModal"
+      tabindex="-1"
+      aria-labelledby="demoModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="demoModalLabel">TripleCheck Demo</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="embed-responsive embed-responsive-16by9">
+              <iframe
+                class="embed-responsive-item"
+                src="https://www.youtube.com/embed/IjhSHyfQpaQ"
+                allowfullscreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Chat Button -->
+    <button class="live-chat-button btn btn-primary btn-floating">
+      Live Chat
+    </button>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", function (e) {
+          e.preventDefault();
+          document.querySelector(this.getAttribute("href")).scrollIntoView({
+            behavior: "smooth",
+          });
+        });
+      });
+
+      // Add animation class to elements when they come into view
+      const animateOnScroll = (entries, observer) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add(
+              "animate__animated",
+              "animate__fadeInUp"
+            );
+            observer.unobserve(entry.target);
+          }
+        });
+      };
+
+      const observer = new IntersectionObserver(animateOnScroll, {
+        root: null,
+        threshold: 0.1,
+      });
+
+      document.querySelectorAll(".card").forEach((card) => {
+        observer.observe(card);
+      });
+
+      // Live chat button functionality
+      document
+        .querySelector(".live-chat-button")
+        .addEventListener("click", function () {
+          alert("Live chat feature is not available in this demo.");
+        });
+      // Initialize Bootstrap components
+      $(document).ready(function () {
+        $(".collapse").collapse();
+      });
+    </script>
+  </body>
+</html>
