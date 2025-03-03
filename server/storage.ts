@@ -320,7 +320,7 @@ export class MemStorage implements IStorage {
         ownerId: 1,
         title: "Modern Apartment in Kilimani",
         titleSwahili: "Apartment ya Kisasa Kilimani",
-        description: "Luxurious 3-bedroom apartment with amazing city views",
+        description: "Luxurious 3-bedroom apartment with amazing city views and 24/7 security",
         descriptionSwahili: "Apartment nzuri yenye vyumba 3 na mandhari mazuri ya jiji",
         location: "Kilimani, Nairobi",
         price: 25000000,
@@ -333,22 +333,25 @@ export class MemStorage implements IStorage {
           squareFeet: 1500,
           parkingSpaces: 2,
           yearBuilt: 2020,
-          amenities: ["Swimming Pool", "Gym", "Security"],
+          amenities: ["Swimming Pool", "Gym", "Security", "Elevator"],
           waterSource: "borehole",
           powerBackup: true,
-          security: ["gated", "security_guard"],
-          nearbyFacilities: ["schools", "hospitals"]
+          security: ["gated", "security_guard", "cctv"],
+          nearbyFacilities: ["schools", "hospitals", "shopping_mall"]
         },
         propertyType: "residential",
         landReferenceNumber: "KLM123456",
         titleDeedNumber: "TD789012",
-        plotNumber: "P345"
+        plotNumber: "P345",
+        latitude: -1.2921,
+        longitude: 36.8219,
+        neighborhood: "Kilimani"
       },
       {
         ownerId: 1,
         title: "Commercial Space in CBD",
         titleSwahili: "Nafasi ya Biashara CBD",
-        description: "Prime commercial space in Nairobi CBD",
+        description: "Prime commercial space in Nairobi CBD, perfect for office or retail",
         descriptionSwahili: "Nafasi bora ya biashara katikati ya Nairobi",
         location: "CBD, Nairobi",
         price: 45000000,
@@ -361,66 +364,76 @@ export class MemStorage implements IStorage {
           squareFeet: 3000,
           parkingSpaces: 3,
           yearBuilt: 2019,
-          amenities: ["Reception", "High-speed Internet", "24/7 Access"],
+          amenities: ["Reception", "High-speed Internet", "24/7 Access", "Conference Room"],
           waterSource: "county_water",
           powerBackup: true,
           security: ["CCTV", "security_guard", "electric_fence"],
-          nearbyFacilities: ["banks", "restaurants"]
+          nearbyFacilities: ["banks", "restaurants", "parking"]
         },
         propertyType: "commercial",
         landReferenceNumber: "NRB789012",
         titleDeedNumber: "TD345678",
-        plotNumber: "P789"
+        plotNumber: "P789",
+        latitude: -1.2833,
+        longitude: 36.8172,
+        neighborhood: "Central Business District"
+      },
+      {
+        ownerId: 2,
+        title: "Family Villa in Karen",
+        titleSwahili: "Nyumba ya Familia Karen",
+        description: "Spacious 5-bedroom villa with beautiful gardens and pool",
+        descriptionSwahili: "Nyumba kubwa yenye vyumba 5 na bustani nzuri na bwawa la kuogelea",
+        location: "Karen, Nairobi",
+        price: 85000000,
+        imageUrls: [
+          "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9"
+        ],
+        features: {
+          bedrooms: 5,
+          bathrooms: 4,
+          squareFeet: 5000,
+          parkingSpaces: 4,
+          yearBuilt: 2021,
+          amenities: ["Swimming Pool", "Garden", "Staff Quarters", "Solar Water Heating"],
+          waterSource: "borehole",
+          powerBackup: true,
+          security: ["electric_fence", "security_guard", "panic_button"],
+          nearbyFacilities: ["international_schools", "shopping_center", "golf_club"]
+        },
+        propertyType: "residential",
+        landReferenceNumber: "KRN456789",
+        titleDeedNumber: "TD901234",
+        plotNumber: "P567",
+        latitude: -1.3206,
+        longitude: 36.7059,
+        neighborhood: "Karen"
+      }
+    ];
+
+    // Add mock community posts for security updates
+    const mockPosts: InsertCommunityPost[] = [
+      {
+        title: "Security Update: New CCTV System in Kilimani",
+        content: "The Kilimani Residents Association has partnered with local security firms to install new CCTV cameras throughout the neighborhood...",
+        location: "Kilimani, Nairobi",
+        isAnonymous: false,
+        userId: 1,
+        category: "security_update"
+      },
+      {
+        title: "Important: Karen Security Measures",
+        content: "Recent security improvements in Karen area include enhanced patrol schedules and new emergency response protocols...",
+        location: "Karen, Nairobi",
+        isAnonymous: false,
+        userId: 2,
+        category: "security_update"
       }
     ];
 
     mockProperties.forEach(property => {
       this.createProperty(property);
     });
-
-    // Add mock community posts
-    const mockPosts: InsertCommunityPost[] = [
-      {
-        title: "Beware of Fake Title Deeds in Westlands",
-        content: "I encountered a fraudster who presented fake title deeds for a property in Westlands. Here's how to identify the red flags...",
-        location: "Westlands, Nairobi",
-        isAnonymous: true,
-        userId: 1,
-        category: "fraud"
-      },
-      {
-        title: "Successful Property Purchase Through Proper Verification",
-        content: "I recently bought a property and here's how I verified everything to ensure it was legitimate...",
-        location: "Kilimani, Nairobi",
-        isAnonymous: false,
-        userId: 2,
-        category: "success_story"
-      }
-    ];
-
-    const mockResources: InsertLegalResource[] = [
-      {
-        title: "Constitutional Protection of Property Rights",
-        description: "Article 40 of the Kenyan Constitution on Protection of Right to Property",
-        category: "constitutional",
-        link: "http://www.kenyalaw.org/lex//actview.xql?actid=Const2010",
-        content: "Every person has the right, either individually or in association with others, to acquire and own property..."
-      },
-      {
-        title: "How to Report Real Estate Fraud",
-        description: "Official channels for reporting real estate fraud in Kenya",
-        category: "reporting",
-        link: "https://www.lands.go.ke/report-fraud/",
-        content: "Step by step guide on reporting suspected real estate fraud to relevant authorities..."
-      },
-      {
-        title: "Land Registration Act",
-        description: "Key provisions of the Land Registration Act relevant to property buyers",
-        category: "statutory",
-        link: "http://www.kenyalaw.org/lex//actview.xql?actid=No.%203%20of%202012",
-        content: "Important sections of the Land Registration Act that protect property buyers..."
-      }
-    ];
 
     mockPosts.forEach(post => {
       const id = this.currentIds.communityPosts++;
@@ -432,14 +445,17 @@ export class MemStorage implements IStorage {
       });
     });
 
-    mockResources.forEach(resource => {
-      const id = this.currentIds.legalResources++;
-      this.legalResources.set(id, {
-        ...resource,
-        id,
-        updatedAt: new Date()
-      });
-    });
+    // Add mock user preferences for testing recommendations
+    const mockPreferences: Partial<UserPreference> = {
+      userId: 1,
+      preferredLanguage: 'en',
+      notificationSettings: {
+        email: true,
+        sms: true
+      }
+    };
+
+    this.updateUserPreferences(1, mockPreferences);
   }
 }
 
