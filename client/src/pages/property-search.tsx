@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Property } from "@shared/schema";
-import ListingCard from "@/components/listing-card";
-import PropertySearch from "@/components/property-search";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { MapPin, SlidersHorizontal } from "lucide-react";
+import PropertySearch from "@/components/property-search";
+import ListingCard from "@/components/listing-card";
 
 export default function PropertySearchPage() {
   const { data: properties, isLoading } = useQuery<Property[]>({
