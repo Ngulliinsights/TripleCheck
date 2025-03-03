@@ -2,13 +2,15 @@ import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import PublicLayout from "@/components/layouts/public-layout";
+import DashboardLayout from "@/components/layouts/dashboard-layout";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home";
 import PropertyPage from "@/pages/property";
 import DashboardPage from "@/pages/dashboard";
+import CommunityPage from "@/pages/community";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList, NavigationMenuLink } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import CommunityPage from "@/pages/community";
 
 function Navigation() {
   return (
@@ -49,20 +51,40 @@ function Navigation() {
   );
 }
 
+function PublicRoutes() {
+  return (
+    <PublicLayout>
+      <Switch>
+        <Route path="/" component={HomePage} />
+        <Route path="/property/:id" component={PropertyPage} />
+        <Route path="/community" component={CommunityPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </PublicLayout>
+  );
+}
+
+function DashboardRoutes() {
+  return (
+    <DashboardLayout>
+      <Switch>
+        <Route path="/dashboard" component={DashboardPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </DashboardLayout>
+  );
+}
+
 function Router() {
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="max-w-screen-xl mx-auto px-4 py-8">
-        <Switch>
-          <Route path="/" component={HomePage} />
-          <Route path="/property/:id" component={PropertyPage} />
-          <Route path="/dashboard" component={DashboardPage} />
-          <Route path="/community" component={CommunityPage} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-    </div>
+    <Switch>
+      <Route path="/dashboard/*">
+        <DashboardRoutes />
+      </Route>
+      <Route>
+        <PublicRoutes />
+      </Route>
+    </Switch>
   );
 }
 
