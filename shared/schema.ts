@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -46,7 +46,13 @@ export const properties = pgTable("properties", {
   blockchainVerification: json("blockchain_verification").$type<BlockchainVerification>(),
   digitalTitleDeedHash: text("digital_title_deed_hash"), // Hash of the digital title deed
   smartContractAddress: text("smart_contract_address"), // Address of deployed smart contract
-  createdAt: timestamp("created_at").notNull().defaultNow()
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  latitude: numeric("latitude"),
+  longitude: numeric("longitude"),
+  neighborhood: text("neighborhood"),
+  propertyScore: integer("property_score").notNull().default(0),
+  viewCount: integer("view_count").notNull().default(0),
+  recommendationWeight: numeric("recommendation_weight").notNull().default(0)
 });
 
 // Users table with enhanced verification fields
@@ -125,6 +131,28 @@ export const legalResources = pgTable("legal_resources", {
   updatedAt: timestamp("updated_at").notNull().defaultNow()
 });
 
+// Add user preferences table
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  preferredLocations: text("preferred_locations").array(),
+  priceRange: json("price_range").notNull(),
+  propertyTypes: text("property_types").array(),
+  amenities: text("amenities").array(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+// Add property interaction history
+export const propertyInteractions = pgTable("property_interactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  propertyId: integer("property_id").notNull(),
+  interactionType: text("interaction_type").notNull(), // view, save, inquire
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -147,7 +175,10 @@ export const insertPropertySchema = createInsertSchema(properties).pick({
   propertyType: true,
   landReferenceNumber: true,
   titleDeedNumber: true,
-  plotNumber: true
+  plotNumber: true,
+  latitude: true,
+  longitude: true,
+  neighborhood: true
 });
 
 export const insertReviewSchema = createInsertSchema(reviews).pick({
@@ -236,3 +267,6 @@ export type VerificationDocuments = {
     verifiedAt?: string;
   };
 };
+
+export type UserPreference = typeof userPreferences.$inferSelect;
+export type PropertyInteraction = typeof propertyInteractions.$inferSelect;
