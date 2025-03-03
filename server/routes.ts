@@ -1,16 +1,14 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, insertReviewSchema, insertUserSchema, insertCommunityPostSchema } from "@shared/schema";
-import { blockchainService } from "./services/blockchain";
+import { insertPropertySchema, insertReviewSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
-import { recommendationService } from "./services/recommendations";
 
 // Mock AI verification function
 async function performAIVerification(propertyData: any) {
   // Simulate AI processing delay
   await new Promise(resolve => setTimeout(resolve, 1000));
-
+  
   return {
     documentAuthenticity: Math.random() > 0.2 ? "verified" : "suspicious",
     ownershipVerified: Math.random() > 0.3,
@@ -41,69 +39,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const propertyData = insertPropertySchema.parse(req.body);
       const property = await storage.createProperty(propertyData);
-
+      
       // Trigger AI verification
       const verificationResults = await performAIVerification(propertyData);
-
-      // If AI verification passes, proceed with blockchain verification
-      if (verificationResults.documentAuthenticity === "verified" && 
-          verificationResults.ownershipVerified) {
-        try {
-          const blockchainVerification = await blockchainService.verifyProperty(property);
-
-          // Update property with both AI and blockchain verification results
-          const updatedProperty = await storage.updateProperty(property.id, {
-            ...property,
-            verificationStatus: "verified",
-            aiVerificationResults: verificationResults,
-            blockchainVerification
-          });
-
-          res.status(201).json(updatedProperty);
-        } catch (error) {
-          console.error("Blockchain verification failed:", error);
-          const updatedProperty = await storage.updateProperty(property.id, {
-            ...property,
-            verificationStatus: "partial",
-            aiVerificationResults: verificationResults
-          });
-          res.status(201).json(updatedProperty);
-        }
-      } else {
-        const updatedProperty = await storage.updateProperty(property.id, {
-          ...property,
-          verificationStatus: "failed",
-          aiVerificationResults: verificationResults
-        });
-        res.status(201).json(updatedProperty);
-      }
+      const verificationStatus = verificationResults.documentAuthenticity === "verified" 
+        && verificationResults.ownershipVerified ? "verified" : "failed";
+      
+      const updatedProperty = await storage.updateVerificationStatus(
+        property.id,
+        verificationStatus,
+        verificationResults
+      );
+      
+      res.status(201).json(updatedProperty);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid property data" });
       }
       throw error;
-    }
-  });
-
-  // Blockchain verification endpoints
-  app.get("/api/properties/:id/verification", async (req, res) => {
-    try {
-      const property = await storage.getProperty(Number(req.params.id));
-      if (!property) {
-        return res.status(404).json({ message: "Property not found" });
-      }
-
-      const status = await blockchainService.getVerificationStatus(property.id.toString());
-      const history = await blockchainService.getPropertyHistory(property.id.toString());
-
-      res.json({
-        status,
-        history,
-        blockchainVerification: property.blockchainVerification
-      });
-    } catch (error) {
-      console.error("Failed to fetch blockchain verification:", error);
-      res.status(500).json({ message: "Failed to fetch verification status" });
     }
   });
 
@@ -138,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
-      
+
       const user = await storage.createUser(userData);
       res.status(201).json(user);
     } catch (error) {
@@ -146,87 +99,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user data" });
       }
       throw error;
-    }
-  });
-
-  // Community posts routes
-  app.get("/api/community-posts", async (_req, res) => {
-    const posts = await storage.getCommunityPosts();
-    res.json(posts);
-  });
-
-  app.get("/api/community-posts/:id", async (req, res) => {
-    const post = await storage.getCommunityPost(Number(req.params.id));
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-    res.json(post);
-  });
-
-  app.post("/api/community-posts", async (req, res) => {
-    try {
-      const postData = insertCommunityPostSchema.parse(req.body);
-      const post = await storage.createCommunityPost(postData);
-      res.status(201).json(post);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid post data" });
-      }
-      throw error;
-    }
-  });
-
-  // Legal resources routes
-  app.get("/api/legal-resources", async (_req, res) => {
-    const resources = await storage.getLegalResources();
-    res.json(resources);
-  });
-
-  app.get("/api/legal-resources/:id", async (req, res) => {
-    const resource = await storage.getLegalResource(Number(req.params.id));
-    if (!resource) {
-      return res.status(404).json({ message: "Resource not found" });
-    }
-    res.json(resource);
-  });
-
-  // Property recommendations route
-  app.get("/api/recommendations", async (req, res) => {
-    try {
-      const userId = Number(req.query.userId);
-      if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
-      }
-
-      const limit = Number(req.query.limit) || 10;
-      const recommendations = await recommendationService.getRecommendations(userId, limit);
-      res.json(recommendations);
-    } catch (error) {
-      console.error("Failed to get recommendations:", error);
-      res.status(500).json({ message: "Failed to fetch recommendations" });
-    }
-  });
-
-  // Record property interaction
-  app.post("/api/properties/:id/interactions", async (req, res) => {
-    try {
-      const propertyId = Number(req.params.id);
-      const { userId, interactionType } = req.body;
-
-      if (!userId || !interactionType) {
-        return res.status(400).json({ message: "User ID and interaction type are required" });
-      }
-
-      const interaction = await storage.recordPropertyInteraction({
-        userId,
-        propertyId,
-        interactionType
-      });
-
-      res.status(201).json(interaction);
-    } catch (error) {
-      console.error("Failed to record interaction:", error);
-      res.status(500).json({ message: "Failed to record interaction" });
     }
   });
 
