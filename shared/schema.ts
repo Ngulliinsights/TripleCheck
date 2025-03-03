@@ -36,6 +36,30 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
+// Community posts table
+export const communityPosts = pgTable("community_posts", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  location: text("location").notNull(),
+  isAnonymous: boolean("is_anonymous").notNull().default(true),
+  userId: integer("user_id").notNull(),
+  category: text("category").notNull(), // fraud, scam, success_story
+  verificationStatus: text("verification_status").notNull().default('pending'),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+// Legal resources table
+export const legalResources = pgTable("legal_resources", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // constitutional, statutory, reporting
+  link: text("link"),
+  content: text("content").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -59,6 +83,23 @@ export const insertReviewSchema = createInsertSchema(reviews).pick({
   comment: true
 });
 
+export const insertCommunityPostSchema = createInsertSchema(communityPosts).pick({
+  title: true,
+  content: true,
+  location: true,
+  isAnonymous: true,
+  userId: true,
+  category: true
+});
+
+export const insertLegalResourceSchema = createInsertSchema(legalResources).pick({
+  title: true,
+  description: true,
+  category: true,
+  link: true,
+  content: true
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -68,6 +109,12 @@ export type InsertProperty = z.infer<typeof insertPropertySchema>;
 
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
+
+export type CommunityPost = typeof communityPosts.$inferSelect;
+export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
+
+export type LegalResource = typeof legalResources.$inferSelect;
+export type InsertLegalResource = z.infer<typeof insertLegalResourceSchema>;
 
 // Feature type
 export type PropertyFeatures = {

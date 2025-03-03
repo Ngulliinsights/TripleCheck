@@ -8,6 +8,7 @@ import PropertyPage from "@/pages/property";
 import DashboardPage from "@/pages/dashboard";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList, NavigationMenuLink } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
+import CommunityPage from "@/pages/community";
 
 function Navigation() {
   return (
@@ -33,6 +34,16 @@ function Navigation() {
             Dashboard
           </NavigationMenuLink>
         </NavigationMenuItem>
+        <NavigationMenuItem>
+          <NavigationMenuLink 
+            className={cn(
+              "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50"
+            )}
+            href="/community"
+          >
+            Community
+          </NavigationMenuLink>
+        </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
   );
@@ -47,6 +58,7 @@ function Router() {
           <Route path="/" component={HomePage} />
           <Route path="/property/:id" component={PropertyPage} />
           <Route path="/dashboard" component={DashboardPage} />
+          <Route path="/community" component={CommunityPage} />
           <Route component={NotFound} />
         </Switch>
       </main>
