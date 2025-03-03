@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertPropertySchema, insertReviewSchema, insertUserSchema, insertCommunityPostSchema } from "@shared/schema";
 import { blockchainService } from "./services/blockchain";
 import { z } from "zod";
+import { recommendationService } from "./services/recommendations";
 
 // Mock AI verification function
 async function performAIVerification(propertyData: any) {
@@ -187,6 +188,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Resource not found" });
     }
     res.json(resource);
+  });
+
+  // Property recommendations route
+  app.get("/api/recommendations", async (req, res) => {
+    try {
+      const userId = Number(req.query.userId);
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+
+      const limit = Number(req.query.limit) || 10;
+      const recommendations = await recommendationService.getRecommendations(userId, limit);
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Failed to get recommendations:", error);
+      res.status(500).json({ message: "Failed to fetch recommendations" });
+    }
+  });
+
+  // Record property interaction
+  app.post("/api/properties/:id/interactions", async (req, res) => {
+    try {
+      const propertyId = Number(req.params.id);
+      const { userId, interactionType } = req.body;
+
+      if (!userId || !interactionType) {
+        return res.status(400).json({ message: "User ID and interaction type are required" });
+      }
+
+      const interaction = await storage.recordPropertyInteraction({
+        userId,
+        propertyId,
+        interactionType
+      });
+
+      res.status(201).json(interaction);
+    } catch (error) {
+      console.error("Failed to record interaction:", error);
+      res.status(500).json({ message: "Failed to record interaction" });
+    }
   });
 
   const httpServer = createServer(app);

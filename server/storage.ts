@@ -31,6 +31,14 @@ export interface IStorage {
   // Legal resource operations
   getLegalResources(): Promise<LegalResource[]>;
   getLegalResource(id: number): Promise<LegalResource | undefined>;
+
+  // User preferences
+  getUserPreferences(userId: number): Promise<UserPreference | undefined>;
+  updateUserPreferences(userId: number, preferences: Partial<UserPreference>): Promise<UserPreference>;
+
+  // Property interactions
+  getPropertyInteractions(propertyId: number, userId: number): Promise<PropertyInteraction[]>;
+  recordPropertyInteraction(interaction: Omit<PropertyInteraction, 'id' | 'createdAt'>): Promise<PropertyInteraction>;
 }
 
 export interface CommunityPost {
@@ -72,6 +80,26 @@ export interface InsertLegalResource {
   content: string;
 }
 
+export interface UserPreference {
+  id: number;
+  userId: number;
+  preferredLanguage: string;
+  notificationSettings: {
+    email: boolean;
+    sms: boolean;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PropertyInteraction {
+  id: number;
+  userId: number;
+  propertyId: number;
+  interactionType: 'view' | 'favorite' | 'inquiry';
+  createdAt: Date;
+}
+
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
@@ -79,12 +107,16 @@ export class MemStorage implements IStorage {
   private reviews: Map<number, Review>;
   private communityPosts: Map<number, CommunityPost>;
   private legalResources: Map<number, LegalResource>;
+  private userPreferences: Map<number, UserPreference>;
+  private propertyInteractions: Map<number, PropertyInteraction>;
   private currentIds: {
     users: number;
     properties: number;
     reviews: number;
     communityPosts: number;
     legalResources: number;
+    userPreferences: number;
+    propertyInteractions: number;
   };
 
   constructor() {
@@ -93,12 +125,16 @@ export class MemStorage implements IStorage {
     this.reviews = new Map();
     this.communityPosts = new Map();
     this.legalResources = new Map();
+    this.userPreferences = new Map();
+    this.propertyInteractions = new Map();
     this.currentIds = {
       users: 1,
       properties: 1,
       reviews: 1,
       communityPosts: 1,
-      legalResources: 1
+      legalResources: 1,
+      userPreferences: 1,
+      propertyInteractions: 1
     };
 
     // Add mock data
@@ -231,6 +267,50 @@ export class MemStorage implements IStorage {
 
   async getLegalResource(id: number): Promise<LegalResource | undefined> {
     return this.legalResources.get(id);
+  }
+
+  async getUserPreferences(userId: number): Promise<UserPreference | undefined> {
+    return Array.from(this.userPreferences.values())
+      .find(pref => pref.userId === userId);
+  }
+
+  async updateUserPreferences(userId: number, preferences: Partial<UserPreference>): Promise<UserPreference> {
+    const existing = await this.getUserPreferences(userId);
+    const id = existing?.id || this.currentIds.userPreferences++;
+
+    const updated: UserPreference = {
+      ...existing,
+      ...preferences,
+      id,
+      userId,
+      updatedAt: new Date(),
+      createdAt: existing?.createdAt || new Date()
+    };
+
+    this.userPreferences.set(id, updated);
+    return updated;
+  }
+
+  async getPropertyInteractions(propertyId: number, userId: number): Promise<PropertyInteraction[]> {
+    return Array.from(this.propertyInteractions.values())
+      .filter(interaction => 
+        interaction.propertyId === propertyId && 
+        interaction.userId === userId
+      );
+  }
+
+  async recordPropertyInteraction(
+    interaction: Omit<PropertyInteraction, 'id' | 'createdAt'>
+  ): Promise<PropertyInteraction> {
+    const id = this.currentIds.propertyInteractions++;
+    const newInteraction: PropertyInteraction = {
+      ...interaction,
+      id,
+      createdAt: new Date()
+    };
+
+    this.propertyInteractions.set(id, newInteraction);
+    return newInteraction;
   }
 
   private initializeMockData() {
