@@ -2,7 +2,7 @@ import {
   User, InsertUser, 
   Property, InsertProperty,
   Review, InsertReview,
-  PropertyFeatures
+  BlockchainVerification
 } from "@shared/schema";
 
 export interface IStorage {
@@ -16,7 +16,7 @@ export interface IStorage {
   getProperty(id: number): Promise<Property | undefined>;
   getProperties(): Promise<Property[]>;
   createProperty(property: InsertProperty): Promise<Property>;
-  updateVerificationStatus(id: number, status: string, results: any): Promise<Property>;
+  updateProperty(id: number, property: Partial<Property>): Promise<Property>;
   searchProperties(query: string): Promise<Property[]>;
 
   // Review operations
@@ -115,7 +115,20 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentIds.users++;
-    const user: User = { ...insertUser, id, trustScore: 0, isVerifiedAgent: false };
+    const user: User = {
+      ...insertUser,
+      id,
+      verificationStatus: 'pending',
+      verificationDocuments: null,
+      trustScore: 0,
+      isVerifiedAgent: false,
+      agentLicenseNumber: null,
+      licenseExpiryDate: null,
+      idNumber: null,
+      kraPinNumber: null,
+      phoneNumber: null,
+      preferredLanguage: 'en'
+    };
     this.users.set(id, user);
     return user;
   }
@@ -144,21 +157,25 @@ export class MemStorage implements IStorage {
       id,
       verificationStatus: 'pending',
       aiVerificationResults: null,
+      verificationDocuments: null,
+      surveyorVerification: null,
+      landRegistryVerification: null,
+      blockchainVerification: null,
+      digitalTitleDeedHash: null,
+      smartContractAddress: null,
+      titleSwahili: null,
+      descriptionSwahili: null,
       createdAt: new Date()
     };
     this.properties.set(id, property);
     return property;
   }
 
-  async updateVerificationStatus(id: number, status: string, results: any): Promise<Property> {
+  async updateProperty(id: number, updates: Partial<Property>): Promise<Property> {
     const property = await this.getProperty(id);
     if (!property) throw new Error("Property not found");
 
-    const updatedProperty = {
-      ...property,
-      verificationStatus: status,
-      aiVerificationResults: results
-    };
+    const updatedProperty = { ...property, ...updates };
     this.properties.set(id, updatedProperty);
     return updatedProperty;
   }
@@ -217,16 +234,18 @@ export class MemStorage implements IStorage {
   }
 
   private initializeMockData() {
-    // Add mock properties
+    // Add mock properties with blockchain verification
     const mockProperties: InsertProperty[] = [
       {
         ownerId: 1,
         title: "Modern Apartment in Kilimani",
+        titleSwahili: "Apartment ya Kisasa Kilimani",
         description: "Luxurious 3-bedroom apartment with amazing city views",
+        descriptionSwahili: "Apartment nzuri yenye vyumba 3 na mandhari mazuri ya jiji",
         location: "Kilimani, Nairobi",
         price: 25000000,
         imageUrls: [
-          "https://images.unsplash.com/photo-1580041065738-e72023775cdc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+          "https://images.unsplash.com/photo-1580041065738-e72023775cdc"
         ],
         features: {
           bedrooms: 3,
@@ -234,26 +253,44 @@ export class MemStorage implements IStorage {
           squareFeet: 1500,
           parkingSpaces: 2,
           yearBuilt: 2020,
-          amenities: ["Swimming Pool", "Gym", "Security"]
-        }
+          amenities: ["Swimming Pool", "Gym", "Security"],
+          waterSource: "borehole",
+          powerBackup: true,
+          security: ["gated", "security_guard"],
+          nearbyFacilities: ["schools", "hospitals"]
+        },
+        propertyType: "residential",
+        landReferenceNumber: "KLM123456",
+        titleDeedNumber: "TD789012",
+        plotNumber: "P345"
       },
       {
         ownerId: 1,
-        title: "Family Home in Karen",
-        description: "Spacious 4-bedroom house with large garden",
-        location: "Karen, Nairobi",
+        title: "Commercial Space in CBD",
+        titleSwahili: "Nafasi ya Biashara CBD",
+        description: "Prime commercial space in Nairobi CBD",
+        descriptionSwahili: "Nafasi bora ya biashara katikati ya Nairobi",
+        location: "CBD, Nairobi",
         price: 45000000,
         imageUrls: [
-          "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+          "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83"
         ],
         features: {
-          bedrooms: 4,
-          bathrooms: 3,
+          bedrooms: 0,
+          bathrooms: 2,
           squareFeet: 3000,
           parkingSpaces: 3,
           yearBuilt: 2019,
-          amenities: ["Garden", "Staff Quarters", "Security"]
-        }
+          amenities: ["Reception", "High-speed Internet", "24/7 Access"],
+          waterSource: "county_water",
+          powerBackup: true,
+          security: ["CCTV", "security_guard", "electric_fence"],
+          nearbyFacilities: ["banks", "restaurants"]
+        },
+        propertyType: "commercial",
+        landReferenceNumber: "NRB789012",
+        titleDeedNumber: "TD345678",
+        plotNumber: "P789"
       }
     ];
 

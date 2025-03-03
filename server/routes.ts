@@ -2,13 +2,14 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPropertySchema, insertReviewSchema, insertUserSchema, insertCommunityPostSchema } from "@shared/schema";
+import { blockchainService } from "./services/blockchain";
 import { z } from "zod";
 
 // Mock AI verification function
 async function performAIVerification(propertyData: any) {
   // Simulate AI processing delay
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
   return {
     documentAuthenticity: Math.random() > 0.2 ? "verified" : "suspicious",
     ownershipVerified: Math.random() > 0.3,
@@ -39,24 +40,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const propertyData = insertPropertySchema.parse(req.body);
       const property = await storage.createProperty(propertyData);
-      
+
       // Trigger AI verification
       const verificationResults = await performAIVerification(propertyData);
-      const verificationStatus = verificationResults.documentAuthenticity === "verified" 
-        && verificationResults.ownershipVerified ? "verified" : "failed";
-      
-      const updatedProperty = await storage.updateVerificationStatus(
-        property.id,
-        verificationStatus,
-        verificationResults
-      );
-      
-      res.status(201).json(updatedProperty);
+
+      // If AI verification passes, proceed with blockchain verification
+      if (verificationResults.documentAuthenticity === "verified" && 
+          verificationResults.ownershipVerified) {
+        try {
+          const blockchainVerification = await blockchainService.verifyProperty(property);
+
+          // Update property with both AI and blockchain verification results
+          const updatedProperty = await storage.updateProperty(property.id, {
+            ...property,
+            verificationStatus: "verified",
+            aiVerificationResults: verificationResults,
+            blockchainVerification
+          });
+
+          res.status(201).json(updatedProperty);
+        } catch (error) {
+          console.error("Blockchain verification failed:", error);
+          const updatedProperty = await storage.updateProperty(property.id, {
+            ...property,
+            verificationStatus: "partial",
+            aiVerificationResults: verificationResults
+          });
+          res.status(201).json(updatedProperty);
+        }
+      } else {
+        const updatedProperty = await storage.updateProperty(property.id, {
+          ...property,
+          verificationStatus: "failed",
+          aiVerificationResults: verificationResults
+        });
+        res.status(201).json(updatedProperty);
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid property data" });
       }
       throw error;
+    }
+  });
+
+  // Blockchain verification endpoints
+  app.get("/api/properties/:id/verification", async (req, res) => {
+    try {
+      const property = await storage.getProperty(Number(req.params.id));
+      if (!property) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+
+      const status = await blockchainService.getVerificationStatus(property.id.toString());
+      const history = await blockchainService.getPropertyHistory(property.id.toString());
+
+      res.json({
+        status,
+        history,
+        blockchainVerification: property.blockchainVerification
+      });
+    } catch (error) {
+      console.error("Failed to fetch blockchain verification:", error);
+      res.status(500).json({ message: "Failed to fetch verification status" });
     }
   });
 
