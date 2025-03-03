@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, insertReviewSchema, insertUserSchema } from "@shared/schema";
+import { insertPropertySchema, insertReviewSchema, insertUserSchema, insertCommunityPostSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Mock AI verification function
@@ -91,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
-
+      
       const user = await storage.createUser(userData);
       res.status(201).json(user);
     } catch (error) {
@@ -100,6 +100,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       throw error;
     }
+  });
+
+  // Community posts routes
+  app.get("/api/community-posts", async (_req, res) => {
+    const posts = await storage.getCommunityPosts();
+    res.json(posts);
+  });
+
+  app.get("/api/community-posts/:id", async (req, res) => {
+    const post = await storage.getCommunityPost(Number(req.params.id));
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    res.json(post);
+  });
+
+  app.post("/api/community-posts", async (req, res) => {
+    try {
+      const postData = insertCommunityPostSchema.parse(req.body);
+      const post = await storage.createCommunityPost(postData);
+      res.status(201).json(post);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid post data" });
+      }
+      throw error;
+    }
+  });
+
+  // Legal resources routes
+  app.get("/api/legal-resources", async (_req, res) => {
+    const resources = await storage.getLegalResources();
+    res.json(resources);
+  });
+
+  app.get("/api/legal-resources/:id", async (req, res) => {
+    const resource = await storage.getLegalResource(Number(req.params.id));
+    if (!resource) {
+      return res.status(404).json({ message: "Resource not found" });
+    }
+    res.json(resource);
   });
 
   const httpServer = createServer(app);

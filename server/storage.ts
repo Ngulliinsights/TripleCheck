@@ -22,21 +22,86 @@ export interface IStorage {
   // Review operations
   getReviews(propertyId: number): Promise<Review[]>;
   createReview(review: InsertReview): Promise<Review>;
+
+  // Community post operations
+  getCommunityPosts(): Promise<CommunityPost[]>;
+  getCommunityPost(id: number): Promise<CommunityPost | undefined>;
+  createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost>;
+
+  // Legal resource operations
+  getLegalResources(): Promise<LegalResource[]>;
+  getLegalResource(id: number): Promise<LegalResource | undefined>;
 }
+
+export interface CommunityPost {
+  id: number;
+  title: string;
+  content: string;
+  location: string;
+  isAnonymous: boolean;
+  userId: number;
+  category: string;
+  verificationStatus: string;
+  createdAt: Date;
+}
+
+export interface InsertCommunityPost {
+  title: string;
+  content: string;
+  location: string;
+  isAnonymous: boolean;
+  userId: number;
+  category: string;
+}
+
+export interface LegalResource {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  link: string;
+  content: string;
+  updatedAt: Date;
+}
+
+export interface InsertLegalResource {
+  title: string;
+  description: string;
+  category: string;
+  link: string;
+  content: string;
+}
+
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private properties: Map<number, Property>;
   private reviews: Map<number, Review>;
-  private currentIds: { users: number; properties: number; reviews: number; };
+  private communityPosts: Map<number, CommunityPost>;
+  private legalResources: Map<number, LegalResource>;
+  private currentIds: {
+    users: number;
+    properties: number;
+    reviews: number;
+    communityPosts: number;
+    legalResources: number;
+  };
 
   constructor() {
     this.users = new Map();
     this.properties = new Map();
     this.reviews = new Map();
-    this.currentIds = { users: 1, properties: 1, reviews: 1 };
+    this.communityPosts = new Map();
+    this.legalResources = new Map();
+    this.currentIds = {
+      users: 1,
+      properties: 1,
+      reviews: 1,
+      communityPosts: 1,
+      legalResources: 1
+    };
 
-    // Add some mock data
+    // Add mock data
     this.initializeMockData();
   }
 
@@ -58,7 +123,7 @@ export class MemStorage implements IStorage {
   async updateUserTrustScore(id: number, score: number): Promise<User> {
     const user = await this.getUser(id);
     if (!user) throw new Error("User not found");
-    
+
     const updatedUser = { ...user, trustScore: score };
     this.users.set(id, updatedUser);
     return updatedUser;
@@ -100,7 +165,7 @@ export class MemStorage implements IStorage {
 
   async searchProperties(query: string): Promise<Property[]> {
     const lowercaseQuery = query.toLowerCase();
-    return Array.from(this.properties.values()).filter(property => 
+    return Array.from(this.properties.values()).filter(property =>
       property.title.toLowerCase().includes(lowercaseQuery) ||
       property.location.toLowerCase().includes(lowercaseQuery) ||
       property.description.toLowerCase().includes(lowercaseQuery)
@@ -121,6 +186,34 @@ export class MemStorage implements IStorage {
     };
     this.reviews.set(id, review);
     return review;
+  }
+
+  async getCommunityPosts(): Promise<CommunityPost[]> {
+    return Array.from(this.communityPosts.values());
+  }
+
+  async getCommunityPost(id: number): Promise<CommunityPost | undefined> {
+    return this.communityPosts.get(id);
+  }
+
+  async createCommunityPost(insertPost: InsertCommunityPost): Promise<CommunityPost> {
+    const id = this.currentIds.communityPosts++;
+    const post: CommunityPost = {
+      ...insertPost,
+      id,
+      verificationStatus: 'pending',
+      createdAt: new Date()
+    };
+    this.communityPosts.set(id, post);
+    return post;
+  }
+
+  async getLegalResources(): Promise<LegalResource[]> {
+    return Array.from(this.legalResources.values());
+  }
+
+  async getLegalResource(id: number): Promise<LegalResource | undefined> {
+    return this.legalResources.get(id);
   }
 
   private initializeMockData() {
@@ -166,6 +259,69 @@ export class MemStorage implements IStorage {
 
     mockProperties.forEach(property => {
       this.createProperty(property);
+    });
+
+    // Add mock community posts
+    const mockPosts: InsertCommunityPost[] = [
+      {
+        title: "Beware of Fake Title Deeds in Westlands",
+        content: "I encountered a fraudster who presented fake title deeds for a property in Westlands. Here's how to identify the red flags...",
+        location: "Westlands, Nairobi",
+        isAnonymous: true,
+        userId: 1,
+        category: "fraud"
+      },
+      {
+        title: "Successful Property Purchase Through Proper Verification",
+        content: "I recently bought a property and here's how I verified everything to ensure it was legitimate...",
+        location: "Kilimani, Nairobi",
+        isAnonymous: false,
+        userId: 2,
+        category: "success_story"
+      }
+    ];
+
+    const mockResources: InsertLegalResource[] = [
+      {
+        title: "Constitutional Protection of Property Rights",
+        description: "Article 40 of the Kenyan Constitution on Protection of Right to Property",
+        category: "constitutional",
+        link: "http://www.kenyalaw.org/lex//actview.xql?actid=Const2010",
+        content: "Every person has the right, either individually or in association with others, to acquire and own property..."
+      },
+      {
+        title: "How to Report Real Estate Fraud",
+        description: "Official channels for reporting real estate fraud in Kenya",
+        category: "reporting",
+        link: "https://www.lands.go.ke/report-fraud/",
+        content: "Step by step guide on reporting suspected real estate fraud to relevant authorities..."
+      },
+      {
+        title: "Land Registration Act",
+        description: "Key provisions of the Land Registration Act relevant to property buyers",
+        category: "statutory",
+        link: "http://www.kenyalaw.org/lex//actview.xql?actid=No.%203%20of%202012",
+        content: "Important sections of the Land Registration Act that protect property buyers..."
+      }
+    ];
+
+    mockPosts.forEach(post => {
+      const id = this.currentIds.communityPosts++;
+      this.communityPosts.set(id, {
+        ...post,
+        id,
+        verificationStatus: 'verified',
+        createdAt: new Date()
+      });
+    });
+
+    mockResources.forEach(resource => {
+      const id = this.currentIds.legalResources++;
+      this.legalResources.set(id, {
+        ...resource,
+        id,
+        updatedAt: new Date()
+      });
     });
   }
 }
