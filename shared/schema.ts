@@ -2,25 +2,26 @@ import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table with enhanced verification fields
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  fullName: text("full_name").notNull(),
-  idNumber: text("id_number"), // National ID
-  kraPinNumber: text("kra_pin"),
-  phoneNumber: text("phone_number"),
-  agentLicenseNumber: text("agent_license_number"),
-  licenseExpiryDate: timestamp("license_expiry_date"),
-  verificationStatus: text("verification_status").notNull().default('pending'),
-  verificationDocuments: json("verification_documents"),
-  trustScore: integer("trust_score").notNull().default(0),
-  isVerifiedAgent: boolean("is_verified_agent").notNull().default(false),
-  preferredLanguage: text("preferred_language").notNull().default('en') // en or sw
-});
+// Add blockchain-related types
+export type BlockchainVerification = {
+  transactionHash: string;
+  blockNumber: number;
+  timestamp: string;
+  smartContractAddress: string;
+  verificationData: {
+    propertyId: string;
+    titleDeedHash: string;
+    landRegistryReference: string;
+    ownershipHistory: Array<{
+      owner: string;
+      timestamp: string;
+      transactionHash: string;
+    }>;
+    verificationStatus: string;
+  };
+};
 
-// Properties table with enhanced verification tracking
+// Enhance property verification with blockchain fields
 export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),
   ownerId: integer("owner_id").notNull(),
@@ -37,11 +38,33 @@ export const properties = pgTable("properties", {
   titleDeedNumber: text("title_deed_number"),
   plotNumber: text("plot_number"),
   verificationStatus: text("verification_status").notNull().default('pending'),
-  verificationDocuments: json("verification_documents"), // Store documents metadata
+  verificationDocuments: json("verification_documents"),
   aiVerificationResults: json("ai_verification_results"),
   surveyorVerification: json("surveyor_verification"),
   landRegistryVerification: json("land_registry_verification"),
+  // New blockchain fields
+  blockchainVerification: json("blockchain_verification").$type<BlockchainVerification>(),
+  digitalTitleDeedHash: text("digital_title_deed_hash"), // Hash of the digital title deed
+  smartContractAddress: text("smart_contract_address"), // Address of deployed smart contract
   createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+// Users table with enhanced verification fields
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  fullName: text("full_name").notNull(),
+  idNumber: text("id_number"), // National ID
+  kraPinNumber: text("kra_pin"),
+  phoneNumber: text("phone_number"),
+  agentLicenseNumber: text("agent_license_number"),
+  licenseExpiryDate: timestamp("license_expiry_date"),
+  verificationStatus: text("verification_status").notNull().default('pending'),
+  verificationDocuments: json("verification_documents"),
+  trustScore: integer("trust_score").notNull().default(0),
+  isVerifiedAgent: boolean("is_verified_agent").notNull().default(false),
+  preferredLanguage: text("preferred_language").notNull().default('en') // en or sw
 });
 
 // Payment records table for M-Pesa transactions
