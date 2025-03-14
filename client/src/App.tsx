@@ -14,6 +14,9 @@ import { cn } from "@/lib/utils";
 import BasicChecksPage from "@/pages/services/basic-checks";
 import DocumentAuthPage from "@/pages/services/document-auth";
 import FraudDetectionPage from "@/pages/services/fraud-detection";
+import ReviewsPage from "@/pages/services/reviews";
+import TrustPointsPage from "@/pages/services/trust-points";
+import KarmaScorePage from "@/pages/services/karma";
 
 function Navigation() {
   return (
@@ -156,6 +159,11 @@ function Router() {
           <Route path="/services/basic-checks" component={BasicChecksPage} />
           <Route path="/services/document-auth" component={DocumentAuthPage} />
           <Route path="/services/fraud-detection" component={FraudDetectionPage} />
+
+          {/* Community Trust Network Services */}
+          <Route path="/services/reviews" component={ReviewsPage} />
+          <Route path="/services/trust-points" component={TrustPointsPage} />
+          <Route path="/services/karma" component={KarmaScorePage} />
 
           <Route component={NotFound} />
         </Switch>
