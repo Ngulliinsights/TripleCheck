@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Gauge, CheckCircle2, AlertTriangle, TrendingUp, History, Shield } from "lucide-react";
+import { Gauge, CheckCircle2, AlertTriangle, TrendingUp, History, Shield, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
