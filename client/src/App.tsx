@@ -20,6 +20,7 @@ import KarmaScorePage from "@/pages/services/karma";
 import ReportsPage from "@/pages/services/reports";
 import AlertsPage from "@/pages/services/alerts";
 import ResourcesPage from "@/pages/services/resources";
+import { TutorialProvider } from "@/components/tutorial/TutorialProvider";
 
 function Navigation() {
   return (
@@ -28,7 +29,7 @@ function Navigation() {
         <NavigationMenuList className="gap-4">
           {/* Logo */}
           <NavigationMenuItem>
-            <NavigationMenuLink href="/">
+            <NavigationMenuLink href="/" className="tutorial-welcome">
               <img src="/Artmark.svg" alt="TripleCheck Logo" className="h-8" />
             </NavigationMenuLink>
           </NavigationMenuItem>
@@ -126,7 +127,7 @@ function Navigation() {
 
           {/* Search */}
           <NavigationMenuItem className="ml-auto">
-            <div className="relative">
+            <div className="relative search-bar">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -138,8 +139,11 @@ function Navigation() {
 
           {/* Auth Buttons */}
           <NavigationMenuItem>
-            <Button variant="outline" className="text-white border-white hover:bg-white hover:text-[#2C5282]">
-              Sign In
+            <Button 
+              variant="outline" 
+              className="text-white border-white hover:bg-white hover:text-[#2C5282] verify-property"
+            >
+              Verify Property
             </Button>
           </NavigationMenuItem>
         </NavigationMenuList>
@@ -183,8 +187,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <TutorialProvider>
+        <Router />
+        <Toaster />
+      </TutorialProvider>
     </QueryClientProvider>
   );
 }
