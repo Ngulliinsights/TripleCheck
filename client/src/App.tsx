@@ -17,6 +17,9 @@ import FraudDetectionPage from "@/pages/services/fraud-detection";
 import ReviewsPage from "@/pages/services/reviews";
 import TrustPointsPage from "@/pages/services/trust-points";
 import KarmaScorePage from "@/pages/services/karma";
+import ReportsPage from "@/pages/services/reports";
+import AlertsPage from "@/pages/services/alerts";
+import ResourcesPage from "@/pages/services/resources";
 
 function Navigation() {
   return (
@@ -164,6 +167,11 @@ function Router() {
           <Route path="/services/reviews" component={ReviewsPage} />
           <Route path="/services/trust-points" component={TrustPointsPage} />
           <Route path="/services/karma" component={KarmaScorePage} />
+
+          {/* Market Insights Services */}
+          <Route path="/services/reports" component={ReportsPage} />
+          <Route path="/services/alerts" component={AlertsPage} />
+          <Route path="/services/resources" component={ResourcesPage} />
 
           <Route component={NotFound} />
         </Switch>
