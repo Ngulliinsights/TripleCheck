@@ -234,15 +234,15 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
             </DialogDescription>
           </DialogHeader>
           <div className="p-4">
-            <p className="text-sm text-center mb-4">
-              We'll show you how to:
+            <div className="text-sm text-center mb-4">
+              <p className="mb-2">We'll show you how to:</p>
               <ul className="list-disc pl-6 mt-2 text-left space-y-1">
                 <li>Verify properties and ownership records</li>
                 <li>Check trust scores and seller karma</li>
                 <li>Use our advanced fraud detection tools</li>
                 <li>Access comprehensive property reports</li>
               </ul>
-            </p>
+            </div>
           </div>
           <DialogFooter className="flex justify-between sm:justify-between">
             <Button variant="outline" onClick={() => setShowWelcome(false)}>
