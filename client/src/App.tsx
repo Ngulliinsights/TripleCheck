@@ -20,6 +20,9 @@ import KarmaScorePage from "@/pages/services/karma";
 import ReportsPage from "@/pages/services/reports";
 import AlertsPage from "@/pages/services/alerts";
 import ResourcesPage from "@/pages/services/resources";
+import ListPropertyPage from "@/pages/services/list-property";
+import ReputationPage from "@/pages/services/reputation";
+import TenantsPage from "@/pages/services/tenants";
 import { TutorialProvider, useTutorial } from "@/components/tutorial/TutorialProvider";
 
 // Component to show a button to restart the tutorial
@@ -196,6 +199,11 @@ function Router() {
           <Route path="/services/reports" component={ReportsPage} />
           <Route path="/services/alerts" component={AlertsPage} />
           <Route path="/services/resources" component={ResourcesPage} />
+
+          {/* For Landlords & Agents Services */}
+          <Route path="/services/list-property" component={ListPropertyPage} />
+          <Route path="/services/reputation" component={ReputationPage} />
+          <Route path="/services/tenants" component={TenantsPage} />
 
           <Route component={NotFound} />
         </Switch>
