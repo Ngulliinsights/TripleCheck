@@ -9,7 +9,7 @@ import DashboardPage from "@/pages/dashboard";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList, NavigationMenuContent, NavigationMenuTrigger, NavigationMenuLink } from "@/components/ui/navigation-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import BasicChecksPage from "@/pages/services/basic-checks";
 import DocumentAuthPage from "@/pages/services/document-auth";
@@ -20,7 +20,24 @@ import KarmaScorePage from "@/pages/services/karma";
 import ReportsPage from "@/pages/services/reports";
 import AlertsPage from "@/pages/services/alerts";
 import ResourcesPage from "@/pages/services/resources";
-import { TutorialProvider } from "@/components/tutorial/TutorialProvider";
+import { TutorialProvider, useTutorial } from "@/components/tutorial/TutorialProvider";
+
+// Component to show a button to restart the tutorial
+function TutorialButton() {
+  const { restartTutorial } = useTutorial();
+  
+  return (
+    <Button 
+      variant="ghost" 
+      size="icon"
+      onClick={restartTutorial}
+      title="Start Platform Tour"
+      className="text-white hover:text-white hover:bg-white/20"
+    >
+      <HelpCircle className="h-5 w-5" />
+    </Button>
+  );
+}
 
 function Navigation() {
   return (
@@ -137,14 +154,17 @@ function Navigation() {
             </div>
           </NavigationMenuItem>
 
-          {/* Auth Buttons */}
+          {/* Verification and Tutorial Buttons */}
           <NavigationMenuItem>
             <Button 
               variant="outline" 
-              className="text-white border-white hover:bg-white hover:text-[#2C5282] verify-property"
+              className="text-white border-white hover:bg-white hover:text-[#2C5282] verify-property mr-2"
             >
               Verify Property
             </Button>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <TutorialButton />
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
