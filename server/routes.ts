@@ -27,6 +27,9 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 // AI verification function using Google's AI
 async function performAIVerification(propertyData: any) {
   try {
+    // Import the fraud detection function directly to avoid circular dependencies
+    const { detectFraud } = await import('./ai-routes');
+    
     // Run fraud detection on the property data
     const fraudDetection = await detectFraud(propertyData);
     
@@ -145,15 +148,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Property verification routes
-  app.post("/api/properties/:id/verify-documents", (req, res) => {
-    // Cast the standard request to FileUploadRequest
-    return handleDocumentVerification(req as FileUploadRequest, res);
-  });
-  
-  app.get("/api/properties/:id/fraud-detection", handleFraudDetection);
-  
-  app.get("/api/properties/:id/verification-report", handleGenerateReport);
+  // Register AI-related routes
+  registerAIRoutes(app);
   
   // Property verification status endpoint
   app.get("/api/properties/:id/verification-status", async (req, res) => {
