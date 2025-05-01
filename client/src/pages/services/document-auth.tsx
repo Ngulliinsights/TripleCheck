@@ -74,11 +74,11 @@ export default function DocumentAuthPage() {
   const verifyDocumentsMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       try {
-        const response = await apiRequest(`/api/properties/${propertyId}/verify-documents`, {
-          method: 'POST',
-          body: formData,
-        });
-        return response as VerificationResponse;
+        return await apiRequest<VerificationResponse>(
+          'POST',
+          `/api/properties/${propertyId}/verify-documents`, 
+          formData
+        );
       } catch (error) {
         console.error("Document verification error:", error);
         throw error;
