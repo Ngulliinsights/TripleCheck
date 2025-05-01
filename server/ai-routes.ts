@@ -44,7 +44,7 @@ export async function handleDocumentVerification(req: FileUploadRequest, res: Re
     }
 
     // Get property ID
-    const propertyId = parseInt(req.params.propertyId || req.body.propertyId);
+    const propertyId = parseInt(req.params.id || req.body.propertyId);
     if (isNaN(propertyId)) {
       return res.status(400).json({ 
         success: false, 
@@ -209,7 +209,7 @@ export async function handleGenerateReport(req: Request, res: Response) {
 /**
  * Analyze a property document for verification using Google AI
  */
-async function verifyDocument(
+export async function verifyDocument(
   documentBuffer: Buffer, 
   documentType: string,
   property: any
@@ -292,7 +292,7 @@ async function verifyDocument(
 /**
  * Analyze property data for potential fraud indicators using Google AI
  */
-async function detectFraud(property: any): Promise<FraudDetectionResult> {
+export async function detectFraud(property: any): Promise<FraudDetectionResult> {
   // Use Google AI to detect potential fraud
   const prompt = `
     You are a real estate fraud detection expert. Analyze this property for potential fraud indicators.
@@ -351,7 +351,7 @@ async function detectFraud(property: any): Promise<FraudDetectionResult> {
 /**
  * Generate a property verification report using Google AI
  */
-async function generateVerificationReport(property: any): Promise<string> {
+export async function generateVerificationReport(property: any): Promise<string> {
   // Use Google AI to generate a report
   const prompt = `
     You are a real estate verification expert. Generate a comprehensive verification report for this property.
@@ -412,11 +412,17 @@ async function generateVerificationReport(property: any): Promise<string> {
  */
 export function registerAIRoutes(app: Express) {
   // Property document verification endpoint
-  app.post('/api/properties/:propertyId/verify-documents', handleDocumentVerification);
+  app.post('/api/properties/:id/verify-documents', (req, res) => {
+    return handleDocumentVerification(req as FileUploadRequest, res);
+  });
   
   // Property fraud detection endpoint
-  app.get('/api/properties/:propertyId/fraud-detection', handleFraudDetection);
+  app.get('/api/properties/:id/fraud-detection', (req, res) => {
+    return handleFraudDetection(req, res);
+  });
   
   // Property verification report endpoint
-  app.get('/api/properties/:propertyId/verification-report', handleGenerateReport);
+  app.get('/api/properties/:id/verification-report', (req, res) => {
+    return handleGenerateReport(req, res);
+  });
 }
