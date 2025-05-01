@@ -141,77 +141,30 @@ export default function ReportsPage() {
         // Generate verification report using our AI API
         await verificationReportMutation.mutateAsync(selectedPropertyId);
       } else {
-        // For other report types (market analysis, risk assessment), simulate for now
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // For other report types (market analysis, risk assessment), use our AI API as well
+        // Just send the report type as a parameter
+        const response = await apiRequest<VerificationReportResponse>(
+          'GET',
+          `/api/properties/${selectedPropertyId}/verification-report?reportType=${reportId}`
+        );
         
-        // Generate mock report content for non-verification reports
-        if (reportId === "market-analysis") {
-          setReportContent(`
-            # Market Analysis Report
-            
-            ## Property Overview
-            Property ID: ${selectedPropertyId}
-            Location: Kilimani, Nairobi
-            
-            ## Market Trends
-            - Current market is showing 5% annual growth in this neighborhood
-            - Similar properties have appreciated 12% over the last 3 years
-            - Average time on market: 45 days
-            
-            ## Price Analysis
-            Current listing price: KES 15,500,000
-            Estimated market value: KES 14,800,000 - 16,200,000
-            Price per square meter: KES 125,000
-            
-            ## Neighborhood Analysis
-            Walkability score: 78/100
-            School ratings: 8/10
-            Access to amenities: Excellent
-            
-            ## Investment Outlook
-            Short-term (1-2 years): Moderate appreciation expected
-            Long-term (5+ years): Strong appreciation potential
-            Rental yield potential: 7-9% annually
-          `);
-        } else if (reportId === "risk-assessment") {
-          setReportContent(`
-            # Risk Assessment Report
-            
-            ## Property ID: ${selectedPropertyId}
-            ## Risk Score: 28/100 (Low Risk)
-            
-            ## Legal Risk Factors
-            - No pending litigation detected
-            - Clean title history
-            - All permits appear to be in order
-            
-            ## Financial Risk Factors
-            - Property taxes: Current
-            - Mortgage status: No liens detected
-            - Insurance considerations: Standard for area
-            
-            ## Physical Risk Factors
-            - Flood zone: Low risk (Zone X)
-            - Seismic risk: Minimal
-            - Environmental hazards: None detected
-            
-            ## Market Risk Factors
-            - Oversupply risk: Low
-            - Demand stability: Strong
-            - Neighborhood deterioration risk: Very low
-            
-            ## Regulatory Risk Factors
-            - Zoning changes likelihood: Low
-            - Infrastructure development: Positive impact expected
-            - Tax increase risk: Moderate
-          `);
+        if (response.success && response.report) {
+          setReportContent(response.report);
+          
+          toast({
+            title: "Report Generated",
+            description: `Your ${reportId.replace('-', ' ')} report is ready to view`,
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Report Generation Failed",
+            description: response.message || "Unable to generate report",
+            variant: "destructive"
+          });
+          
+          setReportContent(`# Error Generating ${reportId.replace('-', ' ')} Report\n\nWe couldn't generate this report at the moment. Please try again later or contact support.`);
         }
-        
-        toast({
-          title: "Report Generated",
-          description: `Your ${reportId.replace('-', ' ')} report is ready to view`,
-          variant: "default"
-        });
       }
       
       clearInterval(interval);

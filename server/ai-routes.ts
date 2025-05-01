@@ -191,8 +191,24 @@ export async function handleGenerateReport(req: Request, res: Response) {
       });
     }
 
-    // Generate report
-    const report = await generateVerificationReport(property);
+    // Get report type from query parameter, default to verification
+    const reportType = req.query.reportType as string || 'verification';
+
+    // Generate report based on type
+    let report: string;
+    
+    switch (reportType) {
+      case 'market-analysis':
+        report = await generateMarketAnalysisReport(property);
+        break;
+      case 'risk-assessment':
+        report = await generateRiskAssessmentReport(property);
+        break;
+      case 'verification':
+      default:
+        report = await generateVerificationReport(property);
+        break;
+    }
 
     // Return report
     return res.status(200).json({
@@ -406,6 +422,74 @@ export async function generateVerificationReport(property: any): Promise<string>
       - Verify all original documents in person
       - Consider a professional property inspection
     `;
+  }
+}
+
+/**
+ * Generate a market analysis report using Google AI
+ */
+export async function generateMarketAnalysisReport(property: any): Promise<string> {
+  // Use Google AI to generate a market analysis report
+  const prompt = `
+    You are a real estate market analysis expert. Generate a comprehensive market analysis report for this property.
+    
+    Property details:
+    ${JSON.stringify(property, null, 2)}
+    
+    Create a detailed, professional market analysis report that covers:
+    1. Current market conditions in ${property.location}
+    2. Price trend analysis for similar properties
+    3. Investment potential evaluation
+    4. Comparable property analysis
+    5. Future market projections
+    
+    Format the report in a clean, structured markdown format with sections and bullet points.
+    Use realistic data and market insights for Kenya, particularly focusing on ${property.location}.
+    Include specific figures for price per square meter, expected ROI, and rental yield where appropriate.
+    The report should be thorough and provide actionable investment insights.
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("AI market analysis report generation error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generate a risk assessment report using Google AI
+ */
+export async function generateRiskAssessmentReport(property: any): Promise<string> {
+  // Use Google AI to generate a risk assessment report
+  const prompt = `
+    You are a real estate risk assessment specialist. Generate a comprehensive risk assessment report for this property.
+    
+    Property details:
+    ${JSON.stringify(property, null, 2)}
+    
+    Create a detailed, professional risk assessment report that covers:
+    1. Legal risk factors (title issues, permits, zoning compliance)
+    2. Financial risk factors (price volatility, tax implications, financing considerations)
+    3. Physical risk factors (location risks, structural concerns, environmental factors)
+    4. Market risk factors (supply/demand imbalances, market stability)
+    5. Overall risk score and mitigation strategies
+    
+    Format the report in a clean, structured markdown format with sections and bullet points.
+    Use realistic data and considerations for Kenyan real estate, particularly in ${property.location}.
+    Include specific risk scores (low/medium/high) for each category and provide an overall risk rating.
+    The report should be thorough and provide actionable risk mitigation strategies.
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("AI risk assessment report generation error:", error);
+    throw error;
   }
 }
 
