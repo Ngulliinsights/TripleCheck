@@ -28,7 +28,9 @@ interface FraudDetectionResult {
 
 // Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+// Use the correct model name according to Google AI API
+// For text-based prompts use 'gemini-1.0-pro' or 'gemini-1.5-pro'
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
 /**
  * Handle document upload and verification
@@ -129,7 +131,7 @@ export async function handleDocumentVerification(req: FileUploadRequest, res: Re
 export async function handleFraudDetection(req: Request, res: Response) {
   try {
     // Get property ID
-    const propertyId = parseInt(req.params.propertyId);
+    const propertyId = parseInt(req.params.id);
     if (isNaN(propertyId)) {
       return res.status(400).json({ 
         success: false, 
@@ -172,7 +174,7 @@ export async function handleFraudDetection(req: Request, res: Response) {
 export async function handleGenerateReport(req: Request, res: Response) {
   try {
     // Get property ID
-    const propertyId = parseInt(req.params.propertyId);
+    const propertyId = parseInt(req.params.id);
     if (isNaN(propertyId)) {
       return res.status(400).json({ 
         success: false, 
