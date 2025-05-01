@@ -48,10 +48,10 @@ export default function FraudDetectionPage() {
   const fraudDetectionMutation = useMutation({
     mutationFn: async (propertyId: string) => {
       try {
-        const response = await apiRequest(`/api/properties/${propertyId}/fraud-detection`, {
-          method: 'GET'
-        });
-        return response as FraudDetectionResponse;
+        return await apiRequest<FraudDetectionResponse>(
+          'GET',
+          `/api/properties/${propertyId}/fraud-detection`
+        );
       } catch (error) {
         console.error("Fraud detection error:", error);
         throw error;

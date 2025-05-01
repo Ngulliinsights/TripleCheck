@@ -8,14 +8,12 @@ import path from "path";
 import { fileURLToPath } from 'url';
 import fs from "fs";
 import { 
-  detectFraud, 
-  verifyDocument, 
-  verifyPropertyBundle, 
   handleDocumentVerification,
   handleFraudDetection,
   handleGenerateReport,
-  FileUploadRequest
-} from "./ai-service";
+  FileUploadRequest,
+  registerAIRoutes
+} from "./ai-routes";
 
 // Uploads directory for temporary file storage
 const __filename = fileURLToPath(import.meta.url);

@@ -71,10 +71,10 @@ export default function ReportsPage() {
   const verificationReportMutation = useMutation({
     mutationFn: async (propertyId: string) => {
       try {
-        const response = await apiRequest(`/api/properties/${propertyId}/verification-report`, {
-          method: 'GET'
-        });
-        return response as VerificationReportResponse;
+        return await apiRequest<VerificationReportResponse>(
+          'GET',
+          `/api/properties/${propertyId}/verification-report`
+        );
       } catch (error) {
         console.error("Report generation error:", error);
         throw error;
