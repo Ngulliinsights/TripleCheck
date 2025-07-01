@@ -55,6 +55,15 @@ async function performAIVerification(propertyData: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint
+  app.get("/api/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      version: "1.0.0"
+    });
+  });
+
   // Configure file upload middleware
   app.use(fileUpload({
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
