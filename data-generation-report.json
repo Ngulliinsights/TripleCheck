@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-07-01T22:41:19.227Z",
+  "duration": 5.273,
+  "statistics": {
+    "fraudulentUsers": 5,
+    "fraudulentProperties": 2,
+    "verifiedProperties": 34,
+    "averagePrice": 28398639
+  },
+  "locations": 12,
+  "amenities": 15
+}
