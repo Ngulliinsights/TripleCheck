@@ -9,8 +9,12 @@ import DashboardPage from "@/pages/dashboard";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList, NavigationMenuContent, NavigationMenuTrigger, NavigationMenuLink } from "@/components/ui/navigation-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, HelpCircle } from "lucide-react";
+import { Search, HelpCircle, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import BasicChecksPage from "@/pages/services/basic-checks";
 import DocumentAuthPage from "@/pages/services/document-auth";
 import FraudDetectionPage from "@/pages/services/fraud-detection";
@@ -24,6 +28,8 @@ import ListPropertyPage from "@/pages/services/list-property";
 import ReputationPage from "@/pages/services/reputation";
 import TenantsPage from "@/pages/services/tenants";
 import PropertyComparePage from "@/pages/compare";
+import LoginPage from "@/pages/auth/login";
+import RegisterPage from "@/pages/auth/register";
 import { TutorialProvider, useTutorial } from "@/components/tutorial/TutorialProvider";
 
 // Component to show a button to restart the tutorial
@@ -44,6 +50,33 @@ function TutorialButton() {
 }
 
 function Navigation() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Check if user is authenticated
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['/api/auth/me'],
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/auth/logout"),
+    onSuccess: () => {
+      queryClient.setQueryData(['/api/auth/me'], null);
+      toast({
+        title: "Logged out successfully",
+        description: "Come back soon!",
+      });
+      setLocation("/");
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
   return (
     <div className="bg-[#2C5282] text-white">
       <NavigationMenu className="max-w-screen-xl mx-auto px-4 py-2">
@@ -157,28 +190,83 @@ function Navigation() {
 
           {/* Search */}
           <NavigationMenuItem className="ml-auto">
-            <div className="relative search-bar">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search properties..."
-                className="pl-9 w-64"
-              />
-            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const query = formData.get('search') as string;
+              if (query.trim()) {
+                setLocation(`/?search=${encodeURIComponent(query.trim())}`);
+              }
+            }}>
+              <div className="relative search-bar">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  name="search"
+                  type="search"
+                  placeholder="Search properties..."
+                  className="pl-9 w-64"
+                />
+              </div>
+            </form>
           </NavigationMenuItem>
 
-          {/* Verification and Tutorial Buttons */}
-          <NavigationMenuItem>
-            <Button 
-              variant="outline" 
-              className="text-white border-white hover:bg-white hover:text-[#2C5282] verify-property mr-2"
-            >
-              Verify Property
-            </Button>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <TutorialButton />
-          </NavigationMenuItem>
+          {/* Authentication */}
+          {user ? (
+            <>
+              <NavigationMenuItem>
+                <Button 
+                  variant="outline" 
+                  className="text-white border-white hover:bg-white hover:text-[#2C5282] verify-property mr-2"
+                >
+                  Verify Property
+                </Button>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4" />
+                  <span>{(user as any)?.username || 'User'}</span>
+                </div>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  disabled={logoutMutation.isPending}
+                  className="text-white hover:text-white hover:bg-white/20"
+                >
+                  <LogOut className="h-4 w-4 mr-1" />
+                  Logout
+                </Button>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <TutorialButton />
+              </NavigationMenuItem>
+            </>
+          ) : (
+            <>
+              <NavigationMenuItem>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLocation("/auth/login")}
+                  className="text-white hover:text-white hover:bg-white/20 mr-2"
+                >
+                  Login
+                </Button>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLocation("/auth/register")}
+                  className="text-white border-white hover:bg-white hover:text-[#2C5282]"
+                >
+                  Sign Up
+                </Button>
+              </NavigationMenuItem>
+            </>
+          )}
         </NavigationMenuList>
       </NavigationMenu>
     </div>
@@ -217,6 +305,10 @@ function Router() {
 
           {/* Property Comparison */}
           <Route path="/compare" component={PropertyComparePage} />
+
+          {/* Authentication */}
+          <Route path="/auth/login" component={LoginPage} />
+          <Route path="/auth/register" component={RegisterPage} />
 
           <Route component={NotFound} />
         </Switch>
