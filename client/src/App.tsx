@@ -23,6 +23,7 @@ import ResourcesPage from "@/pages/services/resources";
 import ListPropertyPage from "@/pages/services/list-property";
 import ReputationPage from "@/pages/services/reputation";
 import TenantsPage from "@/pages/services/tenants";
+import PropertyComparePage from "@/pages/compare";
 import { TutorialProvider, useTutorial } from "@/components/tutorial/TutorialProvider";
 
 // Component to show a button to restart the tutorial
@@ -130,6 +131,15 @@ function Navigation() {
           <NavigationMenuItem>
             <NavigationMenuLink 
               className="text-white hover:text-white/90"
+              href="/compare"
+            >
+              Compare
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem>
+            <NavigationMenuLink 
+              className="text-white hover:text-white/90"
               href="/pricing"
             >
               Pricing
@@ -204,6 +214,9 @@ function Router() {
           <Route path="/services/list-property" component={ListPropertyPage} />
           <Route path="/services/reputation" component={ReputationPage} />
           <Route path="/services/tenants" component={TenantsPage} />
+
+          {/* Property Comparison */}
+          <Route path="/compare" component={PropertyComparePage} />
 
           <Route component={NotFound} />
         </Switch>
