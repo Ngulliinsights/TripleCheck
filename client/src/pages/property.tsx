@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
-import { Property, Review } from "@shared/schema";
+import { Property, PropertyFeatures } from "@shared/schema";
 import VerificationBadge from "@/components/verification-badge";
 import TrustScore from "@/components/trust-score";
+import PropertyReviews from "@/components/property-reviews";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,10 +16,7 @@ export default function PropertyPage() {
     enabled: !!propertyId
   });
 
-  const { data: reviews, isLoading: isLoadingReviews } = useQuery<Review[]>({
-    queryKey: [`/api/properties/${propertyId}/reviews`],
-    enabled: !!propertyId
-  });
+
 
   if (isLoadingProperty) {
     return (
@@ -65,59 +63,32 @@ export default function PropertyPage() {
             <div>
               <p className="font-medium">Bedrooms</p>
               <p className="text-muted-foreground">
-                {(property.features as any).bedrooms}
+                {(property.features as PropertyFeatures)?.bedrooms || 'N/A'}
               </p>
             </div>
             <div>
               <p className="font-medium">Bathrooms</p>
               <p className="text-muted-foreground">
-                {(property.features as any).bathrooms}
+                {(property.features as PropertyFeatures)?.bathrooms || 'N/A'}
               </p>
             </div>
             <div>
               <p className="font-medium">Square Feet</p>
               <p className="text-muted-foreground">
-                {(property.features as any).squareFeet}
+                {(property.features as PropertyFeatures)?.squareFeet?.toLocaleString() || 'N/A'}
               </p>
             </div>
             <div>
               <p className="font-medium">Year Built</p>
               <p className="text-muted-foreground">
-                {(property.features as any).yearBuilt}
+                {(property.features as PropertyFeatures)?.yearBuilt || 'N/A'}
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Reviews</h2>
-        {isLoadingReviews ? (
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full" />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {reviews?.map((review) => (
-              <Card key={review.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex-1">
-                      <p className="font-medium">Rating: {review.rating}/5</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <p>{review.comment}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
+      <PropertyReviews propertyId={Number(propertyId)} />
     </div>
   );
 }

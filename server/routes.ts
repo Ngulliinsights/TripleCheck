@@ -156,6 +156,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(property);
   });
 
+  // Reviews routes
+  app.get("/api/properties/:id/reviews", async (req, res) => {
+    const reviews = await storage.getReviews(Number(req.params.id));
+    res.json(reviews);
+  });
+
+  app.post("/api/properties/:id/reviews", async (req, res) => {
+    try {
+      const userId = req.session ? (req.session as any)?.userId : null;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const propertyId = Number(req.params.id);
+      const reviewData = insertReviewSchema.parse({
+        ...req.body,
+        propertyId,
+        userId
+      });
+
+      const review = await storage.createReview(reviewData);
+      res.status(201).json(review);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Failed to create review" });
+    }
+  });
+
   app.post("/api/properties", async (req, res) => {
     try {
       const propertyData = insertPropertySchema.parse(req.body);

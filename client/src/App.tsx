@@ -30,6 +30,8 @@ import TenantsPage from "@/pages/services/tenants";
 import PropertyComparePage from "@/pages/compare";
 import LoginPage from "@/pages/auth/login";
 import RegisterPage from "@/pages/auth/register";
+import FeaturesPage from "@/pages/features";
+import PricingPage from "@/pages/pricing";
 import { TutorialProvider, useTutorial } from "@/components/tutorial/TutorialProvider";
 
 // Component to show a button to restart the tutorial
@@ -309,6 +311,10 @@ function Router() {
           {/* Authentication */}
           <Route path="/auth/login" component={LoginPage} />
           <Route path="/auth/register" component={RegisterPage} />
+
+          {/* Static Pages */}
+          <Route path="/features" component={FeaturesPage} />
+          <Route path="/pricing" component={PricingPage} />
 
           <Route component={NotFound} />
         </Switch>
