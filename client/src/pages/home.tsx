@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Property } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,8 +12,20 @@ import ListingCard from "@/components/listing-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
+  const [location] = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Extract search query from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.split('?')[1] || '');
+    const query = urlParams.get('search');
+    if (query) {
+      setSearchQuery(query);
+    }
+  }, [location]);
+
   const { data: properties, isLoading } = useQuery<Property[]>({
-    queryKey: ["/api/properties"]
+    queryKey: searchQuery ? ["/api/properties", { q: searchQuery }] : ["/api/properties"]
   });
 
   // For the demo video modal
@@ -58,6 +71,49 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Search Results Section */}
+      {searchQuery && (
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            <div className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-3xl font-bold mb-2">
+                  Search Results for "{searchQuery}"
+                </h2>
+                <p className="text-muted-foreground">
+                  {isLoading ? "Searching..." : `Found ${properties?.length || 0} properties`}
+                </p>
+              </div>
+
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} className="h-96 w-full" />
+                  ))}
+                </div>
+              ) : properties && properties.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {properties.map((property) => (
+                    <ListingCard key={property.id} property={property} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Search className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-medium mb-2">No properties found</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Try adjusting your search terms or browse all properties below.
+                  </p>
+                  <Button onClick={() => window.location.href = "/"}>
+                    View All Properties
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Features Section */}
       <section className="py-16 bg-gray-50">
