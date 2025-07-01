@@ -8,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, Home, Upload, Building, Map, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function ListPropertyPage() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form data state
   const [propertyData, setPropertyData] = useState({
@@ -67,22 +69,13 @@ export default function ListPropertyPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateCurrentStep()) {
-      toast({
-        title: "Missing information",
-        description: "Please complete all required fields before submitting.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+  const createPropertyMutation = useMutation({
+    mutationFn: async (propertyData: any) => {
+      const response = await apiRequest("POST", "/api/properties", propertyData);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
       toast({
         title: "Property submitted successfully",
         description: "Your property listing is now pending verification.",
@@ -101,7 +94,46 @@ export default function ListPropertyPage() {
         ownershipStatus: "freehold"
       });
       setCurrentStep(1);
-    }, 1500);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to submit property",
+        description: error.message || "Please try again later.",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateCurrentStep()) {
+      toast({
+        title: "Missing information",
+        description: "Please complete all required fields before submitting.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Format property data for API
+    const formattedData = {
+      ownerId: 1, // TODO: Get from authenticated user
+      title: propertyData.title,
+      description: propertyData.description,
+      location: propertyData.location,
+      price: parseInt(propertyData.price),
+      imageUrls: [], // TODO: Add image upload functionality
+      features: {
+        bedrooms: parseInt(propertyData.beds),
+        bathrooms: parseInt(propertyData.baths),
+        squareFeet: parseInt(propertyData.area),
+        parkingSpaces: 1, // Default value
+        yearBuilt: new Date().getFullYear(), // Default to current year
+        amenities: [] // TODO: Add amenities selection
+      }
+    };
+
+    createPropertyMutation.mutate(formattedData);
   };
 
   return (
@@ -416,8 +448,8 @@ export default function ListPropertyPage() {
                       Next
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? 'Submitting...' : 'Submit Property'}
+                    <Button type="submit" disabled={createPropertyMutation.isPending}>
+                      {createPropertyMutation.isPending ? 'Submitting...' : 'Submit Property'}
                     </Button>
                   )}
                 </div>
