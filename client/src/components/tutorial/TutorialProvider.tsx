@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import {
@@ -241,7 +240,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const nextStep = () => {
     if (currentStep < tutorialSteps.length - 1) {
       const nextStepData = tutorialSteps[currentStep + 1];
-      
+
       setCurrentStep(prev => prev + 1);
 
       // Navigate to target page if specified
@@ -265,7 +264,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const prevStep = () => {
     if (currentStep > 0) {
       const prevStepData = tutorialSteps[currentStep - 1];
-      
+
       setCurrentStep(prev => prev - 1);
 
       // Navigate to target page if specified
@@ -331,7 +330,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 
       // Wait for navigation to complete
       const timer = setTimeout(updatePosition, 300);
-      
+
       window.addEventListener('resize', updatePosition);
       window.addEventListener('scroll', updatePosition);
 

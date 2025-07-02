@@ -53,40 +53,48 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Validate environment variables
-  if (!process.env.GOOGLE_API_KEY) {
-    console.warn('Warning: GOOGLE_API_KEY not set. AI features may not work properly.');
+  try {
+    // Validate environment variables
+    if (!process.env.GOOGLE_API_KEY) {
+      console.warn('Warning: GOOGLE_API_KEY not set. AI features may not work properly.');
+    }
+
+    // Register API routes
+    registerRoutes(app);
+    registerAIRoutes(app);
+    registerMLRoutes(app);
+
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      
+      console.error('Server error:', err);
+      res.status(status).json({ message });
+    });
+
+    // Create HTTP server
+    const httpServer = createServer(app);
+
+    // Always use development mode in Replit environment
+    // This ensures Vite dev server is used instead of trying to serve static files
+    const isDevelopment = process.env.NODE_ENV !== "production" || !process.env.NODE_ENV;
+    
+    if (isDevelopment) {
+      log('Starting in development mode with Vite dev server');
+      await setupVite(app, httpServer);
+    } else {
+      log('Starting in production mode with static files');
+      serveStatic(app);
+    }
+
+    // ALWAYS serve the app on port 5000
+    // this serves both the API and the client
+    const port = 5000;
+    httpServer.listen(port, "0.0.0.0", () => {
+      log(`serving on port ${port} in ${isDevelopment ? 'development' : 'production'} mode`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
   }
-
-  // Register API routes
-  registerRoutes(app);
-  registerAIRoutes(app);
-  registerMLRoutes(app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  // Create HTTP server
-  const httpServer = createServer(app);
-
-  if (process.env.NODE_ENV === "development") {
-    await setupVite(app, httpServer);
-  } else {
-    serveStatic(app);
-  }
-
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client
-  const port = 5000;
-  httpServer.listen(port, "0.0.0.0", () => {
-    log(`serving on port ${port}`);
-  });
 })();
