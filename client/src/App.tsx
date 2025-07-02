@@ -40,17 +40,18 @@ import { TutorialProvider, useTutorial } from "@/components/tutorial/TutorialPro
 
 // Component to show a button to restart the tutorial
 function TutorialButton() {
-  const { restartTutorial } = useTutorial();
+  const { restartTutorial, isActive } = useTutorial();
   
   return (
     <Button 
       variant="ghost" 
-      size="icon"
+      size="sm"
       onClick={restartTutorial}
-      title="Start Platform Tour"
-      className="text-white hover:text-white hover:bg-white/20"
+      title={isActive ? "Restart Platform Tour" : "Take Platform Tour"}
+      className="text-white hover:text-white hover:bg-white/20 tutorial-help-button"
     >
-      <HelpCircle className="h-5 w-5" />
+      <HelpCircle className="h-4 w-4 mr-1" />
+      {isActive ? "Restart Tour" : "Take Tour"}
     </Button>
   );
 }

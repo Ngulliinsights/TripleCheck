@@ -46,7 +46,7 @@ export default function HomePage() {
           <div className="flex justify-center gap-4 animate__animated animate__fadeIn animate__delay-2s">
             <Button 
               size="lg" 
-              className="bg-[#2C5282] hover:bg-[#2C5282]/90 verify-property"
+              className="bg-[#2C5282] hover:bg-[#2C5282]/90 verify-property tutorial-verify-btn"
               onClick={() => window.location.href = "/services/basic-checks"}
             >
               Verify Property Now
