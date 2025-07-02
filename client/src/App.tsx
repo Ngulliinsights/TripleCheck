@@ -32,6 +32,10 @@ import LoginPage from "@/pages/auth/login";
 import RegisterPage from "@/pages/auth/register";
 import FeaturesPage from "@/pages/features";
 import PricingPage from "@/pages/pricing";
+import OurStoryPage from "@/pages/our-story";
+import TeamPage from "@/pages/team";
+import PartnersPage from "@/pages/partners";
+import PressMediaPage from "@/pages/press-media";
 import { TutorialProvider, useTutorial } from "@/components/tutorial/TutorialProvider";
 
 // Component to show a button to restart the tutorial
@@ -316,6 +320,10 @@ function Router() {
           {/* Static Pages */}
           <Route path="/features" component={FeaturesPage} />
           <Route path="/pricing" component={PricingPage} />
+          <Route path="/our-story" component={OurStoryPage} />
+          <Route path="/team" component={TeamPage} />
+          <Route path="/partners" component={PartnersPage} />
+          <Route path="/press-media" component={PressMediaPage} />
 
           <Route component={NotFound} />
         </Switch>
