@@ -43,7 +43,7 @@ const tutorialSteps: TutorialStep[] = [
     id: 'welcome',
     title: 'Welcome to TripleCheck!',
     description: 'Let us show you around our platform and help you get started with property verification in Kenya.',
-    element: '[href="/"]',
+    element: 'body',
     placement: 'bottom'
   },
   {
@@ -57,43 +57,36 @@ const tutorialSteps: TutorialStep[] = [
     id: 'search',
     title: 'Property Search',
     description: 'Easily search for properties by location, price range, or property type. Our advanced search helps you find exactly what you\'re looking for.',
-    element: '.search-bar',
+    element: 'input[type="search"]',
+    placement: 'bottom'
+  },
+  {
+    id: 'services',
+    title: 'Our Services',
+    description: 'Explore our comprehensive services: Property Verification, Community Trust Network, and Market Insights - all designed to protect your investments.',
+    element: 'body',
     placement: 'bottom'
   },
   {
     id: 'verification',
     title: 'Property Verification',
-    description: 'Check property authenticity and ownership details. This is your first step in ensuring a property is legitimate.',
-    element: '.verify-property',
-    placement: 'left'
-  },
-  {
-    id: 'services-menu',
-    title: 'Services Menu',
-    description: 'Click on Services to explore our three main categories: Property Verification, Community Trust Network, and Market Insights.',
-    element: '[role="button"]:has-text("Services")',
+    description: 'Start with basic property checks, document authentication, and fraud detection to verify any property in Kenya.',
+    element: 'body',
     placement: 'bottom'
   },
   {
-    id: 'basic-checks',
-    title: 'Basic Property Checks',
-    description: 'Start with basic property verification to check ownership, legal status, and authenticity.',
-    element: 'nav a[href="/services/basic-checks"], .service-nav a[href="/services/basic-checks"]',
-    placement: 'right'
+    id: 'community',
+    title: 'Community Trust Network',
+    description: 'Access user reviews, trust points, and karma scores to make informed decisions based on community feedback.',
+    element: 'body',
+    placement: 'bottom'
   },
   {
-    id: 'document-auth',
-    title: 'Document Authentication',
-    description: 'Upload property documents for verification. We use AI and blockchain to validate ownership records, title deeds, and more.',
-    element: 'nav a[href="/services/document-auth"], .service-nav a[href="/services/document-auth"]',
-    placement: 'right'
-  },
-  {
-    id: 'fraud-detection',
-    title: 'Fraud Detection System',
-    description: 'Our advanced algorithms identify suspicious listings and potential scams to keep you safe during property transactions.',
-    element: 'nav a[href="/services/fraud-detection"], .service-nav a[href="/services/fraud-detection"]',
-    placement: 'right'
+    id: 'insights',
+    title: 'Market Insights',
+    description: 'Get comprehensive reports, real-time alerts, and educational resources to stay informed about the property market.',
+    element: 'body',
+    placement: 'bottom'
   },
   {
     id: 'features',
