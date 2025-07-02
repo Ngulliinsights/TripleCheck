@@ -44,7 +44,11 @@ export default function HomePage() {
             Your trusted partner in real estate verification.
           </p>
           <div className="flex justify-center gap-4 animate__animated animate__fadeIn animate__delay-2s">
-            <Button size="lg" className="bg-[#2C5282] hover:bg-[#2C5282]/90">
+            <Button 
+              size="lg" 
+              className="bg-[#2C5282] hover:bg-[#2C5282]/90 verify-property"
+              onClick={() => window.location.href = "/services/basic-checks"}
+            >
               Verify Property Now
             </Button>
             <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>

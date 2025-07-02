@@ -43,7 +43,7 @@ const tutorialSteps: TutorialStep[] = [
     id: 'welcome',
     title: 'Welcome to TripleCheck!',
     description: 'Let us show you around our platform and help you get started with property verification in Kenya.',
-    element: '.tutorial-welcome',
+    element: '[href="/"]',
     placement: 'bottom'
   },
   {
@@ -68,59 +68,59 @@ const tutorialSteps: TutorialStep[] = [
     placement: 'left'
   },
   {
-    id: 'services',
-    title: 'Our Core Services',
-    description: 'Explore our three main service categories: Property Verification, Community Trust Network, and Market Insights.',
-    element: '[href="/services/basic-checks"]',
+    id: 'services-menu',
+    title: 'Services Menu',
+    description: 'Click on Services to explore our three main categories: Property Verification, Community Trust Network, and Market Insights.',
+    element: '[role="button"]:has-text("Services")',
+    placement: 'bottom'
+  },
+  {
+    id: 'basic-checks',
+    title: 'Basic Property Checks',
+    description: 'Start with basic property verification to check ownership, legal status, and authenticity.',
+    element: 'a[href="/services/basic-checks"]',
     placement: 'right'
   },
   {
     id: 'document-auth',
     title: 'Document Authentication',
     description: 'Upload property documents for verification. We use AI and blockchain to validate ownership records, title deeds, and more.',
-    element: '[href="/services/document-auth"]',
+    element: 'a[href="/services/document-auth"]',
     placement: 'right'
   },
   {
     id: 'fraud-detection',
     title: 'Fraud Detection System',
     description: 'Our advanced algorithms identify suspicious listings and potential scams to keep you safe during property transactions.',
-    element: '[href="/services/fraud-detection"]',
+    element: 'a[href="/services/fraud-detection"]',
     placement: 'right'
   },
   {
-    id: 'reviews',
-    title: 'Community Reviews',
-    description: 'Read and contribute reviews from other users to build a trustworthy community ecosystem around real estate.',
-    element: '[href="/services/reviews"]',
-    placement: 'right'
+    id: 'features',
+    title: 'Platform Features',
+    description: 'Learn about all the powerful features we offer to protect your real estate investments.',
+    element: 'a[href="/features"]',
+    placement: 'bottom'
   },
   {
-    id: 'trust-points',
-    title: 'Trust Points System',
-    description: 'Earn trust points by verifying properties and contributing authentic information. Use these points for premium features.',
-    element: '[href="/services/trust-points"]',
-    placement: 'right'
-  },
-  {
-    id: 'karma',
-    title: 'Real Estate Karma Score',
-    description: 'Every property and seller has a Karma Score. Higher scores indicate more trustworthy listings and sellers.',
-    element: '[href="/services/karma"]',
-    placement: 'right'
-  },
-  {
-    id: 'reports',
-    title: 'Comprehensive Reports',
-    description: 'Get detailed property history reports showing ownership changes, price fluctuations, and verification data.',
-    element: '[href="/services/reports"]',
-    placement: 'right'
+    id: 'pricing',
+    title: 'Pricing Plans',
+    description: 'Choose from our flexible pricing plans designed to meet your verification needs and budget.',
+    element: 'a[href="/pricing"]',
+    placement: 'bottom'
   },
   {
     id: 'dashboard',
     title: 'Your Dashboard',
     description: 'Access your saved properties, verification history, and manage your account settings from your personal dashboard.',
-    element: '[href="/dashboard"]',
+    element: 'a[href="/dashboard"]',
+    placement: 'bottom'
+  },
+  {
+    id: 'complete',
+    title: 'Tour Complete!',
+    description: 'You\'re all set! Start by verifying your first property or exploring our comprehensive services. Need help? Click the help button anytime.',
+    element: 'body',
     placement: 'bottom'
   }
 ];
@@ -188,19 +188,24 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const currentTutorialStep = tutorialSteps[currentStep];
 
   // Calculate position for the tooltip highlight using a ref
+  const [highlightPosition, setHighlightPosition] = useState<any>(null);
+
   const calculateHighlightPosition = () => {
     if (!currentTutorialStep) return null;
     
     try {
       const element = document.querySelector(currentTutorialStep.element);
-      if (!element) return null;
+      if (!element) {
+        console.warn(`Tutorial element not found: ${currentTutorialStep.element}`);
+        return null;
+      }
       
       const rect = element.getBoundingClientRect();
       return {
-        top: `${rect.top}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
-        height: `${rect.height}px`,
+        top: rect.top + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+        height: rect.height,
       };
     } catch (error) {
       console.error("Error finding tutorial element:", error);
@@ -208,7 +213,27 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const highlightPosition = isActive ? calculateHighlightPosition() : null;
+  // Update highlight position when step changes or window resizes
+  useEffect(() => {
+    if (isActive) {
+      const updatePosition = () => {
+        setHighlightPosition(calculateHighlightPosition());
+      };
+      
+      updatePosition();
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition);
+      
+      // Small delay to ensure DOM is ready
+      const timeout = setTimeout(updatePosition, 100);
+      
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition);
+        clearTimeout(timeout);
+      };
+    }
+  }, [isActive, currentStep]);
 
   return (
     <TutorialContext.Provider
@@ -255,57 +280,97 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
         </DialogContent>
       </Dialog>
 
-      {/* Tutorial Tooltips */}
+      {/* Tutorial Overlay and Tooltip */}
       {isActive && currentTutorialStep && (
-        <TooltipProvider>
-          <Tooltip open={true}>
-            <TooltipTrigger asChild>
-              {/* Semi-transparent overlay with highlighted element */}
-              <div className="fixed inset-0 z-50 bg-black/50 pointer-events-none">
-                {highlightPosition && (
-                  <div
-                    className="absolute border-2 border-[#2C5282] rounded-md bg-transparent pointer-events-none"
-                    style={{
-                      top: highlightPosition.top,
-                      left: highlightPosition.left,
-                      width: highlightPosition.width,
-                      height: highlightPosition.height,
-                      boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)'
-                    }}
-                  />
-                )}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent
-              side={currentTutorialStep.placement || 'top'}
-              className="p-4 max-w-sm bg-white border border-[#2C5282] z-50"
-              align="center"
-            >
-              <h3 className="font-semibold text-lg text-[#2C5282] mb-2">{currentTutorialStep.title}</h3>
-              <p className="text-sm mb-4">{currentTutorialStep.description}</p>
-              <div className="flex justify-between items-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={prevStep}
-                  disabled={currentStep === 0}
-                >
-                  Previous
-                </Button>
-                <span className="text-xs text-muted-foreground">
+        <div className="fixed inset-0 z-[9999] pointer-events-none">
+          {/* Dark overlay */}
+          <div className="absolute inset-0 bg-black/50" />
+          
+          {/* Highlighted element */}
+          {highlightPosition && (
+            <div
+              className="absolute border-4 border-[#2C5282] rounded-lg bg-white/10 pointer-events-none shadow-2xl"
+              style={{
+                top: `${highlightPosition.top - 4}px`,
+                left: `${highlightPosition.left - 4}px`,
+                width: `${highlightPosition.width + 8}px`,
+                height: `${highlightPosition.height + 8}px`,
+                boxShadow: `0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 20px rgba(44, 82, 130, 0.5)`
+              }}
+            />
+          )}
+          
+          {/* Tutorial card */}
+          <div 
+            className="absolute bg-white rounded-lg shadow-xl border-2 border-[#2C5282] p-6 max-w-sm pointer-events-auto"
+            style={{
+              top: highlightPosition ? 
+                (highlightPosition.top > window.innerHeight / 2 ? 
+                  `${highlightPosition.top - 200}px` : 
+                  `${highlightPosition.top + highlightPosition.height + 20}px`) : 
+                '50%',
+              left: highlightPosition ? 
+                `${Math.max(20, Math.min(highlightPosition.left, window.innerWidth - 400))}px` : 
+                '50%',
+              transform: !highlightPosition ? 'translate(-50%, -50%)' : 'none'
+            }}
+          >
+            <div className="mb-4">
+              <h3 className="font-bold text-xl text-[#2C5282] mb-2">
+                {currentTutorialStep.title}
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                {currentTutorialStep.description}
+              </p>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={prevStep}
+                disabled={currentStep === 0}
+                className="border-[#2C5282] text-[#2C5282] hover:bg-[#2C5282] hover:text-white"
+              >
+                Previous
+              </Button>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">
                   {currentStep + 1} of {tutorialSteps.length}
                 </span>
+                <div className="flex gap-1">
+                  {tutorialSteps.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-2 h-2 rounded-full ${
+                        index === currentStep ? 'bg-[#2C5282]' : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={endTutorial}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  Skip
+                </Button>
                 <Button
                   size="sm"
                   onClick={nextStep}
-                  className="bg-[#2C5282] hover:bg-[#2C5282]/90"
+                  className="bg-[#2C5282] hover:bg-[#2C5282]/90 text-white"
                 >
                   {currentStep === tutorialSteps.length - 1 ? 'Finish' : 'Next'}
                 </Button>
               </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+            </div>
+          </div>
+        </div>
       )}
     </TutorialContext.Provider>
   );

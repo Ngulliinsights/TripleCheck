@@ -219,6 +219,7 @@ function Navigation() {
                 <Button 
                   variant="outline" 
                   className="text-white border-white hover:bg-white hover:text-[#2C5282] verify-property mr-2"
+                  onClick={() => setLocation("/services/basic-checks")}
                 >
                   Verify Property
                 </Button>
