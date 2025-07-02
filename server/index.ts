@@ -75,10 +75,10 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   // Create HTTP server
-  const server = createServer(app);
+  const httpServer = createServer(app);
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, httpServer);
   } else {
     serveStatic(app);
   }
@@ -86,7 +86,7 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client
   const port = 5000;
-  server.listen(port, "0.0.0.0", () => {
+  httpServer.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
 })();
