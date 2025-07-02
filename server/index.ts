@@ -78,7 +78,7 @@ app.use((req, res, next) => {
   const server = createServer(app);
 
   if (app.get("env") === "development") {
-    await setupVite(app, server);
+    await setupVite(app, httpServer);
   } else {
     serveStatic(app);
   }
