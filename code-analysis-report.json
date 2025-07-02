@@ -1,0 +1,6430 @@
+[
+  {
+    "filePath": "client/src/App.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 80,
+        "issues": [
+          "High number of imports suggests tight coupling",
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Consider dependency injection or facade patterns",
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 55,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected",
+          "1 functions exceed 30 lines"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names",
+          "Break long functions into smaller, focused functions"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 85.83333333333333
+  },
+  {
+    "filePath": "client/src/components/listing-card.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90
+  },
+  {
+    "filePath": "client/src/components/property-reviews.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 75,
+        "issues": [
+          "Uses loose equality (==) instead of strict equality (===)",
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Replace == with === for type-safe comparisons",
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 80,
+        "issues": [
+          "High number of imports suggests tight coupling",
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Consider dependency injection or facade patterns",
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 80.83333333333333
+  },
+  {
+    "filePath": "client/src/components/property-search.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/trust-score.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90.83333333333333
+  },
+  {
+    "filePath": "client/src/components/tutorial/TutorialProvider.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 80,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling",
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling",
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90.83333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/accordion.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/alert-dialog.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/alert.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90
+  },
+  {
+    "filePath": "client/src/components/ui/aspect-ratio.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 96.66666666666667
+  },
+  {
+    "filePath": "client/src/components/ui/avatar.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/badge.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/breadcrumb.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90
+  },
+  {
+    "filePath": "client/src/components/ui/button.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/calendar.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/card.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90
+  },
+  {
+    "filePath": "client/src/components/ui/carousel.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90
+  },
+  {
+    "filePath": "client/src/components/ui/chart.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 75,
+        "issues": [
+          "Potential XSS vulnerability through innerHTML usage"
+        ],
+        "recommendations": [
+          "Use textContent or properly sanitize HTML content"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 90,
+        "issues": [
+          "Chained array operations may be inefficient for large datasets"
+        ],
+        "recommendations": [
+          "Consider combining operations or using lazy evaluation"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 55,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected",
+          "1 functions exceed 30 lines"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names",
+          "Break long functions into smaller, focused functions"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 82.5
+  },
+  {
+    "filePath": "client/src/components/ui/checkbox.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/collapsible.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 94.16666666666667
+  },
+  {
+    "filePath": "client/src/components/ui/command.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/context-menu.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/dialog.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/drawer.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/dropdown-menu.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/form.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/hover-card.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90.83333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/input-otp.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/input.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/label.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/menubar.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/navigation-menu.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/pagination.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90
+  },
+  {
+    "filePath": "client/src/components/ui/popover.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90.83333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/progress.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/radio-group.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/resizable.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/scroll-area.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/select.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/separator.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/sheet.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/sidebar.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 65,
+        "issues": [
+          "Hard dependencies on Date/Random make testing difficult",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Inject time/random dependencies for better testability",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 87.5
+  },
+  {
+    "filePath": "client/src/components/ui/skeleton.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 95
+  },
+  {
+    "filePath": "client/src/components/ui/slider.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/switch.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/table.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90
+  },
+  {
+    "filePath": "client/src/components/ui/tabs.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/textarea.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/toast.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/components/ui/toaster.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 100
+  },
+  {
+    "filePath": "client/src/components/ui/toggle-group.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90
+  },
+  {
+    "filePath": "client/src/components/ui/toggle.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/ui/tooltip.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/components/verification-badge.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/hooks/use-mobile.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 97.5
+  },
+  {
+    "filePath": "client/src/hooks/use-toast.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 80,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling",
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling",
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 90,
+        "issues": [
+          "Chained array operations may be inefficient for large datasets"
+        ],
+        "recommendations": [
+          "Consider combining operations or using lazy evaluation"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 70,
+        "issues": [
+          "No corresponding test file found"
+        ],
+        "recommendations": [
+          "Create unit tests for this module"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 85.83333333333333
+  },
+  {
+    "filePath": "client/src/lib/queryClient.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 80,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling",
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling",
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 70,
+        "issues": [
+          "No corresponding test file found"
+        ],
+        "recommendations": [
+          "Create unit tests for this module"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 81.66666666666667
+  },
+  {
+    "filePath": "client/src/lib/utils.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 70,
+        "issues": [
+          "No corresponding test file found"
+        ],
+        "recommendations": [
+          "Create unit tests for this module"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 95
+  },
+  {
+    "filePath": "client/src/main.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 96.66666666666667
+  },
+  {
+    "filePath": "client/src/pages/auth/login.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 84.16666666666667
+  },
+  {
+    "filePath": "client/src/pages/auth/register.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 84.16666666666667
+  },
+  {
+    "filePath": "client/src/pages/compare.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 70,
+        "issues": [
+          "Missing type definitions for complex module",
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Define interfaces for better type safety and documentation",
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 86.66666666666667
+  },
+  {
+    "filePath": "client/src/pages/dashboard.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 90,
+        "issues": [
+          "Chained array operations may be inefficient for large datasets"
+        ],
+        "recommendations": [
+          "Consider combining operations or using lazy evaluation"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90.83333333333333
+  },
+  {
+    "filePath": "client/src/pages/features.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/pages/home.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90.83333333333333
+  },
+  {
+    "filePath": "client/src/pages/not-found.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 93.33333333333333
+  },
+  {
+    "filePath": "client/src/pages/pricing.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 75,
+        "issues": [
+          "Uses loose equality (==) instead of strict equality (===)",
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Replace == with === for type-safe comparisons",
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 86.66666666666667
+  },
+  {
+    "filePath": "client/src/pages/property.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 92.5
+  },
+  {
+    "filePath": "client/src/pages/services/alerts.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/pages/services/basic-checks.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 65,
+        "issues": [
+          "Property access without null checking detected",
+          "Async functions without error handling"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access",
+          "Wrap async operations in try-catch blocks"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 80.83333333333333
+  },
+  {
+    "filePath": "client/src/pages/services/document-auth.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 84.16666666666667
+  },
+  {
+    "filePath": "client/src/pages/services/fraud-detection.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 80,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling",
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling",
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 83.33333333333333
+  },
+  {
+    "filePath": "client/src/pages/services/karma.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/pages/services/list-property.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 65,
+        "issues": [
+          "Hard dependencies on Date/Random make testing difficult",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Inject time/random dependencies for better testability",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 81.66666666666667
+  },
+  {
+    "filePath": "client/src/pages/services/reports.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 65,
+        "issues": [
+          "Hard dependencies on Date/Random make testing difficult",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Inject time/random dependencies for better testability",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 83.33333333333333
+  },
+  {
+    "filePath": "client/src/pages/services/reputation.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "client/src/pages/services/resources.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 90
+  },
+  {
+    "filePath": "client/src/pages/services/reviews.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 80,
+        "issues": [
+          "Async functions without error handling"
+        ],
+        "recommendations": [
+          "Wrap async operations in try-catch blocks"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 87.5
+  },
+  {
+    "filePath": "client/src/pages/services/tenants.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 80,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling",
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling",
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 90,
+        "issues": [
+          "Chained array operations may be inefficient for large datasets"
+        ],
+        "recommendations": [
+          "Consider combining operations or using lazy evaluation"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 85.83333333333333
+  },
+  {
+    "filePath": "client/src/pages/services/trust-points.tsx",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 80,
+        "issues": [
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "drizzle.config.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 50,
+        "issues": [
+          "No corresponding test file found",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 89.16666666666667
+  },
+  {
+    "filePath": "postcss.config.js",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 50,
+        "issues": [
+          "No corresponding test file found",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 91.66666666666667
+  },
+  {
+    "filePath": "scripts/code-analysis.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 45,
+        "issues": [
+          "Potential SQL injection through string concatenation",
+          "Potential XSS vulnerability through innerHTML usage"
+        ],
+        "recommendations": [
+          "Use parameterized queries or prepared statements",
+          "Use textContent or properly sanitize HTML content"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 65,
+        "issues": [
+          "Potential N+1 query problem with await in loops",
+          "Chained array operations may be inefficient for large datasets"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()",
+          "Consider combining operations or using lazy evaluation"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 50,
+        "issues": [
+          "High cyclomatic complexity (50)",
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Break down complex functions into smaller, focused functions",
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 35,
+        "issues": [
+          "No corresponding test file found",
+          "Hard dependencies on Date/Random make testing difficult",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Inject time/random dependencies for better testability",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 63.333333333333336
+  },
+  {
+    "filePath": "scripts/data-analysis.js",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 50,
+        "issues": [
+          "No corresponding test file found",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 80.83333333333333
+  },
+  {
+    "filePath": "scripts/data-generator.js",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 80,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling",
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling",
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 60,
+        "issues": [
+          "Hardcoded credentials detected"
+        ],
+        "recommendations": [
+          "Move sensitive data to environment variables"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 65,
+        "issues": [
+          "Potential N+1 query problem with await in loops",
+          "Chained array operations may be inefficient for large datasets"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()",
+          "Consider combining operations or using lazy evaluation"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 75,
+        "issues": [
+          "File contains many functions - consider breaking into modules",
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Split large files into focused modules following SRP",
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 30,
+        "issues": [
+          "High cyclomatic complexity (31)",
+          "Low comment density for complex file",
+          "Poor variable naming detected",
+          "1 functions exceed 30 lines"
+        ],
+        "recommendations": [
+          "Break down complex functions into smaller, focused functions",
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names",
+          "Break long functions into smaller, focused functions"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 35,
+        "issues": [
+          "No corresponding test file found",
+          "Hard dependencies on Date/Random make testing difficult",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Inject time/random dependencies for better testability",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 57.5
+  },
+  {
+    "filePath": "scripts/quality-gates.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 60,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling",
+          "Property access without null checking detected",
+          "Async functions without error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling",
+          "Use optional chaining (?.) for safer property access",
+          "Wrap async operations in try-catch blocks"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 50,
+        "issues": [
+          "No corresponding test file found",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 75
+  },
+  {
+    "filePath": "scripts/run-analysis.js",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 50,
+        "issues": [
+          "No corresponding test file found",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 87.5
+  },
+  {
+    "filePath": "scripts/run-data-generation.js",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 50,
+        "issues": [
+          "No corresponding test file found",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 83.33333333333333
+  },
+  {
+    "filePath": "server/ai-routes.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 80,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling",
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling",
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 75,
+        "issues": [
+          "API endpoint may lack input validation"
+        ],
+        "recommendations": [
+          "Implement input validation and sanitization"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 65,
+        "issues": [
+          "High cyclomatic complexity (25)",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Break down complex functions into smaller, focused functions",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 55,
+        "issues": [
+          "No corresponding test file found",
+          "Hard dependencies on Date/Random make testing difficult"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Inject time/random dependencies for better testability"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 73.33333333333333
+  },
+  {
+    "filePath": "server/ai-service.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 65,
+        "issues": [
+          "Potential N+1 query problem with await in loops",
+          "Chained array operations may be inefficient for large datasets"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()",
+          "Consider combining operations or using lazy evaluation"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 75,
+        "issues": [
+          "File contains many functions - consider breaking into modules",
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Split large files into focused modules following SRP",
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 30,
+        "issues": [
+          "High cyclomatic complexity (48)",
+          "Low comment density for complex file",
+          "Poor variable naming detected",
+          "1 functions exceed 30 lines"
+        ],
+        "recommendations": [
+          "Break down complex functions into smaller, focused functions",
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names",
+          "Break long functions into smaller, focused functions"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 35,
+        "issues": [
+          "No corresponding test file found",
+          "Hard dependencies on Date/Random make testing difficult",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Inject time/random dependencies for better testability",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 66.66666666666667
+  },
+  {
+    "filePath": "server/index.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 60,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling",
+          "Property access without null checking detected",
+          "Async functions without error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling",
+          "Use optional chaining (?.) for safer property access",
+          "Wrap async operations in try-catch blocks"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 90,
+        "issues": [
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 70,
+        "issues": [
+          "No corresponding test file found"
+        ],
+        "recommendations": [
+          "Create unit tests for this module"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 85
+  },
+  {
+    "filePath": "server/ml-routes.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 75,
+        "issues": [
+          "API endpoint may lack input validation"
+        ],
+        "recommendations": [
+          "Implement input validation and sanitization"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 70,
+        "issues": [
+          "Missing type definitions for complex module",
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Define interfaces for better type safety and documentation",
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 55,
+        "issues": [
+          "No corresponding test file found",
+          "Hard dependencies on Date/Random make testing difficult"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Inject time/random dependencies for better testability"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 74.16666666666667
+  },
+  {
+    "filePath": "server/ml-training.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 65,
+        "issues": [
+          "Potential N+1 query problem with await in loops",
+          "Chained array operations may be inefficient for large datasets"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()",
+          "Consider combining operations or using lazy evaluation"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 75,
+        "issues": [
+          "File contains many functions - consider breaking into modules",
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Split large files into focused modules following SRP",
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 45,
+        "issues": [
+          "High cyclomatic complexity (33)",
+          "Poor variable naming detected",
+          "2 functions exceed 30 lines"
+        ],
+        "recommendations": [
+          "Break down complex functions into smaller, focused functions",
+          "Use descriptive, meaningful variable names",
+          "Break long functions into smaller, focused functions"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 35,
+        "issues": [
+          "No corresponding test file found",
+          "Hard dependencies on Date/Random make testing difficult",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Inject time/random dependencies for better testability",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 69.16666666666667
+  },
+  {
+    "filePath": "server/routes.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 95,
+        "issues": [
+          "Multiple if statements without else clauses may indicate missing error handling"
+        ],
+        "recommendations": [
+          "Consider adding else clauses or default error handling"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 75,
+        "issues": [
+          "API endpoint may lack input validation"
+        ],
+        "recommendations": [
+          "Implement input validation and sanitization"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 50,
+        "issues": [
+          "High cyclomatic complexity (28)",
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Break down complex functions into smaller, focused functions",
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 55,
+        "issues": [
+          "No corresponding test file found",
+          "Hard dependencies on Date/Random make testing difficult"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Inject time/random dependencies for better testability"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 73.33333333333333
+  },
+  {
+    "filePath": "server/storage.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 65,
+        "issues": [
+          "Property access without null checking detected",
+          "Async functions without error handling"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access",
+          "Wrap async operations in try-catch blocks"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 90,
+        "issues": [
+          "Magic numbers detected"
+        ],
+        "recommendations": [
+          "Extract numbers to named constants"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 55,
+        "issues": [
+          "No corresponding test file found",
+          "Hard dependencies on Date/Random make testing difficult"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Inject time/random dependencies for better testability"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 76.66666666666667
+  },
+  {
+    "filePath": "server/vite.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 75,
+        "issues": [
+          "Potential N+1 query problem with await in loops"
+        ],
+        "recommendations": [
+          "Consider batching database operations or using Promise.all()"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 55,
+        "issues": [
+          "No corresponding test file found",
+          "Hard dependencies on Date/Random make testing difficult"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Inject time/random dependencies for better testability"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 81.66666666666667
+  },
+  {
+    "filePath": "shared/schema.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 70,
+        "issues": [
+          "No corresponding test file found"
+        ],
+        "recommendations": [
+          "Create unit tests for this module"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 88.33333333333333
+  },
+  {
+    "filePath": "tailwind.config.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 85,
+        "issues": [
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 75,
+        "issues": [
+          "Low comment density for complex file",
+          "Poor variable naming detected"
+        ],
+        "recommendations": [
+          "Add comments explaining complex logic and business rules",
+          "Use descriptive, meaningful variable names"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 50,
+        "issues": [
+          "No corresponding test file found",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 85
+  },
+  {
+    "filePath": "vite.config.ts",
+    "results": [
+      {
+        "dimension": "Functional Correctness",
+        "score": 75,
+        "issues": [
+          "Uses loose equality (==) instead of strict equality (===)",
+          "Property access without null checking detected"
+        ],
+        "recommendations": [
+          "Replace == with === for type-safe comparisons",
+          "Use optional chaining (?.) for safer property access"
+        ],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Security",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Performance",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Architecture",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "medium"
+      },
+      {
+        "dimension": "Maintainability",
+        "score": 100,
+        "issues": [],
+        "recommendations": [],
+        "confidence": "high"
+      },
+      {
+        "dimension": "Testability",
+        "score": 50,
+        "issues": [
+          "No corresponding test file found",
+          "No exported functions found - difficult to test"
+        ],
+        "recommendations": [
+          "Create unit tests for this module",
+          "Export functions for individual testing"
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "overallScore": 87.5
+  }
+]
