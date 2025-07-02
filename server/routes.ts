@@ -5,7 +5,6 @@ import { insertPropertySchema, insertReviewSchema, insertUserSchema } from "@sha
 import { z } from "zod";
 import fileUpload from "express-fileupload";
 import path from "path";
-import { fileURLToPath } from 'url';
 import fs from "fs";
 import { 
   handleDocumentVerification,
@@ -16,9 +15,8 @@ import {
 } from "./ai-routes";
 
 // Uploads directory for temporary file storage
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const UPLOAD_DIR = path.join(__dirname, '../uploads');
+const __dirname = path.resolve();
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
 // Ensure directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -54,7 +52,7 @@ async function performAIVerification(propertyData: any) {
   }
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export function registerRoutes(app: Express): void {
   // Health check endpoint
   app.get("/api/health", (req, res) => {
     res.status(200).json({ 
@@ -298,6 +296,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
+  // Routes registered successfully
 }

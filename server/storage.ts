@@ -58,7 +58,7 @@ export class MemStorage implements IStorage {
   async updateUserTrustScore(id: number, score: number): Promise<User> {
     const user = await this.getUser(id);
     if (!user) throw new Error("User not found");
-    
+
     const updatedUser = { ...user, trustScore: score };
     this.users.set(id, updatedUser);
     return updatedUser;

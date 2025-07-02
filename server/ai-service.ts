@@ -3,7 +3,6 @@ import { Request, Response } from 'express';
 import fileUpload from 'express-fileupload';
 import { storage } from './storage';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import fs from 'fs';
 import crypto from 'crypto';
 
@@ -74,9 +73,8 @@ interface MLTrainingData {
 }
 
 // Directory to save temporary uploaded files
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const UPLOAD_DIR = path.join(__dirname, '../uploads');
+const __dirname = path.resolve();
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
 // Ensure uploads directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
