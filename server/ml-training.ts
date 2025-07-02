@@ -324,7 +324,7 @@ function evaluateModel(model: any, testData: TrainingData[]): ModelMetrics {
  */
 async function saveModel(model: any): Promise<void> {
   try {
-    const modelPath = path.join(__dirname, '../models');
+    const modelPath = path.join(__dirname, '..', 'models');
     
     // Ensure models directory exists
     if (!fs.existsSync(modelPath)) {
@@ -353,7 +353,7 @@ async function saveModel(model: any): Promise<void> {
  */
 export async function loadModel(): Promise<any> {
   try {
-    const modelFile = path.join(__dirname, '../models/fraud-detection-model.json');
+    const modelFile = path.join(__dirname, '..', 'models', 'fraud-detection-model.json');
     
     if (!fs.existsSync(modelFile)) {
       return null;

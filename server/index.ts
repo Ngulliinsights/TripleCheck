@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { createServer } from "http";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import { registerAIRoutes } from "./ai-routes";
@@ -52,6 +53,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Validate environment variables
+  if (!process.env.GOOGLE_API_KEY) {
+    console.warn('Warning: GOOGLE_API_KEY not set. AI features may not work properly.');
+  }
+
   // Register API routes
   registerRoutes(app);
   registerAIRoutes(app);
@@ -68,6 +74,9 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
+  // Create HTTP server
+  const server = createServer(app);
+
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
@@ -77,11 +86,7 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
 })();
