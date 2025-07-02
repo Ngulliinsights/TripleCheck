@@ -78,21 +78,21 @@ const tutorialSteps: TutorialStep[] = [
     id: 'basic-checks',
     title: 'Basic Property Checks',
     description: 'Start with basic property verification to check ownership, legal status, and authenticity.',
-    element: 'a[href="/services/basic-checks"]',
+    element: 'nav a[href="/services/basic-checks"], .service-nav a[href="/services/basic-checks"]',
     placement: 'right'
   },
   {
     id: 'document-auth',
     title: 'Document Authentication',
     description: 'Upload property documents for verification. We use AI and blockchain to validate ownership records, title deeds, and more.',
-    element: 'a[href="/services/document-auth"]',
+    element: 'nav a[href="/services/document-auth"], .service-nav a[href="/services/document-auth"]',
     placement: 'right'
   },
   {
     id: 'fraud-detection',
     title: 'Fraud Detection System',
     description: 'Our advanced algorithms identify suspicious listings and potential scams to keep you safe during property transactions.',
-    element: 'a[href="/services/fraud-detection"]',
+    element: 'nav a[href="/services/fraud-detection"], .service-nav a[href="/services/fraud-detection"]',
     placement: 'right'
   },
   {
@@ -135,7 +135,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check if the user has seen the tutorial before
     const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
-    
+
     // Only show welcome dialog if user hasn't seen tutorial and we haven't shown it in this session yet
     if (!hasSeenTutorial && location === '/' && !hasShownWelcomeRef.current) {
       setShowWelcome(true);
@@ -166,7 +166,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const nextStep = () => {
     if (currentStep < tutorialSteps.length - 1) {
       setCurrentStep(prev => prev + 1);
-      
+
       // Execute any actions associated with this step
       const nextStepData = tutorialSteps[currentStep + 1];
       if (nextStepData && nextStepData.action) {
@@ -192,14 +192,14 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 
   const calculateHighlightPosition = () => {
     if (!currentTutorialStep) return null;
-    
+
     try {
       const element = document.querySelector(currentTutorialStep.element);
       if (!element) {
         console.warn(`Tutorial element not found: ${currentTutorialStep.element}`);
         return null;
       }
-      
+
       const rect = element.getBoundingClientRect();
       return {
         top: rect.top + window.scrollY,
@@ -219,14 +219,14 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
       const updatePosition = () => {
         setHighlightPosition(calculateHighlightPosition());
       };
-      
+
       updatePosition();
       window.addEventListener('resize', updatePosition);
       window.addEventListener('scroll', updatePosition);
-      
+
       // Small delay to ensure DOM is ready
       const timeout = setTimeout(updatePosition, 100);
-      
+
       return () => {
         window.removeEventListener('resize', updatePosition);
         window.removeEventListener('scroll', updatePosition);
@@ -285,7 +285,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 z-[9999] pointer-events-none">
           {/* Dark overlay */}
           <div className="absolute inset-0 bg-black/50" />
-          
+
           {/* Highlighted element */}
           {highlightPosition && (
             <div
@@ -299,7 +299,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
               }}
             />
           )}
-          
+
           {/* Tutorial card */}
           <div 
             className="absolute bg-white rounded-lg shadow-xl border-2 border-[#2C5282] p-6 max-w-sm pointer-events-auto"
@@ -323,7 +323,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
                 {currentTutorialStep.description}
               </p>
             </div>
-            
+
             <div className="flex justify-between items-center">
               <Button
                 variant="outline"
@@ -334,7 +334,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
               >
                 Previous
               </Button>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-500">
                   {currentStep + 1} of {tutorialSteps.length}
@@ -350,7 +350,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
                   ))}
                 </div>
               </div>
-              
+
               <div className="flex gap-2">
                 <Button
                   variant="ghost"
