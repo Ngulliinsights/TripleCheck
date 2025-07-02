@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
+import { registerAIRoutes } from "./ai-routes";
+import { registerMLRoutes } from "./ml-routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -50,7 +52,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  // Register API routes
+  registerRoutes(app);
+  registerAIRoutes(app);
+  registerMLRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
