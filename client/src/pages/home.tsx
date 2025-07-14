@@ -1,399 +1,517 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useLocation } from "wouter";
 import { Property } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, CheckCircle, Star, FileText, Shield, Users } from "lucide-react";
+import { Search, CheckCircle, Star, FileText, Shield, Users, ArrowRight, Play, LucideIcon } from "lucide-react";
 import PropertySearch from "@/components/property-search";
 import ListingCard from "@/components/listing-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { images } from "@/config/images";
+import { Testimonials } from "@/components/testimonials";
+import { NewsBlog } from "@/components/news-blog";
+
+// Enhanced type definitions with better constraints
+interface PricingPlan {
+  readonly id: string;
+  readonly name: string;
+  readonly price: string;
+  readonly features: readonly string[];
+  readonly isPopular: boolean;
+  readonly buttonVariant: 'default' | 'outline';
+  readonly buttonClass?: string;
+  readonly buttonText?: string;
+}
+
+interface Feature {
+  readonly icon: LucideIcon;
+  readonly title: string;
+  readonly description: string;
+  readonly color: string;
+}
+
+interface WorkflowStep {
+  readonly step: number;
+  readonly title: string;
+  readonly description: string;
+}
+
+interface PropertyGridProps {
+  properties: Property[] | undefined;
+  isLoading: boolean;
+  error?: Error | null;
+}
+
+interface FeatureCardProps extends Feature {}
+
+interface StepCardProps extends WorkflowStep {}
+
+interface PricingCardProps {
+  plan: PricingPlan;
+}
+
+// Optimized constants with readonly arrays for better performance
+const PRICING_PLANS: readonly PricingPlan[] = [
+  {
+    id: 'basic',
+    name: 'Basic Plan',
+    price: '$49/month',
+    features: [
+      'Verification of up to 5 properties',
+      'Basic fraud detection',
+      'Email support'
+    ] as const,
+    isPopular: false,
+    buttonVariant: 'default'
+  },
+  {
+    id: 'pro',
+    name: 'Pro Plan',
+    price: '$99/month',
+    features: [
+      'Verification of up to 20 properties',
+      'Advanced fraud detection',
+      'Priority email support'
+    ] as const,
+    isPopular: true,
+    buttonVariant: 'default',
+    buttonClass: 'bg-[#2C5282] hover:bg-[#1A365D]'
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise Plan',
+    price: 'Custom Pricing',
+    features: [
+      'Unlimited property verifications',
+      'Comprehensive fraud detection',
+      'Dedicated account manager'
+    ] as const,
+    isPopular: false,
+    buttonVariant: 'outline',
+    buttonText: 'Contact Us'
+  }
+] as const;
+
+const FEATURES: readonly Feature[] = [
+  {
+    icon: Shield,
+    title: 'Real-Time Fraud Detection',
+    description: 'Advanced algorithms to identify and prevent fraudulent activities in real-time.',
+    color: '#2C5282'
+  },
+  {
+    icon: FileText,
+    title: 'Secure Document Authentication',
+    description: 'Verify ownership and lease agreements to protect yourself from fraudulent listings.',
+    color: '#2C5282'
+  },
+  {
+    icon: Star,
+    title: 'Real Estate Karma Score',
+    description: 'Identify trustworthy landlords and agents based on their track record.',
+    color: '#2C5282'
+  }
+] as const;
+
+const HOW_IT_WORKS_STEPS: readonly WorkflowStep[] = [
+  {
+    step: 1,
+    title: 'Submit Property Details',
+    description: 'Provide the necessary details of the property you wish to verify through our platform.'
+  },
+  {
+    step: 2,
+    title: 'System Analysis',
+    description: 'Our advanced system analyzes the provided information using various verification techniques.'
+  },
+  {
+    step: 3,
+    title: 'Receive Verification Report',
+    description: 'Get a comprehensive report detailing the verification results and property status.'
+  }
+] as const;
+
+// Memoized components with enhanced performance optimizations
+const FeatureCard = memo<FeatureCardProps>(({ icon: Icon, title, description, color }) => (
+  <Card className="h-full hover:shadow-lg transition-all duration-300 hover:scale-105 group">
+    <CardHeader>
+      <Icon 
+        className="w-12 h-12 mb-4 transition-transform duration-300 group-hover:scale-110" 
+        style={{ color }} 
+        aria-hidden="true"
+      />
+      <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <p className="text-muted-foreground leading-relaxed">{description}</p>
+    </CardContent>
+  </Card>
+));
+
+FeatureCard.displayName = 'FeatureCard';
+
+const StepCard = memo<StepCardProps>(({ step, title, description }) => (
+  <Card className="h-full hover:shadow-lg transition-all duration-300 hover:scale-105 group">
+    <CardHeader>
+      <div className="rounded-full bg-[#2C5282] text-white w-12 h-12 flex items-center justify-center mb-4 font-semibold transition-colors duration-300 group-hover:bg-[#1A365D]">
+        {step}
+      </div>
+      <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <p className="text-muted-foreground leading-relaxed">{description}</p>
+    </CardContent>
+  </Card>
+));
+
+StepCard.displayName = 'StepCard';
+
+const PricingCard = memo<PricingCardProps>(({ plan }) => (
+  <Card className={`h-full ${plan.isPopular ? 'border-[#2C5282] border-2 shadow-xl' : ''} hover:shadow-lg transition-all duration-300 hover:scale-105 group`}>
+    <CardHeader>
+      <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
+      <div className="text-3xl font-bold text-[#2C5282] transition-colors duration-300 group-hover:text-[#1A365D]">
+        {plan.price}
+      </div>
+      {plan.isPopular && (
+        <Badge className="bg-[#2C5282] hover:bg-[#1A365D] transition-colors duration-300">
+          Most Popular
+        </Badge>
+      )}
+    </CardHeader>
+    <CardContent className="flex flex-col h-full">
+      <ul className="space-y-3 flex-grow">
+        {plan.features.map((feature, index) => (
+          <li key={index} className="flex items-start gap-2">
+            <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
+            <span className="text-sm text-muted-foreground leading-relaxed">{feature}</span>
+          </li>
+        ))}
+      </ul>
+      <Button 
+        variant={plan.buttonVariant} 
+        className={`w-full mt-6 transition-all duration-300 ${plan.buttonClass || 'hover:scale-105'}`}
+        aria-label={`Select ${plan.name}`}
+      >
+        {plan.buttonText || 'Get Started'}
+        <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+      </Button>
+    </CardContent>
+  </Card>
+));
+
+PricingCard.displayName = 'PricingCard';
+
+// Enhanced loading skeleton component
+const PropertySkeleton = memo(() => (
+  <div className="space-y-4 animate-pulse">
+    <Skeleton className="h-48 w-full rounded-lg bg-gray-200" />
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-3/4 bg-gray-200" />
+      <Skeleton className="h-4 w-1/2 bg-gray-200" />
+      <Skeleton className="h-6 w-1/3 bg-gray-200" />
+    </div>
+  </div>
+));
+
+PropertySkeleton.displayName = 'PropertySkeleton';
+
+// Optimized PropertyGrid with better error handling
+const PropertyGrid = memo<PropertyGridProps>(({ properties, isLoading, error }) => {
+  const handleRetry = useCallback(() => {
+    window.location.reload();
+  }, []);
+
+  const handleViewAll = useCallback(() => {
+    window.location.href = "/";
+  }, []);
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+          <h3 className="text-lg font-medium text-red-800 mb-2">Unable to Load Properties</h3>
+          <p className="text-red-600 mb-4">
+            There was an error loading the properties. Please try again.
+          </p>
+          <Button onClick={handleRetry} variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }, (_, i) => (
+          <PropertySkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (!properties || properties.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">
+          <Search className="w-16 h-16 mx-auto text-gray-400 mb-4" aria-hidden="true" />
+          <h3 className="text-xl font-medium mb-2">No properties found</h3>
+          <p className="text-muted-foreground mb-6 leading-relaxed">
+            Try adjusting your search terms or browse all properties below.
+          </p>
+          <Button onClick={handleViewAll} className="hover:scale-105 transition-transform duration-200">
+            View All Properties
+            <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {properties.map((property) => (
+        <ListingCard key={property.id} property={property} />
+      ))}
+    </div>
+  );
+});
+
+PropertyGrid.displayName = 'PropertyGrid';
+
+// Enhanced smooth scroll utility
+const smoothScrollTo = (elementId: string) => {
+  const element = document.getElementById(elementId);
+  if (element) {
+    const headerHeight = 80; // Adjust based on your header height
+    const elementPosition = element.offsetTop - headerHeight;
+    
+    window.scrollTo({
+      top: elementPosition,
+      behavior: 'smooth'
+    });
+  }
+};
 
 export default function HomePage() {
   const [location] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Extract search query from URL parameters
-  useEffect(() => {
-    const urlParams = new URLSearchParams(location.split('?')[1] || '');
-    const query = urlParams.get('search');
-    if (query) {
-      setSearchQuery(query);
+  // Memoized URL parameter extraction with better error handling
+  const urlSearchQuery = useMemo(() => {
+    try {
+      const searchParams = location.split('?')[1];
+      if (!searchParams) return '';
+      
+      const urlParams = new URLSearchParams(searchParams);
+      return urlParams.get('search') || '';
+    } catch (error) {
+      console.warn('Error parsing URL parameters:', error);
+      return '';
     }
   }, [location]);
 
-  const { data: properties, isLoading } = useQuery<Property[]>({
-    queryKey: searchQuery ? ["/api/properties", { q: searchQuery }] : ["/api/properties"]
-  });
+  // Optimized effect for URL search query synchronization
+  useEffect(() => {
+    if (urlSearchQuery && urlSearchQuery !== searchQuery) {
+      setSearchQuery(urlSearchQuery);
+    }
+  }, [urlSearchQuery, searchQuery]);
 
-  // For the demo video modal
-  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  // Optimized query configuration with better error handling
+  const queryConfig = useMemo(() => ({
+    queryKey: searchQuery ? ["/api/properties", { q: searchQuery }] : ["/api/properties"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 3,
+    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  }), [searchQuery]);
+
+  // Enhanced React Query with better error handling
+  const { data: properties, isLoading, error } = useQuery<Property[]>(queryConfig);
+
+  // Optimized navigation callbacks with better performance
+  const handleExploreProperties = useCallback(() => {
+    smoothScrollTo('featured-properties');
+  }, []);
+
+  const handleLearnMore = useCallback(() => {
+    smoothScrollTo('features');
+  }, []);
+
+  const openDemoVideo = useCallback(() => {
+    window.open('https://www.youtube.com/embed/IjhSHyfQpaQ', '_blank', 'noopener,noreferrer');
+  }, []);
+
+  // Memoized search results count
+  const searchResultsCount = useMemo(() => {
+    return properties?.length || 0;
+  }, [properties]);
+
+  // Error boundary fallback
+  if (error && !isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Something went wrong</h2>
+            <p className="text-muted-foreground mb-6 leading-relaxed">
+              We're having trouble loading the page. Please check your connection and try again.
+            </p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="hover:scale-105 transition-transform duration-200"
+            >
+              Refresh Page
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-16">
-      {/* Hero Section */}
-      <section className="relative h-[90vh] flex items-center justify-center bg-[url('/hero-bg.webp')] bg-cover bg-center">
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative text-center text-white space-y-6 max-w-4xl mx-auto px-4">
-          <h1 className="text-5xl font-bold animate__animated animate__fadeIn">
-            Verified. Transparent. Trusted.
-          </h1>
-          <p className="text-2xl animate__animated animate__fadeIn animate__delay-1s">
-            Your trusted partner in real estate verification.
-          </p>
-          <div className="flex justify-center gap-4 animate__animated animate__fadeIn animate__delay-2s">
-            <Button 
-              size="lg" 
-              className="bg-[#2C5282] hover:bg-[#2C5282]/90 verify-property tutorial-verify-btn"
-              onClick={() => window.location.href = "/services/basic-checks"}
-            >
-              Verify Property Now
-            </Button>
-            <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="lg" className="text-white border-white hover:bg-white hover:text-[#2C5282]">
-                  Watch Demo Video
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>How TripleCheck Works</DialogTitle>
-                </DialogHeader>
-                <div className="aspect-video">
-                  <iframe 
-                    className="w-full h-full"
-                    src="https://www.youtube.com/embed/demo-video"
-                    title="TripleCheck Demo"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
+    <div className="min-h-screen">
+      {/* Enhanced Hero Section with better accessibility */}
+      <section className="relative h-screen flex items-center" role="banner">
+        <OptimizedImage
+          webpSrc={images.hero.webp}
+          fallbackSrc={images.hero.jpg}
+          alt="African Property Trust - Verified Real Estate Platform"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40" />
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-4xl mx-auto text-center text-white">
+            <h1 className="text-4xl md:text-6xl font-light mb-6 leading-tight animate-fade-in">
+              Verified.Transparent.Trusted
+            </h1>
+            <p className="text-lg md:text-2xl mb-8 max-w-2xl mx-auto leading-relaxed animate-slide-in">
+              Your Trusted Partner in Real Estate Verification 
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-in">
+              <Button
+                size="lg"
+                className="bg-customSecondary hover:bg-customSecondaryHover text-white px-8 py-3 transition-all duration-300 hover:scale-105"
+                onClick={handleExploreProperties}
+                aria-label="Explore verified properties"
+              >
+                Explore Properties
+                <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white text-white hover:bg-white hover:text-customSecondary px-8 py-3 transition-all duration-300 hover:scale-105"
+                onClick={openDemoVideo}
+                aria-label="Watch demo video"
+              >
+                Learn More
+                <Play className="w-4 h-4 ml-2" aria-hidden="true" />
+              </Button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Search Results Section */}
+      {/* Enhanced Search Results Section */}
       {searchQuery && (
-        <section className="py-16">
+        <section className="py-16 bg-gray-50" role="region" aria-label="Search Results">
           <div className="container mx-auto px-4">
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="text-center">
                 <h2 className="text-3xl font-bold mb-2">
                   Search Results for "{searchQuery}"
                 </h2>
-                <p className="text-muted-foreground">
-                  {isLoading ? "Searching..." : `Found ${properties?.length || 0} properties`}
+                <p className="text-muted-foreground text-lg">
+                  {isLoading ? "Searching..." : `Found ${searchResultsCount} properties`}
                 </p>
               </div>
-
-              {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Skeleton key={i} className="h-96 w-full" />
-                  ))}
-                </div>
-              ) : properties && properties.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {properties.map((property) => (
-                    <ListingCard key={property.id} property={property} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Search className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-medium mb-2">No properties found</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Try adjusting your search terms or browse all properties below.
-                  </p>
-                  <Button onClick={() => window.location.href = "/"}>
-                    View All Properties
-                  </Button>
-                </div>
-              )}
+              <PropertyGrid properties={properties} isLoading={isLoading} error={error} />
             </div>
           </div>
         </section>
       )}
 
-      {/* Features Section */}
-      <section className="py-16 bg-gray-50">
+      {/* Enhanced Features Section */}
+      <section id="features" className="py-16 bg-white" role="region" aria-label="Key Features">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Our Key Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card>
-              <CardHeader>
-                <Shield className="w-12 h-12 text-[#2C5282] mb-4" />
-                <CardTitle>Real-Time Fraud Detection</CardTitle>
-              </CardHeader>
-              <CardContent>
-                Advanced algorithms to identify and prevent fraudulent activities in real-time.
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <FileText className="w-12 h-12 text-[#2C5282] mb-4" />
-                <CardTitle>Secure Document Authentication</CardTitle>
-              </CardHeader>
-              <CardContent>
-                Verify ownership and lease agreements to protect yourself from fraudulent listings.
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <Star className="w-12 h-12 text-[#2C5282] mb-4" />
-                <CardTitle>Real Estate Karma Score</CardTitle>
-              </CardHeader>
-              <CardContent>
-                Identify trustworthy landlords and agents based on their track record.
-              </CardContent>
-            </Card>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Our Key Features</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+              Advanced technology and comprehensive verification processes to ensure your real estate transactions are secure
+            </p>
           </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">How TripleCheck Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card>
-              <CardHeader>
-                <div className="rounded-full bg-[#2C5282] text-white w-12 h-12 flex items-center justify-center mb-4">1</div>
-                <CardTitle>Submit Property Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                Provide the necessary details of the property you wish to verify through our platform.
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <div className="rounded-full bg-[#2C5282] text-white w-12 h-12 flex items-center justify-center mb-4">2</div>
-                <CardTitle>System Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                Our advanced system analyzes the provided information using various verification techniques.
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <div className="rounded-full bg-[#2C5282] text-white w-12 h-12 flex items-center justify-center mb-4">3</div>
-                <CardTitle>Receive Verification Report</CardTitle>
-              </CardHeader>
-              <CardContent>
-                Get a comprehensive report detailing the verification results and property status.
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Affordable Pricing Plans</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Plan</CardTitle>
-                <div className="text-3xl font-bold">$49/month</div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Verification of up to 5 properties
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Basic fraud detection
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Email support
-                  </li>
-                </ul>
-                <Button className="w-full mt-6">Get Started</Button>
-              </CardContent>
-            </Card>
-            <Card className="border-[#2C5282]">
-              <CardHeader>
-                <CardTitle>Pro Plan</CardTitle>
-                <div className="text-3xl font-bold">$99/month</div>
-                <Badge className="bg-[#2C5282]">Most Popular</Badge>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Verification of up to 20 properties
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Advanced fraud detection
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Priority email support
-                  </li>
-                </ul>
-                <Button className="w-full mt-6 bg-[#2C5282]">Get Started</Button>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Enterprise Plan</CardTitle>
-                <div className="text-3xl font-bold">Custom Pricing</div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Unlimited property verifications
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Comprehensive fraud detection
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Dedicated account manager
-                  </li>
-                </ul>
-                <Button variant="outline" className="w-full mt-6">Contact Us</Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">What Our Clients Say</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex justify-center mb-4">
-                  <Users className="w-12 h-12 text-[#2C5282]" />
-                </div>
-                <blockquote className="text-center mb-4">
-                  "TripleCheck has transformed the way we handle property verifications. The accuracy and reliability are unparalleled."
-                </blockquote>
-                <div className="text-center">
-                  <div className="font-semibold">Harrison Mumari</div>
-                  <div className="text-gray-500">Real Estate Agent</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex justify-center mb-4">
-                  <Users className="w-12 h-12 text-[#2C5282]" />
-                </div>
-                <blockquote className="text-center mb-4">
-                  "As a property buyer, TripleCheck gave me the peace of mind I needed to make informed decisions."
-                </blockquote>
-                <div className="text-center">
-                  <div className="font-semibold">Jackline Kivisi</div>
-                  <div className="text-gray-500">Property Buyer</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex justify-center mb-4">
-                  <Users className="w-12 h-12 text-[#2C5282]" />
-                </div>
-                <blockquote className="text-center mb-4">
-                  "The comprehensive reports provided by TripleCheck are invaluable in my line of work. Highly recommend their services."
-                </blockquote>
-                <div className="text-center">
-                  <div className="font-semibold">Michael Muchiri</div>
-                  <div className="text-gray-500">Real Estate Developer</div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Blog Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Latest Blog Posts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card>
-              <img 
-                src="/blog1.webp" 
-                alt="Understanding Blockchain in Real Estate" 
-                className="w-full h-48 object-cover"
-              />
-              <CardHeader>
-                <CardTitle>Understanding Blockchain in Real Estate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">Explore how blockchain technology is revolutionizing the real estate industry.</p>
-                <Button variant="outline">Read More</Button>
-              </CardContent>
-            </Card>
-            <Card>
-              <img 
-                src="/blog2.webp" 
-                alt="Tips for Verifying Property Legitimacy" 
-                className="w-full h-48 object-cover"
-              />
-              <CardHeader>
-                <CardTitle>Tips for Verifying Property Legitimacy</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">Learn the essential steps to ensure the legitimacy of a property before purchasing.</p>
-                <Button variant="outline">Read More</Button>
-              </CardContent>
-            </Card>
-            <Card>
-              <img 
-                src="/blog3.webp" 
-                alt="The Future of Real Estate Verification" 
-                className="w-full h-48 object-cover"
-              />
-              <CardHeader>
-                <CardTitle>The Future of Real Estate Verification</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">Discover the latest trends and technologies shaping the future of property verification.</p>
-                <Button variant="outline">Read More</Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Properties Section - Retaining original functionality */}
-      <section>
-        <h2 className="text-2xl font-semibold mb-6">Featured Properties</h2>
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="space-y-4">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
+            {FEATURES.map((feature, index) => (
+              <FeatureCard key={index} {...feature} />
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties?.map((property) => (
-              <ListingCard key={property.id} property={property} />
-            ))}
-          </div>
-        )}
+        </div>
       </section>
 
+      {/* Enhanced How It Works Section */}
+      <section className="py-16 bg-gray-50" role="region" aria-label="How It Works">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">How TripleCheck Works</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+              Our streamlined verification process ensures thorough property validation in three simple steps
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {HOW_IT_WORKS_STEPS.map((step, index) => (
+              <StepCard key={index} {...step} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Enhanced Pricing Section */}
+      <section className="py-16 bg-white" role="region" aria-label="Pricing Plans">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Affordable Pricing Plans</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+              Choose the plan that fits your needs and budget. All plans include our core verification features
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {PRICING_PLANS.map((plan) => (
+              <PricingCard key={plan.id} plan={plan} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Enhanced Testimonials Section */}
+      <section className="py-16 bg-gray-50" role="region" aria-label="Customer Testimonials">
+        <Testimonials />
+      </section>
+
+      {/* Enhanced News & Blog Section */}
+      <section className="py-16 bg-white" role="region" aria-label="News and Blog">
+        <NewsBlog />
+      </section>
+
+      {/* Enhanced Featured Properties Section */}
+      <section id="featured-properties" className="py-16 bg-gray-50" role="region" aria-label="Featured Properties">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Featured Properties</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+              Discover verified properties from trusted landlords and agents
+            </p>
+          </div>
+          <PropertyGrid properties={properties} isLoading={isLoading} error={error} />
+        </div>
+      </section>
     </div>
   );
 }
