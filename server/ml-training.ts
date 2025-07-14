@@ -3,6 +3,12 @@ import { detectFraud, verifyDocument } from './ai-service';
 import fs from 'fs';
 import path from 'path';
 
+interface AIVerificationResults {
+  authenticity: number;
+  completeness: number;
+  consistency: number;
+}
+
 interface TrainingData {
   propertyId: number;
   features: number[];
@@ -29,7 +35,7 @@ interface ModelMetrics {
  */
 export async function generateTrainingData(): Promise<TrainingData[]> {
   try {
-    const properties = await storage.getAllProperties();
+    const properties = await storage.getProperties();
     const trainingData: TrainingData[] = [];
 
     for (const property of properties) {
@@ -46,15 +52,13 @@ export async function generateTrainingData(): Promise<TrainingData[]> {
       const riskScore = calculateCompositeRiskScore(property, fraudAnalysis);
 
       // Get document verification scores if available
-      const documentScores = property.aiVerificationResults ? {
-        authenticity: property.aiVerificationResults.authenticity || 50,
-        completeness: property.aiVerificationResults.completeness || 50,
-        consistency: property.aiVerificationResults.consistency || 50
-      } : {
-        authenticity: 50,
-        completeness: 50,
-        consistency: 50
-      };
+     const verification = property.aiVerificationResults as AIVerificationResults | undefined;
+     const documentScores = {
+  authenticity: verification?.authenticity ?? 50,
+  completeness: verification?.completeness ?? 50,
+  consistency:  verification?.consistency  ?? 50
+};
+      
 
       trainingData.push({
         propertyId: property.id,
