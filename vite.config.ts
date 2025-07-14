@@ -15,7 +15,7 @@ export default defineConfig({
     themePlugin(),
   ],
   build: {
-    outDir: 'dist/client',
+    outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
   },
   resolve: {
@@ -25,8 +25,4 @@ export default defineConfig({
     },
   },
   root: path.resolve(__dirname, "client"),
-  build: {
-    outDir: path.resolve(__dirname, "dist/public"),
-    emptyOutDir: true,
-  },
 });
