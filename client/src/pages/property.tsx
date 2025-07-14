@@ -7,9 +7,12 @@ import PropertyReviews from "@/components/property-reviews";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function PropertyPage() {
-  const [, params] = useRoute("/property/:id");
-  const propertyId = params?.id;
+interface PropertyPageProps {
+  id: string;
+}
+
+export default function PropertyPage({ id }: PropertyPageProps) {
+  const propertyId = id;
 
   const { data: property, isLoading: isLoadingProperty } = useQuery<Property>({
     queryKey: [`/api/properties/${propertyId}`],

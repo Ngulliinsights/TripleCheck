@@ -2,6 +2,7 @@ import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { Logo } from "@/components/ui/logo";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home";
 import PropertyPage from "@/pages/property";
@@ -48,7 +49,7 @@ function TutorialButton() {
       size="sm"
       onClick={restartTutorial}
       title={isActive ? "Restart Platform Tour" : "Take Platform Tour"}
-      className="text-white hover:text-white hover:bg-white/20 tutorial-help-button"
+      className="text-white hover:text-white hover:bg-white/10 transition-colors tutorial-help-button"
     >
       <HelpCircle className="h-4 w-4 mr-1" />
       {isActive ? "Restart Tour" : "Take Tour"}
@@ -85,20 +86,24 @@ function Navigation() {
   };
 
   return (
-    <div className="bg-[#2C5282] text-white">
+    <div className="bg-customSecondary text-white">
       <NavigationMenu className="max-w-screen-xl mx-auto px-4 py-2">
         <NavigationMenuList className="gap-4">
-          {/* Logo */}
+          {/* Logo with enhanced presentation */}
           <NavigationMenuItem>
             <NavigationMenuLink href="/" className="tutorial-welcome">
-              <img src="/Artmark.svg" alt="TripleCheck Logo" className="h-8" />
+              <Logo 
+                size="md"
+                variant="default"
+                className="border border-white/20 hover:border-white/40 shadow-md hover:shadow-lg" 
+              />
             </NavigationMenuLink>
           </NavigationMenuItem>
 
           {/* Main Navigation */}
           <NavigationMenuItem>
             <NavigationMenuLink 
-              className="text-white hover:text-white/90"
+              className="text-white hover:text-white/80 transition-colors"
               href="/"
             >
               Home
@@ -107,36 +112,110 @@ function Navigation() {
 
           {/* About Us Dropdown */}
           <NavigationMenuItem>
-            <NavigationMenuTrigger className="text-white hover:text-white/90">About Us</NavigationMenuTrigger>
+            <NavigationMenuTrigger className="text-white hover:text-white/80 transition-colors bg-transparent hover:bg-white/10">
+              About Us
+            </NavigationMenuTrigger>
             <NavigationMenuContent>
-              <ul className="grid w-48 p-2">
-                <li><NavigationMenuLink href="/our-story">Our Story</NavigationMenuLink></li>
-                <li><NavigationMenuLink href="/team">Team</NavigationMenuLink></li>
-                <li><NavigationMenuLink href="/partners">Partners</NavigationMenuLink></li>
-                <li><NavigationMenuLink href="/press-media">Press and Media</NavigationMenuLink></li>
+              <ul className="grid w-48 p-2 bg-white shadow-lg rounded-md">
+                <li>
+                  <NavigationMenuLink 
+                    className="block px-4 py-2 hover:bg-customSecondary/10 hover:text-customSecondary transition-colors" 
+                    href="/our-story"
+                  >
+                    Our Story
+                  </NavigationMenuLink>
+                </li>
+                <li>
+                  <NavigationMenuLink 
+                    className="block px-4 py-2 hover:bg-customSecondary/10 hover:text-customSecondary transition-colors" 
+                    href="/team"
+                  >
+                    Team
+                  </NavigationMenuLink>
+                </li>
+                <li>
+                  <NavigationMenuLink 
+                    className="block px-4 py-2 hover:bg-customSecondary/10 hover:text-customSecondary transition-colors" 
+                    href="/partners"
+                  >
+                    Partners
+                  </NavigationMenuLink>
+                </li>
+                <li>
+                  <NavigationMenuLink 
+                    className="block px-4 py-2 hover:bg-customSecondary/10 hover:text-customSecondary transition-colors" 
+                    href="/press-media"
+                  >
+                    Press and Media
+                  </NavigationMenuLink>
+                </li>
               </ul>
             </NavigationMenuContent>
           </NavigationMenuItem>
 
           {/* Services Dropdown */}
           <NavigationMenuItem>
-            <NavigationMenuTrigger className="text-white hover:text-white/90">Services</NavigationMenuTrigger>
+            <NavigationMenuTrigger className="text-white hover:text-white/80 transition-colors bg-transparent hover:bg-white/10">
+              Services
+            </NavigationMenuTrigger>
             <NavigationMenuContent>
-              <div className="grid grid-cols-4 gap-4 p-4 w-screen max-w-4xl">
+              <div className="grid grid-cols-4 gap-4 p-6 w-screen max-w-4xl bg-white shadow-lg rounded-md">
                 <div>
-                  <h3 className="font-medium mb-2">Property Verification</h3>
-                  <ul className="space-y-1">
-                    <li><NavigationMenuLink href="/services/basic-checks">Basic Property Checks</NavigationMenuLink></li>
-                    <li><NavigationMenuLink href="/services/document-auth">Document Authentication</NavigationMenuLink></li>
-                    <li><NavigationMenuLink href="/services/fraud-detection">Fraud Detection</NavigationMenuLink></li>
+                  <h3 className="font-medium mb-3 text-customPrimary">Property Verification</h3>
+                  <ul className="space-y-2">
+                    <li>
+                      <NavigationMenuLink 
+                        className="block hover:text-customSecondary transition-colors" 
+                        href="/services/basic-checks"
+                      >
+                        Basic Property Checks
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink 
+                        className="block hover:text-customSecondary transition-colors" 
+                        href="/services/document-auth"
+                      >
+                        Document Authentication
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink 
+                        className="block hover:text-customSecondary transition-colors" 
+                        href="/services/fraud-detection"
+                      >
+                        Fraud Detection
+                      </NavigationMenuLink>
+                    </li>
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-medium mb-2">Community Trust Network</h3>
-                  <ul className="space-y-1">
-                    <li><NavigationMenuLink href="/services/reviews">User Reviews & Ratings</NavigationMenuLink></li>
-                    <li><NavigationMenuLink href="/services/trust-points">Trust Points System</NavigationMenuLink></li>
-                    <li><NavigationMenuLink href="/services/karma">Real Estate Karma Score</NavigationMenuLink></li>
+                  <h3 className="font-medium mb-3 text-customPrimary">Community Trust Network</h3>
+                  <ul className="space-y-2">
+                    <li>
+                      <NavigationMenuLink 
+                        className="block hover:text-customSecondary transition-colors" 
+                        href="/services/reviews"
+                      >
+                        User Reviews & Ratings
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink 
+                        className="block hover:text-customSecondary transition-colors" 
+                        href="/services/trust-points"
+                      >
+                        Trust Points System
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink 
+                        className="block hover:text-customSecondary transition-colors" 
+                        href="/services/karma"
+                      >
+                        Real Estate Karma Score
+                      </NavigationMenuLink>
+                    </li>
                   </ul>
                 </div>
                 <div>
@@ -223,7 +302,7 @@ function Navigation() {
               <NavigationMenuItem>
                 <Button 
                   variant="outline" 
-                  className="text-white border-white hover:bg-white hover:text-[#2C5282] verify-property mr-2"
+                  className="text-white border-white hover:bg-white hover:text-customSecondary transition-all verify-property mr-2"
                   onClick={() => setLocation("/services/basic-checks")}
                 >
                   Verify Property
@@ -241,7 +320,7 @@ function Navigation() {
                   size="sm"
                   onClick={handleLogout}
                   disabled={logoutMutation.isPending}
-                  className="text-white hover:text-white hover:bg-white/20"
+                  className="text-white hover:text-white hover:bg-white/10 transition-colors"
                 >
                   <LogOut className="h-4 w-4 mr-1" />
                   Logout
@@ -258,7 +337,7 @@ function Navigation() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setLocation("/auth/login")}
-                  className="text-white hover:text-white hover:bg-white/20 mr-2"
+                  className="text-white hover:text-white hover:bg-white/10 transition-colors mr-2"
                 >
                   Login
                 </Button>
@@ -268,7 +347,7 @@ function Navigation() {
                   variant="outline"
                   size="sm"
                   onClick={() => setLocation("/auth/register")}
-                  className="text-white border-white hover:bg-white hover:text-[#2C5282]"
+                  className="text-white border-white/80 hover:bg-white hover:text-customSecondary transition-all"
                 >
                   Sign Up
                 </Button>
@@ -287,24 +366,49 @@ function Router() {
       <Navigation />
       <main>
         <Switch>
-          <Route path="/" component={HomePage} />
-          <Route path="/property/:id" component={PropertyPage} />
-          <Route path="/dashboard" component={DashboardPage} />
+          <Route path="/">
+            <HomePage />
+          </Route>
+          {/* Fixed property route - properly extract id from params */}
+          <Route path="/property/:id">
+            {(params) => <PropertyPage id={params.id} />}
+          </Route>
+          <Route path="/dashboard">
+            <DashboardPage />
+          </Route>
 
           {/* Property Verification Services */}
-          <Route path="/services/basic-checks" component={BasicChecksPage} />
-          <Route path="/services/document-auth" component={DocumentAuthPage} />
-          <Route path="/services/fraud-detection" component={FraudDetectionPage} />
+          <Route path="/services/basic-checks">
+            <BasicChecksPage />
+          </Route>
+          <Route path="/services/document-auth">
+            <DocumentAuthPage />
+          </Route>
+          <Route path="/services/fraud-detection">
+            <FraudDetectionPage />
+          </Route>
 
           {/* Community Trust Network Services */}
-          <Route path="/services/reviews" component={ReviewsPage} />
-          <Route path="/services/trust-points" component={TrustPointsPage} />
-          <Route path="/services/karma" component={KarmaScorePage} />
+          <Route path="/services/reviews">
+            {() => <ReviewsPage />}
+          </Route>
+          <Route path="/services/trust-points">
+            {() => <TrustPointsPage />}
+          </Route>
+          <Route path="/services/karma">
+            {() => <KarmaScorePage />}
+          </Route>
 
           {/* Market Insights Services */}
-          <Route path="/services/reports" component={ReportsPage} />
-          <Route path="/services/alerts" component={AlertsPage} />
-          <Route path="/services/resources" component={ResourcesPage} />
+          <Route path="/services/reports">
+            {() => <ReportsPage />}
+          </Route>
+          <Route path="/services/alerts">
+            {() => <AlertsPage />}
+          </Route>
+          <Route path="/services/resources">
+            {() => <ResourcesPage />}
+          </Route>
 
           {/* For Landlords & Agents Services */}
           <Route path="/services/list-property" component={ListPropertyPage} />
