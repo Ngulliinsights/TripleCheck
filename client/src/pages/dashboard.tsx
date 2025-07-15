@@ -6,15 +6,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function DashboardPage() {
   const { data: properties, isLoading } = useQuery<Property[]>({
-    queryKey: ["/api/properties"]
+    queryKey: ["/api/properties"],
+    select: (data) => Array.isArray(data) ? data : []
   });
 
-  const verifiedProperties = properties?.filter(
-    p => p.verificationStatus === "verified"
-  );
-  const pendingProperties = properties?.filter(
-    p => p.verificationStatus === "pending"
-  );
+  const verifiedProperties = Array.isArray(properties) 
+    ? properties.filter(p => p.verificationStatus === "verified")
+    : [];
+    
+  const pendingProperties = Array.isArray(properties)
+    ? properties.filter(p => p.verificationStatus === "pending")
+    : [];
 
   return (
     <div className="space-y-8">
@@ -26,7 +28,7 @@ export default function DashboardPage() {
             <CardTitle>Total Properties</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{properties?.length || 0}</p>
+            <p className="text-3xl font-bold">{Array.isArray(properties) ? properties.length : 0}</p>
           </CardContent>
         </Card>
         <Card>

@@ -256,7 +256,7 @@ const PropertyGrid = memo<PropertyGridProps>(({ properties, isLoading, error }) 
     );
   }
 
-  if (!properties || properties.length === 0) {
+  if (!Array.isArray(properties) || properties.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">

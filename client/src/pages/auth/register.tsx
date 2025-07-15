@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -65,7 +65,11 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <Shield className="mx-auto h-12 w-12 text-[#2C5282]" />
+          <img 
+            src="/assets/Artmark.svg" 
+            alt="Artmark Logo" 
+            className="mx-auto h-16 w-auto"
+          />
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             Join TripleCheck
           </h2>
@@ -166,7 +170,7 @@ export default function RegisterPage() {
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{" "}
-                <Link href="/auth/login" className="text-[#2C5282] hover:underline">
+                <Link href="/auth/login" className="text-teal-600 hover:text-teal-700 hover:underline">
                   Sign in here
                 </Link>
               </p>

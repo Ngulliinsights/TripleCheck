@@ -28,14 +28,19 @@ export default function PropertyComparePage() {
   const [selectedProperty1, setSelectedProperty1] = useState<string>("");
   const [selectedProperty2, setSelectedProperty2] = useState<string>("");
 
-  // Fetch all properties
-  const { data: properties = [], isLoading } = useQuery<Property[]>({
-    queryKey: ['/api/properties']
+  // Fetch all properties with array type safety
+  const { data: properties, isLoading } = useQuery<Property[]>({
+    queryKey: ['/api/properties'],
+    select: (data) => Array.isArray(data) ? data : []
   });
 
-  // Get selected properties data
-  const property1 = properties.find((p: Property) => p.id.toString() === selectedProperty1);
-  const property2 = properties.find((p: Property) => p.id.toString() === selectedProperty2);
+  // Get selected properties data with null checks
+  const property1 = Array.isArray(properties) 
+    ? properties.find((p: Property) => p.id.toString() === selectedProperty1)
+    : undefined;
+  const property2 = Array.isArray(properties)
+    ? properties.find((p: Property) => p.id.toString() === selectedProperty2)
+    : undefined;
 
   // Helper function to safely get features
   const getFeatures = (property: Property | undefined): PropertyFeatures | null => {
@@ -157,7 +162,7 @@ export default function PropertyComparePage() {
                     <SelectValue placeholder="Select first property" />
                   </SelectTrigger>
                   <SelectContent>
-                    {properties.map((property) => (
+                    {properties?.map((property) => (
                       <SelectItem 
                         key={property.id} 
                         value={property.id.toString()}
@@ -177,7 +182,7 @@ export default function PropertyComparePage() {
                     <SelectValue placeholder="Select second property" />
                   </SelectTrigger>
                   <SelectContent>
-                    {properties.map((property) => (
+                    {properties?.map((property) => (
                       <SelectItem 
                         key={property.id} 
                         value={property.id.toString()}
