@@ -50,7 +50,16 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentIds.users++;
-    const user: User = { ...insertUser, id, trustScore: 0, isVerifiedAgent: false };
+    const now = new Date();
+    // Now including both createdAt and updatedAt timestamps as required by the User schema
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      trustScore: 0, 
+      isVerifiedAgent: false,
+      createdAt: now,
+      updatedAt: now
+    };
     this.users.set(id, user);
     return user;
   }
@@ -59,7 +68,12 @@ export class MemStorage implements IStorage {
     const user = await this.getUser(id);
     if (!user) throw new Error("User not found");
 
-    const updatedUser = { ...user, trustScore: score };
+    // Update the updatedAt timestamp when modifying the user
+    const updatedUser = { 
+      ...user, 
+      trustScore: score,
+      updatedAt: new Date()
+    };
     this.users.set(id, updatedUser);
     return updatedUser;
   }
@@ -74,12 +88,15 @@ export class MemStorage implements IStorage {
 
   async createProperty(insertProperty: InsertProperty): Promise<Property> {
     const id = this.currentIds.properties++;
+    const now = new Date();
+    // Including both createdAt and updatedAt as required by the Property schema
     const property: Property = {
       ...insertProperty,
       id,
       verificationStatus: 'pending',
       aiVerificationResults: null,
-      createdAt: new Date()
+      createdAt: now,
+      updatedAt: now
     };
     this.properties.set(id, property);
     return property;
@@ -89,10 +106,12 @@ export class MemStorage implements IStorage {
     const property = await this.getProperty(id);
     if (!property) throw new Error("Property not found");
 
+    // Update the updatedAt timestamp when modifying the property
     const updatedProperty = {
       ...property,
       verificationStatus: status,
-      aiVerificationResults: results
+      aiVerificationResults: results,
+      updatedAt: new Date()
     };
     this.properties.set(id, updatedProperty);
     return updatedProperty;
@@ -114,17 +133,20 @@ export class MemStorage implements IStorage {
 
   async createReview(insertReview: InsertReview): Promise<Review> {
     const id = this.currentIds.reviews++;
+    const now = new Date();
+    // Including both createdAt and updatedAt as required by the Review schema
     const review: Review = {
       ...insertReview,
       id,
-      createdAt: new Date()
+      createdAt: now,
+      updatedAt: now
     };
     this.reviews.set(id, review);
     return review;
   }
 
   private initializeMockData() {
-    // Add mock properties
+    // Add mock properties with complete PropertyFeatures that include petFriendly and furnished
     const mockProperties: InsertProperty[] = [
       {
         ownerId: 1,
@@ -141,7 +163,11 @@ export class MemStorage implements IStorage {
           squareFeet: 1500,
           parkingSpaces: 2,
           yearBuilt: 2020,
-          amenities: ["Swimming Pool", "Gym", "Security"]
+          amenities: ["Swimming Pool", "Gym", "Security"],
+          // Adding the missing required properties for PropertyFeatures
+          petFriendly: true,
+          furnished: true,
+          propertyType: "apartment" as const
         }
       },
       {
@@ -159,11 +185,16 @@ export class MemStorage implements IStorage {
           squareFeet: 3000,
           parkingSpaces: 3,
           yearBuilt: 2019,
-          amenities: ["Garden", "Staff Quarters", "Security"]
+          amenities: ["Garden", "Staff Quarters", "Security"],
+          // Adding the missing required properties for PropertyFeatures
+          petFriendly: false,
+          furnished: false,
+          propertyType: "house" as const
         }
       }
     ];
 
+    // Initialize the mock properties through the createProperty method
     mockProperties.forEach(property => {
       this.createProperty(property);
     });

@@ -2,25 +2,33 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/**",
-      "use": "@vercel/static"
+      "src": "dist/server/index.js",
+      "use": "@vercel/node"
     },
     {
-      "src": "server/index.ts",
-      "use": "@vercel/node"
+      "src": "dist/public/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server/index.ts"
+      "dest": "/dist/server/index.js"
     },
     {
       "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/dist/index.html"
+      "dest": "/dist/public/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "dist/server/index.js": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
