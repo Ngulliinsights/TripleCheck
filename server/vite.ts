@@ -115,6 +115,16 @@ export async function setupVite(app: Express, server: Server): Promise<void> {
  * Includes comprehensive error checking and fallback handling
  */
 export function serveStatic(app: Express): void {
+  // In Vercel, the static files are served directly, so we need to handle this differently
+  const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
+  
+  if (isVercel) {
+    // In Vercel, static files are handled by the platform
+    // We only need to handle the SPA fallback
+    log("Running in Vercel environment - static files handled by platform", "static");
+    return;
+  }
+  
   const distPath = path.resolve(__dirname, "public");
   
   // Enhanced directory existence check with better error messaging

@@ -1,0 +1,38 @@
+# Development files
+node_modules
+.env
+.env.local
+.env.*.local
+
+# Source files (we only need the built dist folder)
+client/
+server/
+shared/
+scripts/
+
+# Documentation and config files not needed in production
+*.md
+.replit
+.gitignore
+tsconfig.json
+vite.config.ts
+tailwind.config.ts
+postcss.config.js
+drizzle.config.ts
+
+# Development artifacts
+code-analysis-report.json
+data-generation-report.json
+cookies.txt
+generated-icon.png
+theme.json
+
+# Uploads and temporary files
+uploads/
+attached_assets/
+
+# Keep only what's needed
+!dist/
+!package.json
+!package-lock.json
+!vercel.json
