@@ -1,14 +1,72 @@
-import express, { type Request, Response, NextFunction } from "express";
+import 'dotenv/config';
+import express, { type Request, type Response, type NextFunction } from "express";
 import { createServer } from "http";
 import session from "express-session";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { registerAIRoutes } from "./ai-routes";
 import { registerMLRoutes } from "./ml-routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, serveStatic, log as viteLog } from "./vite";
+import { logger } from "./logger";
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts for development
+      connectSrc: ["'self'", "https:", "wss:"],
+    },
+  },
+}));
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://your-domain.com'] // Replace with your actual domain
+    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to API routes
+app.use('/api', limiter);
+
+// Stricter rate limiting for authentication routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 auth requests per windowMs
+  message: {
+    error: 'Too many authentication attempts, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/auth', authLimiter);
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // Session configuration
 app.use(session({
@@ -52,7 +110,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      log(logLine);
+      logger.apiRequest(req.method, path, res.statusCode, duration);
     }
   });
 
@@ -84,14 +142,36 @@ function getPortNumber(envPort: string | undefined, defaultPort: number): number
  * This centralizes env validation and provides clear error messages
  */
 function validateEnvironment(): void {
+  const requiredEnvVars = [];
+  const warnings = [];
+
+  // Critical environment variables
+  if (!process.env.DATABASE_URL) {
+    requiredEnvVars.push('DATABASE_URL - Required for database connectivity');
+  }
+
+  // Important but not critical
   if (!process.env.GOOGLE_API_KEY) {
-    console.warn('Warning: GOOGLE_API_KEY not set. AI features may not work properly.');
+    warnings.push('GOOGLE_API_KEY not set. AI features may not work properly.');
   }
   
-  // Add other environment variable validations as needed
   if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
-    console.warn('Warning: SESSION_SECRET not set in production. Using default secret is insecure.');
+    warnings.push('SESSION_SECRET not set in production. Using default secret is insecure.');
   }
+
+  // Log warnings
+  warnings.forEach(warning => console.warn(`⚠️  Warning: ${warning}`));
+
+  // Exit if critical variables are missing
+  if (requiredEnvVars.length > 0) {
+    console.error('❌ Missing required environment variables:');
+    requiredEnvVars.forEach(envVar => console.error(`   - ${envVar}`));
+    console.error('\nPlease check your .env file and ensure all required variables are set.');
+    console.error('Run "npm run db:setup" after setting DATABASE_URL to initialize the database.');
+    process.exit(1);
+  }
+
+  console.log('✅ Environment validation passed');
 }
 
 // Main server startup function
@@ -99,6 +179,17 @@ function validateEnvironment(): void {
   try {
     // Validate environment before starting
     validateEnvironment();
+
+    // Initialize database with sample data if needed
+    try {
+      const { storage } = await import("./storage");
+      if (typeof (storage as any).initializeDatabase === 'function') {
+        await (storage as any).initializeDatabase();
+      }
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+      console.log('You may need to run: npm run db:setup');
+    }
 
     // Register API routes
     registerRoutes(app);
@@ -128,13 +219,13 @@ function validateEnvironment(): void {
     const isVercel: boolean = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 
     if (isProduction) {
-      log('Starting in production mode');
+      logger.info('Starting in production mode', 'SERVER');
       if (isVercel) {
-        log('Vercel environment detected - static files handled by platform');
+        logger.info('Vercel environment detected - static files handled by platform', 'SERVER');
       }
       serveStatic(app);
     } else {
-      log('Starting in development mode with Vite dev server');
+      logger.info('Starting in development mode with Vite dev server', 'SERVER');
       await setupVite(app, httpServer);
     }
 
@@ -144,7 +235,7 @@ function validateEnvironment(): void {
 
     // Now we can safely pass the numeric port to listen()
     httpServer.listen(port, host, () => {
-      log(`serving on port ${port} in ${isProduction ? 'production' : 'development'} mode`);
+      logger.info(`Server running on port ${port} in ${isProduction ? 'production' : 'development'} mode`, 'SERVER');
     });
 
   } catch (error) {

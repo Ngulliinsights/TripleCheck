@@ -3,367 +3,547 @@ import { detectFraud, verifyDocument } from './ai-service';
 import fs from 'fs';
 import path from 'path';
 
-// This interface represents the actual structure of AI verification results
-// based on what your system is actually storing
-interface ActualAIVerificationResults {
-  overallScore: number;
-  verificationTimestamp: string;
-  imageAnalysis?: {
-    qualityScore: number;
-    authenticityScore: number;
-    flaggedIssues: string[];
+// Enhanced type definitions with better constraints and documentation
+export interface ActualAIVerificationResults {
+  readonly overallScore: number;
+  readonly verificationTimestamp: string;
+  readonly imageAnalysis?: {
+    readonly qualityScore: number;
+    readonly authenticityScore: number;
+    readonly flaggedIssues: readonly string[];
   };
-  descriptionAnalysis?: {
-    coherenceScore: number;
-    accuracyScore: number;
-    flaggedIssues: string[];
+  readonly descriptionAnalysis?: {
+    readonly coherenceScore: number;
+    readonly accuracyScore: number;
+    readonly flaggedIssues: readonly string[];
   };
-  aiModel?: string;
+  readonly aiModel?: string;
 }
 
-// This interface represents the simplified structure needed for training
-interface TrainingDocumentScores {
-  authenticity: number;
-  completeness: number;
-  consistency: number;
+export interface TrainingDocumentScores {
+  readonly authenticity: number;
+  readonly completeness: number;
+  readonly consistency: number;
 }
 
-interface TrainingData {
-  propertyId: number;
-  features: number[];
-  fraudLabel: boolean;
-  riskScore: number;
-  verificationStatus: string;
-  documentScores: TrainingDocumentScores;
+export interface TrainingData {
+  readonly propertyId: number;
+  readonly features: readonly number[];
+  readonly fraudLabel: boolean;
+  readonly riskScore: number;
+  readonly verificationStatus: string;
+  readonly documentScores: TrainingDocumentScores;
 }
 
-interface ModelMetrics {
-  accuracy: number;
-  precision: number;
-  recall: number;
-  f1Score: number;
-  confusionMatrix: number[][];
+export interface ModelMetrics {
+  readonly accuracy: number;
+  readonly precision: number;
+  readonly recall: number;
+  readonly f1Score: number;
+  readonly confusionMatrix: readonly (readonly number[])[];
 }
+
+export interface TrainedModel {
+  readonly type: 'threshold';
+  readonly thresholds: {
+    readonly riskScore: number;
+    readonly priceDeviationFactor: number;
+    readonly documentScoreThreshold: number;
+  };
+  readonly featureWeights: readonly number[];
+  readonly trainingAccuracy: number;
+  readonly fraudRate: number;
+  readonly sampleSize: number;
+  readonly trainedAt?: string;
+  readonly version?: string;
+}
+
+export interface PropertyFeatures {
+  readonly price: number;
+  readonly bedrooms: number;
+  readonly bathrooms: number;
+  readonly squareFootage: number;
+  readonly amenities: readonly string[];
+  readonly yearBuilt?: number;
+}
+
+export interface Property {
+  readonly id: number;
+  readonly price: number;
+  readonly location: string;
+  readonly features: PropertyFeatures;
+  readonly verificationStatus?: string;
+  readonly trustScore?: number;
+  readonly ownerId?: number;
+  readonly isFraudulent?: boolean;
+  readonly yearBuilt?: number;
+  readonly aiVerificationResults?: ActualAIVerificationResults;
+}
+
+export interface FraudAnalysis {
+  readonly isSuspicious: boolean;
+  readonly suspiciousScore: number;
+  readonly fraudPatterns?: {
+    readonly priceAnomaly?: number;
+    readonly documentInconsistency?: number;
+    readonly ownershipRisk?: number;
+    readonly marketDeviation?: number;
+  };
+}
+
+// Enhanced constants for better maintainability
+const FRAUD_DETECTION_CONSTANTS = {
+  MINIMUM_TRAINING_SAMPLES: 10,
+  TRAIN_TEST_SPLIT_RATIO: 0.8,
+  DEFAULT_RISK_THRESHOLD: 70,
+  HIGH_CONFIDENCE_THRESHOLD: 0.7,
+  PRICE_ANOMALY_THRESHOLD: 80,
+  MULTIPLE_RISK_FACTORS_THRESHOLD: 2,
+  SCORE_BOUNDS: { MIN: 0, MAX: 100 },
+  FEATURE_WEIGHTS: [0.3, 0.1, 0.1, 0.2, 0.15, 0.05, 0.1] as const,
+  RISK_SCORE_WEIGHTS: {
+    AI_FRAUD_DETECTION: 40,
+    PRICE_ANOMALY: 0.2,
+    DOCUMENT_INCONSISTENCY: 0.3,
+    OWNERSHIP_RISK: 0.25,
+    MARKET_DEVIATION: 0.15,
+    VERIFICATION_FAILED_BONUS: 20,
+    VERIFICATION_SUCCESS_BONUS: -10
+  }
+} as const;
+
+// Location risk scoring with expanded coverage
+const LOCATION_RISK_SCORES = new Map<string, number>([
+  // High-value, low-risk areas
+  ['karen', 5], ['runda', 5], ['spring valley', 5], ['muthaiga', 5],
+  // Medium-value commercial areas
+  ['kilimani', 4], ['westlands', 4], ['lavington', 4], ['killeleshwa', 4],
+  // General Nairobi
+  ['nairobi', 3],
+  // Other major cities
+  ['mombasa', 2], ['kisumu', 2], ['eldoret', 2], ['nakuru', 2],
+]);
 
 /**
- * Transform actual AI verification results into the simplified format needed for training.
- * This function serves as a bridge between the complex verification data structure
- * and the simplified scores needed for machine learning training.
+ * Enhanced transformation with better error handling and validation.
+ * This function bridges the gap between complex AI verification results
+ * and the simplified training format, with comprehensive input validation.
  */
 function transformVerificationResults(results: ActualAIVerificationResults): TrainingDocumentScores {
+  // Input validation to ensure data integrity
+  if (!results || typeof results.overallScore !== 'number') {
+    throw new Error('Invalid verification results: missing or invalid overallScore');
+  }
+
+  // Validate score ranges to prevent invalid training data
+  const validateScore = (score: number): number => {
+    if (score < 0 || score > 100) {
+      console.warn(`Score ${score} out of range, clamping to [0, 100]`);
+      return Math.min(Math.max(score, 0), 100);
+    }
+    return score;
+  };
+
   return {
-    // Map authenticity from image analysis quality, falling back to overall score
-    authenticity: results.imageAnalysis?.authenticityScore ?? 
-                 Math.min(results.overallScore * 1.2, 100), // Scale up overall score slightly
-    
-    // Map completeness from overall score, considering description analysis
-    completeness: results.descriptionAnalysis?.accuracyScore ?? 
-                 results.overallScore,
-    
-    // Map consistency from description coherence, falling back to overall score
-    consistency: results.descriptionAnalysis?.coherenceScore ?? 
-                results.overallScore
+    authenticity: validateScore(
+      results.imageAnalysis?.authenticityScore ?? 
+      Math.min(results.overallScore * 1.2, 100)
+    ),
+    completeness: validateScore(
+      results.descriptionAnalysis?.accuracyScore ?? 
+      results.overallScore
+    ),
+    consistency: validateScore(
+      results.descriptionAnalysis?.coherenceScore ?? 
+      results.overallScore
+    )
   };
 }
 
 /**
- * Generate training data from existing properties with proper type handling
+ * Enhanced training data generation with improved error handling and validation.
+ * This function processes property data systematically, with comprehensive
+ * error recovery and data quality checks.
  */
 export async function generateTrainingData(): Promise<TrainingData[]> {
   try {
     const properties = await storage.getProperties();
+    
+    if (!Array.isArray(properties)) {
+      throw new Error('Invalid properties data: expected array');
+    }
+
     const trainingData: TrainingData[] = [];
+    const processingErrors: string[] = [];
 
-    for (const property of properties) {
-      // Run fraud detection to get current model predictions
-      const fraudAnalysis = await detectFraud(property);
+    // Process each property with individual error handling
+    // Process properties sequentially to handle async operations properly
+    for (let index = 0; index < properties.length; index++) {
+      const property = properties[index];
+      try {
+        // Validate property structure before processing
+        if (!isValidProperty(property)) {
+          processingErrors.push(`Property ${index}: Invalid structure`);
+          continue;
+        }
 
-      // Extract numerical features from property data
-      const features = extractPropertyFeatures(property);
+        // Run fraud detection with timeout protection
+        const fraudAnalysis = await Promise.race([
+          detectFraud(property),
+          new Promise<FraudAnalysis>((_, reject) => 
+            setTimeout(() => reject(new Error('Fraud detection timeout')), 5000)
+          )
+        ]);
 
-      // Determine fraud label based on multiple indicators
-      const fraudLabel = determineFraudLabel(property, fraudAnalysis);
+        const features = extractPropertyFeatures(property);
+        const fraudLabel = determineFraudLabel(property, fraudAnalysis);
+        const riskScore = calculateCompositeRiskScore(property, fraudAnalysis);
+        const documentScores = getDocumentScores(property);
 
-      // Calculate composite risk score
-      const riskScore = calculateCompositeRiskScore(property, fraudAnalysis);
+        trainingData.push({
+          propertyId: property.id,
+          features,
+          fraudLabel,
+          riskScore,
+          verificationStatus: property.verificationStatus || 'pending',
+          documentScores
+        });
 
-      // Handle AI verification results with proper type casting and transformation
-      let documentScores: TrainingDocumentScores;
-      
-      if (property.aiVerificationResults) {
-        // Cast to the actual structure first, then transform to training format
-        const actualVerification = property.aiVerificationResults as ActualAIVerificationResults;
-        documentScores = transformVerificationResults(actualVerification);
-      } else {
-        // Provide neutral defaults when no verification data exists
-        documentScores = {
-          authenticity: 50,
-          completeness: 50,
-          consistency: 50
-        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        processingErrors.push(`Property ${property.id || index}: ${errorMessage}`);
+        continue;
       }
-
-      trainingData.push({
-        propertyId: property.id,
-        features,
-        fraudLabel,
-        riskScore,
-        verificationStatus: property.verificationStatus || 'pending',
-        documentScores
-      });
     }
 
+    // Log processing summary for debugging
+    if (processingErrors.length > 0) {
+      console.warn(`Training data generation completed with ${processingErrors.length} errors:`, processingErrors);
+    }
+
+    console.log(`Successfully processed ${trainingData.length} properties for training`);
     return trainingData;
-  } catch (error) {
-    console.error('Error generating training data:', error);
-    return [];
-  }
-}
-
-/**
- * Extract numerical features from property for ML training.
- * This function converts property attributes into a standardized numerical format
- * that machine learning algorithms can process effectively.
- */
-function extractPropertyFeatures(property: any): number[] {
-  const features = [];
-
-  // Basic property features - these form the foundation of our feature vector
-  features.push(property.price || 0);
-  features.push(property.features?.bedrooms || 0);
-  features.push(property.features?.bathrooms || 0);
-  features.push(property.features?.squareFootage || 0);
-
-  // Location encoding - convert location strings to numerical risk scores
-  features.push(getLocationScore(property.location));
-
-  // Amenities analysis - count and categorize amenities
-  const amenities = property.features?.amenities || [];
-  features.push(amenities.length);
-  features.push(amenities.includes('Swimming Pool') ? 1 : 0);
-  features.push(amenities.includes('Garden') ? 1 : 0);
-  features.push(amenities.includes('Security') ? 1 : 0);
-
-  // Calculate price efficiency metric
-  const pricePerSqFt = property.features?.squareFootage > 0 
-    ? property.price / property.features.squareFootage 
-    : 0;
-  features.push(pricePerSqFt);
-
-  // Property age calculation - older properties may have different risk profiles
-  const currentYear = new Date().getFullYear();
-  const propertyAge = property.yearBuilt ? currentYear - property.yearBuilt : 0;
-  features.push(propertyAge);
-
-  // Verification status indicators - convert categorical data to numerical
-  features.push(property.verificationStatus === 'verified' ? 1 : 0);
-  features.push(property.trustScore || 0);
-
-  // User-related features
-  features.push(property.ownerId || 0);
-
-  return features;
-}
-
-/**
- * Determine fraud label based on multiple indicators.
- * This function implements a rule-based approach to identify fraudulent properties
- * by examining various risk factors and their combinations.
- */
-function determineFraudLabel(property: any, fraudAnalysis: any): boolean {
-  // Direct fraud flag - highest priority indicator
-  if (property.isFraudulent) {
-    return true;
-  }
-
-  // AI fraud detection with high confidence threshold
-  if (fraudAnalysis.isSuspicious && fraudAnalysis.suspiciousScore > 0.7) {
-    return true;
-  }
-
-  // Price anomaly detection - significant deviations suggest fraud
-  if (fraudAnalysis.fraudPatterns?.priceAnomaly > 80) {
-    return true;
-  }
-
-  // Verification failure indicates potential fraud
-  if (property.verificationStatus === 'failed') {
-    return true;
-  }
-
-  // Multiple moderate risk factors can indicate fraud
-  let riskFactors = 0;
-  if (fraudAnalysis.suspiciousScore > 0.5) riskFactors++;
-  if (fraudAnalysis.fraudPatterns?.documentInconsistency > 60) riskFactors++;
-  if (fraudAnalysis.fraudPatterns?.ownershipRisk > 60) riskFactors++;
-  
-  // If multiple risk factors are present, classify as fraud
-  return riskFactors >= 2;
-}
-
-/**
- * Calculate composite risk score by combining multiple risk indicators.
- * This weighted scoring system provides a nuanced assessment of fraud risk.
- */
-function calculateCompositeRiskScore(property: any, fraudAnalysis: any): number {
-  let riskScore = 0;
-
-  // Base risk from AI fraud detection - primary indicator
-  riskScore += fraudAnalysis.suspiciousScore * 40;
-
-  // Individual pattern contributions with specific weights
-  riskScore += (fraudAnalysis.fraudPatterns?.priceAnomaly || 0) * 0.2;
-  riskScore += (fraudAnalysis.fraudPatterns?.documentInconsistency || 0) * 0.3;
-  riskScore += (fraudAnalysis.fraudPatterns?.ownershipRisk || 0) * 0.25;
-  riskScore += (fraudAnalysis.fraudPatterns?.marketDeviation || 0) * 0.15;
-
-  // Verification status adjustments
-  if (property.verificationStatus === 'failed') {
-    riskScore += 20;
-  } else if (property.verificationStatus === 'verified') {
-    riskScore -= 10; // Reduce risk for verified properties
-  }
-
-  // Ensure score remains within valid bounds
-  return Math.min(Math.max(riskScore, 0), 100);
-}
-
-/**
- * Get location-based risk scoring for Kenyan property markets.
- * This function encodes location information into numerical risk scores
- * based on known market characteristics and fraud patterns.
- */
-function getLocationScore(location: string): number {
-  if (!location) return 0;
-
-  const locationLower = location.toLowerCase();
-
-  // High-value, well-established areas with lower fraud risk
-  if (locationLower.includes('karen') || locationLower.includes('runda') || 
-      locationLower.includes('spring valley')) {
-    return 5;
-  }
-
-  // Medium-value commercial and residential areas
-  if (locationLower.includes('kilimani') || locationLower.includes('westlands') || 
-      locationLower.includes('lavington')) {
-    return 4;
-  }
-
-  // General Nairobi area
-  if (locationLower.includes('nairobi')) {
-    return 3;
-  }
-
-  // Other major cities with established markets
-  if (locationLower.includes('mombasa') || locationLower.includes('kisumu')) {
-    return 2;
-  }
-
-  // Unknown or less established areas
-  return 1;
-}
-
-/**
- * Train and evaluate a fraud detection model using collected data.
- * This function implements a complete machine learning pipeline with
- * data splitting, model training, and performance evaluation.
- */
-export async function trainFraudDetectionModel(): Promise<ModelMetrics> {
-  try {
-    const trainingData = await generateTrainingData();
-
-    // Ensure sufficient data for meaningful training
-    if (trainingData.length < 10) {
-      throw new Error('Insufficient training data - need at least 10 samples');
-    }
-
-    // Implement proper data splitting to avoid overfitting
-    const shuffled = trainingData.sort(() => 0.5 - Math.random());
-    const splitIndex = Math.floor(trainingData.length * 0.8);
-    const trainSet = shuffled.slice(0, splitIndex);
-    const testSet = shuffled.slice(splitIndex);
-
-    // Train the model using the training set
-    const model = trainThresholdModel(trainSet);
-
-    // Evaluate model performance on the test set
-    const metrics = evaluateModel(model, testSet);
-
-    // Persist the trained model for future use
-    await saveModel(model);
-
-    return metrics;
 
   } catch (error) {
-    console.error('Error training fraud detection model:', error);
+    console.error('Critical error in training data generation:', error);
     throw error;
   }
 }
 
 /**
- * Train a threshold-based model as a baseline approach.
- * This simple model establishes performance benchmarks and provides
- * interpretable decision rules for fraud detection.
+ * Property validation helper to ensure data integrity.
+ * This function performs comprehensive validation of property objects
+ * to prevent runtime errors during feature extraction.
  */
-function trainThresholdModel(trainingData: TrainingData[]): any {
-  // Separate fraud and normal cases for threshold analysis
+function isValidProperty(property: any): property is Property {
+  return property &&
+         typeof property.id === 'number' &&
+         typeof property.price === 'number' &&
+         typeof property.location === 'string' &&
+         property.features &&
+         typeof property.features === 'object';
+}
+
+/**
+ * Enhanced document scores extraction with better error handling.
+ * This function safely extracts and transforms document scores,
+ * providing meaningful defaults when data is unavailable.
+ */
+function getDocumentScores(property: Property): TrainingDocumentScores {
+  if (property.aiVerificationResults) {
+    try {
+      return transformVerificationResults(property.aiVerificationResults);
+    } catch (error) {
+      console.warn(`Failed to transform verification results for property ${property.id}:`, error);
+    }
+  }
+
+  // Return neutral baseline scores when verification data is unavailable
+  return {
+    authenticity: 50,
+    completeness: 50,
+    consistency: 50
+  };
+}
+
+/**
+ * Optimized feature extraction with enhanced validation and error handling.
+ * This function converts property attributes into a standardized numerical format
+ * with comprehensive input validation and meaningful defaults.
+ */
+function extractPropertyFeatures(property: Property): number[] {
+  const features: number[] = [];
+  
+  try {
+    // Core property metrics with validation
+    features.push(Math.max(property.price || 0, 0));
+    features.push(Math.max(property.features?.bedrooms || 0, 0));
+    features.push(Math.max(property.features?.bathrooms || 0, 0));
+    features.push(Math.max(property.features?.squareFootage || 0, 0));
+
+    // Enhanced location scoring
+    features.push(getLocationScore(property.location));
+
+    // Amenities analysis with null safety
+    const amenities = property.features?.amenities || [];
+    features.push(amenities.length);
+    
+    // Specific amenity indicators
+    const amenityIndicators = ['Swimming Pool', 'Garden', 'Security'];
+    amenityIndicators.forEach(amenity => {
+      features.push(amenities.includes(amenity) ? 1 : 0);
+    });
+
+    // Price efficiency metric with division-by-zero protection
+    const squareFootage = property.features?.squareFootage || 0;
+    const pricePerSqFt = squareFootage > 0 ? property.price / squareFootage : 0;
+    features.push(pricePerSqFt);
+
+    // Property age calculation
+    const currentYear = new Date().getFullYear();
+    const propertyAge = property.yearBuilt ? Math.max(currentYear - property.yearBuilt, 0) : 0;
+    features.push(propertyAge);
+
+    // Verification and trust indicators
+    features.push(property.verificationStatus === 'verified' ? 1 : 0);
+    features.push(Math.max(property.trustScore || 0, 0));
+    features.push(Math.max(property.ownerId || 0, 0));
+
+    return features;
+
+  } catch (error) {
+    console.error(`Error extracting features for property ${property.id}:`, error);
+    // Return zero-filled feature vector as fallback
+    return new Array(13).fill(0);
+  }
+}
+
+/**
+ * Enhanced fraud label determination with improved logic and validation.
+ * This function implements a comprehensive rule-based approach to identify
+ * fraudulent properties using multiple weighted indicators.
+ */
+function determineFraudLabel(property: Property, fraudAnalysis: FraudAnalysis): boolean {
+  // Direct fraud flag takes highest priority
+  if (property.isFraudulent === true) {
+    return true;
+  }
+
+  // High-confidence AI detection
+  if (fraudAnalysis.isSuspicious && 
+      fraudAnalysis.suspiciousScore > FRAUD_DETECTION_CONSTANTS.HIGH_CONFIDENCE_THRESHOLD) {
+    return true;
+  }
+
+  // Severe price anomaly detection
+  if ((fraudAnalysis.fraudPatterns?.priceAnomaly || 0) > FRAUD_DETECTION_CONSTANTS.PRICE_ANOMALY_THRESHOLD) {
+    return true;
+  }
+
+  // Verification system failure
+  if (property.verificationStatus === 'failed') {
+    return true;
+  }
+
+  // Multiple moderate risk factors analysis
+  const riskFactors = [
+    fraudAnalysis.suspiciousScore > 0.5,
+    (fraudAnalysis.fraudPatterns?.documentInconsistency || 0) > 60,
+    (fraudAnalysis.fraudPatterns?.ownershipRisk || 0) > 60,
+    (fraudAnalysis.fraudPatterns?.marketDeviation || 0) > 50
+  ].filter(Boolean).length;
+
+  return riskFactors >= FRAUD_DETECTION_CONSTANTS.MULTIPLE_RISK_FACTORS_THRESHOLD;
+}
+
+/**
+ * Enhanced composite risk scoring with improved weighting and validation.
+ * This function implements a sophisticated weighted scoring system that
+ * combines multiple risk indicators into a unified risk assessment.
+ */
+function calculateCompositeRiskScore(property: Property, fraudAnalysis: FraudAnalysis): number {
+  let riskScore = 0;
+  const weights = FRAUD_DETECTION_CONSTANTS.RISK_SCORE_WEIGHTS;
+
+  // Primary AI fraud detection score
+  riskScore += fraudAnalysis.suspiciousScore * weights.AI_FRAUD_DETECTION;
+
+  // Individual fraud pattern contributions
+  const patterns = fraudAnalysis.fraudPatterns || {};
+  riskScore += (patterns.priceAnomaly || 0) * weights.PRICE_ANOMALY;
+  riskScore += (patterns.documentInconsistency || 0) * weights.DOCUMENT_INCONSISTENCY;
+  riskScore += (patterns.ownershipRisk || 0) * weights.OWNERSHIP_RISK;
+  riskScore += (patterns.marketDeviation || 0) * weights.MARKET_DEVIATION;
+
+  // Verification status adjustments
+  switch (property.verificationStatus) {
+    case 'failed':
+      riskScore += weights.VERIFICATION_FAILED_BONUS;
+      break;
+    case 'verified':
+      riskScore += weights.VERIFICATION_SUCCESS_BONUS;
+      break;
+    default:
+      // No adjustment for pending or unknown status
+      break;
+  }
+
+  // Ensure score remains within valid bounds
+  return Math.min(Math.max(riskScore, FRAUD_DETECTION_CONSTANTS.SCORE_BOUNDS.MIN), 
+                  FRAUD_DETECTION_CONSTANTS.SCORE_BOUNDS.MAX);
+}
+
+/**
+ * Optimized location scoring with expanded geographical coverage.
+ * This function provides nuanced location risk assessment based on
+ * known market characteristics and fraud patterns in Kenya.
+ */
+function getLocationScore(location: string): number {
+  if (!location || typeof location !== 'string') {
+    return 0;
+  }
+
+  const locationLower = location.toLowerCase().trim();
+  
+  // Check for exact matches first
+  let result = 1; // Default score
+  LOCATION_RISK_SCORES.forEach((score, area) => {
+    if (locationLower.includes(area)) {
+      result = score;
+    }
+  });
+  return result;
+
+  // Fallback for unknown locations
+  return 1;
+}
+
+/**
+ * Enhanced model training with improved validation and error handling.
+ * This function implements a complete machine learning pipeline with
+ * comprehensive data validation and performance monitoring.
+ */
+export async function trainFraudDetectionModel(): Promise<ModelMetrics> {
+  try {
+    const trainingData = await generateTrainingData();
+
+    // Validate training data sufficiency
+    if (trainingData.length < FRAUD_DETECTION_CONSTANTS.MINIMUM_TRAINING_SAMPLES) {
+      throw new Error(`Insufficient training data: ${trainingData.length} samples (minimum: ${FRAUD_DETECTION_CONSTANTS.MINIMUM_TRAINING_SAMPLES})`);
+    }
+
+    // Analyze class distribution for potential imbalance
+    const fraudCount = trainingData.filter(d => d.fraudLabel).length;
+    const fraudRate = fraudCount / trainingData.length;
+    
+    if (fraudRate < 0.01 || fraudRate > 0.99) {
+      console.warn(`Potential class imbalance detected: ${(fraudRate * 100).toFixed(1)}% fraud rate`);
+    }
+
+    // Implement stratified sampling for better train/test split
+    const fraudCases = trainingData.filter(d => d.fraudLabel);
+    const normalCases = trainingData.filter(d => !d.fraudLabel);
+    
+    const trainSet = [
+      ...shuffleArray(fraudCases).slice(0, Math.floor(fraudCases.length * FRAUD_DETECTION_CONSTANTS.TRAIN_TEST_SPLIT_RATIO)),
+      ...shuffleArray(normalCases).slice(0, Math.floor(normalCases.length * FRAUD_DETECTION_CONSTANTS.TRAIN_TEST_SPLIT_RATIO))
+    ];
+    
+    const testSet = trainingData.filter(d => !trainSet.includes(d));
+
+    console.log(`Training set: ${trainSet.length} samples, Test set: ${testSet.length} samples`);
+
+    // Train and evaluate the model
+    const model = trainThresholdModel(trainSet);
+    const metrics = evaluateModel(model, testSet);
+
+    // Save model with validation
+    await saveModel(model);
+
+    console.log('Model training completed successfully:', metrics);
+    return metrics;
+
+  } catch (error) {
+    console.error('Model training failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Utility function for array shuffling with Fisher-Yates algorithm.
+ * This ensures proper randomization for train/test splits.
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
+ * Enhanced threshold model training with improved statistics and validation.
+ * This function creates a robust baseline model with comprehensive
+ * performance analysis and feature importance assessment.
+ */
+function trainThresholdModel(trainingData: TrainingData[]): TrainedModel {
   const fraudCases = trainingData.filter(d => d.fraudLabel);
   const normalCases = trainingData.filter(d => !d.fraudLabel);
-
-  // Calculate class distribution for model calibration
   const fraudRate = fraudCases.length / trainingData.length;
 
-  // Analyze price distributions to identify anomaly thresholds
-  const fraudPrices = fraudCases.map(d => d.features[0]);
-  const normalPrices = normalCases.map(d => d.features[0]);
+  // Calculate training accuracy for model validation
+  const trainingAccuracy = calculateTrainingAccuracy(trainingData);
+
+  console.log(`Model training summary: ${trainingData.length} samples, ${(fraudRate * 100).toFixed(1)}% fraud rate, ${(trainingAccuracy * 100).toFixed(1)}% training accuracy`);
 
   return {
     type: 'threshold',
     thresholds: {
-      riskScore: 70, // Primary decision threshold
-      priceDeviationFactor: 0.3, // Price deviation threshold
-      documentScoreThreshold: 40 // Document quality threshold
+      riskScore: FRAUD_DETECTION_CONSTANTS.DEFAULT_RISK_THRESHOLD,
+      priceDeviationFactor: 0.3,
+      documentScoreThreshold: 40
     },
-    // Feature importance weights derived from analysis
-    featureWeights: [0.3, 0.1, 0.1, 0.2, 0.15, 0.05, 0.1],
-    trainingAccuracy: calculateTrainingAccuracy(trainingData),
-    fraudRate: fraudRate,
+    featureWeights: FRAUD_DETECTION_CONSTANTS.FEATURE_WEIGHTS,
+    trainingAccuracy,
+    fraudRate,
     sampleSize: trainingData.length
   };
 }
 
 /**
- * Calculate training accuracy to assess model fit.
- * This provides a baseline measure of how well the model
- * performs on the data it was trained on.
+ * Optimized training accuracy calculation with improved precision.
+ * This function provides accurate baseline performance metrics
+ * for model quality assessment.
  */
 function calculateTrainingAccuracy(trainingData: TrainingData[]): number {
-  let correct = 0;
+  if (trainingData.length === 0) return 0;
 
-  for (const data of trainingData) {
-    const prediction = data.riskScore > 70;
-    if (prediction === data.fraudLabel) {
-      correct++;
-    }
-  }
+  const correct = trainingData.filter(data => {
+    const prediction = data.riskScore > FRAUD_DETECTION_CONSTANTS.DEFAULT_RISK_THRESHOLD;
+    return prediction === data.fraudLabel;
+  }).length;
 
   return correct / trainingData.length;
 }
 
 /**
- * Evaluate model performance using comprehensive metrics.
- * This function calculates standard machine learning performance
- * metrics to assess model quality and reliability.
+ * Enhanced model evaluation with comprehensive performance metrics.
+ * This function calculates standard machine learning metrics with
+ * proper handling of edge cases and undefined values.
  */
-function evaluateModel(model: any, testData: TrainingData[]): ModelMetrics {
+function evaluateModel(model: TrainedModel, testData: TrainingData[]): ModelMetrics {
+  if (testData.length === 0) {
+    throw new Error('Cannot evaluate model: empty test dataset');
+  }
+
   let truePositives = 0;
   let trueNegatives = 0;
   let falsePositives = 0;
   let falseNegatives = 0;
 
-  // Calculate confusion matrix components
-  for (const data of testData) {
+  // Calculate confusion matrix with proper classification logic
+  testData.forEach(data => {
     const prediction = data.riskScore > model.thresholds.riskScore;
     const actual = data.fraudLabel;
 
@@ -371,13 +551,13 @@ function evaluateModel(model: any, testData: TrainingData[]): ModelMetrics {
     else if (!prediction && !actual) trueNegatives++;
     else if (prediction && !actual) falsePositives++;
     else if (!prediction && actual) falseNegatives++;
-  }
+  });
 
-  // Calculate performance metrics
+  // Calculate metrics with proper division-by-zero handling
   const accuracy = (truePositives + trueNegatives) / testData.length;
-  const precision = truePositives / (truePositives + falsePositives) || 0;
-  const recall = truePositives / (truePositives + falseNegatives) || 0;
-  const f1Score = 2 * (precision * recall) / (precision + recall) || 0;
+  const precision = truePositives + falsePositives > 0 ? truePositives / (truePositives + falsePositives) : 0;
+  const recall = truePositives + falseNegatives > 0 ? truePositives / (truePositives + falseNegatives) : 0;
+  const f1Score = precision + recall > 0 ? 2 * (precision * recall) / (precision + recall) : 0;
 
   return {
     accuracy,
@@ -392,94 +572,139 @@ function evaluateModel(model: any, testData: TrainingData[]): ModelMetrics {
 }
 
 /**
- * Save trained model to persistent storage.
- * This function serializes the model with metadata
- * for future loading and inference.
+ * Enhanced model persistence with improved error handling and validation.
+ * This function safely serializes models with comprehensive metadata
+ * and proper directory management.
  */
-async function saveModel(model: any): Promise<void> {
+async function saveModel(model: TrainedModel): Promise<void> {
   try {
     const modelPath = path.join(__dirname, '..', 'models');
 
-    // Ensure the models directory exists
-    if (!fs.existsSync(modelPath)) {
-      fs.mkdirSync(modelPath, { recursive: true });
-    }
+    // Ensure directory exists with proper error handling
+    await fs.promises.mkdir(modelPath, { recursive: true });
 
     const modelFile = path.join(modelPath, 'fraud-detection-model.json');
 
-    // Add metadata to the model for tracking and versioning
-    const modelData = {
+    // Enhanced model metadata for versioning and tracking
+    const modelData: TrainedModel = {
       ...model,
       trainedAt: new Date().toISOString(),
       version: '1.0.0'
     };
 
-    fs.writeFileSync(modelFile, JSON.stringify(modelData, null, 2));
+    // Use async file operations for better performance
+    await fs.promises.writeFile(modelFile, JSON.stringify(modelData, null, 2), 'utf8');
     console.log('Model saved successfully:', modelFile);
 
   } catch (error) {
-    console.error('Error saving model:', error);
-    throw error;
+    console.error('Model save failed:', error);
+    throw new Error(`Failed to save model: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 /**
- * Load previously trained model from storage.
- * This function deserializes a saved model for inference.
+ * Enhanced model loading with improved error handling and validation.
+ * This function safely deserializes models with comprehensive
+ * validation and meaningful error messages.
  */
-export async function loadModel(): Promise<any> {
+export async function loadModel(): Promise<TrainedModel | null> {
   try {
     const modelFile = path.join(__dirname, '..', 'models', 'fraud-detection-model.json');
 
-    if (!fs.existsSync(modelFile)) {
+    // Check file existence asynchronously
+    try {
+      await fs.promises.access(modelFile);
+    } catch {
+      console.log('No existing model found, will need to train new model');
       return null;
     }
 
-    const modelData = fs.readFileSync(modelFile, 'utf8');
-    return JSON.parse(modelData);
+    // Load and parse model data
+    const modelData = await fs.promises.readFile(modelFile, 'utf8');
+    const model = JSON.parse(modelData) as TrainedModel;
+
+    // Validate model structure
+    if (!isValidModel(model)) {
+      throw new Error('Invalid model structure');
+    }
+
+    console.log(`Model loaded successfully (version: ${model.version}, trained: ${model.trainedAt})`);
+    return model;
 
   } catch (error) {
-    console.error('Error loading model:', error);
+    console.error('Model loading failed:', error);
     return null;
   }
 }
 
 /**
- * Predict fraud probability using the trained model.
- * This function applies the trained model to new property data
- * to generate fraud risk assessments.
+ * Model validation helper to ensure data integrity.
+ * This function validates the structure and content of loaded models.
  */
-export async function predictFraud(propertyFeatures: number[]): Promise<{probability: number, prediction: boolean}> {
-  try {
-    const model = await loadModel();
+function isValidModel(model: any): model is TrainedModel {
+  return model &&
+         model.type === 'threshold' &&
+         model.thresholds &&
+         typeof model.thresholds.riskScore === 'number' &&
+         Array.isArray(model.featureWeights) &&
+         typeof model.trainingAccuracy === 'number';
+}
 
-    if (!model) {
-      throw new Error('No trained model available');
+/**
+ * Enhanced fraud prediction with improved error handling and validation.
+ * This function applies trained models to new data with comprehensive
+ * input validation and meaningful error recovery.
+ */
+export async function predictFraud(propertyFeatures: readonly number[]): Promise<{
+  readonly probability: number;
+  readonly prediction: boolean;
+  readonly confidence: number;
+}> {
+  try {
+    // Validate input features
+    if (!Array.isArray(propertyFeatures) || propertyFeatures.length === 0) {
+      throw new Error('Invalid property features: expected non-empty array');
     }
 
-    // Apply feature weights to calculate weighted score
+    // Validate feature values
+    if (propertyFeatures.some(feature => typeof feature !== 'number' || !isFinite(feature))) {
+      throw new Error('Invalid feature values: all features must be finite numbers');
+    }
+
+    const model = await loadModel();
+    if (!model) {
+      throw new Error('No trained model available - please train model first');
+    }
+
+    // Calculate weighted score with proper bounds checking
     const weightedScore = propertyFeatures.reduce((sum, feature, index) => {
       const weight = model.featureWeights[index] || 0;
       return sum + (feature * weight);
     }, 0);
 
-    // Normalize score to probability range [0, 1]
+    // Normalize score to probability range with proper bounds
     const normalizedScore = Math.min(Math.max(weightedScore / 100, 0), 1);
     
     // Apply threshold for binary classification
-    const prediction = normalizedScore > 0.7;
+    const prediction = normalizedScore > FRAUD_DETECTION_CONSTANTS.HIGH_CONFIDENCE_THRESHOLD;
+
+    // Calculate confidence based on distance from threshold
+    const confidence = Math.abs(normalizedScore - FRAUD_DETECTION_CONSTANTS.HIGH_CONFIDENCE_THRESHOLD) * 2;
 
     return {
       probability: normalizedScore,
-      prediction
+      prediction,
+      confidence: Math.min(confidence, 1)
     };
 
   } catch (error) {
-    console.error('Error predicting fraud:', error);
-    // Return neutral prediction when model fails
+    console.error('Fraud prediction failed:', error);
+    
+    // Return safe default values when prediction fails
     return {
       probability: 0.5,
-      prediction: false
+      prediction: false,
+      confidence: 0
     };
   }
 }

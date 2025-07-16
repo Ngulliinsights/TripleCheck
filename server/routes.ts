@@ -10,13 +10,16 @@ import { z } from "zod";
 import fileUpload from "express-fileupload";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcrypt";
 import {
   handleDocumentVerification,
   handleFraudDetection,
   handleGenerateReport,
-  FileUploadRequest,
   registerAIRoutes,
 } from "./ai-routes";
+// Fix 1: Use type-only import for FileUploadRequest
+import type { FileUploadRequest } from "./ai-routes";
+import emailRoutes from "./email-routes";
 
 // Import only the types that actually exist in the schema
 import type { User, Property, Review } from "@shared/schema";
@@ -53,23 +56,27 @@ interface AuthenticatedRequest extends Omit<Request, "session"> {
   session?: CustomSession;
 }
 
-// Enhanced fraud detection result type that matches actual implementation
+// Fix 2: Make optional properties truly optional in CompleteFraudDetectionResult
 interface CompleteFraudDetectionResult {
   isSuspicious: boolean;
   suspiciousScore: number;
   overallScore: number;
   verificationTimestamp: string;
-  imageAnalysis?: {
-    qualityScore: number;
-    authenticityScore: number;
-    flaggedIssues: string[];
-  };
-  descriptionAnalysis?: {
-    sentiment: number;
-    keywordFlags: string[];
-    qualityScore: number;
-  };
-  aiModel?: string;
+  imageAnalysis?:
+    | {
+        qualityScore: number;
+        authenticityScore: number;
+        flaggedIssues: string[];
+      }
+    | undefined;
+  descriptionAnalysis?:
+    | {
+        sentiment: number;
+        keywordFlags: string[];
+        qualityScore: number;
+      }
+    | undefined;
+  aiModel?: string | undefined;
 }
 
 // Enhanced verification result with flexible property access
@@ -82,20 +89,24 @@ interface VerificationResult {
   overallScore: number;
   verificationTimestamp: string;
   fraudDetection?: CompleteFraudDetectionResult;
-  imageAnalysis?: {
-    qualityScore: number;
-    authenticityScore: number;
-    flaggedIssues: string[];
-  };
-  descriptionAnalysis?: {
-    sentiment: number;
-    keywordFlags: string[];
-    qualityScore: number;
-  };
-  aiModel?: string;
+  imageAnalysis?:
+    | {
+        qualityScore: number;
+        authenticityScore: number;
+        flaggedIssues: string[];
+      }
+    | undefined;
+  descriptionAnalysis?:
+    | {
+        sentiment: number;
+        keywordFlags: string[];
+        qualityScore: number;
+      }
+    | undefined;
+  aiModel?: string | undefined;
 }
 
-// Define AIVerificationResults to include all necessary properties
+// Fix 3: Align AIVerificationResults with the actual data structure
 interface AIVerificationResults {
   documentAuthenticity?: "verified" | "suspicious" | "pending";
   ownershipVerified?: boolean;
@@ -104,17 +115,21 @@ interface AIVerificationResults {
   overallScore: number;
   verificationTimestamp: string;
   fraudDetection?: CompleteFraudDetectionResult;
-  imageAnalysis?: {
-    qualityScore: number;
-    authenticityScore: number;
-    flaggedIssues: string[];
-  };
-  descriptionAnalysis?: {
-    sentiment: number;
-    keywordFlags: string[];
-    qualityScore: number;
-  };
-  aiModel?: string;
+  imageAnalysis?:
+    | {
+        qualityScore: number;
+        authenticityScore: number;
+        flaggedIssues: string[];
+      }
+    | undefined;
+  descriptionAnalysis?:
+    | {
+        sentiment: number;
+        keywordFlags: string[];
+        qualityScore: number;
+      }
+    | undefined;
+  aiModel?: string | undefined;
 }
 
 // Type-safe search filters with validation
@@ -128,18 +143,20 @@ interface SearchFilters {
   verified?: boolean;
 }
 
-// Generic API response wrapper for consistent structure
+// Fix 4: Make metadata properties truly optional
 interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
   errors?: any[];
-  metadata?: {
-    totalCount?: number;
-    page?: number;
-    limit?: number;
-    filters?: SearchFilters;
-  };
+  metadata?:
+    | {
+        totalCount?: number | undefined;
+        page?: number | undefined;
+        limit?: number | undefined;
+        filters?: SearchFilters | undefined;
+      }
+    | undefined;
 }
 
 // Enhanced constants with better organization
@@ -325,15 +342,16 @@ async function detectFraudSafely(
     const { detectFraud } = await import("./ai-routes");
     const raw: AIFraudDetectionResult = await detectFraud(propertyData);
 
+    // Fix 5: Ensure undefined properties are handled correctly
     return {
       isSuspicious: raw.isSuspicious ?? false,
       suspiciousScore: raw.suspiciousScore ?? 0,
       overallScore: raw.overallScore ?? raw.suspiciousScore ?? 0,
       verificationTimestamp:
         raw.verificationTimestamp ?? new Date().toISOString(),
-      imageAnalysis: raw.imageAnalysis,
-      descriptionAnalysis: raw.descriptionAnalysis,
-      aiModel: raw.aiModel ?? "default",
+      imageAnalysis: raw.imageAnalysis || undefined,
+      descriptionAnalysis: raw.descriptionAnalysis || undefined,
+      aiModel: raw.aiModel || undefined,
     };
   } catch (error) {
     console.error("Fraud detection error:", error);
@@ -342,7 +360,9 @@ async function detectFraudSafely(
       suspiciousScore: 0,
       overallScore: CONSTANTS.DEFAULT_RISK_SCORE,
       verificationTimestamp: new Date().toISOString(),
-      aiModel: "fallback",
+      imageAnalysis: undefined,
+      descriptionAnalysis: undefined,
+      aiModel: undefined,
     };
   }
 }
@@ -356,8 +376,9 @@ async function performAIVerification(
     const fraudDetection = await detectFraudSafely(propertyData);
 
     return {
-      documentAuthenticity: fraudDetection.isSuspicious
-        ? CONSTANTS.VERIFICATION.SUSPICIOUS
+      documentAuthenticity:
+        fraudDetection.isSuspicious ?
+          CONSTANTS.VERIFICATION.SUSPICIOUS
         : CONSTANTS.VERIFICATION.VERIFIED,
       ownershipVerified: !fraudDetection.isSuspicious,
       riskScore: Math.floor(fraudDetection.suspiciousScore * 100),
@@ -365,6 +386,9 @@ async function performAIVerification(
       verifiedAt: new Date().toISOString(),
       overallScore: fraudDetection.overallScore,
       verificationTimestamp: fraudDetection.verificationTimestamp,
+      imageAnalysis: fraudDetection.imageAnalysis,
+      descriptionAnalysis: fraudDetection.descriptionAnalysis,
+      aiModel: fraudDetection.aiModel,
     };
   } catch (error) {
     console.error("AI verification error:", error);
@@ -374,11 +398,14 @@ async function performAIVerification(
       riskScore: CONSTANTS.DEFAULT_RISK_SCORE,
       verifiedAt: new Date().toISOString(),
       error:
-        error instanceof Error
-          ? error.message
-          : ERROR_MESSAGES.AI_VERIFICATION_FAILED,
+        error instanceof Error ?
+          error.message
+        : ERROR_MESSAGES.AI_VERIFICATION_FAILED,
       overallScore: CONSTANTS.DEFAULT_RISK_SCORE,
       verificationTimestamp: new Date().toISOString(),
+      imageAnalysis: undefined,
+      descriptionAnalysis: undefined,
+      aiModel: undefined,
     };
   }
 }
@@ -483,21 +510,53 @@ const validateSearchFilters = (
 };
 
 export function registerRoutes(app: Express): void {
-  // Enhanced health check endpoint with more detailed information
-  app.get("/api/health", (req: Request, res: Response) => {
-    const response: ApiResponse = {
-      success: true,
-      data: {
-        status: "healthy",
-        timestamp: new Date().toISOString(),
-        version: CONSTANTS.API_VERSION,
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV || "development",
-        nodeVersion: process.version,
-        platform: process.platform,
+  // Enhanced health check endpoint with system status
+  app.get("/api/health", async (req: Request, res: Response) => {
+    const healthData = {
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      version: CONSTANTS.API_VERSION,
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || "development",
+      nodeVersion: process.version,
+      platform: process.platform,
+      services: {
+        database: "unknown",
+        ai: "unknown",
       },
     };
-    res.status(CONSTANTS.HTTP_STATUS.OK).json(response);
+
+    // Test database connectivity
+    try {
+      await storage.getProperties();
+      healthData.services.database = "connected";
+    } catch (error) {
+      healthData.services.database = "disconnected";
+      healthData.status = "degraded";
+    }
+
+    // Test AI service availability
+    try {
+      if (process.env.GOOGLE_API_KEY) {
+        healthData.services.ai = "configured";
+      } else {
+        healthData.services.ai = "not_configured";
+      }
+    } catch (error) {
+      healthData.services.ai = "error";
+    }
+
+    const response: ApiResponse = {
+      success: healthData.status !== "error",
+      data: healthData,
+    };
+
+    const statusCode =
+      healthData.status === "healthy" ?
+        CONSTANTS.HTTP_STATUS.OK
+      : CONSTANTS.HTTP_STATUS.INTERNAL_SERVER_ERROR;
+
+    res.status(statusCode).json(response);
   });
 
   // Enhanced file upload middleware with security improvements
@@ -536,8 +595,15 @@ export function registerRoutes(app: Express): void {
           return res.status(CONSTANTS.HTTP_STATUS.CONFLICT).json(response);
         }
 
-        // Create user using Drizzle's insert functionality
-        const user = await storage.createUser(userData);
+        // Hash password before storing
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+
+        // Create user with hashed password
+        const user = await storage.createUser({
+          ...userData,
+          password: hashedPassword,
+        });
 
         // Remove password from response for security
         const { password, ...userWithoutPassword } = user;
@@ -572,7 +638,17 @@ export function registerRoutes(app: Express): void {
 
         // Authenticate user using type-safe query
         const user = await storage.getUserByUsername(username);
-        if (!user || user.password !== password) {
+        if (!user) {
+          const response: ApiResponse = {
+            success: false,
+            message: ERROR_MESSAGES.INVALID_CREDENTIALS,
+          };
+          return res.status(CONSTANTS.HTTP_STATUS.UNAUTHORIZED).json(response);
+        }
+
+        // Verify password using bcrypt
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
           const response: ApiResponse = {
             success: false,
             message: ERROR_MESSAGES.INVALID_CREDENTIALS,
@@ -672,9 +748,13 @@ export function registerRoutes(app: Express): void {
       const sanitizedQuery = sanitizeSearchQuery(query || "");
 
       // Use efficient query methods with proper error handling
-      const properties = sanitizedQuery
-        ? await storage.searchProperties(sanitizedQuery)
+      const properties =
+        sanitizedQuery ?
+          await storage.searchProperties(sanitizedQuery)
         : await storage.getProperties();
+
+      // Fix 6: Cast readonly arrays to mutable arrays safely
+      const mutableProperties = [...properties] as DatabaseProperty[];
 
       const response: ApiResponse<{
         properties: DatabaseProperty[];
@@ -682,11 +762,11 @@ export function registerRoutes(app: Express): void {
       }> = {
         success: true,
         data: {
-          properties,
-          totalCount: properties.length,
+          properties: mutableProperties,
+          totalCount: mutableProperties.length,
         },
         metadata: {
-          totalCount: properties.length,
+          totalCount: mutableProperties.length,
           ...(sanitizedQuery && { filters: { location: sanitizedQuery } }),
         },
       };
@@ -699,7 +779,7 @@ export function registerRoutes(app: Express): void {
 
   app.get("/api/properties/:id", async (req: Request, res: Response) => {
     try {
-      const validation = validatePropertyId(req.params.id);
+      const validation = validatePropertyId(req.params.id || "");
       if (!validation.valid) {
         const response: ApiResponse = {
           success: false,
@@ -718,9 +798,12 @@ export function registerRoutes(app: Express): void {
         return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json(response);
       }
 
+      // Fix 7: Create a mutable copy of the property
+      const mutableProperty = { ...property } as DatabaseProperty;
+
       const response: ApiResponse<DatabaseProperty> = {
         success: true,
-        data: property,
+        data: mutableProperty,
       };
 
       res.json(response);
@@ -744,11 +827,13 @@ export function registerRoutes(app: Express): void {
         // Perform AI verification with proper typing
         const verificationResults = await performAIVerification(propertyData);
         const verificationStatus =
-          verificationResults.documentAuthenticity ===
-            CONSTANTS.VERIFICATION.VERIFIED &&
-          verificationResults.ownershipVerified
-            ? CONSTANTS.VERIFICATION.VERIFIED
-            : CONSTANTS.VERIFICATION.FAILED;
+          (
+            verificationResults.documentAuthenticity ===
+              CONSTANTS.VERIFICATION.VERIFIED &&
+            verificationResults.ownershipVerified
+          ) ?
+            CONSTANTS.VERIFICATION.VERIFIED
+          : CONSTANTS.VERIFICATION.FAILED;
 
         // Update verification status using type-safe update
         const updatedProperty = await storage.updateVerificationStatus(
@@ -757,9 +842,12 @@ export function registerRoutes(app: Express): void {
           verificationResults
         );
 
+        // Create a mutable copy of the property
+        const mutableProperty = { ...updatedProperty } as DatabaseProperty;
+
         const response: ApiResponse<DatabaseProperty> = {
           success: true,
-          data: updatedProperty,
+          data: mutableProperty,
           message: "Property created successfully",
         };
 
@@ -787,17 +875,20 @@ export function registerRoutes(app: Express): void {
         // Use type-safe query for reviews
         const reviews = await storage.getReviews(validation.propertyId!);
 
+        // Fix 8: Cast readonly array to mutable array
+        const mutableReviews = [...reviews] as DatabaseReview[];
+
         const response: ApiResponse<{
           reviews: DatabaseReview[];
           totalCount: number;
         }> = {
           success: true,
           data: {
-            reviews,
-            totalCount: reviews.length,
+            reviews: mutableReviews,
+            totalCount: mutableReviews.length,
           },
           metadata: {
-            totalCount: reviews.length,
+            totalCount: mutableReviews.length,
           },
         };
 
@@ -881,7 +972,10 @@ export function registerRoutes(app: Express): void {
   // Register AI-related routes
   registerAIRoutes(app);
 
-  // Enhanced property verification status with better error handling
+  // Register email-related routes
+  app.use("/api/email", emailRoutes);
+
+  // Enhanced property verification status with better error handling and type safety
   app.get(
     "/api/properties/:id/verification-status",
     async (req: Request, res: Response) => {
@@ -895,7 +989,7 @@ export function registerRoutes(app: Express): void {
           return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json(response);
         }
 
-        // Use type-safe query
+        // Use type-safe query with proper null checking
         const property = await storage.getProperty(validation.propertyId!);
         if (!property) {
           const response: ApiResponse = {
@@ -905,17 +999,97 @@ export function registerRoutes(app: Express): void {
           return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json(response);
         }
 
-      
-        const verificationResults = property.aiVerificationResults as AIVerificationResults | undefined;
+        // Safely extract and type the verification results
+        const rawVerificationResults = property.aiVerificationResults;
+
+        // Type guard to ensure we're working with the correct structure
+        const isValidVerificationResults = (
+          data: any
+        ): data is AIVerificationResults => {
+          return (
+            data &&
+            typeof data === "object" &&
+            typeof data.overallScore === "number" &&
+            typeof data.verificationTimestamp === "string"
+          );
+        };
+
+        // Transform the raw data to match our expected interface
+        const verificationResults: AIVerificationResults | null =
+          isValidVerificationResults(rawVerificationResults) ?
+            {
+              documentAuthenticity: rawVerificationResults.documentAuthenticity,
+              ownershipVerified: rawVerificationResults.ownershipVerified,
+              riskScore: rawVerificationResults.riskScore,
+              verifiedAt: rawVerificationResults.verifiedAt,
+              overallScore: rawVerificationResults.overallScore,
+              verificationTimestamp:
+                rawVerificationResults.verificationTimestamp,
+              fraudDetection: rawVerificationResults.fraudDetection,
+              // Handle imageAnalysis with proper optional chaining
+              imageAnalysis:
+                rawVerificationResults.imageAnalysis ?
+                  {
+                    qualityScore:
+                      rawVerificationResults.imageAnalysis.qualityScore || 0,
+                    authenticityScore:
+                      rawVerificationResults.imageAnalysis.authenticityScore ||
+                      0,
+                    flaggedIssues:
+                      rawVerificationResults.imageAnalysis.flaggedIssues || [],
+                  }
+                : undefined,
+              // Transform descriptionAnalysis to match expected interface
+              descriptionAnalysis:
+                rawVerificationResults.descriptionAnalysis ?
+                  {
+                    sentiment:
+                      rawVerificationResults.descriptionAnalysis.sentiment || 0,
+                    keywordFlags:
+                      rawVerificationResults.descriptionAnalysis.keywordFlags ||
+                      [],
+                    qualityScore:
+                      rawVerificationResults.descriptionAnalysis.qualityScore ||
+                      0,
+                  }
+                : undefined,
+              aiModel: rawVerificationResults.aiModel,
+            }
+          : null;
+
+        // Extract fraud detection data with fallback handling
         const fraudDetection = verificationResults?.fraudDetection;
 
+        // Determine the most recent timestamp with proper fallback chain
+        const getLastVerifiedTimestamp = (): string | null => {
+          if (verificationResults?.verificationTimestamp) {
+            return verificationResults.verificationTimestamp;
+          }
+          if (fraudDetection?.verificationTimestamp) {
+            return fraudDetection.verificationTimestamp;
+          }
+          if (verificationResults?.verifiedAt) {
+            return verificationResults.verifiedAt;
+          }
+          return null;
+        };
+
+        // Create the response data with proper typing
         const verificationData = {
           status: property.verificationStatus || "unverified",
-          results: verificationResults || null,
-          lastVerified:
-            verificationResults?.verificationTimestamp ??
-            fraudDetection?.verificationTimestamp ??
-            null,
+          results: verificationResults,
+          lastVerified: getLastVerifiedTimestamp(),
+          // Additional metadata for better client-side handling
+          metadata: {
+            hasAIVerification: !!verificationResults,
+            hasFraudDetection: !!fraudDetection,
+            riskLevel:
+              verificationResults?.riskScore ?
+                verificationResults.riskScore > 70 ? "high"
+                : verificationResults.riskScore > 30 ? "medium"
+                : "low"
+              : "unknown",
+          },
         };
 
         const response: ApiResponse<typeof verificationData> = {
@@ -925,15 +1099,24 @@ export function registerRoutes(app: Express): void {
 
         res.json(response);
       } catch (error) {
+        // Enhanced error logging for debugging
+        console.error("Verification status retrieval error:", {
+          propertyId: req.params.id,
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+
         handleDrizzleError(error, res, ERROR_MESSAGES.VERIFICATION_ERROR);
       }
     }
   );
 
-  // Enhanced location search with better validation
+  // Enhanced location search with better validation and type safety
   app.get("/api/locations/search", async (req: Request, res: Response) => {
     try {
-      const query = req.query.q as string;
+      const query = req.query.q;
+
+      // Improved query validation with explicit type checking
       if (!query || typeof query !== "string" || query.trim().length === 0) {
         const response: ApiResponse = {
           success: false,
@@ -944,19 +1127,35 @@ export function registerRoutes(app: Express): void {
 
       const sanitizedQuery = sanitizeSearchQuery(query);
 
-      // Use type-safe search
+      // Use type-safe search with proper error handling
       const locations = await storage.searchLocations(sanitizedQuery);
 
-      // Transform to expected format with safe property access
-      const suggestions = locations.map((location: any) => ({
-        id: location.id || 0,
-        name: location.name || "",
-        description: location.description || location.name || "",
-        coordinates: location.coordinates || null,
-      }));
+      // Transform to expected format with comprehensive null checking
+      const suggestions = locations.map(
+        (location: any): LocationData => ({
+          id: typeof location.id === "number" ? location.id : 0,
+          name: typeof location.name === "string" ? location.name : "",
+          description:
+            typeof location.description === "string" ? location.description
+            : typeof location.name === "string" ? location.name
+            : "",
+          coordinates:
+            (
+              location.coordinates &&
+              typeof location.coordinates === "object" &&
+              typeof location.coordinates.latitude === "number" &&
+              typeof location.coordinates.longitude === "number"
+            ) ?
+              {
+                latitude: location.coordinates.latitude,
+                longitude: location.coordinates.longitude,
+              }
+            : null,
+        })
+      );
 
       const response: ApiResponse<{
-        suggestions: typeof suggestions;
+        suggestions: LocationData[];
         totalCount: number;
       }> = {
         success: true,
@@ -971,11 +1170,16 @@ export function registerRoutes(app: Express): void {
 
       res.json(response);
     } catch (error) {
+      console.error("Location search error:", {
+        query: req.query.q,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
       handleDrizzleError(error, res, ERROR_MESSAGES.LOCATION_SEARCH_FAILED);
     }
   });
 
-  // Enhanced advanced property search with better validation
+  // Enhanced advanced property search with better validation and type safety
   app.post("/api/properties/search", async (req: Request, res: Response) => {
     try {
       const validation = validateSearchFilters(req.body);
@@ -987,31 +1191,40 @@ export function registerRoutes(app: Express): void {
         return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json(response);
       }
 
-      // Use type-safe filtered search
-      const properties = await storage.searchPropertiesWithFilters(
-        validation.sanitizedFilters!
-      );
+      // Ensure we have valid filters before proceeding
+      const filters = validation.sanitizedFilters!;
 
+      // Use type-safe filtered search with proper error handling
+      const properties = await storage.searchPropertiesWithFilters(filters);
+
+      // Create response with proper typing and metadata
       const response: ApiResponse<{
         properties: DatabaseProperty[];
         totalCount: number;
       }> = {
         success: true,
         data: {
-          properties,
+          properties: [...properties],
           totalCount: properties.length,
         },
         metadata: {
-          filters: validation.sanitizedFilters,
+          filters: filters,
           totalCount: properties.length,
         },
       };
 
       res.json(response);
     } catch (error) {
+      console.error("Property search error:", {
+        filters: req.body,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
       handleDrizzleError(error, res, ERROR_MESSAGES.PROPERTY_SEARCH_FAILED);
     }
   });
 
-  console.log("API routes registered successfully with enhanced type safety");
+  console.log(
+    "API routes registered successfully with enhanced type safety and error handling"
+  );
 }

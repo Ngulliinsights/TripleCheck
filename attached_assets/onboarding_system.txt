@@ -1,0 +1,151 @@
+# OCTAVIA CARBON CO. - ONBOARDING & OFFBOARDING TRACKING SYSTEM
+
+## SHEET 1: EMPLOYEE MASTER TRACKER
+| Employee ID | Full Name | Position | Department | Start Date | Manager | Employment Type | Status | Onboarding Stage | Offboarding Stage | HR Contact | Last Updated |
+|-------------|-----------|----------|------------|------------|---------|-----------------|--------|------------------|-------------------|-------------|--------------|
+| EMP001 | John Doe | Carbon Analyst | Operations | 2024-01-15 | Sarah Johnson | Full-time | Active | Completed | N/A | jane.hr@octaviacarbon.com | 2024-01-20 |
+| EMP002 | Mary Smith | Marketing Coordinator | Marketing | 2024-02-01 | Mike Wilson | Contract | Active | Week 2 | N/A | jane.hr@octaviacarbon.com | 2024-02-05 |
+| EMP003 | David Brown | Finance Manager | Finance | 2023-12-01 | CEO | Full-time | Offboarding | Completed | Week 1 | jane.hr@octaviacarbon.com | 2024-07-10 |
+
+## SHEET 2: ONBOARDING CHECKLIST TEMPLATE
+| Task Category | Task Description | Responsible Party | Due Timeline | Priority Level | Dependencies | Completion Status | Notes |
+|---------------|------------------|-------------------|---------------|----------------|--------------|-------------------|--------|
+| Pre-Arrival | Send welcome email with first day details | HR | 3 days before start | High | Signed contract | Pending | Include parking, dress code, what to bring |
+| Pre-Arrival | Prepare workspace and equipment | IT/Facilities | 2 days before start | High | Desk assignment | Pending | Laptop, monitor, phone setup |
+| Pre-Arrival | Create email account and system access | IT | 2 days before start | Critical | Employee details from HR | Pending | Email, file servers, relevant software |
+| Pre-Arrival | Order business cards and name plate | Admin | 1 week before start | Medium | Final job title confirmed | Pending | Rush order if needed |
+| Day 1 | Facility tour and emergency procedures | HR/Manager | Morning of Day 1 | High | Employee arrival | Pending | Include safety protocols, exits |
+| Day 1 | Complete I9 verification and documentation | HR | Day 1 | Critical | Employee present with documents | Pending | Legal requirement - no delays |
+| Day 1 | IT equipment handover and setup | IT | Day 1 | High | Equipment ready | Pending | Login credentials, password setup |
+| Day 1 | Benefits enrollment session | HR | Day 1 | High | Employee handbook review | Pending | Health, retirement, PTO policies |
+| Week 1 | Department introduction meetings | Manager | Within 3 days | Medium | Manager availability | Pending | Key team members, stakeholders |
+| Week 1 | Role-specific training schedule | Manager | Within 5 days | High | Training materials ready | Pending | Job-specific skills, processes |
+| Week 1 | Assign buddy/mentor | Manager | Day 1 | Medium | Buddy availability | Pending | Peer support for questions |
+| Week 2 | First project assignment | Manager | Week 2 | Medium | Initial training complete | Pending | Manageable scope for learning |
+| Week 2 | Check-in meeting with HR | HR | End of Week 2 | Medium | Employee settled | Pending | Address any concerns or gaps |
+| Month 1 | 30-day review meeting | Manager | Day 30 | High | Performance observations | Pending | Feedback, goal setting |
+| Month 3 | 90-day performance review | Manager | Day 90 | High | Performance data | Pending | Formal evaluation, development plan |
+
+## SHEET 3: OFFBOARDING CHECKLIST TEMPLATE
+| Task Category | Task Description | Responsible Party | Due Timeline | Priority Level | Dependencies | Completion Status | Notes |
+|---------------|------------------|-------------------|---------------|----------------|--------------|-------------------|--------|
+| Notice Period | Document transition plan | Manager | Within 2 days of notice | High | Resignation received | Pending | Project handovers, knowledge transfer |
+| Notice Period | Announce departure to team | Manager | Within 3 days of notice | Medium | Employee consent | Pending | Internal communication plan |
+| Notice Period | Begin knowledge transfer sessions | Manager | Within 1 week | High | Transition plan ready | Pending | Document processes, contacts |
+| Notice Period | Update project assignments | Manager | Within 1 week | High | Workload assessment | Pending | Redistribute responsibilities |
+| Final Week | Conduct exit interview | HR | 2 days before last day | Medium | Employee availability | Pending | Gather feedback, improvement suggestions |
+| Final Week | Complete final timesheet/expense reports | Manager/Finance | 3 days before last day | High | Employee records | Pending | Final payroll processing |
+| Final Week | Return company property | IT/Admin | Last day | Critical | Asset inventory | Pending | Laptop, phone, keys, ID badge |
+| Final Week | Disable system access | IT | Last day | Critical | Manager approval | Pending | Email, servers, applications |
+| Final Week | Remove from building access | Security | Last day | Critical | IT confirmation | Pending | Card access, parking |
+| Final Week | Process final pay and benefits | HR/Finance | Last day | Critical | All approvals complete | Pending | COBRA information, final statements |
+| Post-Departure | Conduct 30-day post-exit check | HR | 30 days after departure | Low | Contact information | Pending | Address any outstanding issues |
+| Post-Departure | Update organizational charts | HR | Within 1 week | Medium | Replacement confirmed | Pending | Internal directory updates |
+
+## SHEET 4: INDIVIDUAL EMPLOYEE TRACKING
+| Employee Name: [Dynamic Field] | Employee ID: [Dynamic Field] | Start Date: [Dynamic Field] | Department: [Dynamic Field] |
+|--------------------------------|------------------------------|----------------------------|----------------------------|
+
+### ONBOARDING PROGRESS TRACKER
+| Task | Assigned To | Due Date | Status | Completion Date | Issues/Notes |
+|------|-------------|----------|--------|-----------------|--------------|
+| Pre-arrival setup | HR Team | [Auto-calculated] | In Progress | | Equipment delayed 2 days |
+| First day orientation | Manager | [Start Date] | Not Started | | |
+| IT system access | IT Team | [Start Date] | Complete | 2024-01-15 | All systems operational |
+| Benefits enrollment | HR Team | [Start Date] | Complete | 2024-01-15 | Enrolled in health plan |
+| Department introductions | Manager | [Start Date +3] | In Progress | | Scheduled for tomorrow |
+
+### OFFBOARDING PROGRESS TRACKER
+| Task | Assigned To | Due Date | Status | Completion Date | Issues/Notes |
+|------|-------------|----------|--------|-----------------|--------------|
+| Knowledge transfer | Manager | [Last Day -7] | Not Started | | |
+| Asset return | IT Team | [Last Day] | Not Started | | |
+| System deactivation | IT Team | [Last Day] | Not Started | | |
+| Final documentation | HR Team | [Last Day] | Not Started | | |
+
+## SHEET 5: SYSTEM ADMINISTRATION
+### RESPONSIBLE PARTIES CONTACT LIST
+| Role | Name | Email | Phone | Backup Contact |
+|------|------|-------|-------|----------------|
+| HR Administrator | Jane Smith | jane.hr@octaviacarbon.com | +254-XXX-XXXX | Mary Johnson |
+| IT Administrator | Tech Support | it.support@octaviacarbon.com | +254-XXX-XXXX | John Tech |
+| Facilities Manager | Facilities Team | facilities@octaviacarbon.com | +254-XXX-XXXX | Security Desk |
+| Finance Contact | Finance Team | finance@octaviacarbon.com | +254-XXX-XXXX | Accounting |
+
+### SYSTEM CONFIGURATION
+| Setting | Value | Description | Last Updated |
+|---------|-------|-------------|--------------|
+| Onboarding Duration | 90 days | Standard probation period | 2024-01-01 |
+| Notice Period | 30 days | Standard for permanent employees | 2024-01-01 |
+| Reminder Frequency | 48 hours | Auto-reminder for overdue tasks | 2024-01-01 |
+| Escalation Threshold | 5 days | When to escalate to manager | 2024-01-01 |
+
+### APPROVAL WORKFLOWS
+| Process | Approval Level 1 | Approval Level 2 | Final Authority |
+|---------|------------------|------------------|-----------------|
+| New Employee Setup | Direct Manager | Department Head | HR Director |
+| System Access Requests | IT Administrator | Security Manager | IT Director |
+| Offboarding Approval | Direct Manager | HR Administrator | Department Head |
+
+## SHEET 6: REPORTING DASHBOARD
+### ONBOARDING METRICS
+| Metric | Current Month | Last Month | YTD | Target |
+|--------|---------------|------------|-----|---------|
+| New Hires | 3 | 5 | 28 | 35 |
+| Onboarding Completion Rate | 85% | 90% | 88% | 95% |
+| Average Time to Productivity | 25 days | 30 days | 28 days | 21 days |
+| First Day Readiness | 67% | 80% | 75% | 100% |
+
+### OFFBOARDING METRICS
+| Metric | Current Month | Last Month | YTD | Target |
+|--------|---------------|------------|-----|---------|
+| Departures | 2 | 1 | 12 | N/A |
+| Offboarding Completion Rate | 100% | 50% | 75% | 100% |
+| Asset Recovery Rate | 90% | 80% | 85% | 100% |
+| Exit Interview Completion | 100% | 100% | 92% | 100% |
+
+### RISK INDICATORS
+| Risk Factor | Current Status | Threshold | Action Required |
+|-------------|----------------|-----------|-----------------|
+| Overdue Onboarding Tasks | 3 tasks | 5 tasks | Monitor |
+| Active System Access (Post-Departure) | 0 accounts | 0 accounts | Good |
+| Unreturned Assets | 1 laptop | 0 items | Follow up required |
+| Incomplete Documentation | 2 files | 0 files | Complete by Friday |
+
+## USAGE INSTRUCTIONS AND NOTES
+
+### For HR Administrators:
+- Update the Employee Master Tracker weekly
+- Use individual employee sheets for detailed tracking
+- Monitor the dashboard for compliance issues
+- Set up automated reminders for critical tasks
+
+### For Managers:
+- Review your direct reports' progress weekly
+- Complete manager-specific tasks on time
+- Use the system to plan workload during transitions
+- Provide feedback on process improvements
+
+### For IT Security:
+- Focus on access control and asset recovery
+- Monitor system access post-departure
+- Maintain security protocols during transitions
+- Update technical requirements as needed
+
+### For Employees:
+- Reference your individual tracking sheet
+- Complete required tasks by due dates
+- Communicate any issues or delays promptly
+- Provide feedback for process improvement
+
+### SCALING CONSIDERATIONS:
+- Add department-specific onboarding modules as needed
+- Implement role-based access controls for sensitive data
+- Consider integration with HRIS systems as you grow
+- Regularly review and update checklists based on feedback
+
+### COMPLIANCE NOTES:
+- Ensure all legal requirements are met (I9, tax forms, etc.)
+- Maintain audit trails for all processes
+- Keep documentation for employment law compliance
+- Regular review of data retention policies

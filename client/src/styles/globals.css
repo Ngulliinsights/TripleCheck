@@ -153,11 +153,10 @@
   }
   
   /* 
-    DARK MODE STRATEGY
-    =================
-    Maintains psychological color impact while ensuring readability. The key principle
-    is to brighten colors for contrast while preserving their emotional associations.
-    Each color family maintains its semantic meaning across both light and dark modes.
+    DARK MODE OPTIMIZATION
+    =====================
+    Maintains psychological color impact while ensuring superior readability.
+    Each color family preserves its semantic meaning while adapting to dark contexts.
   */
   @media (prefers-color-scheme: dark) {
     :root {
@@ -244,33 +243,42 @@
   }
   
   /* 
-    TYPOGRAPHY OPTIMIZATION
-    ======================
-    Builds on Tailwind's typography system with real estate-specific enhancements.
-    Focuses on readability for property descriptions, pricing, and market data.
+    TYPOGRAPHY FOUNDATION
+    ====================
+    Optimized for real estate content with enhanced readability and brand consistency.
   */
   body {
-    @apply bg-background text-foreground antialiased leading-relaxed;
+    @apply bg-background text-foreground;
     font-feature-settings: "kern" 1, "liga" 1, "clig" 1, "calt" 1;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
-  /* Brand-consistent heading hierarchy */
+  /* Brand-consistent heading hierarchy with improved spacing */
   h1, h2, h3, h4, h5, h6 {
     color: hsl(var(--primary));
-    @apply font-semibold tracking-tight;
-    line-height: 1.2;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
   }
   
-  /* Enhanced accessibility with branded focus states */
+  /* Enhanced accessibility with consistent focus states */
   *:focus-visible {
     outline: 2px solid hsl(var(--primary));
     outline-offset: 2px;
     border-radius: calc(var(--radius) - 2px);
   }
   
-  /* Smooth scrolling for improved user experience */
+  /* Optimized scrolling behavior */
   html {
     scroll-behavior: smooth;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
   
   /* Brand-consistent text selection */
@@ -279,26 +287,34 @@
     color: hsl(var(--secondary));
   }
   
-  /* Placeholder styling for form consistency */
+  /* Enhanced placeholder styling */
   ::placeholder {
     color: hsl(var(--muted-foreground));
     opacity: 1;
+  }
+  
+  /* Improved form input styling */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    @apply transition-colors duration-200 ease-in-out;
   }
 }
 
 @layer components {
   /* 
-    PROPERTY IDENTIFICATION SYSTEM
-    =============================
-    Sophisticated badge system with enhanced interaction states and semantic meaning.
-    Each property type receives psychologically appropriate visual treatment.
+    REFINED PROPERTY IDENTIFICATION SYSTEM
+    =====================================
+    Enhanced badge system with improved accessibility and interaction states.
   */
   .property-badge {
     @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium;
     @apply transition-all duration-300 ease-out cursor-pointer;
     @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply select-none;
   }
   
+  /* Individual property badge styles with consistent pattern */
   .property-badge--residential {
     background-color: hsl(var(--property-residential) / 0.1);
     color: hsl(var(--property-residential));
@@ -348,14 +364,14 @@
   }
   
   /* 
-    TRUST STATUS COMMUNICATION
-    =========================
-    Clear visual hierarchy for building user confidence. Each trust state uses
-    universally recognized color conventions while maintaining brand consistency.
+    ENHANCED TRUST STATUS SYSTEM
+    ===========================
+    Refined visual hierarchy with improved accessibility and consistency.
   */
   .trust-badge {
     @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium;
     @apply transition-all duration-200 ease-out;
+    @apply select-none;
   }
   
   .trust-badge--verified {
@@ -383,26 +399,20 @@
   }
   
   /* 
-    ENHANCED PROPERTY CARDS
-    ======================
-    Sophisticated multi-layer interaction system. These cards are the primary
-    interface for property browsing and include progressive enhancement for
-    different interaction states.
+    OPTIMIZED PROPERTY CARDS
+    =======================
+    Enhanced performance and interaction with improved visual hierarchy.
   */
   .property-card {
     @apply bg-card border border-card-border rounded-lg p-6 cursor-pointer;
     @apply transition-all duration-300 ease-out;
     @apply focus:outline-none focus:ring-2 focus:ring-primary/50;
+    @apply will-change-transform;
   }
   
   .property-card:hover {
-    transform: translateY(-3px);
-    background-color: hsl(var(--card-hover));
-    border-color: hsl(var(--secondary) / 0.4);
-    box-shadow: 
-      0 20px 25px -5px rgba(0, 0, 0, 0.1),
-      0 10px 10px -5px rgba(0, 0, 0, 0.04),
-      0 0 20px hsl(var(--secondary) / 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -8px hsl(var(--secondary) / 0.15);
   }
   
   .property-card:active {
@@ -411,30 +421,33 @@
   }
   
   .property-card--featured {
-    border-color: hsl(var(--property-featured) / 0.3);
-    background: linear-gradient(135deg, 
-      hsl(var(--card)) 0%, 
-      hsl(var(--property-featured) / 0.02) 100%);
+    border-color: hsl(var(--secondary));
+    background: linear-gradient(
+      135deg,
+      hsl(var(--secondary-muted)) 0%,
+      hsl(var(--background)) 100%
+    );
   }
   
   .property-card--featured:hover {
-    border-color: hsl(var(--property-featured) / 0.5);
-    box-shadow: 
-      0 20px 25px -5px rgba(0, 0, 0, 0.1),
-      0 10px 10px -5px rgba(0, 0, 0, 0.04),
-      0 0 20px hsl(var(--property-featured) / 0.2);
+    box-shadow: 0 12px 24px -8px hsl(var(--secondary) / 0.25);
+    background: linear-gradient(
+      135deg,
+      hsl(var(--secondary-muted)) 0%,
+      hsl(var(--background)) 60%
+    );
   }
   
   /* 
-    STRATEGIC BUTTON SYSTEM
-    ======================
-    Conversion-optimized button system using psychological color associations.
-    Each button type serves specific user journey purposes.
+    REFINED BUTTON SYSTEM
+    ====================
+    Optimized for performance and consistency with improved accessibility.
   */
   .btn {
     @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
     @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply select-none will-change-transform;
   }
   
   .btn-primary {
@@ -462,18 +475,25 @@
   .btn-secondary {
     @apply btn;
     background-color: transparent;
-    color: hsl(var(--primary));
-    border: 1px solid hsl(var(--primary));
+    color: hsl(var(--secondary));
+    border: 1px solid hsl(var(--secondary));
   }
   
   .btn-secondary:hover:not(:disabled) {
-    background-color: hsl(var(--primary-hover) / 0.05);
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
     transform: translateY(-1px);
-    border-color: hsl(var(--primary-hover));
+    box-shadow: 0 4px 12px hsl(var(--secondary) / 0.25);
   }
   
+  .btn-secondary:active:not(:disabled) {
+    background-color: hsl(var(--secondary-active));
+    transform: translateY(0);
+  }
+
   .btn-secondary:focus {
-    --tw-ring-color: hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 0 2px hsl(var(--background)),
+                0 0 0 4px hsl(var(--secondary));
   }
   
   .btn-accent {
@@ -511,9 +531,9 @@
   }
   
   /* 
-    FORM COMPONENTS
-    ==============
-    Consistent form styling that integrates with the color system.
+    ENHANCED FORM SYSTEM
+    ===================
+    Improved accessibility and visual consistency across all form elements.
   */
   .form-input {
     @apply w-full px-3 py-2 border border-input rounded-md;
@@ -522,8 +542,16 @@
     @apply transition-colors duration-200;
   }
   
-  .form-input:hover {
+  .form-input:hover:not(:focus) {
     border-color: hsl(var(--primary) / 0.5);
+  }
+  
+  .form-input:invalid {
+    border-color: hsl(var(--trust-danger));
+  }
+  
+  .form-input:valid {
+    border-color: hsl(var(--trust-verified));
   }
   
   .form-label {
@@ -538,20 +566,59 @@
   .form-help {
     @apply text-sm text-muted-foreground mt-1;
   }
+  
+  /* 
+    LOADING STATES
+    =============
+    Consistent loading indicators across all components.
+  */
+  .loading-spinner {
+    @apply inline-block animate-spin rounded-full border-2 border-current border-t-transparent;
+    width: 1rem;
+    height: 1rem;
+  }
+  
+  .loading-skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+  
+  /* 
+    ENHANCED TOOLTIPS
+    ================
+    Accessible tooltip system with proper positioning and styling.
+  */
+  .tooltip {
+    @apply relative inline-block;
+  }
+  
+  .tooltip::before {
+    @apply absolute invisible opacity-0 transition-opacity duration-200;
+    @apply bg-foreground text-background text-xs px-2 py-1 rounded;
+    @apply whitespace-nowrap z-50;
+    content: attr(data-tooltip);
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 0.5rem;
+  }
+  
+  .tooltip:hover::before {
+    @apply visible opacity-100;
+  }
 }
 
 @layer utilities {
   /* 
-    BRAND GRADIENT SYSTEM
-    ====================
-    Psychological color progressions for emotional impact and brand recognition.
-    Each gradient serves specific purposes in the user journey.
+    ENHANCED GRADIENT SYSTEM
+    =======================
+    Optimized gradient utilities with improved performance and visual impact.
   */
   .text-gradient-brand {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    background-size: 200% 200%;
   }
   
   .text-gradient-premium {
@@ -559,6 +626,7 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    background-size: 200% 200%;
   }
   
   .text-gradient-luxury {
@@ -566,6 +634,7 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    background-size: 200% 200%;
   }
   
   .bg-gradient-brand {
@@ -581,10 +650,9 @@
   }
   
   /* 
-    RESPONSIVE TYPOGRAPHY
-    ====================
-    Fluid scaling system optimized for property listings across all device sizes.
-    Maintains readability while providing visual hierarchy.
+    OPTIMIZED FLUID TYPOGRAPHY
+    =========================
+    Refined scaling system with improved readability across all devices.
   */
   .text-fluid-xs { font-size: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem); }
   .text-fluid-sm { font-size: clamp(0.875rem, 0.8rem + 0.375vw, 1rem); }
@@ -596,88 +664,333 @@
   .text-fluid-4xl { font-size: clamp(2.25rem, 2rem + 1.25vw, 3rem); }
   
   /* 
-    INTERACTIVE GLOW EFFECTS
-    =======================
-    Brand-consistent hover states for enhanced user engagement.
-    Each glow effect reinforces the psychological associations of its color.
+    REFINED GLOW EFFECTS
+    ===================
+    Performance-optimized hover effects with consistent timing.
   */
   .hover-glow-warm:hover {
     box-shadow: 0 0 20px hsl(var(--secondary) / 0.3);
+    transition: box-shadow 0.3s ease;
   }
   
   .hover-glow-trust:hover {
     box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+    transition: box-shadow 0.3s ease;
   }
   
   .hover-glow-premium:hover {
     box-shadow: 0 0 20px hsl(var(--accent) / 0.3);
+    transition: box-shadow 0.3s ease;
   }
   
   .hover-glow-luxury:hover {
     box-shadow: 0 0 20px hsl(var(--property-luxury) / 0.3);
+    transition: box-shadow 0.3s ease;
   }
   
   .hover-glow-success:hover {
     box-shadow: 0 0 20px hsl(var(--trust-verified) / 0.3);
+    transition: box-shadow 0.3s ease;
   }
   
-  /* 
-    PROPERTY STATUS UTILITIES
-    ========================
-    Comprehensive utility system for property type identification and status communication.
-    Enables quick visual differentiation across all interface elements.
-  */
+  .hover-glow-coral:hover {
+    box-shadow: 0 0 15px hsl(var(--secondary) / 0.5);
+    transition: box-shadow 0.3s ease;
+  }
   
-  /* Property type colors */
-  .text-property-residential { color: hsl(var(--property-residential)); }
-  .text-property-commercial { color: hsl(var(--property-commercial)); }
-  .text-property-featured { color: hsl(var(--property-featured)); }
-  .text-property-luxury { color: hsl(var(--property-luxury)); }
-  
-  /* Property type backgrounds */
-  .bg-property-residential { background-color: hsl(var(--property-residential) / 0.05); }
-  .bg-property-commercial { background-color: hsl(var(--property-commercial) / 0.05); }
-  .bg-property-featured { background-color: hsl(var(--property-featured) / 0.05); }
-  .bg-property-luxury { background-color: hsl(var(--property-luxury) / 0.05); }
-  
-  /* Property type borders */
-  .border-property-residential { border-color: hsl(var(--property-residential)); }
-  .border-property-commercial { border-color: hsl(var(--property-commercial)); }
-  .border-property-featured { border-color: hsl(var(--property-featured)); }
-  .border-property-luxury { border-color: hsl(var(--property-luxury)); }
-  
-  /* Trust status colors */
-  .text-trust-verified { color: hsl(var(--trust-verified)); }
-  .text-trust-pending { color: hsl(var(--trust-pending)); }
-  .text-trust-warning { color: hsl(var(--trust-warning)); }
-  .text-trust-danger { color: hsl(var(--trust-danger)); }
-  
-  /* Trust status backgrounds */
-  .bg-trust-verified { background-color: hsl(var(--trust-verified) / 0.1); }
-  .bg-trust-pending { background-color: hsl(var(--trust-pending) / 0.1); }
-  .bg-trust-warning { background-color: hsl(var(--trust-warning) / 0.1); }
-  .bg-trust-danger { background-color: hsl(var(--trust-danger) / 0.1); }
-  
-  /* Analytics colors for data visualization */
-  .text-chart-primary { color: hsl(var(--chart-primary)); }
-  .text-chart-secondary { color: hsl(var(--chart-secondary)); }
-  .text-chart-accent { color: hsl(var(--chart-accent)); }
-  .text-chart-success { color: hsl(var(--chart-success)); }
-  /* Analytics utilities */
-  .text-analytics-primary { color: hsl(var(--analytics-primary)); }
-  .text-analytics-secondary { color: hsl(var(--analytics-secondary)); }
-  .text-analytics-accent { color: hsl(var(--analytics-accent)); }
-  
-  .bg-analytics-primary { background-color: hsl(var(--analytics-primary) / 0.1); }
-  .bg-analytics-secondary { background-color: hsl(var(--analytics-secondary) / 0.1); }
-  .bg-analytics-accent { background-color: hsl(var(--analytics-accent) / 0.1); }
+/* 
+COMPREHENSIVE PROPERTY UTILITIES
+===============================
+Complete utility system for property type identification and styling.
+Optimized for performance and maintainability.
+*/
+
+/* ========================================
+   PROPERTY TYPE SYSTEM
+   ======================================== */
+
+/* Property type text colors */
+.text-property-residential { color: hsl(var(--property-residential)); }
+.text-property-commercial { color: hsl(var(--property-commercial)); }
+.text-property-featured { color: hsl(var(--property-featured)); }
+.text-property-luxury { color: hsl(var(--property-luxury)); }
+
+/* Property type backgrounds with consistent alpha */
+.bg-property-residential { background-color: hsl(var(--property-residential) / 0.05); }
+.bg-property-commercial { background-color: hsl(var(--property-commercial) / 0.05); }
+.bg-property-featured { background-color: hsl(var(--property-featured) / 0.05); }
+.bg-property-luxury { background-color: hsl(var(--property-luxury) / 0.05); }
+
+/* Property type backgrounds - medium alpha for hover states */
+.bg-property-residential-medium { background-color: hsl(var(--property-residential) / 0.15); }
+.bg-property-commercial-medium { background-color: hsl(var(--property-commercial) / 0.15); }
+.bg-property-featured-medium { background-color: hsl(var(--property-featured) / 0.15); }
+.bg-property-luxury-medium { background-color: hsl(var(--property-luxury) / 0.15); }
+
+/* Property type borders */
+.border-property-residential { border-color: hsl(var(--property-residential)); }
+.border-property-commercial { border-color: hsl(var(--property-commercial)); }
+.border-property-featured { border-color: hsl(var(--property-featured)); }
+.border-property-luxury { border-color: hsl(var(--property-luxury)); }
+
+/* Property type border with alpha for subtle effects */
+.border-property-residential-subtle { border-color: hsl(var(--property-residential) / 0.3); }
+.border-property-commercial-subtle { border-color: hsl(var(--property-commercial) / 0.3); }
+.border-property-featured-subtle { border-color: hsl(var(--property-featured) / 0.3); }
+.border-property-luxury-subtle { border-color: hsl(var(--property-luxury) / 0.3); }
+
+/* ========================================
+   TRUST STATUS SYSTEM
+   ======================================== */
+
+/* Trust status text colors */
+.text-trust-verified { color: hsl(var(--trust-verified)); }
+.text-trust-pending { color: hsl(var(--trust-pending)); }
+.text-trust-warning { color: hsl(var(--trust-warning)); }
+.text-trust-danger { color: hsl(var(--trust-danger)); }
+
+/* Trust status backgrounds */
+.bg-trust-verified { background-color: hsl(var(--trust-verified) / 0.1); }
+.bg-trust-pending { background-color: hsl(var(--trust-pending) / 0.1); }
+.bg-trust-warning { background-color: hsl(var(--trust-warning) / 0.1); }
+.bg-trust-danger { background-color: hsl(var(--trust-danger) / 0.1); }
+
+/* Trust status borders */
+.border-trust-verified { border-color: hsl(var(--trust-verified)); }
+.border-trust-pending { border-color: hsl(var(--trust-pending)); }
+.border-trust-warning { border-color: hsl(var(--trust-warning)); }
+.border-trust-danger { border-color: hsl(var(--trust-danger)); }
+
+/* ========================================
+   ANALYTICS & DATA VISUALIZATION
+   ======================================== */
+
+/* Chart colors for data visualization */
+.text-chart-primary { color: hsl(var(--chart-primary)); }
+.text-chart-secondary { color: hsl(var(--chart-secondary)); }
+.text-chart-accent { color: hsl(var(--chart-accent)); }
+.text-chart-success { color: hsl(var(--chart-success)); }
+
+/* Analytics utilities */
+.text-analytics-primary { color: hsl(var(--analytics-primary)); }
+.text-analytics-secondary { color: hsl(var(--analytics-secondary)); }
+.text-analytics-accent { color: hsl(var(--analytics-accent)); }
+
+.bg-analytics-primary { background-color: hsl(var(--analytics-primary) / 0.1); }
+.bg-analytics-secondary { background-color: hsl(var(--analytics-secondary) / 0.1); }
+.bg-analytics-accent { background-color: hsl(var(--analytics-accent) / 0.1); }
+
+/* Chart background fills */
+.fill-chart-primary { fill: hsl(var(--chart-primary)); }
+.fill-chart-secondary { fill: hsl(var(--chart-secondary)); }
+.fill-chart-accent { fill: hsl(var(--chart-accent)); }
+.fill-chart-success { fill: hsl(var(--chart-success)); }
+
+/* ========================================
+   CORAL THEME SYSTEM
+   ======================================== */
+
+/* Coral text colors */
+.text-coral { color: hsl(var(--secondary)); }
+.text-coral-light { color: hsl(var(--secondary-light)); }
+.text-coral-dark { color: hsl(var(--secondary-active)); }
+
+/* Coral backgrounds */
+.bg-coral { background-color: hsl(var(--secondary)); }
+.bg-coral-light { background-color: hsl(var(--secondary-light)); }
+.bg-coral-dark { background-color: hsl(var(--secondary-active)); }
+.bg-coral-muted { background-color: hsl(var(--secondary-muted)); }
+
+/* Coral borders */
+.border-coral { border-color: hsl(var(--secondary)); }
+.border-coral-light { border-color: hsl(var(--secondary-light)); }
+.border-coral-dark { border-color: hsl(var(--secondary-active)); }
+
+/* Coral gradients - optimized for performance */
+.bg-gradient-coral {
+  background-image: linear-gradient(
+    to right,
+    hsl(var(--secondary-active)),
+    hsl(var(--secondary)),
+    hsl(var(--secondary-light))
+  );
 }
 
-/* 
-  ACCESSIBILITY COMPLIANCE
-  =======================
-  Respects user preferences for inclusive design.
-*/
+.bg-gradient-coral-subtle {
+  background-image: linear-gradient(
+    to right,
+    hsl(var(--secondary-muted)),
+    hsl(var(--secondary-light))
+  );
+}
+
+.bg-gradient-coral-vertical {
+  background-image: linear-gradient(
+    to bottom,
+    hsl(var(--secondary-light)),
+    hsl(var(--secondary)),
+    hsl(var(--secondary-active))
+  );
+}
+
+/* ========================================
+   INTERACTIVE STATES
+   ======================================== */
+
+/* Hover effects with consistent timing */
+.hover-coral:hover {
+  color: hsl(var(--secondary));
+  transition: color 0.2s ease-in-out;
+}
+
+.hover-bg-coral:hover {
+  background-color: hsl(var(--secondary));
+  transition: background-color 0.2s ease-in-out;
+}
+
+.hover-bg-coral-light:hover {
+  background-color: hsl(var(--secondary-light));
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Property type hover effects */
+.hover-property-residential:hover {
+  background-color: hsl(var(--property-residential) / 0.15);
+  transition: background-color 0.2s ease-in-out;
+}
+
+.hover-property-commercial:hover {
+  background-color: hsl(var(--property-commercial) / 0.15);
+  transition: background-color 0.2s ease-in-out;
+}
+
+.hover-property-featured:hover {
+  background-color: hsl(var(--property-featured) / 0.15);
+  transition: background-color 0.2s ease-in-out;
+}
+
+.hover-property-luxury:hover {
+  background-color: hsl(var(--property-luxury) / 0.15);
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* ========================================
+   VISUAL EFFECTS
+   ======================================== */
+
+/* Glow effects for premium interactions */
+.hover-glow-coral:hover {
+  box-shadow: 0 0 20px hsl(var(--secondary) / 0.4);
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.hover-glow-property-luxury:hover {
+  box-shadow: 0 0 25px hsl(var(--property-luxury) / 0.5);
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.hover-glow-featured:hover {
+  box-shadow: 0 0 20px hsl(var(--property-featured) / 0.4);
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+/* Elevated shadow for premium properties */
+.shadow-property-luxury {
+  box-shadow: 0 8px 25px -5px hsl(var(--property-luxury) / 0.3);
+}
+
+.shadow-property-featured {
+  box-shadow: 0 4px 20px -3px hsl(var(--property-featured) / 0.25);
+}
+
+/* ========================================
+   FOCUS STATES (ACCESSIBILITY)
+   ======================================== */
+
+/* Focus rings with consistent styling */
+.focus-ring-coral:focus {
+  outline: 2px solid hsl(var(--secondary));
+  outline-offset: 2px;
+}
+
+.focus-ring-property-residential:focus {
+  outline: 2px solid hsl(var(--property-residential));
+  outline-offset: 2px;
+}
+
+.focus-ring-property-commercial:focus {
+  outline: 2px solid hsl(var(--property-commercial));
+  outline-offset: 2px;
+}
+
+.focus-ring-property-featured:focus {
+  outline: 2px solid hsl(var(--property-featured));
+  outline-offset: 2px;
+}
+
+.focus-ring-property-luxury:focus {
+  outline: 2px solid hsl(var(--property-luxury));
+  outline-offset: 2px;
+}
+
+/* ========================================
+   UTILITY MODIFIERS
+   ======================================== */
+
+/* Opacity variants for layered effects */
+.bg-coral-10 { background-color: hsl(var(--secondary) / 0.1); }
+.bg-coral-20 { background-color: hsl(var(--secondary) / 0.2); }
+.bg-coral-30 { background-color: hsl(var(--secondary) / 0.3); }
+
+.text-coral-80 { color: hsl(var(--secondary) / 0.8); }
+.text-coral-60 { color: hsl(var(--secondary) / 0.6); }
+.text-coral-40 { color: hsl(var(--secondary) / 0.4); }
+
+/* Trust indicator dots */
+.dot-trust-verified::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: hsl(var(--trust-verified));
+  margin-right: 8px;
+}
+
+.dot-trust-pending::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: hsl(var(--trust-pending));
+  margin-right: 8px;
+}
+
+.dot-trust-warning::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: hsl(var(--trust-warning));
+  margin-right: 8px;
+}
+
+.dot-trust-danger::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: hsl(var(--trust-danger));
+  margin-right: 8px;
+}
+
+/* ========================================
+   ACCESSIBILITY COMPLIANCE
+   ======================================== */
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -687,21 +1000,39 @@
     transition-duration: 0.01ms !important;
   }
   
-  /* Remove transforms for users who prefer reduced motion */
+  /* Remove transforms and effects for users who prefer reduced motion */
   .property-card:hover,
   .btn-primary:hover,
   .btn-secondary:hover,
   .btn-accent:hover,
-  .property-badge:hover {
+  .property-badge:hover,
+  .hover-glow-coral:hover,
+  .hover-glow-property-luxury:hover,
+  .hover-glow-featured:hover {
     transform: none !important;
+    box-shadow: none !important;
   }
 }
 
-/* 
-  PRINT STYLES
-  ============
-  Optimized for property listing printouts.
-*/
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .bg-property-residential,
+  .bg-property-commercial,
+  .bg-property-featured,
+  .bg-property-luxury,
+  .bg-trust-verified,
+  .bg-trust-pending,
+  .bg-trust-warning,
+  .bg-trust-danger {
+    background-color: transparent;
+    border: 2px solid currentColor;
+  }
+}
+
+/* ========================================
+   PRINT OPTIMIZATION
+   ======================================== */
+
 @media print {
   .property-card {
     break-inside: avoid;
@@ -711,8 +1042,30 @@
   
   .text-gradient-brand,
   .text-gradient-premium,
-  .text-gradient-luxury {
+  .text-gradient-luxury,
+  .bg-gradient-coral,
+  .bg-gradient-coral-subtle,
+  .bg-gradient-coral-vertical {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+  
+  /* Simplify colors for printing */
+  .text-coral,
+  .text-coral-light,
+  .text-coral-dark {
+    color: #000 !important;
+  }
+  
+  /* Remove backgrounds and shadows for print */
+  .bg-coral,
+  .bg-coral-light,
+  .bg-coral-dark,
+  .bg-coral-muted,
+  .shadow-property-luxury,
+  .shadow-property-featured {
+    background: none !important;
+    box-shadow: none !important;
+  }
+}
 }

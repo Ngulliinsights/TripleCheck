@@ -342,11 +342,8 @@ export default function HomePage() {
   }, []);
 
   const handleLearnMore = useCallback(() => {
-    smoothScrollTo('features');
-  }, []);
-
-  const openDemoVideo = useCallback(() => {
-    window.open('https://www.youtube.com/embed/IjhSHyfQpaQ', '_blank', 'noopener,noreferrer');
+    // Open strategic YouTube video as requested
+    window.open('https://youtu.be/IjhSHyfQpaQ', '_blank');
   }, []);
 
   // Memoized search results count
@@ -409,7 +406,7 @@ export default function HomePage() {
                 size="lg"
                 variant="outline"
                 className="border-white text-white hover:bg-white hover:text-customSecondary px-8 py-3 transition-all duration-300 hover:scale-105"
-                onClick={openDemoVideo}
+                onClick={handleLearnMore}
                 aria-label="Watch demo video"
               >
                 Learn More

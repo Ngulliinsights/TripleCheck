@@ -37,6 +37,11 @@ import OurStoryPage from "@/pages/our-story";
 import TeamPage from "@/pages/team";
 import PartnersPage from "@/pages/partners";
 import PressMediaPage from "@/pages/press-media";
+import InboxPage from "@/pages/inbox";
+import PropertyPhotosPage from "@/pages/properties/photos";
+import PropertyOptimizePage from "@/pages/properties/optimize";
+import PropertyEditPage from "@/pages/property-edit";
+import BlogPage from "@/pages/blog";
 import { TutorialProvider, useTutorial } from "@/components/tutorial/TutorialProvider";
 
 // Component to show a button to restart the tutorial
@@ -268,6 +273,15 @@ function Navigation() {
           <NavigationMenuItem>
             <NavigationMenuLink 
               className="text-white hover:text-white/90"
+              href="/blog"
+            >
+              Blog
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem>
+            <NavigationMenuLink 
+              className="text-white hover:text-white/90"
               href="/dashboard"
             >
               Dashboard
@@ -429,6 +443,20 @@ function Router() {
           <Route path="/team" component={TeamPage} />
           <Route path="/partners" component={PartnersPage} />
           <Route path="/press-media" component={PressMediaPage} />
+
+          {/* Blog Routes */}
+          <Route path="/blog" component={BlogPage} />
+          <Route path="/blog/:id">
+            {() => <BlogPage />}
+          </Route>
+
+          {/* Additional Pages */}
+          <Route path="/inbox" component={InboxPage} />
+          <Route path="/properties/photos" component={PropertyPhotosPage} />
+          <Route path="/properties/optimize" component={PropertyOptimizePage} />
+          <Route path="/property/:id/edit">
+            {(params) => <PropertyEditPage id={params.id} />}
+          </Route>
 
           <Route component={NotFound} />
         </Switch>
