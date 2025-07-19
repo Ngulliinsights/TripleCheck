@@ -1,13 +1,13 @@
 {
   "include": [
-    "client/src/**/*",
-    "shared/**/*", 
+    "src/**/*",
     "server/**/*"
   ],
   "exclude": [
     "node_modules",
     "build",
     "dist",
+    "client",
     "**/*.test.ts",
     "**/*.spec.ts",
     "**/*.test.tsx",
@@ -51,8 +51,14 @@
     // Path Resolution
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"],
+      "@/*": ["./src/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@property/*": ["./src/property/*"],
+      "@trust/*": ["./src/trust/*"],
+      "@user/*": ["./src/user/*"],
+      "@communication/*": ["./src/communication/*"],
+      "@analytics/*": ["./src/analytics/*"],
+      "@infrastructure/*": ["./src/infrastructure/*"],
       "@server/*": ["./server/*"]
     },
     

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
 import { useState, useCallback, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,7 +103,8 @@ export default function DashboardPage() {
     error: userError,
   } = useQuery<User>({
     queryKey: ["/api/auth/me"],
-    retry: 1,
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    retry: false,
     staleTime: 10 * 60 * 1000, // 10 minutes cache for user data
   });
 

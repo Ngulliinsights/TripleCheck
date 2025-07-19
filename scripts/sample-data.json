@@ -1,0 +1,82 @@
+[
+  {
+    "id": "PROP_001",
+    "title": "Modern Apartment in Westlands",
+    "description": "Beautiful 2-bedroom apartment with modern amenities",
+    "location": "Westlands, Nairobi",
+    "price": 5500000,
+    "squareFeet": 1200,
+    "propertyType": "apartment",
+    "yearBuilt": 2020,
+    "features": {
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "amenities": ["Swimming Pool", "Gym", "Parking"]
+    },
+    "isSuspicious": false
+  },
+  {
+    "id": "PROP_002", 
+    "title": "Luxury Villa in Karen",
+    "description": "Spacious 4-bedroom villa with garden",
+    "location": "Karen, Nairobi",
+    "price": 25000000,
+    "squareFeet": 3500,
+    "propertyType": "house",
+    "yearBuilt": 2018,
+    "features": {
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "amenities": ["Garden", "Swimming Pool", "Security"]
+    },
+    "isSuspicious": false
+  },
+  {
+    "id": "PROP_003",
+    "title": "Cheap House Deal!!!",
+    "description": "House",
+    "location": "Unknown",
+    "price": 50000,
+    "squareFeet": 2000,
+    "propertyType": "house", 
+    "yearBuilt": 2025,
+    "features": {
+      "bedrooms": 1,
+      "bathrooms": 5,
+      "amenities": []
+    },
+    "isSuspicious": true
+  },
+  {
+    "id": "PROP_004",
+    "title": "Office Space in CBD",
+    "description": "Prime commercial office space in the heart of Nairobi CBD",
+    "location": "CBD, Nairobi",
+    "price": 15000000,
+    "squareFeet": 800,
+    "propertyType": "commercial",
+    "yearBuilt": 2015,
+    "features": {
+      "bedrooms": 0,
+      "bathrooms": 2,
+      "amenities": ["Elevator", "Parking", "Security"]
+    },
+    "isSuspicious": false
+  },
+  {
+    "id": "PROP_005",
+    "title": "Beachfront Property",
+    "description": "Amazing beachfront property with ocean views",
+    "location": "Mombasa",
+    "price": 1000,
+    "squareFeet": 5000,
+    "propertyType": "house",
+    "yearBuilt": 2010,
+    "features": {
+      "bedrooms": 5,
+      "bathrooms": 1,
+      "amenities": ["Beach Access", "Pool"]
+    },
+    "isSuspicious": true
+  }
+]

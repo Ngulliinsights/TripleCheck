@@ -214,14 +214,43 @@ export default function SearchResultsPage() {
     [searchQuery, filters]
   );
 
-  // React Query for fetching properties
+  // React Query for fetching properties - FIXED RACE CONDITION
   const {
     data: properties,
     isLoading,
     error,
   } = useQuery<Property[]>({
     queryKey: ["/api/properties/search", queryParams],
-    staleTime: 2 * 60 * 1000, // 2 minutes - keeps data fresh but reduces unnecessary requests
+    queryFn: async ({ queryKey }) => {
+      const [, params] = queryKey;
+      const searchParams = new URLSearchParams();
+      
+      // Build search parameters safely
+      Object.entries(params as Record<string, any>).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          searchParams.append(key, String(value));
+        }
+      });
+      
+      const url = `/api/properties/search?${searchParams.toString()}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Search failed: ${response.status}`);
+      }
+      
+      return response.json();
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: (failureCount, error: any) => {
+      // Don't retry on client errors
+      if (error?.message?.includes('4')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   // Memoized active filters count

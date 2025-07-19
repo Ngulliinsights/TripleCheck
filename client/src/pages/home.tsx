@@ -15,6 +15,7 @@ import { images } from "@/config/images";
 import { Testimonials } from "@/components/testimonials";
 import { NewsBlog } from "@/components/news-blog";
 
+
 // Enhanced type definitions with better constraints
 interface PricingPlan {
   readonly id: string;
@@ -317,16 +318,36 @@ export default function HomePage() {
     }
   }, [location]);
 
-  // Optimized effect for URL search query synchronization
+  // Optimized effect for URL search query synchronization - FIXED RACE CONDITION
   useEffect(() => {
+    // Only update if URL has a search query and it's different from current state
     if (urlSearchQuery && urlSearchQuery !== searchQuery) {
       setSearchQuery(urlSearchQuery);
     }
-  }, [urlSearchQuery, searchQuery]);
+    // If URL has no search query but state does, clear the state
+    else if (!urlSearchQuery && searchQuery) {
+      setSearchQuery('');
+    }
+  }, [urlSearchQuery]); // Removed searchQuery dependency to prevent infinite loop
 
   // Optimized query configuration with better error handling
   const queryConfig = useMemo(() => ({
     queryKey: searchQuery ? ["/api/properties", { q: searchQuery }] : ["/api/properties"],
+    queryFn: async () => {
+      const url = searchQuery 
+        ? `/api/properties?q=${encodeURIComponent(searchQuery)}`
+        : '/api/properties';
+      
+      console.log('Fetching properties from:', url); // Debug log
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('Search results:', data); // Debug log
+      return data;
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 3,
@@ -334,7 +355,10 @@ export default function HomePage() {
   }), [searchQuery]);
 
   // Enhanced React Query with better error handling
-  const { data: properties, isLoading, error } = useQuery<Property[]>(queryConfig);
+  const { data: apiResponse, isLoading, error } = useQuery<{success: boolean, data: {properties: Property[], totalCount: number}}>(queryConfig);
+  
+  // Extract properties from API response
+  const properties = apiResponse?.data?.properties;
 
   // Optimized navigation callbacks with better performance
   const handleExploreProperties = useCallback(() => {
@@ -496,6 +520,8 @@ export default function HomePage() {
       <section className="py-16 bg-white" role="region" aria-label="News and Blog">
         <NewsBlog />
       </section>
+
+
 
       {/* Enhanced Featured Properties Section */}
       <section id="featured-properties" className="py-16 bg-gray-50" role="region" aria-label="Featured Properties">

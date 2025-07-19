@@ -1,9 +1,23 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { APIError, parseError, isRetryableError, logError } from "@/utils/error-handling";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    let errorData;
+    
+    try {
+      errorData = JSON.parse(text);
+    } catch {
+      errorData = { message: text };
+    }
+    
+    throw new APIError(
+      errorData.message || res.statusText,
+      res.status,
+      errorData.code,
+      errorData
+    );
   }
 }
 
@@ -109,11 +123,43 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      refetchOnReconnect: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes instead of Infinity to prevent stale data
+      gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
+      retry: (failureCount, error: any) => {
+        const parsedError = parseError(error);
+        logError(parsedError, 'React Query Retry');
+        
+        // Use the new error handling system
+        if (!isRetryableError(parsedError)) {
+          return false;
+        }
+        
+        return failureCount < 3;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      onError: (error: any) => {
+        const parsedError = parseError(error);
+        logError(parsedError, 'React Query Error');
+      },
     },
     mutations: {
-      retry: false,
+      retry: (failureCount, error: any) => {
+        const parsedError = parseError(error);
+        logError(parsedError, 'React Query Mutation Retry');
+        
+        // Use the new error handling system
+        if (!isRetryableError(parsedError)) {
+          return false;
+        }
+        
+        return failureCount < 2;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+      onError: (error: any) => {
+        const parsedError = parseError(error);
+        logError(parsedError, 'React Query Mutation Error');
+      },
     },
   },
 });

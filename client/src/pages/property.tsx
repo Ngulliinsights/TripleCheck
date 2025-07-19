@@ -19,7 +19,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import {
   MapPin,
   Bed,
@@ -71,11 +71,23 @@ export default function PropertyPage({ id }: PropertyPageProps) {
   const { data: property, isLoading: isLoadingProperty } = useQuery<Property>({
     queryKey: [`/api/properties/${id}`],
     enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error: any) => {
+      // Don't retry on 404 errors for properties
+      if (error?.message?.includes('404')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   const { data: user } = useQuery({
     queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   // Mock verification report - in real app, this would come from API
@@ -194,7 +206,7 @@ export default function PropertyPage({ id }: PropertyPageProps) {
     );
   }
 
-  const features = property.features as PropertyFeatures;
+  const features = (property.features || {}) as PropertyFeatures;
   const amenities = features?.amenities || [];
 
   return (
@@ -217,7 +229,10 @@ export default function PropertyPage({ id }: PropertyPageProps) {
           <div className="relative aspect-video rounded-lg overflow-hidden">
             <img
               src={
-                property.imageUrls[selectedImageIndex] || property.imageUrls[0]
+                (property.imageUrls &&
+                  property.imageUrls[selectedImageIndex]) ||
+                (property.imageUrls && property.imageUrls[0]) ||
+                "/placeholder-property.jpg"
               }
               alt={property.title}
               className="w-full h-full object-cover"
@@ -235,12 +250,12 @@ export default function PropertyPage({ id }: PropertyPageProps) {
             </div>
             <div className="absolute bottom-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
               <Camera className="w-4 h-4 inline mr-1" />
-              {selectedImageIndex + 1} / {property.imageUrls.length}
+              {selectedImageIndex + 1} / {property.imageUrls?.length || 0}
             </div>
           </div>
         </div>
         <div className="space-y-2">
-          {property.imageUrls.slice(0, 4).map((url, index) => (
+          {(property.imageUrls || []).slice(0, 4).map((url, index) => (
             <div
               key={index}
               className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${
@@ -257,9 +272,9 @@ export default function PropertyPage({ id }: PropertyPageProps) {
               />
             </div>
           ))}
-          {property.imageUrls.length > 4 && (
+          {(property.imageUrls?.length || 0) > 4 && (
             <div className="aspect-square rounded-lg bg-gray-100 flex items-center justify-center text-sm text-muted-foreground">
-              +{property.imageUrls.length - 4} more
+              +{(property.imageUrls?.length || 0) - 4} more
             </div>
           )}
         </div>
@@ -279,7 +294,7 @@ export default function PropertyPage({ id }: PropertyPageProps) {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-3xl font-bold text-primary">
-                    KES {property.price.toLocaleString()}
+                    KES {property.price?.toLocaleString() || "Price on request"}
                   </span>
                   <TrustScore score={verificationReport.score} />
                 </div>
@@ -435,8 +450,14 @@ export default function PropertyPage({ id }: PropertyPageProps) {
                     <div className="flex items-center gap-2">
                       <div className="w-32 bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-green-500 h-2 rounded-full"
-                          style={{ width: `${verificationReport.score}%` }}
+                          className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                          data-progress={verificationReport.score}
+                          style={
+                            {
+                              '--progress-width': `${verificationReport.score}%`,
+                              width: 'var(--progress-width)'
+                            } as React.CSSProperties & { '--progress-width': string }
+                          }
                         />
                       </div>
                       <span className="font-medium">
