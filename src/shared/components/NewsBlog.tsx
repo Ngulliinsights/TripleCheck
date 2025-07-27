@@ -59,10 +59,7 @@ export function NewsBlog() {
   const { 
     data: posts = [], 
     isLoading, 
-    error, 
-    refetch,
-    isFetching,
-    dataUpdatedAt
+    error
   } = useRecentPosts(SKELETON_COUNT);
 
   // Memoized callback functions to prevent unnecessary re-renders of child components
@@ -74,15 +71,9 @@ export function NewsBlog() {
     navigate('/blog');
   }, [navigate]);
 
-  const handleRefresh = useCallback(() => {
-    refetch();
-  }, [refetch]);
 
-  // Memoized computation for last updated time to avoid recalculation on every render
-  const lastUpdatedText = useMemo(() => {
-    if (!dataUpdatedAt || isLoading) return null;
-    return `Last updated: ${new Date(dataUpdatedAt).toLocaleString()}`;
-  }, [dataUpdatedAt, isLoading]);
+
+
 
   // Memoized skeleton array to prevent recreation
   const skeletonArray = useMemo(() => 
@@ -96,34 +87,25 @@ export function NewsBlog() {
     [posts]
   );
 
-  // Common header section to reduce code duplication
-  const headerSection = useMemo(() => (
-    <div className="text-center mb-12">
-      <div className="flex items-center justify-center gap-3 mb-4">
-        <h2 className="text-3xl font-bold text-gradient-brand">Latest News & Insights</h2>
-        {isFetching && (
-          <div className="flex items-center gap-2 text-secondary">
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Updating...</span>
-          </div>
-        )}
-      </div>
-      <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-        Stay updated with the latest trends, insights, and best practices in real estate verification and fraud prevention
-      </p>
-      {lastUpdatedText && (
-        <p className="text-xs text-muted-foreground mt-2">
-          {lastUpdatedText}
-        </p>
-      )}
-    </div>
-  ), [isFetching, lastUpdatedText]);
+  // All useMemo hooks must be called before any conditional returns
+  // This ensures React's hook call order remains consistent across renders
+  
+
+
+  // Dynamic CTA copy based on content state - computed before conditional returns
+  const ctaCopy = useMemo(() => {
+    const postCount = transformedPosts.length;
+    if (postCount === 0) return "Explore Knowledge Base";
+    if (postCount < SKELETON_COUNT) return `View All ${postCount > 1 ? 'Stories' : 'Story'}`;
+    return "Explore Full Library";
+  }, [transformedPosts.length]);
+
+
 
   // Loading State - Early return pattern for cleaner code flow
   if (isLoading) {
     return (
       <div className="container mx-auto px-4">
-        {headerSection}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {skeletonArray.map((i) => (
             <BlogPostSkeleton key={`skeleton-${i}`} />
@@ -133,15 +115,13 @@ export function NewsBlog() {
     );
   }
 
-  // Error State - Early return pattern for cleaner code flow
+  // Error State with more specific messaging
   if (error) {
     return (
       <div className="container mx-auto px-4">
-        {headerSection}
         <ErrorState
-          title="Unable to Load Articles"
-          message="We're having trouble loading the latest articles. Please try again."
-          onRetry={handleRefresh}
+          title="Content Temporarily Unavailable"
+          message="Our editorial team is working to restore access to the knowledge base. Please check back shortly or contact support if this persists."
           variant="generic"
         />
       </div>
@@ -151,9 +131,8 @@ export function NewsBlog() {
   // Main content render
   return (
     <div className="container mx-auto px-4">
-      {headerSection}
       
-      {/* Articles Grid */}
+      {/* Content Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {transformedPosts.map((post) => (
           <BlogPostCard
@@ -167,31 +146,17 @@ export function NewsBlog() {
         ))}
       </div>
 
-      {/* Call to Action */}
+      {/* Call to Action Section */}
       <div className="text-center mt-12">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button 
-            size="lg" 
-            variant="coral"
-            className="px-8 py-3 hover:bg-secondary/90 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
-            onClick={handleViewAll}
-          >
-            View All Articles
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
-          
-          {/* Manual refresh button */}
-          <Button 
-            size="sm" 
-            variant="coral-ghost"
-            className="px-4 py-2 hover:bg-secondary/10 transition-all duration-300"
-            onClick={handleRefresh}
-            disabled={isFetching}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-            {isFetching ? 'Refreshing...' : 'Refresh Articles'}
-          </Button>
-        </div>
+        <Button 
+          size="lg" 
+          variant="coral"
+          className="px-8 py-3 hover:bg-secondary/90 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+          onClick={handleViewAll}
+        >
+          {ctaCopy}
+          <ArrowRight className="w-5 h-5 ml-2" />
+        </Button>
       </div>
     </div>
   );

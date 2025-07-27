@@ -328,7 +328,7 @@ export function ServiceCategories({
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {SERVICE_CATEGORIES.map((category, _index) => (
             <div 
               key={category.id} 
@@ -338,13 +338,13 @@ export function ServiceCategories({
             >
               {/* Main Card */}
               <Card className={`
-                relative h-64 transition-all duration-500 ease-out cursor-pointer overflow-hidden
+                relative h-48 sm:h-56 md:h-64 transition-all duration-500 ease-out cursor-pointer overflow-hidden
                 ${hoveredCategory === category.id 
                   ? 'bg-cyan-500 shadow-2xl shadow-cyan-500/25 scale-105 border-0' 
                   : 'bg-white hover:shadow-xl shadow-lg border border-gray-200 hover:scale-[1.02]'
                 }
               `}>
-                <CardContent className="p-8 h-full flex flex-col justify-center items-center text-center">
+                <CardContent className="p-4 sm:p-6 md:p-8 h-full flex flex-col justify-center items-center text-center">
                   {/* Icon */}
                   <div className={`
                     inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 transition-all duration-300
@@ -358,7 +358,7 @@ export function ServiceCategories({
                   
                   {/* Title */}
                   <h3 className={`
-                    text-2xl font-bold mb-2 transition-colors duration-300
+                    text-lg sm:text-xl md:text-2xl font-bold mb-2 transition-colors duration-300
                     ${hoveredCategory === category.id ? 'text-white' : 'text-gray-900'}
                   `}>
                     {category.name}

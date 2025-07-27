@@ -6,54 +6,94 @@ import { cn } from "@shared/lib/utils";
 import { Menu, X, Search, User, LogOut, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { safeNavigate, safeSearchNavigate, NAVIGATION_TIMEOUTS } from "@shared/utils/safe-navigation";
 
 // Safe accessibility hook - moved outside component to avoid conditional hook calls
 const createSafeAccessibilityHook = () => {
   return {
     trapFocus: (element: HTMLElement) => {
-      // Basic focus trap implementation
-      const focusableElements = element.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      const firstElement = focusableElements[0] as HTMLElement;
-      const lastElement = focusableElements[
-        focusableElements.length - 1
-      ] as HTMLElement;
+      try {
+        // Basic focus trap implementation with error handling
+        const focusableElements = element.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        
+        if (focusableElements.length === 0) {
+          console.warn("No focusable elements found for focus trap");
+          return () => {}; // Return empty cleanup function
+        }
 
-      const handleTabKey = (e: KeyboardEvent) => {
-        if (e.key === "Tab") {
-          if (e.shiftKey) {
-            if (document.activeElement === firstElement) {
-              lastElement?.focus();
-              e.preventDefault();
-            }
-          } else {
-            if (document.activeElement === lastElement) {
-              firstElement?.focus();
-              e.preventDefault();
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+        const handleTabKey = (e: KeyboardEvent) => {
+          if (e.key === "Tab") {
+            try {
+              if (e.shiftKey) {
+                if (document.activeElement === firstElement) {
+                  lastElement?.focus();
+                  e.preventDefault();
+                }
+              } else {
+                if (document.activeElement === lastElement) {
+                  firstElement?.focus();
+                  e.preventDefault();
+                }
+              }
+            } catch (focusError) {
+              console.warn("Focus trap tab handling error:", focusError);
             }
           }
+        };
+
+        document.addEventListener("keydown", handleTabKey, { passive: false });
+        
+        // Focus first element safely
+        try {
+          firstElement?.focus();
+        } catch (focusError) {
+          console.warn("Failed to focus first element:", focusError);
         }
-      };
 
-      document.addEventListener("keydown", handleTabKey);
-      firstElement?.focus();
-
-      return () => {
-        document.removeEventListener("keydown", handleTabKey);
-      };
+        return () => {
+          document.removeEventListener("keydown", handleTabKey);
+        };
+      } catch (error) {
+        console.warn("Focus trap setup error:", error);
+        return () => {}; // Return empty cleanup function
+      }
     },
     announceLiveRegion: (
       message: string,
       priority: "polite" | "assertive" = "polite"
     ) => {
-      const announcement = document.createElement("div");
-      announcement.setAttribute("aria-live", priority);
-      announcement.setAttribute("aria-atomic", "true");
-      announcement.className = "sr-only";
-      announcement.textContent = message;
-      document.body.appendChild(announcement);
-      setTimeout(() => document.body.removeChild(announcement), 1000);
+      try {
+        const announcement = document.createElement("div");
+        announcement.setAttribute("aria-live", priority);
+        announcement.setAttribute("aria-atomic", "true");
+        announcement.className = "sr-only";
+        announcement.textContent = message;
+        
+        if (document.body) {
+          document.body.appendChild(announcement);
+          
+          // Use a more reliable cleanup method
+          const timeoutId = setTimeout(() => {
+            try {
+              if (announcement.parentNode) {
+                announcement.parentNode.removeChild(announcement);
+              }
+            } catch (cleanupError) {
+              console.warn("Failed to cleanup announcement element:", cleanupError);
+            }
+          }, 1000);
+          
+          // Store timeout ID for potential cleanup
+          announcement.setAttribute('data-timeout-id', timeoutId.toString());
+        }
+      } catch (error) {
+        console.warn("Failed to create live region announcement:", error);
+      }
     },
   };
 };
@@ -80,14 +120,12 @@ interface MainSection {
 export function MobileNav({ className, variant = "default" }: MobileNavProps) {
   const navigate = useNavigate();
 
-  // State management with proper typing
+  // Simplified state management
   const [isOpen, setIsOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<readonly string[]>(
     []
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Refs for DOM manipulation
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -98,69 +136,51 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
   // Accessibility features with safe loading
   const { trapFocus, announceLiveRegion } = createSafeAccessibilityHook();
 
-  // Enhanced safe navigation function with better error handling
+  // Safe navigation with timeout protection
   const handleNavigation = useCallback(
     (href: string, event?: React.MouseEvent) => {
-      try {
-        // Prevent default behavior if event is provided
-        if (event) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-
-        // Validate href parameter for safety
-        if (!href || typeof href !== "string") {
-          throw new Error("Invalid navigation href provided");
-        }
-
-        // Close mobile menu and navigate
-        setIsOpen(false);
-        navigate(href);
-      } catch (error) {
-        // Graceful fallback with detailed logging in development
-        if (process.env.NODE_ENV === "development") {
-          // eslint-disable-next-line no-console
-          console.warn(
-            "Mobile navigation failed, falling back to window.location:",
-            error
-          );
-        }
-
-        setIsOpen(false);
-
-        try {
-          // Fallback to native navigation
-          window.location.href = href;
-        } catch (fallbackError) {
-          // Ultimate fallback to home page
-          if (process.env.NODE_ENV === "development") {
-            // eslint-disable-next-line no-console
-            console.error("Complete mobile navigation failure:", fallbackError);
-          }
-          window.location.href = "/";
-        }
+      // Prevent default behavior if event is provided
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
       }
+
+      // Close mobile menu immediately
+      setIsOpen(false);
+
+      // Use safe navigation utility
+      safeNavigate(navigate, href, {
+        timeout: NAVIGATION_TIMEOUTS.NORMAL,
+        fallbackUrl: "/",
+        onError: (error) => {
+          console.warn("Mobile navigation error:", error);
+        },
+        onTimeout: () => {
+          console.warn("Mobile navigation timeout");
+        }
+      });
     },
     [navigate]
   );
 
-  // Search functionality with proper error handling
+  // Search functionality with timeout protection
   const handleSearch = useCallback(
     (query: string) => {
       if (!query.trim()) return;
 
-      try {
-        const searchUrl = `/search?q=${encodeURIComponent(query.trim())}`;
-        setIsOpen(false);
-        navigate(searchUrl);
-      } catch (error) {
-        if (process.env.NODE_ENV === "development") {
-          // eslint-disable-next-line no-console
-          console.warn("Search navigation failed:", error);
+      setIsOpen(false);
+
+      // Use safe search navigation utility
+      safeSearchNavigate(navigate, query, {
+        timeout: NAVIGATION_TIMEOUTS.NORMAL,
+        fallbackUrl: "/search",
+        onError: (error) => {
+          console.warn("Mobile search navigation error:", error);
+        },
+        onTimeout: () => {
+          console.warn("Mobile search navigation timeout");
         }
-        // Fallback to direct URL navigation
-        window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
-      }
+      });
     },
     [navigate]
   );
@@ -202,52 +222,37 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
     },
   ] as const;
 
-  // Touch gesture handlers with proper null checking and TypeScript compatibility
+  // Simplified touch handlers - removed complex drag gestures to prevent crashes
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (!panelRef.current) return;
-
-    // Access first touch safely for TypeScript compatibility
-    const touch = e.touches.item(0);
-    if (!touch) return; // Guard against undefined touch
-
-    startXRef.current = touch.clientX;
-    startTimeRef.current = Date.now();
-    setIsDragging(true);
+    // Simple touch start tracking without complex drag logic
+    try {
+      const touch = e.touches.item(0);
+      if (touch) {
+        startXRef.current = touch.clientX;
+        startTimeRef.current = Date.now();
+      }
+    } catch (error) {
+      console.warn("Touch start error:", error);
+    }
   }, []);
 
-  const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
-      if (!isDragging || !panelRef.current) return;
-
-      // Access first touch safely for TypeScript compatibility
-      const touch = e.touches.item(0);
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    // Simple swipe-to-close detection
+    try {
+      const touch = e.changedTouches.item(0);
       if (!touch) return;
 
       const deltaX = touch.clientX - startXRef.current;
-
-      // Only allow leftward swipes (closing gesture)
-      if (deltaX < 0) {
-        setDragOffset(Math.max(deltaX, -300)); // Limit drag distance
+      const deltaTime = Date.now() - startTimeRef.current;
+      
+      // Simple left swipe detection to close menu
+      if (deltaX < -50 && deltaTime < 500) {
+        setIsOpen(false);
       }
-    },
-    [isDragging]
-  );
-
-  const handleTouchEnd = useCallback(() => {
-    if (!isDragging) return;
-
-    const deltaTime = Date.now() - startTimeRef.current;
-    const velocity = Math.abs(dragOffset) / deltaTime;
-
-    // Close if dragged more than 100px or fast swipe detected
-    if (Math.abs(dragOffset) > 100 || velocity > 0.5) {
-      setIsOpen(false);
+    } catch (error) {
+      console.warn("Touch end error:", error);
     }
-
-    // Reset drag state
-    setDragOffset(0);
-    setIsDragging(false);
-  }, [isDragging, dragOffset]);
+  }, []);
 
   // Section toggle functionality
   const toggleSection = useCallback((sectionId: string) => {
@@ -258,59 +263,118 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
     );
   }, []);
 
-  // Enhanced accessibility and focus management
+  // Simplified accessibility and focus management
   useEffect(() => {
+    let focusCleanup: (() => void) | null = null;
+    let isActive = true;
+
     const handleClickOutside = (event: Event) => {
-      if (overlayRef.current && event.target === overlayRef.current) {
+      if (isActive && overlayRef.current && event.target === overlayRef.current) {
         setIsOpen(false);
       }
     };
 
     const handleEscapeKey = (event: Event) => {
       const keyboardEvent = event as KeyboardEvent;
-      if (keyboardEvent.key === "Escape" && isOpen) {
+      if (isActive && keyboardEvent.key === "Escape" && isOpen) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      // Add event listeners
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("keydown", handleEscapeKey);
-      document.body.style.overflow = "hidden"; // Prevent background scroll
+      try {
+        // Add event listeners with better error handling
+        document.addEventListener("mousedown", handleClickOutside, { passive: true });
+        document.addEventListener("keydown", handleEscapeKey, { passive: true });
+        
+        // Prevent background scroll safely
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
 
-      // Announce menu opening to screen readers
-      announceLiveRegion("Navigation menu opened", "polite");
+        // Announce menu opening to screen readers safely
+        try {
+          announceLiveRegion("Navigation menu opened", "polite");
+        } catch (error) {
+          console.warn("Failed to announce menu opening:", error);
+        }
 
-      // Set up focus trap for accessibility
-      if (panelRef.current) {
-        const cleanup = trapFocus(panelRef.current);
+        // Set up focus trap for accessibility with error handling
+        if (panelRef.current) {
+          try {
+            focusCleanup = trapFocus(panelRef.current);
+          } catch (error) {
+            console.warn("Failed to set up focus trap:", error);
+          }
+        }
+
+        // Return cleanup function
         return () => {
-          cleanup();
-          document.removeEventListener("mousedown", handleClickOutside);
-          document.removeEventListener("keydown", handleEscapeKey);
-          document.body.style.overflow = "unset";
+          isActive = false;
+          try {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("keydown", handleEscapeKey);
+            document.body.style.overflow = originalOverflow;
+          } catch (error) {
+            console.warn("Failed to cleanup event listeners:", error);
+          }
+          
+          if (focusCleanup) {
+            try {
+              focusCleanup();
+            } catch (error) {
+              console.warn("Failed to cleanup focus trap:", error);
+            }
+          }
+        };
+      } catch (error) {
+        console.warn("Failed to set up mobile nav listeners:", error);
+        return () => {
+          isActive = false;
         };
       }
     }
 
     // Cleanup function for when component unmounts or dependencies change
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscapeKey);
-      document.body.style.overflow = "unset";
+      isActive = false;
     };
   }, [isOpen, trapFocus, announceLiveRegion]);
 
   // Reset state when menu closes
   useEffect(() => {
     if (!isOpen) {
-      setDragOffset(0);
-      setIsDragging(false);
       setExpandedSections([]);
       setSearchQuery("");
     }
   }, [isOpen]);
+
+  // Component cleanup on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      try {
+        // Clean up any remaining timeouts or intervals
+        const announcements = document.querySelectorAll('[data-timeout-id]');
+        announcements.forEach((announcement) => {
+          try {
+            const timeoutId = announcement.getAttribute('data-timeout-id');
+            if (timeoutId) {
+              clearTimeout(parseInt(timeoutId, 10));
+            }
+            if (announcement.parentNode) {
+              announcement.parentNode.removeChild(announcement);
+            }
+          } catch (error) {
+            console.warn('Failed to cleanup announcement:', error);
+          }
+        });
+        
+        // Reset body overflow in case component unmounts while menu is open
+        document.body.style.overflow = "unset";
+      } catch (error) {
+        
+      }
+    };
+  }, []);
 
   // Authentication state - this would typically come from a context or hook
   const isAuthenticated = false; // Replace with actual auth state check
@@ -351,13 +415,9 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
             ref={panelRef}
             className={cn(
               "fixed top-0 left-0 h-full w-80 bg-white/95 backdrop-blur-lg shadow-2xl border-r border-gray-200/50 transform transition-transform duration-300 ease-out",
-              isOpen ? "translate-x-0" : "-translate-x-full",
-              isDragging && "transition-none",
-              dragOffset !== 0 && "mobile-nav-drag"
+              isOpen ? "translate-x-0" : "-translate-x-full"
             )}
-            style={dragOffset !== 0 ? { '--drag-offset': `${dragOffset}px` } as React.CSSProperties : undefined}
             onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
             {/* Header Section */}

@@ -1,12 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
-import { Button } from "@/shared/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/shared/components/ui/card";
-import { Input } from "@/shared/components/ui/input";
+
+import { useMutation } from "@tanstack/react-query";
 import {
   Upload,
   FileText,
@@ -20,10 +14,18 @@ import {
   AlertCircle,
   Zap,
 } from "lucide-react";
+
+import { Button } from "@/shared/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
+import { Input } from "@/shared/components/ui/input";
 import { Progress } from "@/shared/components/ui/progress";
-import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/shared/hooks/use-toast";
-import FileUpload from "../../shared/components/forms/FileUpload";
+
 
 // Constants moved to top level to prevent re-creation on each render
 const FILE_CONSTRAINTS = {
@@ -268,7 +270,11 @@ export default function DocumentAuth(): JSX.Element {
 
         return response.json();
       } catch (error) {
-        console.error('Document verification failed:', error);
+        // Log error in development mode only
+        if (import.meta.env.MODE === "development") {
+          // eslint-disable-next-line no-console
+          console.error('Document verification failed:', error);
+        }
         throw error;
       }
     },
@@ -342,7 +348,11 @@ export default function DocumentAuth(): JSX.Element {
 
   // Memoized status utilities to prevent recalculation
   const getStatusConfig = useMemo(() => {
-    return (status: VerificationResult["status"]) => STATUS_CONFIG[status];
+    return (status: VerificationResult["status"]) => {
+      // Safe object access to prevent injection
+      const validStatuses: Record<VerificationResult["status"], typeof STATUS_CONFIG[keyof typeof STATUS_CONFIG]> = STATUS_CONFIG;
+      return validStatuses[status] || STATUS_CONFIG.processing;
+    };
   }, []);
 
   // Memoized document statistics

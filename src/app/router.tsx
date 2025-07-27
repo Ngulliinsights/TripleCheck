@@ -5,9 +5,7 @@ import { LoadingSkeleton } from "../shared/components/ui/loading-skeleton";
 import { AppLayout } from "../shared/components/layout/AppLayout";
 import { ErrorBoundary } from "./error-boundary";
 import { RoutePerformanceMonitor } from "../infrastructure/routing/RoutePerformanceMonitor";
-import { useRoutePreloader } from "../infrastructure/routing/useRoutePreloader";
-import { WorkingRoutes, preloadRoutes } from "./lazy-routes";
-import { routePreloader } from "../infrastructure/routing/route-preloader";
+import { WorkingRoutes } from "./lazy-routes";
 import {
   Card,
   CardContent,
@@ -64,46 +62,16 @@ const validateRouteParams = (
   };
 };
 
-// Enhanced PropertyDetailsWrapper with comprehensive parameter handling
+// Simplified PropertyDetailsWrapper without complex preloading
 function PropertyDetailsWrapper({
   component: Component,
-  preload,
 }: {
   component: React.ComponentType<ComponentWithParams>;
-  preload: () => void;
 }) {
   const params = useParams<{ id: string }>();
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<Error | null>(null);
-  const [preloadCompleted, setPreloadCompleted] = React.useState(false);
 
   // Validate parameters
   const validation = validateRouteParams(params, ["id"]);
-
-  // Handle preloading with error handling
-  React.useEffect(() => {
-    const handlePreload = async () => {
-      if (preloadCompleted) return;
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        preload();
-        setPreloadCompleted(true);
-      } catch (preloadError) {
-        logger.warn("Preload failed for property details:", preloadError);
-        setError(
-          preloadError instanceof Error ? preloadError : (
-            new Error("Preload failed")
-          )
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    handlePreload();
-  }, [preload, preloadCompleted]);
 
   // Handle parameter validation errors
   if (!validation.isValid) {
@@ -129,27 +97,6 @@ function PropertyDetailsWrapper({
             </CardContent>
           </Card>
         </div>
-      </ErrorBoundary>
-    );
-  }
-
-  // Show loading state while preloading
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingSkeleton
-          variant="detailed"
-          className="w-full max-w-4xl mx-auto p-6"
-        />
-      </div>
-    );
-  }
-
-  // Show error state if preloading failed
-  if (error) {
-    return (
-      <ErrorBoundary level="route" showErrorDetails={true}>
-        <div>Error loading property details</div>
       </ErrorBoundary>
     );
   }
@@ -273,15 +220,6 @@ export function AppRouter() {
   const location = useLocation();
   const navigate = useNavigate();
   const [routeError, setRouteError] = useState<Error | null>(null);
-  const [isRouteLoading, setIsRouteLoading] = useState(false);
-
-  // Enhanced route preloader with comprehensive error handling
-  const { preloadDomainRoutes, preloadByUserBehavior } = useRoutePreloader({
-    enableHoverPreloading: true,
-    enableViewportPreloading: false, // Disabled to prevent crashes
-    preloadOnMount: ["/features", "/pricing"],
-    strategy: "hover",
-  });
 
   // Safe navigation helper to prevent crashes
   const safeNavigate = React.useCallback((path: string) => {
@@ -296,53 +234,11 @@ export function AppRouter() {
     }
   }, [navigate]);
 
-  // Initialize route preloader with error handling
+  // Simple route change handling without complex preloading
   useEffect(() => {
-    try {
-      routePreloader.initialize();
-    } catch (error) {
-      logger.warn("Route preloader initialization failed:", error);
-      // Continue without preloading if initialization fails
-    }
-  }, []);
-
-  // Simplified route loading without hanging issues
-  useEffect(() => {
-    const currentPath = location.pathname;
-    
-    // Reset states immediately
-    setIsRouteLoading(false);
+    // Reset error state on route change
     setRouteError(null);
-
-    // Optional background preloading (non-blocking)
-    const preloadInBackground = async () => {
-      try {
-        if (currentPath.startsWith("/property")) {
-          await preloadDomainRoutes("property").catch(() => {
-            // Silently fail - don't block navigation
-          });
-        } else if (currentPath.startsWith("/services") || currentPath.startsWith("/trust")) {
-          await preloadDomainRoutes("trust").catch(() => {
-            // Silently fail - don't block navigation
-          });
-        } else if (currentPath.startsWith("/dashboard") || currentPath.startsWith("/user")) {
-          await preloadDomainRoutes("user").catch(() => {
-            // Silently fail - don't block navigation
-          });
-        } else if (currentPath === "/") {
-          await preloadByUserBehavior(["/features", "/pricing"]).catch(() => {
-            // Silently fail - don't block navigation
-          });
-        }
-      } catch (error) {
-        // Silently handle preload errors - don't affect navigation
-        logger.warn("Background preload failed:", error);
-      }
-    };
-
-    // Run preloading in background without blocking
-    preloadInBackground();
-  }, [location.pathname, preloadDomainRoutes, preloadByUserBehavior]);
+  }, [location.pathname]);
 
   // Route error recovery component
   const RouteErrorRecovery = () => (
@@ -436,19 +332,6 @@ export function AppRouter() {
                   element={
                     <PropertyDetailsWrapper
                       component={WorkingRoutes.PropertyDetails}
-                      preload={() => {
-                        // Enhanced preloading with error handling
-                        try {
-                          preloadRoutes.property().catch((error) => {
-                            logger.warn(
-                              "Failed to preload property routes:",
-                              error
-                            );
-                          });
-                        } catch (error) {
-                          logger.warn("Property preload error:", error);
-                        }
-                      }}
                     />
                   }
                 />
@@ -586,19 +469,6 @@ export function AppRouter() {
                   element={
                     <PropertyDetailsWrapper
                       component={WorkingRoutes.PropertyPhotos}
-                      preload={() => {
-                        // Enhanced preloading with error handling for property photos
-                        try {
-                          preloadRoutes.property().catch((error) => {
-                            logger.warn(
-                              "Failed to preload property photo routes:",
-                              error
-                            );
-                          });
-                        } catch (error) {
-                          logger.warn("Property photos preload error:", error);
-                        }
-                      }}
                     />
                   }
                 />
@@ -607,22 +477,6 @@ export function AppRouter() {
                   element={
                     <PropertyDetailsWrapper
                       component={WorkingRoutes.PropertyOptimize}
-                      preload={() => {
-                        // Enhanced preloading with error handling for property optimization
-                        try {
-                          preloadRoutes.property().catch((error) => {
-                            logger.warn(
-                              "Failed to preload property optimization routes:",
-                              error
-                            );
-                          });
-                        } catch (error) {
-                          logger.warn(
-                            "Property optimization preload error:",
-                            error
-                          );
-                        }
-                      }}
                     />
                   }
                 />

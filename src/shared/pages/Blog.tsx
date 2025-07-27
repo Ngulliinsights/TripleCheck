@@ -1,14 +1,13 @@
 import { memo, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 import { BlogPostCard, type BlogPost as SharedBlogPost } from "../components/blog/BlogPostCard";
 import { BLOG_POSTS } from "../config/assets";
 
-// Define the static blog post type with better clarity
+// Enhanced type definitions with better semantic clarity
 type StaticBlogPost = typeof BLOG_POSTS[number];
 
-// Transform static blog post to shared format with enhanced type safety
+// Optimized transformation function with explicit return type for better type inference
 const transformStaticPost = (post: StaticBlogPost): SharedBlogPost => ({
   id: post.id,
   title: post.title,
@@ -21,12 +20,21 @@ const transformStaticPost = (post: StaticBlogPost): SharedBlogPost => ({
     jpg: post.image.jpg,
     alt: post.image.alt
   },
-  author: post.author // Static posts use string format
+  author: post.author // Preserved string format for static posts
 });
 
-// Memoized section header component to prevent unnecessary re-renders
-const SectionHeader = memo<{ title: string; className?: string }>(({ title, className = "" }) => (
-  <h2 className={`text-2xl font-bold mb-8 flex items-center gap-2 ${className}`}>
+// Enhanced SectionHeader with improved prop interface and better accessibility
+interface SectionHeaderProps {
+  readonly title: string;
+  readonly className?: string;
+  readonly id?: string;
+}
+
+const SectionHeader = memo<SectionHeaderProps>(({ title, className = "", id }) => (
+  <h2 
+    id={id}
+    className={`text-2xl font-bold mb-8 flex items-center gap-2 ${className}`}
+  >
     <span className="w-1 h-8 bg-secondary rounded-full" aria-hidden="true" />
     {title}
   </h2>
@@ -34,35 +42,52 @@ const SectionHeader = memo<{ title: string; className?: string }>(({ title, clas
 
 SectionHeader.displayName = 'SectionHeader';
 
-// Enhanced main component with better performance and maintainability
+// Grid variant type for better type safety in rendering logic
+type GridVariant = 'featured' | 'default';
+
+// Constants for better maintainability and performance
+const GRID_CLASSES: Record<GridVariant, string> = {
+  featured: "grid grid-cols-1 lg:grid-cols-2 gap-8",
+  default: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+} as const;
+
+const FEATURED_POSTS_COUNT = 2;
+
+// Main BlogPage component with enhanced optimization strategies
 const BlogPage = memo(() => {
   const navigate = useNavigate();
 
-  // Transform static blog posts to shared format - memoized for performance
+  // Pre-transformed posts - memoized with empty dependency array since BLOG_POSTS is static
+  // This prevents unnecessary recalculations on every render
   const transformedPosts = useMemo(() => 
     BLOG_POSTS.map(transformStaticPost), 
-    [] // Empty dependency array since BLOG_POSTS is static
+    [] // Static data dependency - no need to recalculate
   );
 
-  // Memoize featured posts calculation to avoid recalculation
+  // Featured posts extraction - optimized to avoid slice operation on every render
   const featuredPosts = useMemo(() => 
-    transformedPosts.slice(0, 2), 
+    transformedPosts.slice(0, FEATURED_POSTS_COUNT), 
     [transformedPosts]
   );
 
-  // Stable navigation handler using useCallback to prevent child re-renders
+  // Stable navigation handler - prevents unnecessary child re-renders through reference equality
   const handleReadMore = useCallback((postId: string) => {
     navigate(`/blog/${postId}`);
   }, [navigate]);
 
-  // Memoized post grid renderer to optimize rendering performance
-  const renderPostGrid = useCallback((posts: SharedBlogPost[], variant: 'featured' | 'default' = 'default') => {
-    const gridClasses = variant === 'featured' 
-      ? "grid grid-cols-1 lg:grid-cols-2 gap-8"
-      : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+  // Optimized post grid renderer with better type safety and performance characteristics
+  const renderPostGrid = useCallback((
+    posts: readonly SharedBlogPost[], 
+    variant: GridVariant = 'default'
+  ) => {
+    // Use pre-defined constants for better performance and maintainability
+    // Access the grid class safely to prevent potential object injection issues
+    const gridClassName = Object.prototype.hasOwnProperty.call(GRID_CLASSES, variant) 
+      ? GRID_CLASSES[variant] 
+      : GRID_CLASSES.default;
 
     return (
-      <div className={gridClasses}>
+      <div className={gridClassName}>
         {posts.map((post) => (
           <BlogPostCard
             key={post.id}
@@ -77,36 +102,39 @@ const BlogPage = memo(() => {
     );
   }, [handleReadMore]);
 
-  // Enhanced accessibility and semantic structure
+  // Enhanced component structure with improved semantic HTML and accessibility features
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-7xl mx-auto">
-          {/* Enhanced header with improved semantic HTML and better accessibility */}
+          {/* Semantic header with enhanced accessibility attributes */}
           <header className="text-center mb-16" role="banner">
             <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               TripleCheck Insights
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Expert analysis, market insights, and strategic guidance for
-              African real estate investors. Stay ahead of the curve with our
-              comprehensive coverage of PropTech trends and investment
-              opportunities.
+              Navigate Africa&rsquo;s dynamic real estate landscape with confidence. 
+              Our deep-dive analyses uncover emerging opportunities, decode market 
+              shifts, and translate complex PropTech innovations into actionable 
+              investment strategies that drive sustainable returns across the continent&rsquo;s 
+              most promising markets.
             </p>
           </header>
 
-          {/* Featured posts section with enhanced semantic structure */}
+          {/* Featured posts section with proper ARIA labeling */}
           <section className="mb-16" aria-labelledby="featured-heading">
             <SectionHeader 
+              id="featured-heading"
               title="Featured Articles" 
               className="scroll-mt-4" 
             />
             {renderPostGrid(featuredPosts, 'featured')}
           </section>
 
-          {/* All posts section with improved accessibility and performance */}
+          {/* All posts section with consistent semantic structure */}
           <section aria-labelledby="all-posts-heading">
             <SectionHeader 
+              id="all-posts-heading"
               title="All Articles" 
               className="scroll-mt-4" 
             />
@@ -118,7 +146,7 @@ const BlogPage = memo(() => {
   );
 });
 
-// Set display name for better debugging experience
+// Display name for enhanced debugging and development experience
 BlogPage.displayName = 'BlogPage';
 
 export default BlogPage;

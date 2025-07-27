@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 
 import { 
   NavigationMenu,
@@ -32,21 +31,41 @@ export function EnhancedNavigation() {
     }
   }, [scrolled]);
 
-  // Enhanced scroll effect with performance optimization
+  // Simplified scroll effect with better cleanup
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
+    let isActive = true;
+
     const throttledScrollHandler = () => {
-      if (timeoutId) return;
+      if (!isActive || timeoutId) return;
+      
       timeoutId = setTimeout(() => {
-        handleScroll();
+        if (isActive) {
+          handleScroll();
+        }
         timeoutId = null;
-      }, 16); // ~60fps throttling
+      }, 32); // Reduced frequency to prevent performance issues
     };
-    
-    window.addEventListener("scroll", throttledScrollHandler, { passive: true });
+
+    try {
+      window.addEventListener("scroll", throttledScrollHandler, {
+        passive: true,
+      });
+    } catch (error) {
+      console.warn("Failed to add scroll listener:", error);
+    }
+
     return () => {
-      window.removeEventListener("scroll", throttledScrollHandler);
-      if (timeoutId) clearTimeout(timeoutId);
+      isActive = false;
+      try {
+        window.removeEventListener("scroll", throttledScrollHandler);
+      } catch (error) {
+        console.warn("Failed to remove scroll listener:", error);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
     };
   }, [handleScroll]);
 

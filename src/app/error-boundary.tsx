@@ -30,6 +30,17 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public static getDerivedStateFromError(error: Error): Partial<State> {
     const errorId = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Enhanced error detection for React 18 concurrent features
+    const isReactConcurrentError = error.message.includes('concurrent') || 
+                                   error.message.includes('Suspense') ||
+                                   error.message.includes('startTransition');
+    
+    // Log concurrent-specific errors for debugging
+    if (isReactConcurrentError) {
+      console.warn('React 18 concurrent feature error detected:', error.message);
+    }
+    
     return { 
       hasError: true, 
       error,
@@ -113,15 +124,26 @@ export class ErrorBoundary extends Component<Props, State> {
       clearTimeout(this.retryTimeoutId);
     }
 
-    // Add a small delay before retry to prevent immediate re-error
+    // Exponential backoff: 1s, 2s, 4s delays
+    const delay = Math.min(1000 * Math.pow(2, newRetryCount - 1), 4000);
+    
+    console.log(`Retrying in ${delay}ms (attempt ${newRetryCount}/3)`);
+    
     this.retryTimeoutId = setTimeout(() => {
+      // Force a clean state reset for React 18 concurrent features
       this.setState({ 
         hasError: false, 
         error: undefined, 
         errorInfo: undefined,
         retryCount: newRetryCount,
+        errorId: '', // Reset error ID for fresh start
       });
-    }, 100);
+      
+      // Force a re-render by triggering a state update
+      setTimeout(() => {
+        this.forceUpdate();
+      }, 50);
+    }, delay);
   };
 
   private handleGoHome = () => {

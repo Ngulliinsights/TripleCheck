@@ -3,6 +3,7 @@ import { useEffect, Suspense, lazy } from "react";
 
 import { ErrorBoundary } from "./error-boundary";
 import { AppRouter } from "./router";
+import { RouterFallback } from "../shared/components/fallbacks/RouterFallback";
 
 import { queryClient } from "@/infrastructure/api/queryClient";
 
@@ -67,8 +68,8 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ErrorBoundary>
-        <Suspense fallback={null}>
+      <ErrorBoundary level="page" fallback={<RouterFallback />}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
           <PerformanceMonitoringProvider
             config={{
               enableAutoPreloading: false, // Disabled to prevent performance issues
@@ -82,17 +83,21 @@ export function App() {
               },
             }}
           >
-            <Suspense fallback={null}>
-              <AppRouter />
-              <Suspense fallback={null}>
-                <Toaster />
+            <ErrorBoundary level="route" fallback={<RouterFallback />}>
+              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading router...</div>}>
+                <AppRouter />
               </Suspense>
-              {import.meta.env.MODE === "development" && (
-                <Suspense fallback={null}>
-                  <PerformanceDebugger />
-                </Suspense>
-              )}
+            </ErrorBoundary>
+            
+            <Suspense fallback={null}>
+              <Toaster />
             </Suspense>
+            
+            {import.meta.env.MODE === "development" && (
+              <Suspense fallback={null}>
+                <PerformanceDebugger />
+              </Suspense>
+            )}
           </PerformanceMonitoringProvider>
         </Suspense>
       </ErrorBoundary>

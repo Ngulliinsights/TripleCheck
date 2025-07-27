@@ -62,8 +62,8 @@ describe('LoginForm', () => {
     });
 
     // Mock useLogin hook
-    const { useLogin } = require('../../hooks/useAuth');
-    useLogin.mockReturnValue({
+    const { useLogin } = await import('../../hooks/useAuth');
+    (useLogin as any).mockReturnValue({
       mutateAsync: mockMutateAsync,
       isPending: false,
       error: null,
@@ -240,8 +240,8 @@ describe('LoginForm', () => {
     });
 
     it('should show loading state during submission', async () => {
-      const { useLogin } = require('../../hooks/useAuth');
-      useLogin.mockReturnValue({
+      const { useLogin } = await import('../../hooks/useAuth');
+      (useLogin as any).mockReturnValue({
         mutateAsync: mockMutateAsync,
         isPending: true,
         error: null,
@@ -255,8 +255,8 @@ describe('LoginForm', () => {
 
     it('should handle submission errors', async () => {
       const error = new Error('Invalid credentials');
-      const { useLogin } = require('../../hooks/useAuth');
-      useLogin.mockReturnValue({
+      const { useLogin } = await import('../../hooks/useAuth');
+      (useLogin as any).mockReturnValue({
         mutateAsync: mockMutateAsync,
         isPending: false,
         error,
@@ -552,8 +552,8 @@ describe('LoginForm', () => {
   describe('Error Handling', () => {
     it('should display network errors', async () => {
       const networkError = new Error('Network error');
-      const { useLogin } = require('../../hooks/useAuth');
-      useLogin.mockReturnValue({
+      const { useLogin } = await import('../../hooks/useAuth');
+      (useLogin as any).mockReturnValue({
         mutateAsync: mockMutateAsync,
         isPending: false,
         error: networkError,
@@ -565,8 +565,8 @@ describe('LoginForm', () => {
     });
 
     it('should display generic error for unknown errors', async () => {
-      const { useLogin } = require('../../hooks/useAuth');
-      useLogin.mockReturnValue({
+      const { useLogin } = await import('../../hooks/useAuth');
+      (useLogin as any).mockReturnValue({
         mutateAsync: mockMutateAsync,
         isPending: false,
         error: 'Unknown error',

@@ -7,6 +7,9 @@ import { Wordmark } from '../ui/wordmark';
 import { Shield, Menu, Search, ChevronDown } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { MobileNav } from '../navigation/MobileNav';
+import { SafeNavigation } from '../navigation/SafeNavigation';
+import { ErrorBoundary } from '../../../app/error-boundary';
+import { MobileNavFallback } from '../fallbacks/MobileNavFallback';
 
 interface NavigationProps {
   className?: string;
@@ -24,7 +27,7 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
   const navRef = useRef<HTMLElement>(null);
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Enhanced safe navigation function with timeout protection
+  // Enhanced safe navigation function with proper timeout management
   const handleNavigation = useCallback((href: string, event?: React.MouseEvent) => {
     // Prevent multiple simultaneous navigations
     if (isNavigating) return;
@@ -36,7 +39,12 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
         event.stopPropagation();
       }
       
-      // Set loading state with timeout protection
+      // Validate href before navigation
+      if (!href || typeof href !== 'string') {
+        throw new Error('Invalid navigation href');
+      }
+      
+      // Set loading state
       setIsNavigating(true);
       
       // Clean up UI state immediately
@@ -49,36 +57,18 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
         dropdownTimeoutRef.current = null;
       }
       
-      // Validate href before navigation
-      if (!href || typeof href !== 'string') {
-        throw new Error('Invalid navigation href');
-      }
-      
-      // Set a timeout to prevent hanging
-      const navigationTimeout = setTimeout(() => {
-        setIsNavigating(false);
-        console.warn('Navigation timeout, falling back to window.location');
-        window.location.href = href;
-      }, 3000); // 3 second timeout
-      
-      // Use navigate with error handling
+      // Use navigate with proper error handling
       navigate(href);
       
-      // Reset loading state after navigation
-      const resetTimeout = setTimeout(() => {
-        clearTimeout(navigationTimeout);
+      // Reset loading state after a short delay
+      setTimeout(() => {
         setIsNavigating(false);
       }, 100);
-      
-      // Cleanup function
-      return () => {
-        clearTimeout(navigationTimeout);
-        clearTimeout(resetTimeout);
-      };
       
     } catch (error) {
       setIsNavigating(false);
       console.warn('Navigation failed, falling back to window.location:', error);
+      
       // Fallback to direct navigation
       try {
         window.location.href = href;
@@ -90,7 +80,7 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
     }
   }, [navigate, isNavigating]);
 
-  // Safe search function with debouncing
+  // Safe search function with proper error handling
   const handleSearch = useCallback((query: string) => {
     if (!query.trim() || isNavigating) return;
     
@@ -101,31 +91,51 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
       const searchUrl = `/search?q=${encodeURIComponent(query.trim())}`;
       navigate(searchUrl);
       
-      setTimeout(() => setIsNavigating(false), 500);
+      // Reset navigation state
+      setTimeout(() => setIsNavigating(false), 200);
     } catch (error) {
       setIsNavigating(false);
       console.warn('Search navigation failed:', error);
-      window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
+      
+      // Fallback to direct URL navigation
+      try {
+        window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
+      } catch (fallbackError) {
+        console.error('Search fallback failed:', fallbackError);
+      }
     }
   }, [navigate, isNavigating]);
 
-  // Enhanced scroll detection with throttling
+  // Enhanced scroll detection with proper throttling and cleanup
   useEffect(() => {
     let ticking = false;
+    let rafId: number | null = null;
     
     const handleScroll = () => {
       if (!ticking) {
-        requestAnimationFrame(() => {
-          const scrollTop = window.pageYOffset;
-          setIsScrolled(scrollTop > 20);
-          ticking = false;
+        rafId = requestAnimationFrame(() => {
+          try {
+            const scrollTop = window.pageYOffset;
+            setIsScrolled(scrollTop > 20);
+          } catch (error) {
+            console.warn('Scroll handler error:', error);
+          } finally {
+            ticking = false;
+            rafId = null;
+          }
         });
         ticking = true;
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+    };
   }, []);
 
   // Debounced dropdown handlers to prevent hanging
@@ -145,24 +155,30 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
     }, 150); // Small delay to prevent flickering
   }, []);
 
-  // Close dropdown when clicking outside and cleanup
+  // Close dropdown when clicking outside with proper cleanup
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(event.target as Node)) {
-        setActiveDropdown(null);
-        setIsSearchFocused(false);
-        if (dropdownTimeoutRef.current) {
-          clearTimeout(dropdownTimeoutRef.current);
-          dropdownTimeoutRef.current = null;
+      try {
+        if (navRef.current && event.target && !navRef.current.contains(event.target as Node)) {
+          setActiveDropdown(null);
+          setIsSearchFocused(false);
+          if (dropdownTimeoutRef.current) {
+            clearTimeout(dropdownTimeoutRef.current);
+            dropdownTimeoutRef.current = null;
+          }
         }
+      } catch (error) {
+        console.warn('Click outside handler error:', error);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside, { passive: true });
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       if (dropdownTimeoutRef.current) {
         clearTimeout(dropdownTimeoutRef.current);
+        dropdownTimeoutRef.current = null;
       }
     };
   }, []);
@@ -178,15 +194,20 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
     }
   }, [location.pathname]);
 
-  // Cleanup on unmount to prevent hanging
+  // Comprehensive cleanup on unmount to prevent memory leaks
   useEffect(() => {
     return () => {
+      // Clear all timeouts
+      if (dropdownTimeoutRef.current) {
+        clearTimeout(dropdownTimeoutRef.current);
+        dropdownTimeoutRef.current = null;
+      }
+      
+      // Reset all state
       setIsNavigating(false);
       setActiveDropdown(null);
       setIsSearchFocused(false);
-      if (dropdownTimeoutRef.current) {
-        clearTimeout(dropdownTimeoutRef.current);
-      }
+      setSearchQuery('');
     };
   }, []);
 
@@ -332,7 +353,7 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
             {navigationItems.map((item) => (
               <div key={item.label} className="relative">
                 {item.dropdown ? (
@@ -436,7 +457,7 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
           </div>
 
           {/* Search and Actions */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4">
             {/* Enhanced Search */}
             <div className="relative">
               <div className="relative">
@@ -570,14 +591,14 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
               <>
                 <Button 
                   variant="outline" 
-                  className="hidden lg:flex"
+                  className="hidden xl:flex"
                   disabled={isNavigating}
                   onClick={() => handleNavigation('/auth/login')}
                 >
                   {isNavigating ? 'Loading...' : 'Login'}
                 </Button>
                 <Button 
-                  className="hidden lg:flex"
+                  className="hidden xl:flex"
                   disabled={isNavigating}
                   onClick={() => handleNavigation('/auth/register')}
                 >
@@ -587,9 +608,33 @@ export function Navigation({ className, variant = 'default' }: NavigationProps) 
             )}
           </div>
 
+          {/* Tablet Navigation - Simplified */}
+          <div className="hidden md:flex lg:hidden items-center space-x-4">
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={isNavigating}
+              onClick={() => handleNavigation('/auth/login')}
+            >
+              Login
+            </Button>
+            <Button 
+              size="sm"
+              disabled={isNavigating}
+              onClick={() => handleNavigation('/auth/register')}
+            >
+              Get Started
+            </Button>
+            <SafeNavigation fallback={<MobileNavFallback />}>
+              <MobileNav />
+            </SafeNavigation>
+          </div>
+
           {/* Mobile Menu */}
-          <div className="lg:hidden">
-            <MobileNav />
+          <div className="md:hidden">
+            <SafeNavigation fallback={<MobileNavFallback />}>
+              <MobileNav />
+            </SafeNavigation>
           </div>
         </div>
       </div>

@@ -68,11 +68,15 @@ export const authApi = {
   // Get current user profile
   getProfile: async (): Promise<ApiResponse<User>> => {
     try {
+      const token = localStorage.getItem('auth_token');
       return await apiRequest<ApiResponse<User>>(
         'GET',
         `${API_BASE}/profile`,
         undefined,
         {
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
           requestOptions: {
             key: 'user-profile',
             priority: 'normal',

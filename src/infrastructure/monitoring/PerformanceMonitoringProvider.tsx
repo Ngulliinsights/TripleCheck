@@ -160,22 +160,22 @@ const devLogger = {
 };
 
 // Helper functions for color determination
-const getScoreColor = (score: number): string => {
-  if (score >= 80) return "green";
-  if (score >= 60) return "orange";
-  return "red";
+const getScoreColorClass = (score: number): string => {
+  if (score >= 80) return "text-green-600";
+  if (score >= 60) return "text-orange-600";
+  return "text-red-600";
 };
 
-const getRatingColor = (rating: MetricRating): string => {
+const getRatingColorClass = (rating: MetricRating): string => {
   switch (rating) {
     case "good":
-      return "green";
+      return "text-green-600";
     case "needs-improvement":
-      return "orange";
+      return "text-orange-600";
     case "poor":
-      return "red";
+      return "text-red-600";
     default:
-      return "black";
+      return "text-gray-600";
   }
 };
 
@@ -232,11 +232,7 @@ export function PerformanceDebugger() {
           <div className="mb-4">
             <strong>Overall Score: </strong>
             <span
-              className={`font-bold ${
-                report.overallScore >= 80 ? "text-green-600" :
-                report.overallScore >= 60 ? "text-orange-600" :
-                "text-red-600"
-              }`}
+              className={`font-bold ${getScoreColorClass(report.overallScore)}`}
             >
               {report.overallScore}/100
             </span>
@@ -254,12 +250,7 @@ export function PerformanceDebugger() {
                     <strong>{key.toUpperCase()}:</strong>{" "}
                     {metric.value !== null ? metric.value : "N/A"}
                     <span
-                      className={`ml-2 ${
-                        metric.rating === "good" ? "text-green-600" :
-                        metric.rating === "needs-improvement" ? "text-orange-600" :
-                        metric.rating === "poor" ? "text-red-600" :
-                        "text-gray-600"
-                      }`}
+                      className={`ml-2 ${getRatingColorClass(metric.rating)}`}
                     >
                       ({metric.rating})
                     </span>

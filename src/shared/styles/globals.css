@@ -682,7 +682,17 @@
   }
 
   .mobile-nav-drag[data-drag-offset] {
-    transform: translateX(var(--drag-offset, 0px));
+    transform: translateX(attr(data-drag-offset px, 0px));
+  }
+  
+  /* Fallback for browsers that don't support attr() in transform */
+  @supports not (transform: translateX(attr(data-drag-offset px))) {
+    .mobile-nav-drag[data-drag-offset="-50"] { transform: translateX(-50px); }
+    .mobile-nav-drag[data-drag-offset="-100"] { transform: translateX(-100px); }
+    .mobile-nav-drag[data-drag-offset="-150"] { transform: translateX(-150px); }
+    .mobile-nav-drag[data-drag-offset="-200"] { transform: translateX(-200px); }
+    .mobile-nav-drag[data-drag-offset="-250"] { transform: translateX(-250px); }
+    .mobile-nav-drag[data-drag-offset="-300"] { transform: translateX(-300px); }
   }
 }
 

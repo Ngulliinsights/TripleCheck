@@ -49,4 +49,34 @@ router.get('/profile', async (req, res, next) => {
   }
 });
 
+// Update profile
+router.patch('/profile', async (req, res, next) => {
+  try {
+    const result = await authService.updateProfile(req.headers.authorization || '', req.body);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Request password reset
+router.post('/forgot-password', async (req, res, next) => {
+  try {
+    const result = await authService.requestPasswordReset(req.body.email);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Reset password
+router.post('/reset-password', async (req, res, next) => {
+  try {
+    const result = await authService.resetPassword(req.body.token, req.body.password);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export { router as authRouter };
