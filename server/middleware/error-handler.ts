@@ -82,7 +82,7 @@ export function errorHandler(
       details: error.errors.map(err => ({
         field: err.path.join('.'),
         message: err.message,
-        received: err.received
+        code: err.code
       })),
       timestamp: new Date().toISOString()
     });

@@ -1,4 +1,4 @@
-import { BaseEntity } from '../../shared/types';
+import { BaseEntity } from '@/shared/types';
 
 export interface TrustScore extends BaseEntity {
   userId: string;

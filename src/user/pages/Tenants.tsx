@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Button } from "../../shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../../shared/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../shared/components/ui/tabs";
-import { Badge } from "../../shared/components/ui/badge";
-import { Input } from "../../shared/components/ui/input";
-import { Label } from "../../shared/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../shared/components/ui/select";
-import { Slider } from "../../shared/components/ui/slider";
-import { Switch } from "../../shared/components/ui/switch";
+import { Button } from "@shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@shared/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
+import { Badge } from "@shared/components/ui/badge";
+import { Input } from "@shared/components/ui/input";
+import { Label } from "@shared/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/components/ui/select";
+import { Slider } from "@shared/components/ui/slider";
+import { Switch } from "@shared/components/ui/switch";
 import { 
   Search, 
   Star, 
@@ -20,7 +20,7 @@ import {
   Info,
   Filter
 } from "lucide-react";
-import { useToast } from "../../shared/hooks/use-toast";
+import { useToast } from "@/shared/hooks/use-toast";
 
 type TenantLevel = 'gold' | 'silver' | 'bronze' | 'all';
 
@@ -54,7 +54,7 @@ export default function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([
     {
       id: 1,
-      name: "David Mwangi",
+      name: "David Makau",
       photo: "/tenant1.webp",
       rating: 4.8,
       verificationLevel: "Gold",
@@ -169,12 +169,21 @@ export default function TenantsPage() {
   };
 
   const filterTenants = () => {
+    if (!tenants || !Array.isArray(tenants)) return [];
+    
     return tenants.filter(tenant => {
+      if (!tenant) return false;
+      
       // Filter by search query
-      if (searchQuery && !tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
-          !tenant.occupation.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          !tenant.seeking.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
+      if (searchQuery) {
+        const name = tenant.name?.toLowerCase() || '';
+        const occupation = tenant.occupation?.toLowerCase() || '';
+        const seeking = tenant.seeking?.toLowerCase() || '';
+        const query = searchQuery.toLowerCase();
+        
+        if (!name.includes(query) && !occupation.includes(query) && !seeking.includes(query)) {
+          return false;
+        }
       }
       
       // Filter by verification level
@@ -185,8 +194,10 @@ export default function TenantsPage() {
       }
       
       // Filter by income (simplified)
-      const incomeNum = parseInt(tenant.income.replace(/[^0-9]/g, ''));
-      if (incomeNum < incomeRange[0] || incomeNum > incomeRange[1]) return false;
+      if (tenant.income && incomeRange && Array.isArray(incomeRange) && incomeRange.length >= 2) {
+        const incomeNum = parseInt(tenant.income.replace(/[^0-9]/g, ''));
+        if (!isNaN(incomeNum) && (incomeNum < incomeRange[0]! || incomeNum > incomeRange[1]!)) return false;
+      }
       
       return true;
     });
@@ -264,8 +275,8 @@ export default function TenantsPage() {
                   />
                 </div>
                 <div className="flex justify-between text-sm text-gray-500">
-                  <span>{incomeRange[0].toLocaleString()} KES</span>
-                  <span>{incomeRange[1].toLocaleString()} KES</span>
+                  <span>{incomeRange?.[0]?.toLocaleString() || '0'} KES</span>
+                  <span>{incomeRange?.[1]?.toLocaleString() || '0'} KES</span>
                 </div>
               </div>
 

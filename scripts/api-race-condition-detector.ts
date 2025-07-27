@@ -67,7 +67,7 @@ interface PatternRule {
   readonly severity: RiskLevel;
   readonly fix: string;
   readonly confidence: number;
-  readonly category: 'race-condition' | 'infinite-loop' | 'performance';
+  readonly category: 'race-condition' | 'infinite-loop' | 'performance' | 'security' | 'caching';
   readonly contextRequirement?: RegExp;
 }
 
@@ -125,12 +125,88 @@ export class EnhancedAPIRaceConditionDetector {
     this.config = {
       includePatterns: ['.ts', '.tsx', '.js', '.jsx'],
       excludePatterns: ['node_modules', 'dist', '.git', 'coverage', '.next', 'build'],
-      customRules: [],
+      customRules: this.getDefaultRules(),
       confidenceThreshold: 0.7,
       enableIncrementalAnalysis: true,
       maxFileSize: 1024 * 1024,
       ...config
     };
+  }
+
+  private getDefaultRules(): PatternRule[] {
+    return [
+      // Security Issues
+      {
+        pattern: /fetch\s*\(\s*['"`][^'"`]*\/admin[^'"`]*['"`]/g,
+        description: 'Admin endpoint without explicit auth check',
+        severity: 'HIGH',
+        fix: 'Add Authorization header or use authenticated API wrapper',
+        confidence: 0.9,
+        category: 'security'
+      },
+      {
+        pattern: /fetch\s*\(\s*['"`][^'"`]*\/payments?[^'"`]*['"`]/g,
+        description: 'Payment endpoint without explicit auth check',
+        severity: 'CRITICAL',
+        fix: 'Ensure payment endpoints use authenticated requests with proper validation',
+        confidence: 0.95,
+        category: 'security'
+      },
+      {
+        pattern: /fetch\s*\(\s*['"`]http:\/\/localhost:\d+/g,
+        description: 'Hard-coded localhost URL in production code',
+        severity: 'MEDIUM',
+        fix: 'Use environment variables or configuration for API base URLs',
+        confidence: 0.8,
+        category: 'performance'
+      },
+      
+      // Caching Issues
+      {
+        pattern: /useQuery\s*\(\s*\{[^}]*\}/g,
+        description: 'useQuery without explicit caching configuration',
+        severity: 'MEDIUM',
+        fix: 'Add staleTime and gcTime for optimal caching',
+        confidence: 0.7,
+        category: 'caching'
+      },
+      {
+        pattern: /fetch\s*\([^)]*\)\s*(?!.*cache)/g,
+        description: 'Fetch call without caching strategy',
+        severity: 'LOW',
+        fix: 'Consider adding cache headers or using cached request wrapper',
+        confidence: 0.6,
+        category: 'caching'
+      },
+      
+      // Race Condition Risks
+      {
+        pattern: /useQuery.*useQuery/gs,
+        description: 'Multiple useQuery hooks that could cause race conditions',
+        severity: 'MEDIUM',
+        fix: 'Use query dependencies or combine into single query',
+        confidence: 0.8,
+        category: 'race-condition'
+      },
+      {
+        pattern: /fetch\s*\([^)]*\)\s*(?!.*AbortController|.*signal)/g,
+        description: 'Fetch without cancellation support',
+        severity: 'LOW',
+        fix: 'Add AbortController for request cancellation',
+        confidence: 0.7,
+        category: 'race-condition'
+      },
+      
+      // Performance Issues
+      {
+        pattern: /fetch\s*\([^)]*\)\s*(?!.*retry|.*catch)/g,
+        description: 'Fetch without retry or error handling strategy',
+        severity: 'MEDIUM',
+        fix: 'Add retry logic and proper error handling',
+        confidence: 0.8,
+        category: 'performance'
+      }
+    ];
   }
 
   async analyzeCodebase(): Promise<AnalysisReport> {
@@ -240,7 +316,7 @@ export class EnhancedAPIRaceConditionDetector {
   private async analyzeFile(filePath: string, content: string): Promise<APICall[]> {
     const apiCalls: APICall[] = [];
     
-    // Simple API call detection
+    // API call detection patterns
     const patterns = [
       { type: 'fetch' as const, regex: /fetch\s*\(\s*['"`]([^'"`]+)['"`]/g },
       { type: 'axios' as const, regex: /axios\.(\w+)\s*\(\s*['"`]([^'"`]+)['"`]/g },
@@ -252,6 +328,10 @@ export class EnhancedAPIRaceConditionDetector {
       let match;
       while ((match = regex.exec(content)) !== null) {
         const lineNumber = content.substring(0, match.index).split('\n').length;
+        const context = content.substring(Math.max(0, match.index - 100), Math.min(content.length, match.index + 100));
+        
+        // Analyze this specific API call against our rules
+        const { issues, suggestions, riskLevel, caching } = this.analyzeApiCall(match[0], context, type);
         
         apiCalls.push({
           id: `${filePath}:${lineNumber}:${type}:${Date.now()}`,
@@ -260,15 +340,16 @@ export class EnhancedAPIRaceConditionDetector {
             file: filePath,
             line: lineNumber,
             column: 0,
-            context: content.substring(Math.max(0, match.index - 100), Math.min(content.length, match.index + 100))
+            context
           },
+          endpoint: match[1] || undefined,
           dependencies: [],
           triggers: [],
-          caching: { hasCache: false },
-          raceConditionRisk: 'LOW',
+          caching,
+          raceConditionRisk: riskLevel,
           infiniteLoopRisk: 'LOW',
-          issues: [],
-          suggestions: [],
+          issues,
+          suggestions,
           confidence: 0.8,
           lastModified: new Date()
         });
@@ -278,19 +359,149 @@ export class EnhancedAPIRaceConditionDetector {
     return apiCalls;
   }
 
+  private analyzeApiCall(callText: string, context: string, type: APICall['type']): {
+    issues: DetectedIssue[];
+    suggestions: Suggestion[];
+    riskLevel: RiskLevel;
+    caching: APICall['caching'];
+  } {
+    const issues: DetectedIssue[] = [];
+    const suggestions: Suggestion[] = [];
+    let maxRiskLevel: RiskLevel = 'LOW';
+    
+    // Check against all pattern rules
+    for (const rule of this.config.customRules) {
+      if (rule.pattern.test(callText) || rule.pattern.test(context)) {
+        // Check context requirement if specified
+        if (rule.contextRequirement && !rule.contextRequirement.test(context)) {
+          continue;
+        }
+        
+        issues.push({
+          type: rule.category as DetectedIssue['type'],
+          severity: rule.severity,
+          description: rule.description,
+          confidence: rule.confidence,
+          pattern: rule.pattern.source,
+          codeSnippet: callText
+        });
+        
+        suggestions.push({
+          priority: rule.severity === 'CRITICAL' ? 'immediate' : 
+                   rule.severity === 'HIGH' ? 'high' :
+                   rule.severity === 'MEDIUM' ? 'medium' : 'low',
+          action: rule.fix,
+          impact: `Addresses ${rule.category} issue: ${rule.description}`,
+          estimatedEffort: rule.severity === 'CRITICAL' ? 'high' : 'medium'
+        });
+        
+        // Update max risk level
+        if (this.getRiskPriority(rule.severity) > this.getRiskPriority(maxRiskLevel)) {
+          maxRiskLevel = rule.severity;
+        }
+      }
+    }
+    
+    // Analyze caching
+    const caching = this.analyzeCaching(callText, context, type);
+    
+    return { issues, suggestions, riskLevel: maxRiskLevel, caching };
+  }
+
+  private getRiskPriority(risk: RiskLevel): number {
+    switch (risk) {
+      case 'LOW': return 1;
+      case 'MEDIUM': return 2;
+      case 'HIGH': return 3;
+      case 'CRITICAL': return 4;
+      default: return 0;
+    }
+  }
+
+  private analyzeCaching(callText: string, context: string, type: APICall['type']): APICall['caching'] {
+    // Check for caching indicators
+    const hasStaleTime = /staleTime\s*:/.test(context);
+    const hasGcTime = /gcTime\s*:/.test(context);
+    const hasCacheTime = /cacheTime\s*:/.test(context);
+    const hasCacheHeaders = /cache-control|etag|last-modified/i.test(context);
+    
+    if (type === 'useQuery' || type === 'useSafeQuery') {
+      return {
+        hasCache: hasStaleTime || hasGcTime || hasCacheTime,
+        staleTime: hasStaleTime ? this.extractCacheValue(context, 'staleTime') : undefined,
+        gcTime: hasGcTime ? this.extractCacheValue(context, 'gcTime') : undefined,
+        strategy: hasStaleTime ? 'swr' : undefined
+      };
+    }
+    
+    return {
+      hasCache: hasCacheHeaders,
+      strategy: hasCacheHeaders ? 'cache-first' : undefined
+    };
+  }
+
+  private extractCacheValue(context: string, key: string): number | undefined {
+    const match = context.match(new RegExp(`${key}\\s*:\\s*(\\d+)`));
+    return match ? parseInt(match[1], 10) : undefined;
+  }
+
   private async generateReport(results: FileAnalysisResult[], analysisTime: number): Promise<AnalysisReport> {
     const allApiCalls = results.flatMap(r => r.apiCalls);
     
+    // Calculate risk distribution based on actual analysis
+    const riskCounts = {
+      critical: allApiCalls.filter(call => call.raceConditionRisk === 'CRITICAL').length,
+      high: allApiCalls.filter(call => call.raceConditionRisk === 'HIGH').length,
+      medium: allApiCalls.filter(call => call.raceConditionRisk === 'MEDIUM').length,
+      low: allApiCalls.filter(call => call.raceConditionRisk === 'LOW').length
+    };
+
+    // Calculate risk score (weighted average)
+    const riskScore = (
+      riskCounts.critical * 4 + 
+      riskCounts.high * 3 + 
+      riskCounts.medium * 2 + 
+      riskCounts.low * 1
+    ) / Math.max(allApiCalls.length, 1);
+
     const summary = {
       totalAPICalls: allApiCalls.length,
-      criticalRisk: 0,
-      highRisk: 0,
-      mediumRisk: 0,
-      lowRisk: allApiCalls.length,
-      riskScore: 0,
+      criticalRisk: riskCounts.critical,
+      highRisk: riskCounts.high,
+      mediumRisk: riskCounts.medium,
+      lowRisk: riskCounts.low,
+      riskScore: Math.round(riskScore * 100) / 100,
       averageConfidence: allApiCalls.reduce((sum, call) => sum + call.confidence, 0) / allApiCalls.length || 0,
       analysisTime
     };
+
+    // Collect critical issues with location info
+    const criticalIssues: (DetectedIssue & { location: string })[] = [];
+    allApiCalls.forEach(call => {
+      call.issues.forEach(issue => {
+        if (issue.severity === 'CRITICAL' || issue.severity === 'HIGH') {
+          criticalIssues.push({
+            ...issue,
+            location: `${call.location.file}:${call.location.line}`
+          });
+        }
+      });
+    });
+
+    // Identify race condition hotspots (calls with race condition risks)
+    const raceConditionHotspots = allApiCalls.filter(call => 
+      call.raceConditionRisk === 'HIGH' || call.raceConditionRisk === 'CRITICAL' ||
+      call.issues.some(issue => issue.type === 'race-condition')
+    );
+
+    // Identify infinite loop risks
+    const infiniteLoopRisks = allApiCalls.filter(call => 
+      call.infiniteLoopRisk === 'HIGH' || call.infiniteLoopRisk === 'CRITICAL' ||
+      call.issues.some(issue => issue.type === 'infinite-loop')
+    );
+
+    // Generate consolidated recommendations
+    const recommendations = this.generateRecommendations(allApiCalls);
 
     const apiCallsByType = allApiCalls.reduce((acc, call) => {
       acc[call.type] = (acc[call.type] || 0) + 1;
@@ -299,11 +510,11 @@ export class EnhancedAPIRaceConditionDetector {
 
     return {
       summary,
-      criticalIssues: [],
+      criticalIssues,
       apiCallsByType,
-      raceConditionHotspots: [],
-      infiniteLoopRisks: [],
-      recommendations: [],
+      raceConditionHotspots,
+      infiniteLoopRisks,
+      recommendations,
       detailedAnalysis: allApiCalls,
       metadata: {
         generatedAt: new Date(),
@@ -312,6 +523,71 @@ export class EnhancedAPIRaceConditionDetector {
         configUsed: this.config
       }
     };
+  }
+
+  private generateRecommendations(apiCalls: APICall[]): Suggestion[] {
+    const recommendations: Suggestion[] = [];
+    const suggestionMap = new Map<string, Suggestion>();
+
+    // Collect all suggestions and deduplicate
+    apiCalls.forEach(call => {
+      call.suggestions.forEach(suggestion => {
+        const key = `${suggestion.priority}:${suggestion.action}`;
+        if (!suggestionMap.has(key)) {
+          suggestionMap.set(key, suggestion);
+        }
+      });
+    });
+
+    // Add general recommendations based on analysis
+    const cachingIssues = apiCalls.filter(call => !call.caching.hasCache).length;
+    const totalCalls = apiCalls.length;
+
+    if (cachingIssues > totalCalls * 0.8) {
+      recommendations.push({
+        priority: 'high',
+        action: 'Implement comprehensive caching strategy',
+        impact: `${cachingIssues} out of ${totalCalls} API calls lack caching configuration`,
+        estimatedEffort: 'medium'
+      });
+    }
+
+    const securityIssues = apiCalls.filter(call => 
+      call.issues.some(issue => issue.type === 'security')
+    ).length;
+
+    if (securityIssues > 0) {
+      recommendations.push({
+        priority: 'immediate',
+        action: 'Review and secure sensitive API endpoints',
+        impact: `${securityIssues} potential security vulnerabilities detected`,
+        estimatedEffort: 'high'
+      });
+    }
+
+    const raceConditionRisks = apiCalls.filter(call => 
+      call.raceConditionRisk !== 'LOW'
+    ).length;
+
+    if (raceConditionRisks > 0) {
+      recommendations.push({
+        priority: 'high',
+        action: 'Implement request coordination and cancellation',
+        impact: `${raceConditionRisks} API calls have race condition risks`,
+        estimatedEffort: 'medium'
+      });
+    }
+
+    // Add unique suggestions from individual calls
+    Array.from(suggestionMap.values()).forEach(suggestion => {
+      recommendations.push(suggestion);
+    });
+
+    // Sort by priority
+    const priorityOrder = { immediate: 0, high: 1, medium: 2, low: 3 };
+    return recommendations.sort((a, b) => 
+      priorityOrder[a.priority] - priorityOrder[b.priority]
+    );
   }
 
   private async getFileHash(filePath: string): Promise<string> {
@@ -356,13 +632,17 @@ export class EnhancedAPIRaceConditionDetector {
 }
 
 // ✅ WORKING ENTRY POINT
-if (require.main === module) {
+async function main() {
   const detector = new EnhancedAPIRaceConditionDetector();
-  detector.analyzeCodebase()
-    .then(report => {
-      console.log('\n✅ Analysis complete!');
-      console.log(`📊 Total API calls found: ${report.summary.totalAPICalls}`);
-      return detector.saveReport(report);
-    })
-    .catch(console.error);
+  try {
+    const report = await detector.analyzeCodebase();
+    console.log('\n✅ Analysis complete!');
+    console.log(`📊 Total API calls found: ${report.summary.totalAPICalls}`);
+    await detector.saveReport(report);
+  } catch (error) {
+    console.error(error);
+  }
 }
+
+// Always run the main function
+main();

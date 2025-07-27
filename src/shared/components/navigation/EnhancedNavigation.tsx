@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+
 import { 
   NavigationMenu,
   NavigationMenuList,
@@ -8,15 +9,17 @@ import {
   NavigationMenuContent,
   NavigationMenuTrigger,
   NavigationMenuLink 
-} from "./navigation-menu";
-import { Button } from "./button";
-import { Input } from "./input";
+} from "@shared/components/ui/navigation-menu";
+import { Button } from "@shared/components/ui/button";
+import { Input } from "@shared/components/ui/input";
+import { Logo } from "@shared/components/ui/logo";
+import { Wordmark } from "@shared/components/ui/wordmark";
 import { Search, HelpCircle, User, LogOut, Home, Building, BarChart3, Bell } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@shared/lib/utils";
 
 // Enhanced navigation with context awareness and micro-interactions
 export function EnhancedNavigation() {
-  const [location] = useLocation();
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,10 +69,10 @@ export function EnhancedNavigation() {
           keywords: ["analysis", "evaluation", "metrics"]
         },
         { 
-          title: "Market Analysis", 
-          href: "/market", 
-          description: "Real-time market insights",
-          keywords: ["trends", "pricing", "forecasts"]
+          title: "Residential Properties", 
+          href: "/properties/residential", 
+          description: "Houses and apartments",
+          keywords: ["homes", "apartments", "residential"]
         },
       ]
     },
@@ -78,22 +81,34 @@ export function EnhancedNavigation() {
       icon: BarChart3,
       items: [
         { 
-          title: "Property Verification", 
-          href: "/services/verification", 
-          description: "Verify property authenticity",
+          title: "Basic Checks", 
+          href: "/services/basic-checks", 
+          description: "Essential property verification",
           keywords: ["documents", "legal", "validation"]
         },
         { 
           title: "Document Authentication", 
-          href: "/services/documents", 
+          href: "/services/document-auth", 
           description: "Secure document verification",
           keywords: ["certificates", "titles", "permits"]
         },
         { 
-          title: "Trust Score", 
-          href: "/services/trust-score", 
-          description: "Property trust metrics",
-          keywords: ["rating", "reliability", "assessment"]
+          title: "Fraud Detection", 
+          href: "/services/fraud-detection", 
+          description: "AI-powered fraud protection",
+          keywords: ["security", "protection", "analysis"]
+        },
+        { 
+          title: "Fraud Resources", 
+          href: "/fraud-resources", 
+          description: "Complete guide to preventing and reporting fraud",
+          keywords: ["fraud", "prevention", "reporting", "guide", "resources"]
+        },
+        { 
+          title: "Community", 
+          href: "/community", 
+          description: "Share experiences and learn from others",
+          keywords: ["community", "experiences", "stories", "support"]
         },
       ]
     }
@@ -181,15 +196,25 @@ export function EnhancedNavigation() {
         <div className="flex items-center justify-between">
           {/* Logo and main navigation */}
           <div className="flex items-center space-x-8">
-            <motion.a
-              href="/"
+            <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
-              aria-label="AfricanPropertyTrust - Home"
+              className="flex items-center gap-3"
             >
-              AfricanPropertyTrust
-            </motion.a>
+              <Logo
+                size="md"
+                variant={scrolled ? "default" : "light"}
+                interactive={true}
+                href="/"
+              />
+              <Wordmark
+                size="md"
+                variant={scrolled ? "default" : "light"}
+                animated={true}
+                interactive={true}
+                href="/"
+              />
+            </motion.div>
 
             <NavigationMenu>
               <NavigationMenuList>

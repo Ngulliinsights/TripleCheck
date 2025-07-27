@@ -1,13 +1,27 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Progress } from "../../shared/components/ui/progress";
-import { Button } from "../../shared/components/ui/button";
-import { Gauge, CheckCircle2, AlertTriangle, TrendingUp, History, Shield, Users } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@shared/components/ui/card";
+import { Progress } from "@shared/components/ui/progress";
+import { Button } from "@shared/components/ui/button";
+import {
+  Gauge,
+  CheckCircle2,
+  AlertTriangle,
+  TrendingUp,
+  History,
+  Shield,
+  Users,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../../shared/components/ui/tooltip";
+} from "@shared/components/ui/tooltip";
+import { formatDate } from "../../shared/utils/date-utils";
 
 export default function KarmaScorePage() {
   // Simulated karma score data
@@ -18,28 +32,28 @@ export default function KarmaScorePage() {
       communityTrust: 82,
       documentAccuracy: 88,
       transactionHistory: 80,
-      responseTime: 85
+      responseTime: 85,
     },
     recentActivities: [
       {
         type: "verification",
         status: "success",
         date: "2025-03-13",
-        description: "Property documents verified successfully"
+        description: "Property documents verified successfully",
       },
       {
         type: "warning",
         status: "pending",
         date: "2025-03-12",
-        description: "Pending response to user inquiry"
+        description: "Pending response to user inquiry",
       },
       {
         type: "success",
         status: "completed",
         date: "2025-03-10",
-        description: "Completed transaction with verified documentation"
-      }
-    ]
+        description: "Completed transaction with verified documentation",
+      },
+    ],
   };
 
   const scoreCategories = [
@@ -47,11 +61,14 @@ export default function KarmaScorePage() {
     { min: 80, label: "Very Good", color: "text-blue-500" },
     { min: 70, label: "Good", color: "text-yellow-500" },
     { min: 60, label: "Fair", color: "text-orange-500" },
-    { min: 0, label: "Needs Improvement", color: "text-red-500" }
+    { min: 0, label: "Needs Improvement", color: "text-red-500" },
   ];
 
   const getCurrentCategory = (score: number) => {
-    return scoreCategories.find(category => score >= category.min) || scoreCategories[scoreCategories.length - 1];
+    return (
+      scoreCategories.find((category) => score >= category.min) ||
+      scoreCategories[scoreCategories.length - 1]
+    );
   };
 
   const currentCategory = getCurrentCategory(karmaScore.overall);
@@ -74,8 +91,8 @@ export default function KarmaScorePage() {
               <div className="text-6xl font-bold text-[#2C5282]">
                 {karmaScore.overall}
               </div>
-              <div className={`text-xl font-medium ${currentCategory.color}`}>
-                {currentCategory.label}
+              <div className={`text-xl font-medium ${currentCategory?.color || 'text-gray-600'}`}>
+                {currentCategory?.label || 'Unknown'}
               </div>
               <p className="text-muted-foreground">
                 Your karma score indicates a strong reputation in our community
@@ -97,11 +114,14 @@ export default function KarmaScorePage() {
                     <Tooltip>
                       <TooltipTrigger className="text-left">
                         <span className="font-medium capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                          {key.replace(/([A-Z])/g, " $1").trim()}
                         </span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Learn more about {key.replace(/([A-Z])/g, ' $1').trim()}</p>
+                        <p>
+                          Learn more about{" "}
+                          {key.replace(/([A-Z])/g, " $1").trim()}
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                     <span className="font-medium">{value}%</span>
@@ -121,18 +141,19 @@ export default function KarmaScorePage() {
           <CardContent>
             <div className="space-y-4">
               {karmaScore.recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-start gap-4 p-4 bg-muted rounded-lg">
-                  {activity.status === 'success' ? (
+                <div
+                  key={index}
+                  className="flex items-start gap-4 p-4 bg-muted rounded-lg"
+                >
+                  {activity.status === "success" ?
                     <CheckCircle2 className="h-5 w-5 text-green-500 mt-1" />
-                  ) : activity.status === 'pending' ? (
+                  : activity.status === "pending" ?
                     <AlertTriangle className="h-5 w-5 text-yellow-500 mt-1" />
-                  ) : (
-                    <Shield className="h-5 w-5 text-blue-500 mt-1" />
-                  )}
+                  : <Shield className="h-5 w-5 text-blue-500 mt-1" />}
                   <div>
                     <div className="font-medium">{activity.description}</div>
                     <div className="text-sm text-muted-foreground">
-                      {new Date(activity.date).toLocaleDateString()}
+                      {formatDate(activity.date)}
                     </div>
                   </div>
                 </div>

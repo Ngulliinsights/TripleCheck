@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
-import { Progress } from "../../shared/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../shared/components/ui/select";
+import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
+import { Button } from "@shared/components/ui/button";
+import { Badge } from "@shared/components/ui/badge";
+import { Progress } from "@shared/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/components/ui/select";
 import { 
   Home, 
   MapPin, 
@@ -21,17 +22,19 @@ import {
   XCircle,
   Minus
 } from "lucide-react";
-import { cn } from "../../shared/lib/utils";
-import type { Property, PropertyFeatures } from "../../shared/schema";
+import { cn } from "@shared/lib/utils";
+import type { Property, PropertyFeatures } from "@shared/schema";
 
 export default function PropertyComparePage() {
   const [selectedProperty1, setSelectedProperty1] = useState<string>("");
   const [selectedProperty2, setSelectedProperty2] = useState<string>("");
 
-  // Fetch all properties with array type safety
-  const { data: properties, isLoading } = useQuery<Property[]>({
-    queryKey: ['/api/properties'],
-    select: (data) => Array.isArray(data) ? data : []
+  // Fetch all properties with enhanced safety and validation
+  const { data: properties, isLoading, hasValidData } = useSafePropertiesQuery(
+    undefined,
+    {
+      context: 'property-compare',
+      staleTime: 10 * 60 * 1000, // 10 minutes for comparison data
   });
 
   // Get selected properties data with null checks
@@ -217,9 +220,9 @@ export default function PropertyComparePage() {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                      {property1.imageUrls?.[0] ? (
+                      {property1.images?.[0] ? (
                         <img 
-                          src={property1.imageUrls[0]} 
+                          src={property1.images[0]} 
                           alt={property1.title}
                           className="w-full h-full object-cover"
                         />
@@ -253,9 +256,9 @@ export default function PropertyComparePage() {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                      {property2.imageUrls?.[0] ? (
+                      {property2.images?.[0] ? (
                         <img 
-                          src={property2.imageUrls[0]} 
+                          src={property2.images[0]} 
                           alt={property2.title}
                           className="w-full h-full object-cover"
                         />
@@ -418,7 +421,7 @@ export default function PropertyComparePage() {
                         <span>Price per sq ft:</span>
                         <span className="font-medium">
                           {getFeatures(property1)?.squareFeet 
-                            ? formatPrice(Math.round(property1.price / getFeatures(property1)!.squareFeet))
+                            ? formatPrice(Math.round(property1.price / (getFeatures(property1)?.squareFeet || 1)))
                             : "—"
                           }
                         </span>
@@ -437,7 +440,7 @@ export default function PropertyComparePage() {
                         <span>Price per sq ft:</span>
                         <span className="font-medium">
                           {getFeatures(property2)?.squareFeet 
-                            ? formatPrice(Math.round(property2.price / getFeatures(property2)!.squareFeet))
+                            ? formatPrice(Math.round(property2.price / (getFeatures(property2)?.squareFeet || 1)))
                             : "—"
                           }
                         </span>

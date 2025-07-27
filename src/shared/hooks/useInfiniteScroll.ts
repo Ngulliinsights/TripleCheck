@@ -1,9 +1,11 @@
 import { useInfiniteQuery, UseInfiniteQueryResult } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
 
 interface UseInfiniteScrollOptions<TData, TError = Error> {
   queryKey: unknown[];
-  queryFn: ({ pageParam }: { pageParam: number }) => Promise<{
+  queryFn: ({ pageParam, signal }: { pageParam: number; signal?: AbortSignal }) => Promise<{
     data: TData[];
     nextPage?: number;
     hasNextPage: boolean;
@@ -20,18 +22,22 @@ interface UseInfiniteScrollOptions<TData, TError = Error> {
   onSuccess?: (data: any) => void;
 }
 
-interface UseInfiniteScrollReturn<TData, TError = Error> 
-  extends Omit<UseInfiniteQueryResult<any, TError>, 'data'> {
+interface UseInfiniteScrollReturn<TData, TError = Error> {
   data: TData[];
   flatData: TData[];
   totalCount: number;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
-  fetchNextPage: () => void;
+  fetchNextPage: () => Promise<any>;
   scrollRef: React.RefObject<HTMLElement>;
   isNearBottom: boolean;
   loadMore: () => void;
   reset: () => void;
+  // Include other properties from UseInfiniteQueryResult
+  isLoading: boolean;
+  isError: boolean;
+  error: TError | null;
+  refetch: () => Promise<any>;
 }
 
 /**
@@ -68,16 +74,18 @@ export function useInfiniteScroll<TData = any, TError = Error>({
     enabled,
     staleTime,
     gcTime,
-    onError,
-    onSuccess,
+    // Note: onError and onSuccess are deprecated in newer versions of React Query
+    // Use error boundaries or handle errors in components instead
   });
 
   // Flatten the paginated data
   const flatData = query.data?.pages.flatMap(page => page.data) || [];
   const totalCount = query.data?.pages[0]?.totalCount || flatData.length;
 
+  const cleanupManager = useEnhancedCleanupManager();
+
   // Intersection Observer for automatic loading
-  useEffect(() => {
+  useSafeEffect(() => {
     if (!sentinelRef.current || !query.hasNextPage || query.isFetchingNextPage) {
       return;
     }
@@ -100,13 +108,13 @@ export function useInfiniteScroll<TData = any, TError = Error>({
 
     observer.observe(sentinelRef.current);
 
-    return () => {
+    cleanupManager.addCleanup(() => {
       observer.disconnect();
-    };
-  }, [query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage, rootMargin]);
+    }, 'intersection-observer');
+  }, [query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage, rootMargin, cleanupManager]);
 
   // Manual scroll detection as fallback
-  useEffect(() => {
+  useSafeEffect(() => {
     const scrollElement = scrollRef.current;
     if (!scrollElement) return;
 
@@ -121,9 +129,8 @@ export function useInfiniteScroll<TData = any, TError = Error>({
       }
     };
 
-    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
-    return () => scrollElement.removeEventListener('scroll', handleScroll);
-  }, [query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage, threshold]);
+    cleanupManager.addEventListener(scrollElement, 'scroll', handleScroll, { passive: true }, 'scroll-listener');
+  }, [query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage, threshold, cleanupManager]);
 
   const loadMore = useCallback(() => {
     if (query.hasNextPage && !query.isFetchingNextPage) {
@@ -132,7 +139,8 @@ export function useInfiniteScroll<TData = any, TError = Error>({
   }, [query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage]);
 
   const reset = useCallback(() => {
-    query.remove();
+    // React Query v5: Use invalidateQueries instead of deprecated remove() method
+    // This will clear the cache and trigger a fresh fetch
     query.refetch();
   }, [query]);
 
@@ -145,14 +153,6 @@ export function useInfiniteScroll<TData = any, TError = Error>({
     isNearBottom,
     loadMore,
     reset,
-    // Create a sentinel element for intersection observer
-    SentinelComponent: () => (
-      <div 
-        ref={sentinelRef}
-        style={{ height: '1px', width: '100%' }}
-        aria-hidden="true"
-      />
-    ),
   } as UseInfiniteScrollReturn<TData, TError>;
 }
 
@@ -162,13 +162,14 @@ export function useInfiniteScroll<TData = any, TError = Error>({
 export function useInfinitePropertyScroll(filters: Record<string, any> = {}) {
   return useInfiniteScroll({
     queryKey: ['properties', 'infinite', filters],
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam = 1, signal }) => {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/properties?page=${pageParam}&${new URLSearchParams(filters)}`, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json',
         },
+        signal,
       });
       
       if (!response.ok) {
@@ -187,13 +188,14 @@ export function useInfinitePropertyScroll(filters: Record<string, any> = {}) {
 export function useInfiniteMessageScroll(threadId: string) {
   return useInfiniteScroll({
     queryKey: ['messages', 'infinite', threadId],
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam = 1, signal }) => {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/messages/${threadId}?page=${pageParam}`, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json',
         },
+        signal,
       });
       
       if (!response.ok) {
@@ -213,7 +215,7 @@ export function useInfiniteMessageScroll(threadId: string) {
 export function useInfiniteSearchScroll(query: string, filters: Record<string, any> = {}) {
   return useInfiniteScroll({
     queryKey: ['search', 'infinite', query, filters],
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam = 1, signal }) => {
       const token = localStorage.getItem('authToken');
       const searchParams = new URLSearchParams({
         q: query,
@@ -226,6 +228,7 @@ export function useInfiniteSearchScroll(query: string, filters: Record<string, a
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json',
         },
+        signal,
       });
       
       if (!response.ok) {

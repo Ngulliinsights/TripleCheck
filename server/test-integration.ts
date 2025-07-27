@@ -30,7 +30,7 @@ async function testIntegration() {
     }
   } catch (error) {
     console.log('❌ Health check error:', error);
-    tests.push({ name: 'Health Check', status: 'ERROR', error: error.message });
+    tests.push({ name: 'Health Check', status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
   }
 
   // Test 2: Properties API (No Search)
@@ -49,7 +49,7 @@ async function testIntegration() {
     }
   } catch (error) {
     console.log('❌ Properties API error:', error);
-    tests.push({ name: 'Properties API', status: 'ERROR', error: error.message });
+    tests.push({ name: 'Properties API', status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
   }
 
   // Test 3: Search API
@@ -69,7 +69,7 @@ async function testIntegration() {
     }
   } catch (error) {
     console.log('❌ Search API error:', error);
-    tests.push({ name: 'Search API', status: 'ERROR', error: error.message });
+    tests.push({ name: 'Search API', status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
   }
 
   // Test 4: CORS Headers
@@ -89,7 +89,7 @@ async function testIntegration() {
     tests.push({ name: 'CORS Headers', status: 'PASS', headers: corsHeaders });
   } catch (error) {
     console.log('❌ CORS test error:', error);
-    tests.push({ name: 'CORS Headers', status: 'ERROR', error: error.message });
+    tests.push({ name: 'CORS Headers', status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
   }
 
   // Test 5: Database Connection (via API)
@@ -113,7 +113,7 @@ async function testIntegration() {
     }
   } catch (error) {
     console.log('❌ Database test error:', error);
-    tests.push({ name: 'Database Connection', status: 'ERROR', error: error.message });
+    tests.push({ name: 'Database Connection', status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
   }
 
   // Summary

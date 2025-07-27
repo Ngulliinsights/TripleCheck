@@ -1,8 +1,8 @@
 import React from 'react';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
-import { ErrorBoundary } from 'react-error-boundary';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorBoundary } from '@/app/error-boundary';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface QueryErrorFallbackProps {
@@ -54,15 +54,12 @@ export function QueryErrorBoundary({ children, fallback: Fallback = QueryErrorFa
     <QueryErrorResetBoundary>
       {({ reset }) => (
         <ErrorBoundary
-          FallbackComponent={Fallback}
-          onReset={reset}
-          onError={(error, errorInfo) => {
-            // Log error for debugging
-            console.error('Query Error Boundary caught an error:', error, errorInfo);
-            
-            // You can also send to error reporting service here
-            // errorReportingService.captureException(error, { extra: errorInfo });
-          }}
+          fallback={
+            <Fallback 
+              error={new Error('An error occurred')} 
+              resetErrorBoundary={reset} 
+            />
+          }
         >
           {children}
         </ErrorBoundary>

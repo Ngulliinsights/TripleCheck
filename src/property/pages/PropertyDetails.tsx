@@ -1,479 +1,275 @@
-import React, { useState, useCallback } from "react";
-import { useLocation } from "wouter";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Button } from '../../shared/components/ui/button';
+import { Badge } from '../../shared/components/ui/badge';
+import { MapPin, Bed, Bath, Square, Shield, Calendar, User, Phone, Mail } from 'lucide-react';
+import { formatDate } from '../../shared/utils/date-utils';
 
 interface PropertyDetailsProps {
-  id: string;
+  id?: string;
 }
 
-interface Property {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  location: string;
-  imageUrls?: string[];
-  verificationStatus: "verified" | "pending" | "unverified";
-  features?: {
-    bedrooms?: number;
-    bathrooms?: number;
-    squareFeet?: number;
-    parkingSpaces?: number;
-    yearBuilt?: number;
-    propertyType?: string;
-    petFriendly?: boolean;
-    furnished?: boolean;
-    amenities?: string[];
-  };
-}
-
-interface VerificationReport {
-  status: "verified" | "pending" | "failed";
-  score: number;
-  checks: {
-    ownership: boolean;
-    documents: boolean;
-    location: boolean;
-    pricing: boolean;
-  };
-  lastUpdated: string;
-}
-
-export function PropertyDetails({ id }: PropertyDetailsProps) {
-  const [, setLocation] = useLocation();
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [showContactDialog, setShowContactDialog] = useState(false);
-
-  // Mock data - in real app, this would come from API
-  const property: Property = {
-    id,
-    title: "Beautiful 3BR Apartment in Westlands",
-    description: "Spacious and modern 3-bedroom apartment located in the heart of Westlands. Features include modern kitchen, spacious living room, and great city views.",
+export default function PropertyDetails({ id }: PropertyDetailsProps) {
+  // Mock property data - in real app, this would be fetched based on ID
+  const property = {
+    id: id || '1',
+    title: 'Modern 3-Bedroom Apartment in Nairobi',
+    description: 'Beautiful modern apartment with stunning city views, located in the heart of Nairobi. Features include modern appliances, spacious rooms, and excellent security.',
+    location: 'Westlands, Nairobi',
     price: 150000,
-    location: "Westlands, Nairobi",
-    imageUrls: [
-      "/placeholder-property.jpg",
-      "/placeholder-property-2.jpg",
-      "/placeholder-property-3.jpg",
+    images: [
+      '/placeholder-property.jpg',
+      '/placeholder-property.jpg',
+      '/placeholder-property.jpg'
     ],
-    verificationStatus: "verified",
     features: {
       bedrooms: 3,
       bathrooms: 2,
       squareFeet: 1200,
-      parkingSpaces: 1,
+      parkingSpaces: 2,
       yearBuilt: 2020,
-      propertyType: "Apartment",
-      petFriendly: false,
-      furnished: true,
-      amenities: ["Swimming Pool", "Gym", "Security", "Parking", "WiFi", "Generator"],
+      amenities: ['Swimming Pool', 'Gym', 'Security', 'Garden', 'Parking'],
+      propertyType: 'Apartment',
+      petFriendly: true,
+      furnished: false
     },
-  };
-
-  const verificationReport: VerificationReport = {
-    status: "verified",
-    score: 85,
-    checks: {
-      ownership: true,
-      documents: true,
-      location: true,
-      pricing: false,
+    status: 'verified' as const,
+    verificationData: {
+      imageAnalysis: {
+        qualityScore: 95,
+        authenticityScore: 98,
+        flaggedIssues: []
+      },
+      descriptionAnalysis: {
+        accuracyScore: 92,
+        completenessScore: 88,
+        suggestedImprovements: []
+      },
+      overallScore: 94,
+      verificationTimestamp: '2024-01-15T10:30:00Z',
+      aiModel: 'TripleCheck-AI-v2.1'
     },
-    lastUpdated: "2024-01-15",
-  };
-
-  const handleShare = useCallback(async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: property.title,
-          text: property.description,
-          url: window.location.href,
-        });
-      } catch (error) {
-        navigator.clipboard.writeText(window.location.href);
-        alert("Link copied to clipboard");
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard");
+    owner: {
+      name: 'John Doe',
+      phone: '+254 700 123 456',
+      email: 'john.doe@example.com',
+      trustScore: 4.8,
+      verified: true
     }
-  }, [property]);
+  };
 
-  const handleContact = useCallback(() => {
-    setShowContactDialog(true);
-  }, []);
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
 
-  const handleFavorite = useCallback(() => {
-    alert("Added to favorites!");
-  }, []);
-
-  const features = property.features || {};
-  const amenities = features.amenities || [];
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-        <button 
-          className="text-blue-600 hover:underline"
-          onClick={() => setLocation("/")}
-        >
-          ← Back to Properties
-        </button>
-        <span>/</span>
-        <span>{property.location}</span>
-        <span>/</span>
-        <span className="text-gray-900">{property.title}</span>
-      </div>
-
-      {/* Image Gallery */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
-        <div className="lg:col-span-3">
-          <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-200">
-            <img
-              src={property.imageUrls?.[selectedImageIndex] || "/placeholder-property.jpg"}
-              alt={property.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute top-4 left-4">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                property.verificationStatus === 'verified' 
-                  ? 'bg-green-100 text-green-800' 
-                  : property.verificationStatus === 'pending'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-gray-100 text-gray-800'
-              }`}>
-                {property.verificationStatus === 'verified' ? '✓ Verified' : 
-                 property.verificationStatus === 'pending' ? '⏳ Pending' : '❌ Unverified'}
-              </span>
-            </div>
-            <div className="absolute top-4 right-4 flex gap-2">
-              <button 
-                className="bg-white/80 hover:bg-white p-2 rounded-lg transition-colors"
-                onClick={handleShare}
-              >
-                📤
-              </button>
-              <button 
-                className="bg-white/80 hover:bg-white p-2 rounded-lg transition-colors"
-                onClick={handleFavorite}
-              >
-                ❤️
-              </button>
-            </div>
-            <div className="absolute bottom-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
-              📷 {selectedImageIndex + 1} / {property.imageUrls?.length || 0}
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-bold">{property.title}</h1>
+            <Badge className={getStatusColor(property.status)}>
+              <Shield className="w-4 h-4 mr-1" />
+              {property.status}
+            </Badge>
+          </div>
+          <div className="flex items-center text-gray-600 mb-2">
+            <MapPin className="w-4 h-4 mr-1" />
+            {property.location}
+          </div>
+          <div className="text-2xl font-bold text-blue-600">
+            {formatPrice(property.price)}
           </div>
         </div>
-        <div className="space-y-2">
-          {(property.imageUrls || []).slice(0, 4).map((url, index) => (
-            <div
-              key={index}
-              className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${
-                selectedImageIndex === index ? "border-blue-500" : "border-transparent"
-              }`}
-              onClick={() => setSelectedImageIndex(index)}
-            >
-              <img
-                src={url}
-                alt={`${property.title} ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Property Header */}
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{property.title}</h1>
-            <div className="flex items-center gap-2 text-gray-600 mb-2">
-              📍 <span>{property.location}</span>
-            </div>
-            <div className="flex items-center gap-4 mb-6">
-              <span className="text-3xl font-bold text-blue-600">
-                KES {property.price?.toLocaleString() || "Price on request"}
-              </span>
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-gray-600">Trust Score:</span>
-                <span className="font-bold text-green-600">{verificationReport.score}%</span>
-              </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="flex flex-wrap gap-4 mb-6">
-              {features.bedrooms && (
-                <div className="flex items-center gap-1">
-                  🛏️ <span>{features.bedrooms} beds</span>
-                </div>
-              )}
-              {features.bathrooms && (
-                <div className="flex items-center gap-1">
-                  🚿 <span>{features.bathrooms} baths</span>
-                </div>
-              )}
-              {features.squareFeet && (
-                <div className="flex items-center gap-1">
-                  📐 <span>{features.squareFeet.toLocaleString()} sq ft</span>
-                </div>
-              )}
-              {features.parkingSpaces && (
-                <div className="flex items-center gap-1">
-                  🚗 <span>{features.parkingSpaces} parking</span>
-                </div>
-              )}
-              {features.yearBuilt && (
-                <div className="flex items-center gap-1">
-                  📅 <span>Built {features.yearBuilt}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="border-b border-gray-200">
-            <div className="flex space-x-8">
-              {['overview', 'features', 'verification', 'reviews'].map((tab) => (
-                <button
-                  key={tab}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tab Content */}
-          <div className="space-y-6">
-            {activeTab === 'overview' && (
-              <>
-                <div className="bg-white p-6 rounded-lg border">
-                  <h3 className="text-lg font-semibold mb-3">Property Description</h3>
-                  <p className="text-gray-600 leading-relaxed">{property.description}</p>
-                </div>
-
-                {amenities.length > 0 && (
-                  <div className="bg-white p-6 rounded-lg border">
-                    <h3 className="text-lg font-semibold mb-3">Amenities</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {amenities.map((amenity, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <span className="text-green-500">✓</span>
-                          <span className="text-sm">{amenity}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {activeTab === 'features' && (
-              <div className="bg-white p-6 rounded-lg border">
-                <h3 className="text-lg font-semibold mb-3">Property Details</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                  <div>
-                    <p className="font-medium mb-1">Property Type</p>
-                    <p className="text-gray-600">{features.propertyType || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium mb-1">Bedrooms</p>
-                    <p className="text-gray-600">{features.bedrooms || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium mb-1">Bathrooms</p>
-                    <p className="text-gray-600">{features.bathrooms || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium mb-1">Square Feet</p>
-                    <p className="text-gray-600">{features.squareFeet?.toLocaleString() || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium mb-1">Year Built</p>
-                    <p className="text-gray-600">{features.yearBuilt || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium mb-1">Pet Friendly</p>
-                    <p className="text-gray-600">{features.petFriendly ? "Yes" : "No"}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'verification' && (
-              <div className="bg-white p-6 rounded-lg border">
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  🛡️ Verification Report
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span>Overall Score</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-500 h-2 rounded-full"
-                          style={{ width: `${verificationReport.score}%` }}
-                        />
-                      </div>
-                      <span className="font-medium">{verificationReport.score}%</span>
-                    </div>
-                  </div>
-
-                  <hr />
-
-                  <div className="space-y-3">
-                    {Object.entries(verificationReport.checks).map(([key, passed]) => (
-                      <div key={key} className="flex items-center justify-between">
-                        <span className="capitalize">{key.replace(/([A-Z])/g, " $1")}</span>
-                        <span className={`px-2 py-1 rounded text-sm ${
-                          passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {passed ? '✓ Verified' : '⚠️ Pending'}
-                        </span>
-                      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Image Gallery */}
+            <Card>
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <img
+                    src={property.images[0]}
+                    alt={property.title}
+                    className="w-full h-64 md:h-80 object-cover rounded-tl-lg md:rounded-bl-lg"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    {property.images.slice(1, 3).map((image, index) => (
+                      <img
+                        key={index}
+                        src={image}
+                        alt={`${property.title} ${index + 2}`}
+                        className="w-full h-32 md:h-40 object-cover"
+                      />
                     ))}
                   </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  <hr />
+            {/* Description */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 leading-relaxed">{property.description}</p>
+              </CardContent>
+            </Card>
 
-                  <div className="text-sm text-gray-600">
-                    Last updated: {verificationReport.lastUpdated}
+            {/* Features */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Property Features</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="flex items-center">
+                    <Bed className="w-5 h-5 mr-2 text-gray-600" />
+                    <span>{property.features?.bedrooms || 0} Bedrooms</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Bath className="w-5 h-5 mr-2 text-gray-600" />
+                    <span>{property.features?.bathrooms || 0} Bathrooms</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Square className="w-5 h-5 mr-2 text-gray-600" />
+                    <span>{property.features?.squareFeet || 0} sqft</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-gray-600" />
+                    <span>Built {property.features?.yearBuilt || 'N/A'}</span>
                   </div>
                 </div>
-              </div>
+
+                <div>
+                  <h4 className="font-semibold mb-3">Amenities</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {property.features?.amenities?.map((amenity, index) => (
+                      <Badge key={index} variant="secondary">
+                        {amenity}
+                      </Badge>
+                    )) || <span className="text-gray-500">No amenities listed</span>}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Verification Details */}
+            {property.verificationData && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Shield className="w-5 h-5 mr-2 text-green-600" />
+                    Verification Report
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {property.verificationData.overallScore}%
+                      </div>
+                      <div className="text-sm text-gray-600">Overall Score</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {property.verificationData.imageAnalysis.authenticityScore}%
+                      </div>
+                      <div className="text-sm text-gray-600">Image Authenticity</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {property.verificationData.descriptionAnalysis.accuracyScore}%
+                      </div>
+                      <div className="text-sm text-gray-600">Description Accuracy</div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Verified on {formatDate(property.verificationData.verificationTimestamp)} 
+                    using {property.verificationData.aiModel}
+                  </p>
+                </CardContent>
+              </Card>
             )}
-
-            {activeTab === 'reviews' && (
-              <div className="bg-white p-6 rounded-lg border">
-                <h3 className="text-lg font-semibold mb-3">Property Reviews</h3>
-                <p className="text-gray-600">No reviews yet. Be the first to review this property!</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Contact Card */}
-          <div className="bg-white p-6 rounded-lg border">
-            <h3 className="text-lg font-semibold mb-4">Contact Property Owner</h3>
-            <div className="space-y-3">
-              <button
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                onClick={handleContact}
-              >
-                📧 Send Message
-              </button>
-              <button className="w-full border border-gray-300 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                📞 Call Now
-              </button>
-            </div>
           </div>
 
-          {/* Verification Actions */}
-          <div className="bg-white p-6 rounded-lg border">
-            <h3 className="text-lg font-semibold mb-4">Property Verification</h3>
-            <div className="space-y-3">
-              <button className="w-full border border-gray-300 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                🛡️ Verify This Property
-              </button>
-              <button className="w-full border border-gray-300 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                📈 Market Analysis
-              </button>
-              <button className="w-full border border-gray-300 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                🔗 Compare Similar
-              </button>
-            </div>
-          </div>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Contact Owner */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Contact Owner</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center">
+                  <User className="w-5 h-5 mr-3 text-gray-600" />
+                  <div>
+                    <div className="font-medium">{property.owner.name}</div>
+                    <div className="text-sm text-gray-600">
+                      Trust Score: {property.owner.trustScore}/5.0
+                      {property.owner.verified && (
+                        <Badge className="ml-2 bg-green-100 text-green-800">Verified</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Button className="w-full">
+                    <Phone className="w-4 h-4 mr-2" />
+                    Call Owner
+                  </Button>
+                  <Button variant="outline" className="w-full">
+                    <Mail className="w-4 h-4 mr-2" />
+                    Send Message
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Quick Stats */}
-          <div className="bg-white p-6 rounded-lg border">
-            <h3 className="text-lg font-semibold mb-4">Property Stats</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Views</span>
-                <span className="font-medium">1,234</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Favorites</span>
-                <span className="font-medium">89</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Listed</span>
-                <span className="font-medium">2 weeks ago</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Price/sq ft</span>
-                <span className="font-medium">
-                  KES {features.squareFeet ? Math.round(property.price / features.squareFeet).toLocaleString() : "N/A"}
-                </span>
-              </div>
-            </div>
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="outline" className="w-full">
+                  Save to Favorites
+                </Button>
+                <Button variant="outline" className="w-full">
+                  Share Property
+                </Button>
+                <Button variant="outline" className="w-full">
+                  Schedule Viewing
+                </Button>
+                <Button variant="outline" className="w-full">
+                  Report Issue
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-
-      {/* Contact Dialog */}
-      {showContactDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Contact Property Owner</h3>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              alert("Message sent!");
-              setShowContactDialog(false);
-            }}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Message</label>
-                  <textarea
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    rows={4}
-                    placeholder="I'm interested in this property..."
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Your Phone (Optional)</label>
-                  <input
-                    type="tel"
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    placeholder="+254 700 000 000"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Send Message
-                  </button>
-                  <button
-                    type="button"
-                    className="flex-1 border border-gray-300 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors"
-                    onClick={() => setShowContactDialog(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
-
-export default PropertyDetails;

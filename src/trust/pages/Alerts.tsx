@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Button } from "../../shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Input } from "../../shared/components/ui/input";
-import { Label } from "../../shared/components/ui/label";
-import { Switch } from "../../shared/components/ui/switch";
+import { Button } from "@shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
+import { Input } from "@shared/components/ui/input";
+import { Label } from "@shared/components/ui/label";
+import { Switch } from "@shared/components/ui/switch";
 import { Bell, Home, TrendingUp, AlertTriangle } from "lucide-react";
+import { useForm } from "../../shared/hooks/useForm";
+import FormField from "../../shared/components/forms/FormField";
+import { useToast } from "../../shared/hooks/use-toast";
 
 interface AlertPreference {
   id: string;
@@ -14,6 +17,8 @@ interface AlertPreference {
 }
 
 export default function AlertsPage() {
+  const { toast } = useToast();
+  
   const [alertPreferences, setAlertPreferences] = useState<AlertPreference[]>([
     {
       id: "price-changes",
@@ -41,12 +46,85 @@ export default function AlertsPage() {
     }
   ]);
 
+  const {
+    values,
+    errors,
+    touched,
+    isValid,
+    isSubmitting,
+    handleSubmit,
+    getFieldProps,
+    getFieldError
+  } = useForm({
+    initialValues: {
+      location: '',
+      minPrice: '',
+      maxPrice: '',
+      propertyType: ''
+    },
+    validationRules: {
+      location: {
+        required: true,
+        minLength: 2,
+        maxLength: 100
+      },
+      minPrice: {
+        numeric: true,
+        min: 0,
+        custom: (value: unknown, allValues?: unknown) => {
+          if (value && (allValues as any)?.maxPrice && parseFloat(value as string) >= parseFloat((allValues as any).maxPrice)) {
+            return 'Minimum price must be less than maximum price';
+          }
+          return null;
+        }
+      },
+      maxPrice: {
+        numeric: true,
+        min: 0,
+        custom: (value: unknown, allValues?: unknown) => {
+          if (value && (allValues as any)?.minPrice && parseFloat(value as string) <= parseFloat((allValues as any).minPrice)) {
+            return 'Maximum price must be greater than minimum price';
+          }
+          return null;
+        }
+      },
+      propertyType: {
+        required: true
+      }
+    },
+    onSubmit: async (formData) => {
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        toast({
+          title: "Alert preferences saved!",
+          description: "You'll receive notifications based on your criteria.",
+        });
+      } catch (error) {
+        toast({
+          title: "Failed to save preferences",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    }
+  });
+
   const toggleAlert = (alertId: string) => {
     setAlertPreferences(prev =>
       prev.map(pref =>
         pref.id === alertId ? { ...pref, enabled: !pref.enabled } : pref
       )
     );
+    
+    toast({
+      title: "Alert preference updated",
+      description: `${alertPreferences.find(p => p.id === alertId)?.name} alerts ${
+        alertPreferences.find(p => p.id === alertId)?.enabled ? 'disabled' : 'enabled'
+      }.`,
+    });
   };
 
   return (
@@ -93,44 +171,64 @@ export default function AlertsPage() {
             <CardTitle>Custom Alert Criteria</CardTitle>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4">
-              <div>
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  placeholder="Enter preferred locations"
-                />
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <FormField
+                label="Location"
+                type="text"
+                placeholder="Enter preferred locations (e.g., Nairobi, Mombasa)"
+                required
+                helpText="Specify cities or areas where you want to receive alerts"
+                error={getFieldError('location')}
+                touched={touched.location}
+                {...getFieldProps('location')}
+              />
               
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="minPrice">Minimum Price (KES)</Label>
-                  <Input
-                    id="minPrice"
-                    type="number"
-                    placeholder="Minimum price"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="maxPrice">Maximum Price (KES)</Label>
-                  <Input
-                    id="maxPrice"
-                    type="number"
-                    placeholder="Maximum price"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="propertyType">Property Type</Label>
-                <Input
-                  id="propertyType"
-                  placeholder="e.g., Apartment, House, Land"
+                <FormField
+                  label="Minimum Price (KES)"
+                  type="number"
+                  placeholder="0"
+                  min={0}
+                  helpText="Leave empty for no minimum"
+                  error={getFieldError('minPrice')}
+                  touched={touched.minPrice}
+                  {...getFieldProps('minPrice')}
+                />
+                <FormField
+                  label="Maximum Price (KES)"
+                  type="number"
+                  placeholder="10000000"
+                  min={0}
+                  helpText="Leave empty for no maximum"
+                  error={getFieldError('maxPrice')}
+                  touched={touched.maxPrice}
+                  {...getFieldProps('maxPrice')}
                 />
               </div>
 
-              <Button type="submit" className="w-full">
-                Save Alert Preferences
+              <FormField
+                label="Property Type"
+                type="select"
+                required
+                options={[
+                  { value: '', label: 'Select property type' },
+                  { value: 'apartment', label: 'Apartment' },
+                  { value: 'house', label: 'House' },
+                  { value: 'land', label: 'Land' },
+                  { value: 'commercial', label: 'Commercial' },
+                  { value: 'any', label: 'Any Type' }
+                ]}
+                error={getFieldError('propertyType')}
+                touched={touched.propertyType}
+                {...getFieldProps('propertyType')}
+              />
+
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={isSubmitting || !isValid}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Alert Preferences'}
               </Button>
             </form>
           </CardContent>

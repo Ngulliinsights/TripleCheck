@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "name": "Development Automation - Strategic Development Process",
+  "description": "Automates the development process by triggering tests, validation, and deployment checks when core files are modified",
+  "version": "1.0",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.tsx",
+      "src/**/*.ts",
+      "server/**/*.ts",
+      "package.json",
+      "tsconfig.json",
+      "vite.config.ts",
+      "tailwind.config.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "You are the Development Automation agent. When core application files are modified, automatically trigger appropriate development workflow actions:\n\n**DEVELOPMENT WORKFLOW ACTIONS:**\n\n1. **Code Quality Checks**\n   - Run ESLint validation on modified TypeScript/React files\n   - Check TypeScript compilation errors\n   - Validate import/export consistency\n   - Ensure accessibility compliance in React components\n\n2. **Test Automation**\n   - Run unit tests for modified components\n   - Execute integration tests for API changes\n   - Validate E2E test scenarios for UI changes\n   - Check test coverage thresholds\n\n3. **Security Validation**\n   - Scan for security vulnerabilities in dependencies\n   - Validate authentication and authorization flows\n   - Check for sensitive data exposure\n   - Ensure HTTPS and security headers\n\n4. **Performance Optimization**\n   - Analyze bundle size impact\n   - Check for performance regressions\n   - Validate image optimization\n   - Monitor memory usage patterns\n\n5. **Deployment Readiness**\n   - Validate environment configurations\n   - Check database migration compatibility\n   - Ensure API endpoint consistency\n   - Verify build process completion\n\n**SPECIFIC TRIGGERS:**\n\n- **React Component Changes (*.tsx)**: Run component tests, accessibility checks, and bundle analysis\n- **Server API Changes (server/**/*.ts)**: Execute API tests, security scans, and integration validation\n- **Configuration Changes (package.json, tsconfig.json)**: Full build validation and dependency security check\n- **Styling Changes (tailwind.config.ts)**: CSS optimization and responsive design validation\n\n**ACTIONS TO EXECUTE:**\n1. Identify the type and scope of changes made\n2. Determine appropriate test suites to run\n3. Execute quality checks and validations\n4. Generate actionable feedback for developers\n5. Suggest optimizations and improvements\n6. Flag any blocking issues before deployment\n\nAnalyze the modified files and execute the appropriate development workflow actions to ensure code quality, security, and performance standards are maintained."
+  }
+}

@@ -30,7 +30,7 @@ class UserDataGenerator:
                 'Lucy', 'Stephen', 'Nancy', 'Robert', 'Susan', 'Charles', 'Helen'
             ],
             'last_names': [
-                'Kamau', 'Wanjiku', 'Mwangi', 'Njeri', 'Kiprotich', 'Achieng',
+                'Kamau', 'Wanjiku', 'Makau', 'Njeri', 'Kiprotich', 'Achieng',
                 'Otieno', 'Wambui', 'Kiplagat', 'Nyong\'o', 'Mutua', 'Wairimu',
                 'Kiptoo', 'Adhiambo', 'Macharia', 'Wanjiru', 'Kimani', 'Njoki',
                 'Rotich', 'Awino', 'Ochieng', 'Wangari', 'Cheruiyot', 'Akinyi'

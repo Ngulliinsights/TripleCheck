@@ -5,7 +5,7 @@ import {
   insertUserSchema, 
   insertReviewSchema,
   PropertyFeaturesSchema 
-} from "../../shared/schema";
+} from "../../src/shared/schema";
 
 // Enhanced error response interface
 interface ValidationErrorResponse {
@@ -35,7 +35,7 @@ export function validateBody<T>(schema: z.ZodSchema<T>) {
           details: error.errors.map(err => ({
             field: err.path.join('.'),
             message: err.message,
-            received: err.received
+            code: err.code
           })),
           timestamp: new Date().toISOString()
         };

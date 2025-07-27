@@ -1,8 +1,21 @@
-import React, { memo, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import React, { memo, useMemo } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { Calendar, Download, ExternalLink, FileText, Image, Video } from "lucide-react";
+import {
+  Calendar,
+  Download,
+  ExternalLink,
+  FileText,
+  Image,
+  Video,
+} from "lucide-react";
+import { formatPressDate, formatMediaDate } from "../utils/date-utils";
 
 // Type definitions for better TypeScript safety
 interface PressRelease {
@@ -15,7 +28,7 @@ interface PressRelease {
 
 interface MediaKitItem {
   name: string;
-  type: 'image' | 'document' | 'video';
+  type: "image" | "document" | "video";
   size: string;
   id?: string;
 }
@@ -49,20 +62,17 @@ const PressReleaseCard = memo(({ release }: { release: PressRelease }) => (
     <div className="flex items-center text-sm text-gray-500 mb-2">
       <Calendar className="h-4 w-4 mr-1" aria-hidden="true" />
       <time dateTime={release.date}>
-        {new Date(release.date).toLocaleDateString('en-KE', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })}
+        {formatPressDate(release.date)}
       </time>
     </div>
     <p className="text-gray-600 mb-3 leading-relaxed">{release.excerpt}</p>
-    <Button 
-      variant="outline" 
+    <Button
+      variant="outline"
       size="sm"
       aria-label={`Read full press release: ${release.title}`}
     >
-      Read Full Release <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
+      Read Full Release{" "}
+      <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
     </Button>
   </article>
 ));
@@ -70,10 +80,18 @@ const PressReleaseCard = memo(({ release }: { release: PressRelease }) => (
 const MediaKitItemCard = memo(({ item }: { item: MediaKitItem }) => {
   const getIcon = () => {
     switch (item.type) {
-      case 'image': return <Image className="h-6 w-6 text-[#2C5282]" aria-hidden="true" />;
-      case 'document': return <FileText className="h-6 w-6 text-[#2C5282]" aria-hidden="true" />;
-      case 'video': return <Video className="h-6 w-6 text-[#2C5282]" aria-hidden="true" />;
-      default: return <FileText className="h-6 w-6 text-[#2C5282]" aria-hidden="true" />;
+      case "image":
+        return <Image className="h-6 w-6 text-[#2C5282]" aria-hidden="true" />;
+      case "document":
+        return (
+          <FileText className="h-6 w-6 text-[#2C5282]" aria-hidden="true" />
+        );
+      case "video":
+        return <Video className="h-6 w-6 text-[#2C5282]" aria-hidden="true" />;
+      default:
+        return (
+          <FileText className="h-6 w-6 text-[#2C5282]" aria-hidden="true" />
+        );
     }
   };
 
@@ -86,8 +104,8 @@ const MediaKitItemCard = memo(({ item }: { item: MediaKitItem }) => {
           <p className="text-sm text-gray-500">{item.size}</p>
         </div>
       </div>
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         size="sm"
         aria-label={`Download ${item.name}`}
         className="hover:bg-[#2C5282] hover:text-white transition-colors"
@@ -106,17 +124,13 @@ const MediaFeatureCard = memo(({ feature }: { feature: MediaFeature }) => (
         <span className="font-medium">{feature.outlet}</span>
         <span aria-hidden="true">•</span>
         <time dateTime={feature.date}>
-          {new Date(feature.date).toLocaleDateString('en-KE', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-          })}
+          {formatMediaDate(feature.date)}
         </time>
         <Badge variant="outline">{feature.type}</Badge>
       </div>
     </div>
-    <Button 
-      variant="outline" 
+    <Button
+      variant="outline"
       size="sm"
       aria-label={`View ${feature.type.toLowerCase()}: ${feature.title}`}
     >
@@ -125,107 +139,153 @@ const MediaFeatureCard = memo(({ feature }: { feature: MediaFeature }) => (
   </article>
 ));
 
-const ContactCard = memo(({ contact, title }: { contact: ContactInfo; title: string }) => (
-  <div>
-    <h3 className="font-semibold mb-4 text-gray-800">{title}</h3>
-    <address className="not-italic space-y-2">
-      <p><strong className="text-gray-800">{contact.name}</strong></p>
-      <p className="text-gray-600">{contact.title}</p>
-      <p>
-        <span className="text-gray-600">Email: </span>
-        <a 
-          href={`mailto:${contact.email}`}
-          className="text-[#2C5282] hover:underline"
-        >
-          {contact.email}
-        </a>
-      </p>
-      <p>
-        <span className="text-gray-600">Phone: </span>
-        <a 
-          href={`tel:${contact.phone}`}
-          className="text-[#2C5282] hover:underline"
-        >
-          {contact.phone}
-        </a>
-      </p>
-    </address>
-  </div>
-));
+const ContactCard = memo(
+  ({ contact, title }: { contact: ContactInfo; title: string }) => (
+    <div>
+      <h3 className="font-semibold mb-4 text-gray-800">{title}</h3>
+      <address className="not-italic space-y-2">
+        <p>
+          <strong className="text-gray-800">{contact.name}</strong>
+        </p>
+        <p className="text-gray-600">{contact.title}</p>
+        <p>
+          <span className="text-gray-600">Email: </span>
+          <a
+            href={`mailto:${contact.email}`}
+            className="text-[#2C5282] hover:underline"
+          >
+            {contact.email}
+          </a>
+        </p>
+        <p>
+          <span className="text-gray-600">Phone: </span>
+          <a
+            href={`tel:${contact.phone}`}
+            className="text-[#2C5282] hover:underline"
+          >
+            {contact.phone}
+          </a>
+        </p>
+      </address>
+    </div>
+  )
+);
 
 export default function PressMediaPage() {
   // Using useMemo to prevent unnecessary re-renders when data doesn't change
-  const pressReleases: PressRelease[] = useMemo(() => [
-    {
-      title: "TripleCheck Launches AI-Powered Property Verification in Kenya",
-      date: "2024-01-15",
-      excerpt: "Revolutionary platform aims to eliminate property fraud through advanced verification technology",
-      category: "Product Launch",
-      id: "launch-ai-verification"
-    },
-    {
-      title: "Partnership with Kenya Association of Real Estate Agents Announced",
-      date: "2024-02-28",
-      excerpt: "Strategic alliance to enhance property verification standards across Kenya",
-      category: "Partnership",
-      id: "partnership-karea"
-    },
-    {
-      title: "TripleCheck Prevents KSh 50M in Property Fraud in First Quarter",
-      date: "2024-03-30",
-      excerpt: "Platform's fraud detection capabilities save thousands of Kenyan property buyers",
-      category: "Impact Report",
-      id: "q1-impact-report"
-    }
-  ], []);
+  const pressReleases: PressRelease[] = useMemo(
+    () => [
+      {
+        title: "TripleCheck Launches AI-Powered Property Verification in Kenya",
+        date: "2024-01-15",
+        excerpt:
+          "Revolutionary platform aims to eliminate property fraud through advanced verification technology",
+        category: "Product Launch",
+        id: "launch-ai-verification",
+      },
+      {
+        title:
+          "Partnership with Kenya Association of Real Estate Agents Announced",
+        date: "2024-02-28",
+        excerpt:
+          "Strategic alliance to enhance property verification standards across Kenya",
+        category: "Partnership",
+        id: "partnership-karea",
+      },
+      {
+        title:
+          "TripleCheck Prevents KSh 50M in Property Fraud in First Quarter",
+        date: "2024-03-30",
+        excerpt:
+          "Platform's fraud detection capabilities save thousands of Kenyan property buyers",
+        category: "Impact Report",
+        id: "q1-impact-report",
+      },
+    ],
+    []
+  );
 
-  const mediaKit: MediaKitItem[] = useMemo(() => [
-    { name: "Company Logo Package", type: "image", size: "2.3 MB", id: "logo-package" },
-    { name: "Product Screenshots", type: "image", size: "8.7 MB", id: "product-screenshots" },
-    { name: "Executive Photos", type: "image", size: "5.1 MB", id: "executive-photos" },
-    { name: "Company Fact Sheet", type: "document", size: "1.2 MB", id: "fact-sheet" },
-    { name: "Platform Demo Video", type: "video", size: "45 MB", id: "demo-video" }
-  ], []);
+  const mediaKit: MediaKitItem[] = useMemo(
+    () => [
+      {
+        name: "Company Logo Package",
+        type: "image",
+        size: "2.3 MB",
+        id: "logo-package",
+      },
+      {
+        name: "Product Screenshots",
+        type: "image",
+        size: "8.7 MB",
+        id: "product-screenshots",
+      },
+      {
+        name: "Executive Photos",
+        type: "image",
+        size: "5.1 MB",
+        id: "executive-photos",
+      },
+      {
+        name: "Company Fact Sheet",
+        type: "document",
+        size: "1.2 MB",
+        id: "fact-sheet",
+      },
+      {
+        name: "Platform Demo Video",
+        type: "video",
+        size: "45 MB",
+        id: "demo-video",
+      },
+    ],
+    []
+  );
 
-  const mediaFeatures: MediaFeature[] = useMemo(() => [
-    {
-      outlet: "Business Daily",
-      title: "Tech Startup Tackles Kenya's Property Fraud Crisis",
-      date: "2024-01-20",
-      type: "Article",
-      id: "business-daily-article"
-    },
-    {
-      outlet: "KTN News",
-      title: "TripleCheck: Securing Real Estate Transactions",
-      date: "2024-02-15",
-      type: "TV Interview",
-      id: "ktn-interview"
-    },
-    {
-      outlet: "Capital FM",
-      title: "Property Verification Revolution in Kenya",
-      date: "2024-03-05",
-      type: "Radio Interview",
-      id: "capital-fm-interview"
-    }
-  ], []);
+  const mediaFeatures: MediaFeature[] = useMemo(
+    () => [
+      {
+        outlet: "Business Daily",
+        title: "Tech Startup Tackles Kenya's Property Fraud Crisis",
+        date: "2024-01-20",
+        type: "Article",
+        id: "business-daily-article",
+      },
+      {
+        outlet: "KTN News",
+        title: "TripleCheck: Securing Real Estate Transactions",
+        date: "2024-02-15",
+        type: "TV Interview",
+        id: "ktn-interview",
+      },
+      {
+        outlet: "Capital FM",
+        title: "Property Verification Revolution in Kenya",
+        date: "2024-03-05",
+        type: "Radio Interview",
+        id: "capital-fm-interview",
+      },
+    ],
+    []
+  );
 
   // Contact information with proper typing
-  const contacts: Record<string, ContactInfo> = useMemo(() => ({
-    press: {
-      name: "Sarah Wanjiku",
-      title: "Chief Technology Officer",
-      email: "press@triplecheck.co.ke",
-      phone: "+254 700 123 456"
-    },
-    partnerships: {
-      name: "John Kariuki",
-      title: "Chief Executive Officer",
-      email: "partnerships@triplecheck.co.ke",
-      phone: "+254 700 654 321"
-    }
-  }), []);
+  const contacts = useMemo(
+    () => ({
+      press: {
+        name: "Sarah Wanjiku",
+        title: "Chief Technology Officer",
+        email: "press@triplecheck.co.ke",
+        phone: "+254 700 123 456",
+      } as ContactInfo,
+      partnerships: {
+        name: "John Kariuki",
+        title: "Chief Executive Officer",
+        email: "partnerships@triplecheck.co.ke",
+        phone: "+254 700 654 321",
+      } as ContactInfo,
+    }),
+    []
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12">
@@ -236,8 +296,8 @@ export default function PressMediaPage() {
             Press & Media
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Latest news, press releases, and media resources about TripleCheck's mission 
-            to transform Kenya's real estate market
+            Latest news, press releases, and media resources about TripleCheck's
+            mission to transform Kenya's real estate market
           </p>
         </header>
 
@@ -273,15 +333,12 @@ export default function PressMediaPage() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-6 leading-relaxed">
-                Download high-resolution images, logos, and other media assets for your 
-                stories about TripleCheck.
+                Download high-resolution images, logos, and other media assets
+                for your stories about TripleCheck.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {mediaKit.map((item) => (
-                  <MediaKitItemCard 
-                    key={item.id || item.name} 
-                    item={item} 
-                  />
+                  <MediaKitItemCard key={item.id || item.name} item={item} />
                 ))}
               </div>
             </CardContent>
@@ -318,13 +375,13 @@ export default function PressMediaPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <ContactCard 
-                  contact={contacts.press} 
-                  title="For Press Inquiries" 
+                <ContactCard
+                  contact={contacts.press}
+                  title="For Press Inquiries"
                 />
-                <ContactCard 
-                  contact={contacts.partnerships} 
-                  title="For Partnership Inquiries" 
+                <ContactCard
+                  contact={contacts.partnerships}
+                  title="For Partnership Inquiries"
                 />
               </div>
             </CardContent>

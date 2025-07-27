@@ -1,5 +1,7 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
-import { useRef, useMemo, useState, useCallback, useEffect } from "react";
+import { useRef, useMemo, useState, useCallback } from "react";
+import { useSafeEffect } from "../../infrastructure/hooks/useSafeEffect";
+import { useEnhancedCleanupManager } from "../../infrastructure/hooks/useCleanupManager";
 
 // Enhanced request coordinator with better error handling and metrics
 class RequestCoordinator {
@@ -74,11 +76,11 @@ class RequestCoordinator {
   // Clean up old metrics to prevent memory leaks
   cleanup(maxAge: number = 5 * 60 * 1000) {
     const now = Date.now();
-    for (const [key, metrics] of this.requestMetrics.entries()) {
+    this.requestMetrics.forEach((metrics, key) => {
       if (now - metrics.lastUsed > maxAge) {
         this.requestMetrics.delete(key);
       }
-    }
+    });
   }
 }
 
@@ -255,26 +257,20 @@ export function useSafeQuery<T>({
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const operationIdRef = useRef<string | null>(null);
 
+  const cleanupManager = useEnhancedCleanupManager();
+
   // Enhanced debouncing with proper cleanup
-  useEffect(() => {
+  useSafeEffect(() => {
     if (debounceMs > 0) {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
+      cleanupManager.removeCleanup('debounce-timeout');
       
-      debounceTimeoutRef.current = setTimeout(() => {
+      cleanupManager.addTimeout(() => {
         setDebouncedBody(body);
-      }, debounceMs);
-      
-      return () => {
-        if (debounceTimeoutRef.current) {
-          clearTimeout(debounceTimeoutRef.current);
-        }
-      };
+      }, debounceMs, 'debounce-timeout');
     } else {
       setDebouncedBody(body);
     }
-  }, [body, debounceMs]);
+  }, [body, debounceMs, cleanupManager]);
 
   // Optimized cache key generation with better serialization
   const requestCacheKey = useMemo(() => {

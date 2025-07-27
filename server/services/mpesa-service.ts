@@ -59,7 +59,7 @@ export class MpesaService {
   private async getAccessToken(): Promise<string> {
     // Check if token is still valid
     if (this.accessToken && this.tokenExpiry && new Date() < this.tokenExpiry) {
-      return this.accessToken;
+      return this.accessToken!; // Non-null assertion since we just checked
     }
 
     try {
@@ -76,7 +76,7 @@ export class MpesaService {
       // Token expires in 1 hour, refresh 5 minutes early
       this.tokenExpiry = new Date(Date.now() + (55 * 60 * 1000));
       
-      return this.accessToken;
+      return this.accessToken!; // Non-null assertion since we just set it
     } catch (error) {
       console.error('Failed to get M-Pesa access token:', error);
       throw new Error('Failed to authenticate with M-Pesa API');

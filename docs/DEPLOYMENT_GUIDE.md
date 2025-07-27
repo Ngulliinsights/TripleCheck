@@ -1,432 +1,291 @@
-# TripleCheck Platform - Production Deployment Guide
+# 🚀 Deployment Guide
 
-## Quick Start Migration from Replit
+This guide will help you deploy the African Property Trust application to production.
 
-### Prerequisites
+## 📋 Prerequisites
+
 - Node.js 18+ installed
-- PostgreSQL database access
-- Google AI API key
-- Domain/hosting provider
+- Git repository set up
+- Database (PostgreSQL) ready
+- Domain name (optional but recommended)
 
-### 1. Environment Setup
+## 🌐 Deployment Platforms
 
-Create `.env` file:
-```env
-# Database Configuration
-DATABASE_URL=postgresql://username:password@host:port/triplecheck
+### Option 1: Vercel (Recommended)
 
-# AI Services
-GOOGLE_API_KEY=your_google_ai_api_key
+**Pros:**
+- Automatic deployments from Git
+- Built-in preview deployments
+- Serverless functions
+- Easy environment variable management
+- Free tier available
 
-# Security
-SESSION_SECRET=your_64_character_random_string
-NODE_ENV=production
+**Setup:**
+1. Install Vercel CLI: `npm i -g vercel`
+2. Login: `vercel login`
+3. Deploy: `vercel --prod`
 
-# Optional Services
-OPENAI_API_KEY=your_openai_key
+### Option 2: Railway
 
-# Server Configuration
-PORT=5000
-HOST=0.0.0.0
-```
+**Pros:**
+- Traditional server deployment
+- Built-in database
+- Simple pricing
+- Good for long-running processes
 
-### 2. Database Setup
+### Option 3: Render
 
-#### Option A: Using Neon Database (Recommended)
-1. Create account at [neon.tech](https://neon.tech)
-2. Create new project: "triplecheck-production"
-3. Copy connection string to `DATABASE_URL`
+**Pros:**
+- Free tier with PostgreSQL
+- Automatic SSL
+- Easy scaling
 
-#### Option B: Self-hosted PostgreSQL
+## 🔧 Environment Variables Setup
+
+### Required Variables
+
 ```bash
-# Install PostgreSQL
-sudo apt update
-sudo apt install postgresql postgresql-contrib
+# Database
+DATABASE_URL="postgresql://user:password@host:port/database"
 
-# Create database
-sudo -u postgres psql
-CREATE DATABASE triplecheck;
-CREATE USER triplecheck_user WITH PASSWORD 'secure_password';
-GRANT ALL PRIVILEGES ON DATABASE triplecheck TO triplecheck_user;
-\q
+# Authentication
+JWT_SECRET="your-super-secret-jwt-key-minimum-32-characters"
+
+# Application
+NODE_ENV="production"
+PORT="3000"
+FRONTEND_URL="https://your-domain.com"
 ```
 
-### 3. Application Deployment
+### Optional but Recommended
 
-#### Option A: Docker Deployment (Recommended)
-
-**Create Dockerfile:**
-```dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy application code
-COPY . .
-
-# Build application
-RUN npm run build
-
-# Expose port
-EXPOSE 5000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:5000/api/health || exit 1
-
-# Start application
-CMD ["npm", "start"]
-```
-
-**Create docker-compose.yml:**
-```yaml
-version: '3.8'
-
-services:
-  app:
-    build: .
-    ports:
-      - "5000:5000"
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - SESSION_SECRET=${SESSION_SECRET}
-      - NODE_ENV=production
-    restart: unless-stopped
-    depends_on:
-      - postgres
-
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=triplecheck
-      - POSTGRES_USER=triplecheck_user
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backups:/backups
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-    depends_on:
-      - app
-    restart: unless-stopped
-
-volumes:
-  postgres_data:
-```
-
-**Deploy:**
 ```bash
-# Clone your repository
-git clone your-repo-url triplecheck-production
-cd triplecheck-production
+# AI Features
+GOOGLE_API_KEY="your-google-ai-api-key"
+
+# Email Notifications
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+
+# File Uploads
+UPLOAD_DIR="./uploads"
+MAX_FILE_SIZE="10485760"
+
+# Payment (M-Pesa for Kenya)
+MPESA_CONSUMER_KEY="your-mpesa-consumer-key"
+MPESA_CONSUMER_SECRET="your-mpesa-consumer-secret"
+MPESA_BUSINESS_SHORT_CODE="your-business-short-code"
+MPESA_PASSKEY="your-mpesa-passkey"
+MPESA_ENVIRONMENT="production"
+```
+
+## 🗄️ Database Setup
+
+### Option 1: Neon (Recommended)
+1. Go to [neon.tech](https://neon.tech)
+2. Create a new project
+3. Copy the connection string
+4. Set `DATABASE_URL` environment variable
+
+### Option 2: Supabase
+1. Go to [supabase.com](https://supabase.com)
+2. Create a new project
+3. Go to Settings > Database
+4. Copy the connection string
+5. Set `DATABASE_URL` environment variable
+
+### Option 3: Railway PostgreSQL
+1. Add PostgreSQL service in Railway
+2. Copy the connection string from variables
+3. Set `DATABASE_URL` environment variable
+
+## 🚀 Deployment Steps
+
+### 1. Prepare for Deployment
+
+```bash
+# Run deployment setup script
+npm run deploy:setup
+
+# Or manually:
+npm run test
+npm run build
+npm run check
+```
+
+### 2. Deploy to Vercel
+
+```bash
+# First time deployment
+vercel
+
+# Production deployment
+vercel --prod
 
 # Set environment variables
-cp .env.example .env
-# Edit .env with your values
-
-# Start services
-docker-compose up -d
-
-# Run database migrations
-docker-compose exec app npm run db:migrate
+vercel env add DATABASE_URL
+vercel env add JWT_SECRET
+# ... add other variables
 ```
 
-#### Option B: Manual Deployment
+### 3. Deploy to Railway
 
 ```bash
-# 1. Clone and setup
-git clone your-repo-url triplecheck-production
-cd triplecheck-production
+# Install Railway CLI
+npm install -g @railway/cli
 
-# 2. Install dependencies
-npm ci --only=production
+# Login and deploy
+railway login
+railway link
+railway up
+```
 
-# 3. Build application
+### 4. Deploy to Render
+
+1. Connect your GitHub repository
+2. Set build command: `npm run build`
+3. Set start command: `npm start`
+4. Add environment variables in dashboard
+
+## 🔄 Continuous Deployment
+
+### Branch Strategy
+
+```bash
+main        # Development (auto-deploy to staging)
+staging     # Testing (manual deploy)
+production  # Stable releases (manual deploy)
+```
+
+### GitHub Actions (Optional)
+
+Create `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy
+
+on:
+  push:
+    branches: [main, staging, production]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run test
+      - run: npm run build
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.ORG_ID }}
+          vercel-project-id: ${{ secrets.PROJECT_ID }}
+          working-directory: ./
+```
+
+## 🔍 Post-Deployment Checklist
+
+### 1. Health Check
+- [ ] Application loads successfully
+- [ ] Database connection works
+- [ ] Authentication works
+- [ ] API endpoints respond correctly
+
+### 2. Performance Check
+- [ ] Page load times < 3 seconds
+- [ ] API response times < 500ms
+- [ ] Images load properly
+- [ ] Mobile responsiveness
+
+### 3. Security Check
+- [ ] HTTPS enabled
+- [ ] Environment variables secure
+- [ ] No sensitive data in logs
+- [ ] CORS configured correctly
+
+### 4. Monitoring Setup
+- [ ] Error tracking (Sentry recommended)
+- [ ] Performance monitoring
+- [ ] Uptime monitoring
+- [ ] Database monitoring
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Build Fails:**
+```bash
+# Clear cache and rebuild
+rm -rf node_modules dist
+npm install
 npm run build
-
-# 4. Setup environment
-cp .env.example .env
-# Edit .env with production values
-
-# 5. Run database migrations
-npm run db:migrate
-
-# 6. Start application with PM2
-npm install -g pm2
-pm2 start ecosystem.config.js
-pm2 startup
-pm2 save
 ```
 
-### 4. Database Migration
+**Database Connection Issues:**
+- Check DATABASE_URL format
+- Verify database is accessible
+- Check firewall settings
 
-Create `migrate.js`:
-```javascript
-import { drizzle } from 'drizzle-orm/neon-http';
-import { migrate } from 'drizzle-orm/neon-http/migrator';
-import { neon } from '@neondatabase/serverless';
+**Environment Variables Not Working:**
+- Verify variable names match exactly
+- Check for typos in values
+- Restart deployment after changes
 
-const sql = neon(process.env.DATABASE_URL);
-const db = drizzle(sql);
+**Static Files Not Loading:**
+- Check build output in `dist/` folder
+- Verify Vercel routes configuration
+- Check file paths in HTML
 
-async function runMigrations() {
-  console.log('Running migrations...');
-  await migrate(db, { migrationsFolder: 'drizzle' });
-  console.log('Migrations completed!');
-}
+## 📊 Monitoring & Maintenance
 
-runMigrations().catch(console.error);
-```
+### Recommended Tools
 
-Add to `package.json`:
-```json
-{
-  "scripts": {
-    "db:migrate": "node migrate.js",
-    "db:generate": "drizzle-kit generate:pg",
-    "start": "node dist/server/index.js",
-    "build": "tsc && vite build"
-  }
-}
-```
+1. **Error Tracking:** Sentry
+2. **Performance:** Vercel Analytics
+3. **Uptime:** UptimeRobot
+4. **Database:** Built-in provider monitoring
 
-### 5. Nginx Configuration
+### Regular Maintenance
 
-Create `nginx.conf`:
-```nginx
-events {
-    worker_connections 1024;
-}
+- [ ] Update dependencies monthly
+- [ ] Monitor error rates
+- [ ] Check performance metrics
+- [ ] Backup database regularly
+- [ ] Review security logs
 
-http {
-    upstream app {
-        server app:5000;
-    }
+## 🔄 Rolling Back
 
-    server {
-        listen 80;
-        server_name your-domain.com www.your-domain.com;
-
-        # Redirect HTTP to HTTPS
-        return 301 https://$server_name$request_uri;
-    }
-
-    server {
-        listen 443 ssl http2;
-        server_name your-domain.com www.your-domain.com;
-
-        # SSL Configuration
-        ssl_certificate /etc/nginx/ssl/cert.pem;
-        ssl_certificate_key /etc/nginx/ssl/key.pem;
-        ssl_protocols TLSv1.2 TLSv1.3;
-        ssl_ciphers HIGH:!aNULL:!MD5;
-
-        # Security Headers
-        add_header X-Content-Type-Options nosniff;
-        add_header X-Frame-Options DENY;
-        add_header X-XSS-Protection "1; mode=block";
-        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
-
-        # File Upload Size
-        client_max_body_size 10M;
-
-        # Proxy Configuration
-        location / {
-            proxy_pass http://app;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_cache_bypass $http_upgrade;
-        }
-
-        # Static Files
-        location /uploads/ {
-            alias /app/uploads/;
-            expires 1y;
-            add_header Cache-Control "public, immutable";
-        }
-    }
-}
-```
-
-### 6. PM2 Configuration
-
-Create `ecosystem.config.js`:
-```javascript
-module.exports = {
-  apps: [{
-    name: 'triplecheck',
-    script: 'dist/server/index.js',
-    instances: 'max',
-    exec_mode: 'cluster',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 5000
-    },
-    error_file: 'logs/err.log',
-    out_file: 'logs/out.log',
-    log_file: 'logs/combined.log',
-    time: true,
-    max_memory_restart: '1G',
-    watch: false,
-    autorestart: true
-  }]
-};
-```
-
-### 7. SSL Certificate Setup
-
-#### Option A: Let's Encrypt (Free)
+### Vercel
 ```bash
-# Install certbot
-sudo apt install certbot python3-certbot-nginx
+# List deployments
+vercel ls
 
-# Generate certificate
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
-
-# Auto-renewal
-sudo crontab -e
-# Add: 0 12 * * * /usr/bin/certbot renew --quiet
+# Rollback to specific deployment
+vercel rollback [deployment-url]
 ```
 
-#### Option B: Custom Certificate
+### Railway
 ```bash
-# Place your SSL certificate files
-mkdir ssl
-cp your-cert.pem ssl/cert.pem
-cp your-key.pem ssl/key.pem
+# Redeploy previous version
+railway rollback
 ```
 
-### 8. Monitoring and Backup
+## 📞 Support
 
-#### Application Monitoring
-```bash
-# PM2 monitoring
-pm2 monit
-
-# System monitoring
-sudo apt install htop iotop
-
-# Log monitoring
-tail -f logs/combined.log
-```
-
-#### Database Backup
-```bash
-# Create backup script
-cat > backup-db.sh << EOF
-#!/bin/bash
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="backup_triplecheck_\$DATE.sql"
-pg_dump \$DATABASE_URL > /backups/\$BACKUP_FILE
-echo "Backup created: \$BACKUP_FILE"
-EOF
-
-chmod +x backup-db.sh
-
-# Schedule daily backups
-crontab -e
-# Add: 0 2 * * * /path/to/backup-db.sh
-```
-
-### 9. Security Checklist
-
-- [ ] Environment variables secured
-- [ ] Database access restricted
-- [ ] SSL/TLS enabled
-- [ ] Security headers configured
-- [ ] File upload restrictions in place
-- [ ] Rate limiting enabled
-- [ ] Regular security updates scheduled
-- [ ] Backup strategy implemented
-- [ ] Monitoring system active
-
-### 10. Performance Optimization
-
-#### Application Level
-```javascript
-// In server/index.ts
-import compression from 'compression';
-import helmet from 'helmet';
-
-app.use(helmet());
-app.use(compression());
-```
-
-#### Database Level
-```sql
--- Add indexes for better performance
-CREATE INDEX idx_properties_location ON properties(location);
-CREATE INDEX idx_properties_price ON properties(price);
-CREATE INDEX idx_reviews_property_id ON reviews(property_id);
-```
-
-### 11. Scaling Considerations
-
-#### Horizontal Scaling
-- Use load balancer (Nginx/HAProxy)
-- Configure PM2 cluster mode
-- Implement session sharing (Redis)
-
-#### Database Scaling
-- Read replicas for query optimization
-- Connection pooling
-- Query optimization
-
-#### CDN Integration
-- CloudFlare for static assets
-- Image optimization service
-- Global content distribution
+If you encounter issues:
+1. Check the troubleshooting section
+2. Review deployment logs
+3. Check environment variables
+4. Verify database connectivity
+5. Contact support if needed
 
 ---
 
-## Troubleshooting
-
-### Common Issues:
-
-1. **Database Connection Errors**
-   - Check DATABASE_URL format
-   - Verify database permissions
-   - Check firewall settings
-
-2. **SSL Certificate Issues**
-   - Verify certificate validity
-   - Check domain DNS records
-   - Confirm certificate file paths
-
-3. **Performance Issues**
-   - Monitor memory usage
-   - Check database query performance
-   - Review application logs
-
-4. **File Upload Problems**
-   - Check directory permissions
-   - Verify file size limits
-   - Review storage space
-
-### Support Resources:
-- Application logs: `/logs/`
-- Database logs: Check PostgreSQL logs
-- System logs: `journalctl -u your-service`
-- Performance monitoring: PM2 monit
-
-**Estimated Migration Time**: 4-8 hours for complete production setup
+**Next Steps:** After successful deployment, continue with backend refactoring while your app is live!

@@ -1,6 +1,8 @@
 import { ApiResponse, PaginatedResponse } from "../../shared/types";
 import { Property, PropertySearchParams } from "../types/property.types";
 import { PropertyBusinessLogic } from "./property-validation";
+import { apiRequest } from "../../infrastructure/api/queryClient";
+import { requestManager } from "../../infrastructure/api/request-manager";
 
 const API_BASE = "/api/properties";
 
@@ -136,12 +138,19 @@ export const propertyApi = {
       // Build search parameters efficiently
       const searchParams = buildSearchParams(validatedParams);
 
-      const response = await fetch(`${API_BASE}?${searchParams}`, {
-        headers: buildHeaders(),
-      });
-
-      const data =
-        await handleApiResponse<PaginatedResponse<Property>>(response);
+      const data = await apiRequest<PaginatedResponse<Property>>(
+        'GET',
+        `${API_BASE}?${searchParams}`,
+        undefined,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `properties:${searchParams.toString()}`,
+            cancelPrevious: true,
+            priority: 'normal'
+          }
+        }
+      );
 
       // Validate response structure and enhance properties with calculated scores
       if (validatePaginatedResponse(data)) {
@@ -169,11 +178,19 @@ export const propertyApi = {
   // Get single property by ID with enhanced data and market estimate
   getProperty: async (id: string): Promise<ApiResponse<EnhancedProperty>> => {
     try {
-      const response = await fetch(`${API_BASE}/${id}`, {
-        headers: buildHeaders(),
-      });
-
-      const data = await handleApiResponse<ApiResponse<Property>>(response);
+      const data = await apiRequest<ApiResponse<Property>>(
+        'GET',
+        `${API_BASE}/${id}`,
+        undefined,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `property:${id}`,
+            cancelPrevious: true,
+            priority: 'high'
+          }
+        }
+      );
 
       // Validate response structure before processing
       if (validateApiResponse(data)) {
@@ -233,13 +250,19 @@ export const propertyApi = {
 
       PropertyBusinessLogic.validateProperty(tempProperty);
 
-      const response = await fetch(API_BASE, {
-        method: "POST",
-        headers: buildHeaders(),
-        body: JSON.stringify(propertyData),
-      });
-
-      return handleApiResponse<ApiResponse<Property>>(response);
+      return await apiRequest<ApiResponse<Property>>(
+        'POST',
+        API_BASE,
+        propertyData,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `create-property:${Date.now()}`,
+            priority: 'high',
+            cancelPrevious: false
+          }
+        }
+      );
     } catch (error) {
       if (error instanceof PropertyApiError) {
         throw error;
@@ -281,13 +304,19 @@ export const propertyApi = {
         );
       }
 
-      const response = await fetch(`${API_BASE}/${id}`, {
-        method: "PATCH",
-        headers: buildHeaders(),
-        body: JSON.stringify(updates),
-      });
-
-      return handleApiResponse<ApiResponse<Property>>(response);
+      return await apiRequest<ApiResponse<Property>>(
+        'PATCH',
+        `${API_BASE}/${id}`,
+        updates,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `update-property:${id}`,
+            priority: 'high',
+            cancelPrevious: true
+          }
+        }
+      );
     } catch (error) {
       if (error instanceof PropertyApiError) {
         throw error;
@@ -330,12 +359,19 @@ export const propertyApi = {
         throw new PropertyApiError("Sold properties cannot be deleted", 400);
       }
 
-      const response = await fetch(`${API_BASE}/${id}`, {
-        method: "DELETE",
-        headers: buildHeaders(),
-      });
-
-      return handleApiResponse<ApiResponse<void>>(response);
+      return await apiRequest<ApiResponse<void>>(
+        'DELETE',
+        `${API_BASE}/${id}`,
+        undefined,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `delete-property:${id}`,
+            priority: 'high',
+            cancelPrevious: false
+          }
+        }
+      );
     } catch (error) {
       if (error instanceof PropertyApiError) {
         throw error;
@@ -351,11 +387,19 @@ export const propertyApi = {
     ownerId: string
   ): Promise<ApiResponse<Property[]>> => {
     try {
-      const response = await fetch(`${API_BASE}/owner/${ownerId}`, {
-        headers: buildHeaders(),
-      });
-
-      return handleApiResponse<ApiResponse<Property[]>>(response);
+      return await apiRequest<ApiResponse<Property[]>>(
+        'GET',
+        `${API_BASE}/owner/${ownerId}`,
+        undefined,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `owner-properties:${ownerId}`,
+            cancelPrevious: true,
+            priority: 'normal'
+          }
+        }
+      );
     } catch (error) {
       if (error instanceof PropertyApiError) {
         throw error;
@@ -378,17 +422,21 @@ export const propertyApi = {
       };
 
       const searchParams = buildSearchParams(params);
-      const response = await fetch(`${API_BASE}/similar?${searchParams}`, {
-        headers: buildHeaders(),
-      });
+      
+      const data = await apiRequest<{ data: Property[] }>(
+        'GET',
+        `${API_BASE}/similar?${searchParams}`,
+        undefined,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `similar-properties:${property.id}`,
+            cancelPrevious: true,
+            priority: 'low'
+          }
+        }
+      );
 
-      // For similar properties, return empty array on failure instead of throwing
-      if (!response.ok) {
-        console.warn("Failed to fetch similar properties:", response.status);
-        return [];
-      }
-
-      const data = await response.json();
       // Ensure we return an array even if the response structure is unexpected
       return Array.isArray(data?.data) ? data.data : [];
     } catch (error) {
@@ -407,13 +455,19 @@ export const propertyApi = {
     location?: string;
   }): Promise<ApiResponse<Property[]>> => {
     try {
-      const response = await fetch(`${API_BASE}/recommendations`, {
-        method: "POST",
-        headers: buildHeaders(),
-        body: JSON.stringify(userPreferences),
-      });
-
-      return handleApiResponse<ApiResponse<Property[]>>(response);
+      return await apiRequest<ApiResponse<Property[]>>(
+        'POST',
+        `${API_BASE}/recommendations`,
+        userPreferences,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `recommendations:${JSON.stringify(userPreferences)}`,
+            cancelPrevious: true,
+            priority: 'normal'
+          }
+        }
+      );
     } catch (error) {
       if (error instanceof PropertyApiError) {
         throw error;
@@ -466,13 +520,23 @@ export const propertyApi = {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${API_BASE}/${propertyId}/images`, {
-        method: "POST",
-        headers,
-        body: formData,
-      });
+      return await requestManager.makeRequest<ApiResponse<string[]>>(
+        async (signal: AbortSignal) => {
+          const response = await fetch(`${API_BASE}/${propertyId}/images`, {
+            method: "POST",
+            headers,
+            body: formData,
+            signal,
+          });
 
-      return handleApiResponse<ApiResponse<string[]>>(response);
+          return handleApiResponse<ApiResponse<string[]>>(response);
+        },
+        {
+          key: `upload-images:${propertyId}`,
+          priority: 'high',
+          cancelPrevious: false
+        }
+      );
     } catch (error) {
       if (error instanceof PropertyApiError) {
         throw error;
@@ -488,12 +552,19 @@ export const propertyApi = {
     propertyId: string
   ): Promise<ApiResponse<void>> => {
     try {
-      const response = await fetch(`${API_BASE}/${propertyId}/verify`, {
-        method: "POST",
-        headers: buildHeaders(),
-      });
-
-      return handleApiResponse<ApiResponse<void>>(response);
+      return await apiRequest<ApiResponse<void>>(
+        'POST',
+        `${API_BASE}/${propertyId}/verify`,
+        undefined,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `verify-property:${propertyId}`,
+            priority: 'high',
+            cancelPrevious: false
+          }
+        }
+      );
     } catch (error) {
       if (error instanceof PropertyApiError) {
         throw error;
@@ -533,13 +604,19 @@ export const propertyApi = {
         }
       }
 
-      const response = await fetch(`${API_BASE}/batch-update`, {
-        method: "PATCH",
-        headers: buildHeaders(),
-        body: JSON.stringify({ updates }),
-      });
-
-      return handleApiResponse<ApiResponse<Property[]>>(response);
+      return await apiRequest<ApiResponse<Property[]>>(
+        'PATCH',
+        `${API_BASE}/batch-update`,
+        { updates },
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `batch-update:${updates.map(u => u.id).join(',')}`,
+            priority: 'high',
+            cancelPrevious: false
+          }
+        }
+      );
     } catch (error) {
       if (error instanceof PropertyApiError) {
         throw error;
@@ -566,11 +643,7 @@ export const propertyApi = {
       const searchParams =
         filters ? buildSearchParams(filters) : new URLSearchParams();
 
-      const response = await fetch(`${API_BASE}/stats?${searchParams}`, {
-        headers: buildHeaders(),
-      });
-
-      return handleApiResponse<
+      return await apiRequest<
         ApiResponse<{
           totalProperties: number;
           averagePrice: number;
@@ -578,13 +651,177 @@ export const propertyApi = {
           propertyTypeDistribution: Record<string, number>;
           locationDistribution: Record<string, number>;
         }>
-      >(response);
+      >(
+        'GET',
+        `${API_BASE}/stats?${searchParams}`,
+        undefined,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `property-stats:${searchParams.toString()}`,
+            cancelPrevious: true,
+            priority: 'normal'
+          }
+        }
+      );
     } catch (error) {
       if (error instanceof PropertyApiError) {
         throw error;
       }
       throw new PropertyApiError(
         `Failed to fetch property statistics: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  },
+
+  // Land verification specific methods
+
+  // Initiate land verification for a property
+  initiateLandVerification: async (
+    propertyId: string,
+    requestedLayers?: string[]
+  ): Promise<ApiResponse<{ sessionId: string }>> => {
+    try {
+      return await apiRequest<ApiResponse<{ sessionId: string }>>(
+        'POST',
+        `${API_BASE}/${propertyId}/land-verification`,
+        { requestedLayers },
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `initiate-land-verification:${propertyId}`,
+            priority: 'high',
+            cancelPrevious: false
+          }
+        }
+      );
+    } catch (error) {
+      if (error instanceof PropertyApiError) {
+        throw error;
+      }
+      throw new PropertyApiError(
+        `Failed to initiate land verification: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  },
+
+  // Get land verification status for a property
+  getLandVerificationStatus: async (
+    propertyId: string
+  ): Promise<ApiResponse<Property['landVerification']>> => {
+    try {
+      return await apiRequest<ApiResponse<Property['landVerification']>>(
+        'GET',
+        `${API_BASE}/${propertyId}/land-verification/status`,
+        undefined,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `land-verification-status:${propertyId}`,
+            cancelPrevious: true,
+            priority: 'normal'
+          }
+        }
+      );
+    } catch (error) {
+      if (error instanceof PropertyApiError) {
+        throw error;
+      }
+      throw new PropertyApiError(
+        `Failed to get land verification status: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  },
+
+  // Get detailed land verification report
+  getLandVerificationReport: async (
+    propertyId: string
+  ): Promise<ApiResponse<{
+    sessionId: string;
+    overallRiskScore: number;
+    riskLevel: string;
+    confidence: number;
+    completedLayers: string[];
+    riskFactors: Array<{
+      category: string;
+      severity: string;
+      description: string;
+      impact: string;
+    }>;
+    recommendations: Array<{
+      priority: string;
+      title: string;
+      description: string;
+    }>;
+    lastUpdated: Date;
+  }>> => {
+    try {
+      return await apiRequest<ApiResponse<{
+        sessionId: string;
+        overallRiskScore: number;
+        riskLevel: string;
+        confidence: number;
+        completedLayers: string[];
+        riskFactors: Array<{
+          category: string;
+          severity: string;
+          description: string;
+          impact: string;
+        }>;
+        recommendations: Array<{
+          priority: string;
+          title: string;
+          description: string;
+        }>;
+        lastUpdated: Date;
+      }>>(
+        'GET',
+        `${API_BASE}/${propertyId}/land-verification/report`,
+        undefined,
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `land-verification-report:${propertyId}`,
+            cancelPrevious: true,
+            priority: 'normal'
+          }
+        }
+      );
+    } catch (error) {
+      if (error instanceof PropertyApiError) {
+        throw error;
+      }
+      throw new PropertyApiError(
+        `Failed to get land verification report: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  },
+
+  // Update property with land verification results
+  updatePropertyLandVerification: async (
+    propertyId: string,
+    landVerification: Property['landVerification']
+  ): Promise<ApiResponse<Property>> => {
+    try {
+      return await apiRequest<ApiResponse<Property>>(
+        'PATCH',
+        `${API_BASE}/${propertyId}/land-verification`,
+        { landVerification },
+        {
+          headers: buildHeaders(),
+          requestOptions: {
+            key: `update-land-verification:${propertyId}`,
+            priority: 'high',
+            cancelPrevious: true
+          }
+        }
+      );
+    } catch (error) {
+      if (error instanceof PropertyApiError) {
+        throw error;
+      }
+      throw new PropertyApiError(
+        `Failed to update property land verification: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   },

@@ -1,8 +1,8 @@
 import React from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "./card";
+import { Skeleton } from "./skeleton";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "./button";
 
 // Property card skeleton
 export function PropertyCardSkeleton() {

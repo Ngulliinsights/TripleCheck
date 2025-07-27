@@ -144,7 +144,7 @@ Respond in JSON format:
       reliabilityScore: 5,
       riskIndicators: ['Insufficient data for analysis'],
       positiveIndicators: [],
-      recommendedTrustLevel: 'newcomer',
+      recommendedTrustLevel: 'newcomer' as TrustLevel,
       confidence: 0.3
     };
   }
@@ -194,26 +194,23 @@ Analyze community trust for a user on a Kenyan real estate platform. Consider cu
 
 COMMUNITY REFERENCES (${input.references.length}):
 ${input.references.map(ref => `
-- Type: ${ref.referenceType}
-- Relationship: ${ref.relationship}
-- Years Known: ${ref.yearsKnown}
-- Trust Rating: ${ref.trustRating}/10
-- Status: ${ref.verificationStatus}
+- Status: ${ref.status}
+- Message: ${ref.message}
+- Timestamp: ${ref.timestamp}
 `).join('')}
 
 COMMUNITY ENDORSEMENTS (${input.endorsements.length}):
 ${input.endorsements.map(end => `
-- Endorser: ${end.endorserType} - ${end.endorserTitle}
-- Level: ${end.endorsementLevel}/10
-- Reason: ${end.endorsementReason}
-- Status: ${end.verificationStatus}
+- Type: ${end.type}
+- Message: ${end.message}
+- Timestamp: ${end.timestamp}
 `).join('')}
 
 SOCIAL CONNECTIONS (${input.socialConnections.length}):
 ${input.socialConnections.slice(0, 5).map(conn => `
 - Connection Type: ${conn.connectionType}
-- Strength: ${conn.connectionStrength}/10
-- Mutual Connections: ${conn.mutualConnections}
+- Strength: ${conn.strength}/10
+- Connected User: ${conn.connectedUserId}
 `).join('')}
 
 LOCATION TRUST:
@@ -342,14 +339,14 @@ class ComprehensiveTrustCalculator {
     };
 
     // Calculate overall score using weighted formula
-    const overallScore = calculateTrustScore(
-      scoreBreakdown.community,
-      scoreBreakdown.behavior,
-      scoreBreakdown.social,
-      scoreBreakdown.location,
-      scoreBreakdown.endorsement,
-      scoreBreakdown.transaction
-    );
+    const trustMetrics = {
+      verificationScore: scoreBreakdown.behavior,
+      communityRating: scoreBreakdown.community,
+      transactionHistory: scoreBreakdown.transaction,
+      responseTime: scoreBreakdown.behavior, // Using behavior as proxy for response time
+      profileCompleteness: scoreBreakdown.behavior // Using behavior as proxy for profile completeness
+    };
+    const overallScore = calculateTrustScore(trustMetrics);
 
     const trustLevel = getTrustLevelFromScore(overallScore);
     const requirements = getTrustLevelRequirements(trustLevel);
@@ -357,7 +354,7 @@ class ComprehensiveTrustCalculator {
     return {
       overallScore,
       trustLevel,
-      maxTransactionValue: requirements.maxTransactionValue,
+      maxTransactionValue: requirements.maxTransactionValue || 0,
       riskLevel: this.calculateRiskLevel(overallScore, communityAnalysis.riskAssessment),
       scoreBreakdown,
       recommendations: this.generateRecommendations(scoreBreakdown, communityAnalysis),
@@ -471,31 +468,8 @@ class ComprehensiveTrustCalculator {
     if (nextLevel === currentLevel) return ['You have reached the highest trust level!'];
 
     const requirements = getTrustLevelRequirements(nextLevel as TrustLevel);
-    return requirements.requirements.map(req => {
-      switch (req) {
-        case 'community_references_2+':
-          return 'Get at least 2 verified community references';
-        case 'behavior_score_6+':
-          return 'Maintain behavior score of 60+ points';
-        case 'successful_transactions_5+':
-          return 'Complete at least 5 successful transactions';
-        case 'social_connections_10+':
-          return 'Build connections with 10+ other users';
-        case 'community_endorsement':
-          return 'Get endorsement from a community leader';
-        case 'location_trust_8+':
-          return 'Build location trust score to 80+ points';
-        case 'behavior_score_8+':
-          return 'Maintain behavior score of 80+ points';
-        case 'multiple_endorsements':
-          return 'Get endorsements from multiple community leaders';
-        case 'transaction_history_50+':
-          return 'Complete 50+ successful transactions';
-        case 'zero_flags':
-          return 'Maintain zero flagged interactions';
-        default:
-          return req.replace(/_/g, ' ');
-      }
+    return requirements.requirements.map(requirement => {
+      return `${requirement.description} (minimum: ${requirement.minValue})`;
     });
   }
 }

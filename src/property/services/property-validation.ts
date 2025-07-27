@@ -69,9 +69,11 @@ export const PropertySearchSchema = z.object({
   areaMin: z.number().positive().optional(),
   areaMax: z.number().positive().optional(),
   amenities: z.array(z.string()).optional(),
+  landVerified: z.boolean().optional(),
+  landRiskLevel: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(100).default(12),
-  sortBy: z.enum(['price', 'date', 'relevance', 'trustScore']).default('relevance'),
+  sortBy: z.enum(['price', 'date', 'relevance', 'trustScore', 'landVerification']).default('relevance'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
@@ -133,6 +135,11 @@ export class PropertyBusinessLogic {
     // Verification bonus
     if (property.verificationStatus === 'verified') score += 50;
 
+    // Land verification integration
+    if (property.landVerification) {
+      score += this.calculateLandVerificationScore(property.landVerification);
+    }
+
     // Trust score integration
     if (property.trustScore) {
       score += Math.floor(property.trustScore / 10);
@@ -141,13 +148,123 @@ export class PropertyBusinessLogic {
     return Math.min(score, 1000); // Cap at 1000
   }
 
+  // Calculate land verification contribution to property score
+  static calculateLandVerificationScore(landVerification: Property['landVerification']): number {
+    if (!landVerification) return 0;
+
+    let score = 0;
+
+    // Base score for having land verification
+    score += 20;
+
+    // Status-based scoring
+    switch (landVerification.status) {
+      case 'completed':
+        score += 60;
+        break;
+      case 'in_progress':
+        score += 30;
+        break;
+      case 'suspended':
+        score += 10;
+        break;
+      case 'failed':
+        score -= 20;
+        break;
+      default:
+        break;
+    }
+
+    // Risk level adjustment
+    switch (landVerification.riskLevel) {
+      case 'low':
+        score += 40;
+        break;
+      case 'medium':
+        score += 20;
+        break;
+      case 'high':
+        score -= 10;
+        break;
+      case 'critical':
+        score -= 30;
+        break;
+    }
+
+    // Confidence bonus
+    score += Math.floor(landVerification.confidence * 20);
+
+    // Completed layers bonus
+    score += landVerification.completedLayers.length * 5;
+
+    return Math.max(0, score);
+  }
+
+  // Generate land verification badge based on status
+  static generateLandVerificationBadge(landVerification: Property['landVerification']): Property['landVerification']['badge'] | undefined {
+    if (!landVerification) return undefined;
+
+    switch (landVerification.status) {
+      case 'completed':
+        if (landVerification.riskLevel === 'low') {
+          return {
+            type: 'verified',
+            label: 'Land Verified',
+            color: 'green',
+            description: 'Property has completed comprehensive land verification with low risk'
+          };
+        } else if (landVerification.riskLevel === 'medium') {
+          return {
+            type: 'verified',
+            label: 'Land Verified - Medium Risk',
+            color: 'blue',
+            description: 'Property has completed land verification with medium risk factors identified'
+          };
+        } else {
+          return {
+            type: 'high_risk',
+            label: 'High Risk Property',
+            color: 'red',
+            description: 'Property has completed verification but significant risks were identified'
+          };
+        }
+      case 'in_progress':
+        return {
+          type: 'in_progress',
+          label: 'Verification In Progress',
+          color: 'blue',
+          description: 'Land verification is currently underway'
+        };
+      case 'suspended':
+      case 'failed':
+        return {
+          type: 'expert_required',
+          label: 'Expert Review Required',
+          color: 'orange',
+          description: 'Land verification requires expert attention'
+        };
+      default:
+        return undefined;
+    }
+  }
+
   // Determine if property is featured based on score and other factors
   static isFeaturedProperty(property: Property): boolean {
     const score = this.calculatePropertyScore(property);
-    return score >= 800 && 
-           property.verificationStatus === 'verified' && 
-           property.status === 'active' &&
-           property.images.length >= 5;
+    const hasBasicRequirements = property.verificationStatus === 'verified' && 
+                                property.status === 'active' &&
+                                property.images.length >= 5;
+    
+    // Enhanced requirements for land properties
+    if (property.propertyType === 'land') {
+      return score >= 850 && 
+             hasBasicRequirements &&
+             property.landVerification?.status === 'completed' &&
+             property.landVerification?.riskLevel === 'low';
+    }
+    
+    // Standard requirements for other property types
+    return score >= 800 && hasBasicRequirements;
   }
 
   // Calculate estimated market value based on similar properties

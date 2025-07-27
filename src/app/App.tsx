@@ -1,37 +1,100 @@
-import React, { useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/infrastructure/api/queryClient";
-import { initializeHealthMonitoring } from "@/infrastructure/monitoring/system-health";
-import { Toaster } from "@/shared/components/ui/toaster";
+import { useEffect, Suspense, lazy } from "react";
+
 import { ErrorBoundary } from "./error-boundary";
-import { TutorialProvider } from "@/shared/components/TutorialProvider";
 import { AppRouter } from "./router";
 
+import { queryClient } from "@/infrastructure/api/queryClient";
+
+// Lazy load non-critical components to improve initial load time
+const PerformanceMonitoringProvider = lazy(() =>
+  import("@/infrastructure/monitoring").then((module) => ({
+    default: module.PerformanceMonitoringProvider,
+  }))
+);
+
+const PerformanceDebugger = lazy(() =>
+  import("@/infrastructure/monitoring").then((module) => ({
+    default: module.PerformanceDebugger,
+  }))
+);
+
+const Toaster = lazy(() =>
+  import("@/shared/components/ui/toaster").then((module) => ({
+    default: module.Toaster,
+  }))
+);
+
 /**
- * Root application component that sets up global providers
- * and initializes system-wide functionality
- * 
- * This component:
- * - Sets up React Query for data fetching and caching
- * - Initializes error boundaries for graceful error handling
- * - Provides tutorial context for user onboarding
- * - Initializes system health monitoring
- * - Renders the main router with all application routes
+ * Root application component optimized for performance
+ *
+ * Performance optimizations:
+ * - Lazy loads non-critical components
+ * - Defers system health monitoring initialization
+ * - Minimizes initial bundle size
+ * - Uses efficient error boundaries
  */
 export function App() {
-  // Initialize system health monitoring on app startup
-  // This runs once when the app mounts, not on every render
+  // Defer non-critical initialization to avoid blocking initial render
   useEffect(() => {
-    initializeHealthMonitoring();
+    // Use requestIdleCallback for non-critical initialization
+    const initializeNonCritical = () => {
+      import("@/infrastructure/monitoring/system-health")
+        .then((module) => {
+          module.initializeHealthMonitoring();
+          return undefined; // Explicit return to satisfy ESLint
+        })
+        .catch((_error) => {
+          // Silently handle initialization errors in production
+          // In development, errors would be visible in the browser console anyway
+        });
+    };
+
+    if ("requestIdleCallback" in window) {
+      const windowWithCallback = window as Window & {
+        requestIdleCallback: (
+          callback: () => void,
+          options?: { timeout: number }
+        ) => void;
+      };
+      windowWithCallback.requestIdleCallback(initializeNonCritical, {
+        timeout: 2000,
+      });
+    } else {
+      setTimeout(initializeNonCritical, 100);
+    }
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
-        <TutorialProvider>
-          <AppRouter />
-          <Toaster />
-        </TutorialProvider>
+        <Suspense fallback={null}>
+          <PerformanceMonitoringProvider
+            config={{
+              enableAutoPreloading: false, // Disabled to prevent performance issues
+              preconnectOrigins: [
+                "https://fonts.googleapis.com",
+                "https://fonts.gstatic.com",
+              ],
+              criticalAssets: {
+                fonts: ["/fonts/inter-var.woff2"],
+                images: ["/images/logo.webp"],
+              },
+            }}
+          >
+            <Suspense fallback={null}>
+              <AppRouter />
+              <Suspense fallback={null}>
+                <Toaster />
+              </Suspense>
+              {import.meta.env.MODE === "development" && (
+                <Suspense fallback={null}>
+                  <PerformanceDebugger />
+                </Suspense>
+              )}
+            </Suspense>
+          </PerformanceMonitoringProvider>
+        </Suspense>
       </ErrorBoundary>
     </QueryClientProvider>
   );

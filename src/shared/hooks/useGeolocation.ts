@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
 
 interface GeolocationPosition {
   latitude: number;
@@ -58,7 +60,7 @@ export function useGeolocation({
   };
 
   // Convert native position to our format
-  const convertPosition = useCallback((nativePosition: Position): GeolocationPosition => {
+  const convertPosition = useCallback((nativePosition: globalThis.GeolocationPosition): GeolocationPosition => {
     const { coords, timestamp } = nativePosition;
     return {
       latitude: coords.latitude,
@@ -73,7 +75,7 @@ export function useGeolocation({
   }, []);
 
   // Success handler
-  const handleSuccess = useCallback((nativePosition: Position) => {
+  const handleSuccess = useCallback((nativePosition: globalThis.GeolocationPosition) => {
     const convertedPosition = convertPosition(nativePosition);
     setPosition(convertedPosition);
     setError(null);
@@ -92,11 +94,13 @@ export function useGeolocation({
   const getCurrentPosition = useCallback((): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
       if (!supported) {
-        const error = new Error('Geolocation is not supported') as GeolocationPositionError;
-        error.code = 0;
-        error.PERMISSION_DENIED = 1;
-        error.POSITION_UNAVAILABLE = 2;
-        error.TIMEOUT = 3;
+        const error = {
+          code: 0,
+          message: 'Geolocation is not supported',
+          PERMISSION_DENIED: 1,
+          POSITION_UNAVAILABLE: 2,
+          TIMEOUT: 3,
+        } as GeolocationPositionError;
         reject(error);
         return;
       }
@@ -176,7 +180,7 @@ export function useGeolocation({
   }, [calculateDistance]);
 
   // Auto-start watching if enabled
-  useEffect(() => {
+  useSafeEffect(() => {
     if (watch && supported) {
       watchPosition();
     }
@@ -187,7 +191,7 @@ export function useGeolocation({
   }, [watch, supported, watchPosition, clearWatch]);
 
   // Cleanup on unmount
-  useEffect(() => {
+  useSafeEffect(() => {
     return () => {
       clearWatch();
     };
@@ -240,6 +244,7 @@ export function useLocationBasedSearch() {
   const [searchRadius, setSearchRadius] = useState(10); // Default 10km radius
   const [nearbyProperties, setNearbyProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const cleanupManager = useEnhancedCleanupManager();
 
   const geolocation = useGeolocation({
     enableHighAccuracy: true,
@@ -253,6 +258,10 @@ export function useLocationBasedSearch() {
     }
 
     setLoading(true);
+    
+    const controller = new AbortController();
+    cleanupManager.addAbortController(controller, 'nearby-search');
+
     try {
       const { latitude, longitude } = geolocation.position;
       const token = localStorage.getItem('authToken');
@@ -264,6 +273,7 @@ export function useLocationBasedSearch() {
             'Authorization': token ? `Bearer ${token}` : '',
             'Content-Type': 'application/json',
           },
+          signal: controller.signal,
         }
       );
 
@@ -284,12 +294,16 @@ export function useLocationBasedSearch() {
 
       setNearbyProperties(propertiesWithDistance);
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // Request was cancelled
+      }
       console.error('Error searching nearby properties:', error);
       setNearbyProperties([]);
     } finally {
       setLoading(false);
+      cleanupManager.removeCleanup('nearby-search');
     }
-  }, [geolocation, searchRadius]);
+  }, [geolocation, searchRadius, cleanupManager]);
 
   const updateSearchRadius = useCallback((radius: number) => {
     setSearchRadius(radius);
@@ -317,10 +331,14 @@ export function useLocationBasedSearch() {
 export function useGeocoding() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cleanupManager = useEnhancedCleanupManager();
 
   const geocodeAddress = useCallback(async (address: string): Promise<GeolocationPosition | null> => {
     setLoading(true);
     setError(null);
+
+    const controller = new AbortController();
+    cleanupManager.addAbortController(controller, 'geocode-request');
 
     try {
       // Using a geocoding service (you'd replace this with your preferred service)
@@ -330,6 +348,7 @@ export function useGeocoding() {
           headers: {
             'Content-Type': 'application/json',
           },
+          signal: controller.signal,
         }
       );
 
@@ -351,13 +370,17 @@ export function useGeocoding() {
 
       return null;
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return null; // Request was cancelled
+      }
       const errorMessage = err instanceof Error ? err.message : 'Geocoding failed';
       setError(errorMessage);
       return null;
     } finally {
       setLoading(false);
+      cleanupManager.removeCleanup('geocode-request');
     }
-  }, []);
+  }, [cleanupManager]);
 
   const reverseGeocode = useCallback(async (
     latitude: number, 
@@ -366,6 +389,9 @@ export function useGeocoding() {
     setLoading(true);
     setError(null);
 
+    const controller = new AbortController();
+    cleanupManager.addAbortController(controller, 'reverse-geocode-request');
+
     try {
       const response = await fetch(
         `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
@@ -373,6 +399,7 @@ export function useGeocoding() {
           headers: {
             'Content-Type': 'application/json',
           },
+          signal: controller.signal,
         }
       );
 
@@ -388,13 +415,17 @@ export function useGeocoding() {
 
       return null;
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return null; // Request was cancelled
+      }
       const errorMessage = err instanceof Error ? err.message : 'Reverse geocoding failed';
       setError(errorMessage);
       return null;
     } finally {
       setLoading(false);
+      cleanupManager.removeCleanup('reverse-geocode-request');
     }
-  }, []);
+  }, [cleanupManager]);
 
   return {
     loading,

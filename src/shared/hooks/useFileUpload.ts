@@ -1,4 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
 
 interface FileUploadOptions {
   maxFiles?: number;
@@ -36,7 +38,7 @@ interface UseFileUploadReturn {
   removeFile: (fileId: string) => void;
   clearFiles: () => void;
   uploadFiles: () => Promise<UploadResult[]>;
-  uploadFile: (file: File) => Promise<UploadResult>;
+  uploadFile: (file: FileWithPreview) => Promise<UploadResult>;
   cancelUpload: (fileId?: string) => void;
   getRootProps: () => React.HTMLAttributes<HTMLElement>;
   getInputProps: () => React.InputHTMLAttributes<HTMLInputElement>;

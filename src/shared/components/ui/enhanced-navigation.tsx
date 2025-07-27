@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+
 import { 
   NavigationMenu,
   NavigationMenuList,
@@ -11,12 +12,14 @@ import {
 } from "./navigation-menu";
 import { Button } from "./button";
 import { Input } from "./input";
+import { Logo } from "./logo";
+import { Wordmark } from "./wordmark";
 import { Search, HelpCircle, User, LogOut, Home, Building, BarChart3, Bell } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@shared/lib/utils";
 
 // Enhanced navigation with context awareness and micro-interactions
 export function EnhancedNavigation() {
-  const [location] = useLocation();
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -181,15 +184,25 @@ export function EnhancedNavigation() {
         <div className="flex items-center justify-between">
           {/* Logo and main navigation */}
           <div className="flex items-center space-x-8">
-            <motion.a
-              href="/"
+            <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
-              aria-label="AfricanPropertyTrust - Home"
+              className="flex items-center gap-3"
             >
-              AfricanPropertyTrust
-            </motion.a>
+              <Logo
+                size="md"
+                variant={scrolled ? "default" : "light"}
+                interactive={true}
+                href="/"
+              />
+              <Wordmark
+                size="md"
+                variant={scrolled ? "default" : "light"}
+                animated={true}
+                interactive={true}
+                href="/"
+              />
+            </motion.div>
 
             <NavigationMenu>
               <NavigationMenuList>

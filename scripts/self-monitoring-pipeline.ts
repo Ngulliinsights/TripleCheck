@@ -22,7 +22,7 @@ import crypto from 'crypto';
 
 import { users, properties, reviews } from '../shared/schema';
 import type { InsertUser, InsertProperty, InsertReview } from '../shared/schema';
-import { RobustDataLoader } from './robust-data-loader';
+// Note: RobustDataLoader has been replaced by robust-batch-loader.ts
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

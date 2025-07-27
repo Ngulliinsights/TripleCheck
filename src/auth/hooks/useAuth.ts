@@ -1,19 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi } from '../services/auth-api';
-import { LoginCredentials, RegisterData, User } from '../types/auth.types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { authApi } from "../services/auth-api";
+import { cachePresets, queryKeys } from "../../infrastructure/api/queryClient";
 
-// Query keys
+// Use standardized query keys from infrastructure
 export const authKeys = {
-  profile: ['auth', 'profile'] as const,
+  profile: (userId: string) => queryKeys.user.profile(userId),
 };
 
 // Get current user profile
 export function useProfile() {
   return useQuery({
-    queryKey: authKeys.profile,
+    queryKey: ["auth", "profile"], // Keep simple key for profile
     queryFn: authApi.getProfile,
     retry: false, // Don't retry auth requests
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    ...cachePresets.profile, // Use standardized cache preset
   });
 }
 
@@ -26,10 +26,10 @@ export function useLogin() {
     onSuccess: (data) => {
       // Store token in localStorage
       if (data.data.token) {
-        localStorage.setItem('auth_token', data.data.token);
+        localStorage.setItem("auth_token", data.data.token);
       }
       // Set user data in cache
-      queryClient.setQueryData(authKeys.profile, { data: data.data.user });
+      queryClient.setQueryData(["auth", "profile"], { data: data.data.user });
     },
   });
 }
@@ -43,10 +43,10 @@ export function useRegister() {
     onSuccess: (data) => {
       // Store token in localStorage
       if (data.data.token) {
-        localStorage.setItem('auth_token', data.data.token);
+        localStorage.setItem("auth_token", data.data.token);
       }
       // Set user data in cache
-      queryClient.setQueryData(authKeys.profile, { data: data.data.user });
+      queryClient.setQueryData(["auth", "profile"], { data: data.data.user });
     },
   });
 }
@@ -59,7 +59,7 @@ export function useLogout() {
     mutationFn: authApi.logout,
     onSuccess: () => {
       // Clear token from localStorage
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem("auth_token");
       // Clear all cached data
       queryClient.clear();
     },
@@ -74,7 +74,7 @@ export function useUpdateProfile() {
     mutationFn: authApi.updateProfile,
     onSuccess: (data) => {
       // Update profile in cache
-      queryClient.setQueryData(authKeys.profile, data);
+      queryClient.setQueryData(["auth", "profile"], data);
     },
   });
 }
@@ -94,10 +94,36 @@ export function useResetPassword() {
   });
 }
 
+// Validate reset token
+export function useValidateResetToken() {
+  return useMutation({
+    mutationFn: authApi.validateResetToken,
+  });
+}
+
+// Check password history
+export function useCheckPasswordHistory() {
+  return useMutation({
+    mutationFn: ({ email, password }: { email: string; password: string }) =>
+      authApi.checkPasswordHistory(email, password),
+  });
+}
+
+// Get account lockout status
+export function useAccountLockout(email: string) {
+  return useQuery({
+    queryKey: ["auth", "lockout", email],
+    queryFn: () => authApi.getAccountLockout(email),
+    enabled: !!email,
+    retry: false,
+    staleTime: 30000, // 30 seconds
+  });
+}
+
 // Custom hook for auth state
 export function useAuth() {
   const { data: profileData, isLoading, error } = useProfile();
-  
+
   return {
     user: profileData?.data || null,
     isAuthenticated: !!profileData?.data,

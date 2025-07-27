@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
 
 interface UsePollingOptions<TData, TError = Error> {
   queryKey: unknown[];
@@ -30,7 +32,7 @@ interface UsePollingReturn<TData, TError = Error> {
   start: () => void;
   stop: () => void;
   restart: () => void;
-  forceRefetch: () => Promise<TData>;
+  forceRefetch: () => Promise<TData | undefined>;
   currentInterval: number;
   errorCount: number;
 }
@@ -58,9 +60,9 @@ export function usePolling<TData = any, TError = Error>({
   const [currentInterval, setCurrentInterval] = useState(interval);
   const [errorCount, setErrorCount] = useState(0);
   
-  const intervalRef = useRef<NodeJS.Timeout>();
   const isWindowFocusedRef = useRef(true);
   const isOnlineRef = useRef(navigator.onLine);
+  const cleanupManager = useEnhancedCleanupManager();
 
   // React Query for data fetching
   const query = useQuery({
@@ -122,9 +124,7 @@ export function usePolling<TData = any, TError = Error>({
 
   // Start polling
   const start = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
+    cleanupManager.removeCleanup('polling-interval');
 
     setIsPolling(true);
     setErrorCount(0);
@@ -138,7 +138,7 @@ export function usePolling<TData = any, TError = Error>({
 
     // Set up interval
     const scheduleNext = () => {
-      intervalRef.current = setTimeout(() => {
+      cleanupManager.addTimeout(() => {
         // Check if we should pause
         const shouldPause = 
           (pauseOnWindowBlur && !isWindowFocusedRef.current) ||
@@ -151,7 +151,7 @@ export function usePolling<TData = any, TError = Error>({
         } else {
           scheduleNext(); // Keep checking conditions
         }
-      }, currentInterval);
+      }, currentInterval, 'polling-interval');
     };
 
     scheduleNext();
@@ -162,16 +162,14 @@ export function usePolling<TData = any, TError = Error>({
     pauseOnWindowBlur,
     pauseOnOffline,
     isPolling,
+    cleanupManager,
   ]);
 
   // Stop polling
   const stop = useCallback(() => {
     setIsPolling(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = undefined;
-    }
-  }, []);
+    cleanupManager.removeCleanup('polling-interval');
+  }, [cleanupManager]);
 
   // Restart polling
   const restart = useCallback(() => {
@@ -187,7 +185,7 @@ export function usePolling<TData = any, TError = Error>({
   }, [executeQuery]);
 
   // Window focus/blur handling
-  useEffect(() => {
+  useSafeEffect(() => {
     if (!pauseOnWindowBlur) return;
 
     const handleFocus = () => {
@@ -201,17 +199,12 @@ export function usePolling<TData = any, TError = Error>({
       isWindowFocusedRef.current = false;
     };
 
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('blur', handleBlur);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('blur', handleBlur);
-    };
-  }, [pauseOnWindowBlur, enabled, isPolling, start]);
+    cleanupManager.addEventListener(window, 'focus', handleFocus, undefined, 'window-focus');
+    cleanupManager.addEventListener(window, 'blur', handleBlur, undefined, 'window-blur');
+  }, [pauseOnWindowBlur, enabled, isPolling, start, cleanupManager]);
 
   // Online/offline handling
-  useEffect(() => {
+  useSafeEffect(() => {
     if (!pauseOnOffline) return;
 
     const handleOnline = () => {
@@ -225,17 +218,12 @@ export function usePolling<TData = any, TError = Error>({
       isOnlineRef.current = false;
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [pauseOnOffline, enabled, isPolling, start]);
+    cleanupManager.addEventListener(window, 'online', handleOnline, undefined, 'window-online');
+    cleanupManager.addEventListener(window, 'offline', handleOffline, undefined, 'window-offline');
+  }, [pauseOnOffline, enabled, isPolling, start, cleanupManager]);
 
   // Start/stop based on enabled prop
-  useEffect(() => {
+  useSafeEffect(() => {
     if (enabled) {
       start();
     } else {
@@ -246,13 +234,11 @@ export function usePolling<TData = any, TError = Error>({
   }, [enabled, start, stop]);
 
   // Cleanup on unmount
-  useEffect(() => {
+  useSafeEffect(() => {
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      cleanupManager.runAllCleanup();
     };
-  }, []);
+  }, [cleanupManager]);
 
   return {
     data: query.data,

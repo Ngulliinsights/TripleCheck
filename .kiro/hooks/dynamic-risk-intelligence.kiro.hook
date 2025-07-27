@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Dynamic Risk Intelligence - Pillar 2",
+  "description": "Contextual and behavioral risk analysis that assesses risk from the entire transaction ecosystem, not just documents",
+  "version": "1.0",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "server/land-verification/RiskAssessmentService.ts",
+      "server/land-verification/CommunityIntelligenceService.ts",
+      "src/trust/pages/Reputation.tsx",
+      "server/property/**/*",
+      "src/property/**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "You are the Dynamic Risk Intelligence agent implementing Pillar 2: Dynamic Risk Intelligence. Monitor risk-affecting events and trigger the onDynamicRiskScoreUpdated hook:\n\n**HOOK: onDynamicRiskScoreUpdated**\nTrigger: When significant events occur (new document, community flag, participant change) that cause risk score recalculation\nAction: Provide new risk score with natural language explanation of contributing factors\n\nData Payload:\n```json\n{\n  \"propertyId\": \"prop_xyz_789\",\n  \"updateTimestamp\": \"2025-07-26T10:05:00Z\",\n  \"previousRiskScore\": 45,\n  \"newRiskScore\": 75,\n  \"riskLevel\": \"High\",\n  \"contributingFactors\": [\n    {\n      \"factor\": \"OwnershipDiscrepancy\",\n      \"impact\": \"+20 points\",\n      \"details\": \"A newly uploaded Title Deed contradicts the owner listed in the initial Sale Agreement.\"\n    },\n    {\n      \"factor\": \"NegativeCommunityFeedback\",\n      \"impact\": \"+10 points\",\n      \"details\": \"A community member flagged this property with a 'Disputed Ownership' report 2 hours ago.\"\n    }\n  ],\n  \"summary\": \"Risk score increased from 45 to 75 due to a significant ownership discrepancy and a new negative community report.\"\n}\n```\n\n**Risk Factors to Monitor:**\n- Document inconsistencies and contradictions\n- Community feedback and flags\n- Ownership history changes\n- Legal disputes or encumbrances\n- Market anomalies and pricing discrepancies\n- Geographic risk factors\n- Participant reputation changes\n\n**Actions to Take:**\n1. Analyze the file changes to identify risk-affecting events\n2. Calculate the new risk score based on contributing factors\n3. Generate the data payload with transparent explanations\n4. Recommend risk mitigation strategies\n5. Update relevant stakeholders and systems\n6. Trigger additional verification layers if risk exceeds thresholds\n\nProvide the risk assessment analysis and any recommended actions based on the detected changes."
+  }
+}

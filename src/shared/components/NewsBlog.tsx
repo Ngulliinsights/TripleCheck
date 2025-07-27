@@ -1,120 +1,198 @@
-import { OptimizedImage } from "./ui/optimized-image";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { RefreshCw, ArrowRight } from "lucide-react";
+import { useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { useRecentPosts } from "../hooks/useCMS";
+
+import { BlogPostCard, type BlogPost as SharedBlogPost } from "./blog/BlogPostCard";
+import { BlogPostSkeleton } from "./blog/BlogPostSkeleton";
 import { Button } from "./ui/button";
-import { Skeleton } from "./ui/skeleton";
-import { useLocation } from "wouter";
-import { ArrowRight } from "lucide-react";
-import { useRecentPosts } from "@/hooks/useCMS";
+import { ErrorState } from "./ui/error-states";
 
-// Helper function to format dates
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
+// Constants moved outside component to prevent re-creation on each render
+const SKELETON_COUNT = 3;
 
-// Loading skeleton for blog posts
-const BlogPostSkeleton = () => (
-  <Card className="overflow-hidden">
-    <Skeleton className="aspect-video w-full" />
-    <CardHeader>
-      <Skeleton className="h-4 w-24 mb-2" />
-      <Skeleton className="h-6 w-full" />
-      <Skeleton className="h-6 w-3/4" />
-    </CardHeader>
-    <CardContent>
-      <Skeleton className="h-16 w-full mb-4" />
-      <Skeleton className="h-9 w-24" />
-    </CardContent>
-  </Card>
-);
+// Type definitions for better TypeScript safety
+interface Post {
+  id: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  featured?: boolean;
+  publishedAt: string;
+  readTime: string;
+  viewCount?: number;
+  image: {
+    webp: string;
+    fallback: string;
+  };
+  tags: string[];
+  author: {
+    name: string;
+  };
+}
+
+// Transform CMS post to shared blog post format with proper type safety
+const transformCMSPost = (post: Post): SharedBlogPost => ({
+  id: post.id,
+  title: post.title,
+  excerpt: post.excerpt,
+  category: post.category,
+  // Ensure featured is explicitly boolean, not undefined
+  ...(post.featured !== undefined && { featured: post.featured }),
+  publishedAt: post.publishedAt,
+  readTime: post.readTime,
+  // Only include viewCount if it's defined
+  ...(post.viewCount !== undefined && { viewCount: post.viewCount }),
+  image: {
+    webp: post.image.webp,
+    fallback: post.image.fallback
+  },
+  tags: post.tags,
+  author: post.author
+});
 
 export function NewsBlog() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   
-  // Fetch recent posts using CMS hook
-  const { data: posts = [], isLoading, error } = useRecentPosts(3);
+  // Fetch the latest 3 posts for the home page
+  const { 
+    data: posts = [], 
+    isLoading, 
+    error, 
+    refetch,
+    isFetching,
+    dataUpdatedAt
+  } = useRecentPosts(SKELETON_COUNT);
 
-  return (
-    <section className="py-16">
+  // Memoized callback functions to prevent unnecessary re-renders of child components
+  const handleReadMore = useCallback((postId: string) => {
+    navigate(`/blog/${postId}`);
+  }, [navigate]);
+
+  const handleViewAll = useCallback(() => {
+    navigate('/blog');
+  }, [navigate]);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  // Memoized computation for last updated time to avoid recalculation on every render
+  const lastUpdatedText = useMemo(() => {
+    if (!dataUpdatedAt || isLoading) return null;
+    return `Last updated: ${new Date(dataUpdatedAt).toLocaleString()}`;
+  }, [dataUpdatedAt, isLoading]);
+
+  // Memoized skeleton array to prevent recreation
+  const skeletonArray = useMemo(() => 
+    Array.from({ length: SKELETON_COUNT }, (_, i) => i), 
+    []
+  );
+
+  // Memoized transformed posts to prevent recalculation on every render
+  const transformedPosts = useMemo(() => 
+    posts.map(transformCMSPost), 
+    [posts]
+  );
+
+  // Common header section to reduce code duplication
+  const headerSection = useMemo(() => (
+    <div className="text-center mb-12">
+      <div className="flex items-center justify-center gap-3 mb-4">
+        <h2 className="text-3xl font-bold text-gradient-brand">Latest News & Insights</h2>
+        {isFetching && (
+          <div className="flex items-center gap-2 text-secondary">
+            <RefreshCw className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Updating...</span>
+          </div>
+        )}
+      </div>
+      <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+        Stay updated with the latest trends, insights, and best practices in real estate verification and fraud prevention
+      </p>
+      {lastUpdatedText && (
+        <p className="text-xs text-muted-foreground mt-2">
+          {lastUpdatedText}
+        </p>
+      )}
+    </div>
+  ), [isFetching, lastUpdatedText]);
+
+  // Loading State - Early return pattern for cleaner code flow
+  if (isLoading) {
+    return (
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-semibold text-customPrimary mb-4">
-            Latest News & Insights
-          </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Stay informed with expert analysis, market insights, and the latest trends in African real estate
-          </p>
+        {headerSection}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {skeletonArray.map((i) => (
+            <BlogPostSkeleton key={`skeleton-${i}`} />
+          ))}
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {isLoading ? (
-            // Show loading skeletons
-            Array.from({ length: 3 }, (_, i) => (
-              <BlogPostSkeleton key={i} />
-            ))
-          ) : error ? (
-            // Show error state
-            <div className="col-span-full text-center py-8">
-              <p className="text-gray-500 mb-4">
-                Unable to load latest articles. Please try again later.
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.reload()}
-              >
-                Retry
-              </Button>
-            </div>
-          ) : (
-            // Show actual posts
-            posts.map((post) => (
-              <Card key={post.id} className="overflow-hidden hover-scale cursor-pointer transition-all duration-300 hover:shadow-lg">
-                <div className="aspect-video relative">
-                  <OptimizedImage
-                    webpSrc={post.image.webp}
-                    fallbackSrc={post.image.fallback}
-                    alt={post.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardHeader>
-                  <div className="text-sm text-gray-500 mb-2">
-                    {formatDate(post.publishedAt)}
-                  </div>
-                  <CardTitle className="text-xl text-customSecondary hover:text-customSecondary/80 transition-colors">
-                    {post.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 mb-4 line-clamp-3">{post.excerpt}</p>
-                  <Button
-                    variant="outline"
-                    className="text-customSecondary border-customSecondary hover:bg-customSecondary hover:text-white transition-all duration-300"
-                    onClick={() => setLocation(`/blog/${post.id}`)}
-                  >
-                    Read More
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+      </div>
+    );
+  }
 
-        {/* View All Articles Button */}
-        <div className="text-center">
-          <Button
-            size="lg"
-            className="bg-customSecondary hover:bg-customSecondaryHover text-white px-8 py-3 transition-all duration-300 hover:scale-105"
-            onClick={() => setLocation('/blog')}
+  // Error State - Early return pattern for cleaner code flow
+  if (error) {
+    return (
+      <div className="container mx-auto px-4">
+        {headerSection}
+        <ErrorState
+          title="Unable to Load Articles"
+          message="We're having trouble loading the latest articles. Please try again."
+          onRetry={handleRefresh}
+          variant="generic"
+        />
+      </div>
+    );
+  }
+
+  // Main content render
+  return (
+    <div className="container mx-auto px-4">
+      {headerSection}
+      
+      {/* Articles Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {transformedPosts.map((post) => (
+          <BlogPostCard
+            key={post.id}
+            post={post}
+            onReadMore={() => handleReadMore(post.id)}
+            showTags={true}
+            showViewCount={true}
+            maxTags={2}
+          />
+        ))}
+      </div>
+
+      {/* Call to Action */}
+      <div className="text-center mt-12">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Button 
+            size="lg" 
+            variant="coral"
+            className="px-8 py-3 hover:bg-secondary/90 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+            onClick={handleViewAll}
           >
             View All Articles
-            <ArrowRight className="w-4 h-4 ml-2" />
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+          
+          {/* Manual refresh button */}
+          <Button 
+            size="sm" 
+            variant="coral-ghost"
+            className="px-4 py-2 hover:bg-secondary/10 transition-all duration-300"
+            onClick={handleRefresh}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            {isFetching ? 'Refreshing...' : 'Refresh Articles'}
           </Button>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

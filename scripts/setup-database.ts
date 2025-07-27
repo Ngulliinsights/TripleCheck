@@ -10,8 +10,8 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { migrate } from "drizzle-orm/neon-http/migrator";
-import { users, properties, reviews } from "../shared/schema";
-import type { InsertUser, InsertProperty, User } from "../shared/schema";
+import { users, properties, reviews } from "../src/shared/schema";
+import type { InsertUser, InsertProperty, User } from "../src/shared/schema";
 import bcrypt from "bcrypt";
 
 async function setupDatabase() {
@@ -49,10 +49,11 @@ async function setupDatabase() {
     console.log("📝 Creating initial users...");
 
     // Create sample users with hashed passwords
+    const defaultPassword = process.env.DEFAULT_SETUP_PASSWORD || 'password123';
     const sampleUsers: InsertUser[] = [
-      { username: 'demo_user', password: 'password123' },
-      { username: 'property_owner', password: 'secure456' },
-      { username: 'agent_smith', password: 'agent789' }
+      { username: 'demo_user', password: defaultPassword },
+      { username: 'property_owner', password: process.env.PROPERTY_OWNER_PASSWORD || 'secure456' },
+      { username: 'agent_smith', password: process.env.AGENT_PASSWORD || 'agent789' }
     ];
 
     // Use explicit typing for the created users array

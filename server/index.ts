@@ -5,13 +5,13 @@ import session from "express-session";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import cors from "cors";
-import { registerRoutes } from "./routes";
-import { registerAIRoutes } from "./ai-routes";
-import { registerMLRoutes } from "./ml-routes";
+import { registerRoutes } from "./routes/index";
+import { registerAIRoutes } from "./routes/ai-routes";
+import { registerMLRoutes } from "./routes/ml-routes";
 import { setupVite, serveStatic, log as viteLog } from "./vite";
-import { logger } from "./logger";
+import { logger } from "./infrastructure/monitoring/logger";
 import { errorHandler, notFoundHandler, corsErrorHandler, timeoutHandler } from "./middleware/error-handler";
-import { initializeDatabase, runMigrations, seedDatabase } from "./lib/database";
+import { initializeDatabase, runMigrations, seedDatabase } from "./infrastructure/database/connection";
 
 const app = express();
 

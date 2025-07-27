@@ -4,6 +4,7 @@ import { Message, MessageThread } from '../hooks/useMessages';
 // Communication validation schemas
 export const MessageSchema = z.object({
   senderId: z.string().uuid('Invalid sender ID'),
+  senderName: z.string().min(1, 'Sender name is required'),
   recipientId: z.string().uuid('Invalid recipient ID'),
   subject: z.string()
     .min(3, 'Subject must be at least 3 characters')
@@ -383,7 +384,7 @@ export class CommunicationBusinessLogic {
           break;
 
         case 'batched':
-          if (priorityAnalysis.priority === 'high') {
+          if ((priorityAnalysis.priority as 'low' | 'medium' | 'high') === 'high') {
             immediateDelivery.push(message);
           } else {
             batchedDelivery.push(message);

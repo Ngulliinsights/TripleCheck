@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Performance monitoring utilities for production optimization
 export interface PerformanceMetrics {
   pageLoadTime: number;
@@ -72,8 +74,8 @@ class PerformanceMonitor {
 
   private trackNavigationTiming(entry: PerformanceNavigationTiming) {
     const metrics: Partial<PerformanceMetrics> = {
-      pageLoadTime: entry.loadEventEnd - entry.navigationStart,
-      timeToInteractive: entry.domInteractive - entry.navigationStart,
+      pageLoadTime: entry.loadEventEnd - entry.fetchStart,
+      timeToInteractive: entry.domInteractive - entry.fetchStart,
     };
     
     this.recordMetrics(metrics);

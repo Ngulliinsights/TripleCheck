@@ -1,41 +1,99 @@
+/**
+ * Database Connection Management
+ *
+ * Centralized database connection handling with connection pooling,
+ * health monitoring, and automatic reconnection capabilities
+ */
+
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-// TODO: Import actual schema files when they're created
-// import * as schema from "../../shared/schema";
-// import * as communitySchema from "../../shared/community-trust-schema";
 
-// Database configuration with fallbacks
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://localhost:5432/triplecheck";
+import * as schema from "../../../src/shared/schema";
+import * as communitySchema from "../../shared/community-trust-schema";
+import { cleanupManager } from '../../utils/cleanup-manager';
+import { logger } from "../monitoring/logger";
 
-// Connection configuration
+import {
+  databaseConfig,
+  validateDatabaseConfig,
+  buildConnectionString,
+} from "./config/database.config";
+// Define types locally since database.types may not exist
+interface DatabaseHealthCheck {
+  status: "healthy" | "unhealthy";
+  responseTime: number;
+  activeConnections: number;
+  maxConnections: number;
+  diskUsage: number;
+  memoryUsage: number;
+  errors: string[];
+  warnings: string[];
+  timestamp: Date;
+}
+
+interface QueryPerformanceMetrics {
+  query: string;
+  executionTime: number;
+  planningTime: number;
+  rowsReturned: number;
+  rowsExamined: number;
+  indexesUsed: string[];
+  timestamp: Date;
+}
+
+// Validate configuration on startup
+validateDatabaseConfig();
+
+// Build connection string from configuration
+const DATABASE_URL = process.env.DATABASE_URL || buildConnectionString();
+
+// Simplified connection configuration for better performance
 const connectionConfig = {
-  max: 20, // Maximum number of connections
-  idle_timeout: 20, // Close idle connections after 20 seconds
-  connect_timeout: 10, // Connection timeout in seconds
-  prepare: false, // Disable prepared statements for better compatibility
+  max: 5, // Reduce connection pool size for development
+  idle_timeout: 20,
+  connect_timeout: 10,
+  prepare: false,
+  onnotice: () => {}, // Disable notice logging to reduce overhead
 };
 
 // Create connection with retry logic
-let sql: postgres.Sql;
-let db: ReturnType<typeof drizzle>;
+let sql: postgres.Sql | undefined;
+let db: ReturnType<typeof drizzle> | undefined;
 
 export async function initializeDatabase() {
   try {
-    console.log('Initializing database connection...');
-    
+    logger.info("Initializing database connection...", "DATABASE");
+
     sql = postgres(DATABASE_URL, connectionConfig);
-    db = drizzle(sql, { 
-      // schema: { ...schema, ...communitySchema }, // TODO: Add when schema files are created
-      logger: process.env.NODE_ENV === 'development'
+    db = drizzle(sql, {
+      schema: { ...schema, ...communitySchema },
+      logger:
+        process.env.NODE_ENV === "development" ?
+          {
+            logQuery: (query: string, params: unknown[]) => {
+              logger.debug("Database query", "DATABASE", { query, params });
+            },
+          }
+        : false,
     });
 
-    // Test the connection
-    await sql`SELECT 1`;
-    console.log('Database connection established successfully');
-    
+    // Test the connection with timeout
+    await Promise.race([
+      sql`SELECT 1 as connection_test`,
+      new Promise((resolve, reject) =>
+        setTimeout(() => reject(new Error("Connection test timeout")), 5000)
+      ),
+    ]);
+
+    logger.info("Database connection established successfully", "DATABASE", {
+      host: databaseConfig.host,
+      database: databaseConfig.database,
+      maxConnections: databaseConfig.maxConnections,
+    });
+
     return { success: true };
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    logger.error("Failed to initialize database", "DATABASE", { error });
     return { success: false, error };
   }
 }
@@ -43,87 +101,502 @@ export async function initializeDatabase() {
 // Get database instance with connection check
 export function getDatabase() {
   if (!db) {
-    throw new Error('Database not initialized. Call initializeDatabase() first.');
+    throw new Error(
+      "Database not initialized. Call initializeDatabase() first."
+    );
   }
   return db;
 }
 
-// Safe database operation wrapper
+// Get raw SQL instance for advanced operations
+export function getSqlInstance() {
+  if (!sql) {
+    throw new Error(
+      "Database not initialized. Call initializeDatabase() first."
+    );
+  }
+  return sql;
+}
+
+// Database connection singleton
+export class DatabaseConnection {
+  private static instance: DatabaseConnection;
+  private connectionPool: postgres.Sql | null = null;
+  private drizzleInstance: ReturnType<typeof drizzle> | null = null;
+  private healthMetrics: DatabaseHealthCheck | null = null;
+
+  static getInstance(): DatabaseConnection {
+    if (!DatabaseConnection.instance) {
+      DatabaseConnection.instance = new DatabaseConnection();
+    }
+    return DatabaseConnection.instance;
+  }
+
+  async connect(): Promise<void> {
+    if (this.connectionPool) {
+      logger.debug("Database already connected", "DATABASE");
+      return;
+    }
+
+    try {
+      this.connectionPool = postgres(DATABASE_URL, connectionConfig);
+      this.drizzleInstance = drizzle(this.connectionPool, {
+        logger:
+          process.env.NODE_ENV === "development" ?
+            {
+              logQuery: (query: string, params: unknown[]) => {
+                logger.debug("Database query", "DATABASE", { query, params });
+              },
+            }
+          : false,
+      });
+
+      // Test connection
+      await this.connectionPool`SELECT 1`;
+      logger.info("Database connection pool established", "DATABASE");
+    } catch (error) {
+      logger.error("Failed to establish database connection", "DATABASE", {
+        error,
+      });
+      throw error;
+    }
+  }
+
+  getDb(): ReturnType<typeof drizzle> {
+    if (!this.drizzleInstance) {
+      throw new Error("Database not connected. Call connect() first.");
+    }
+    return this.drizzleInstance;
+  }
+
+  getSql(): postgres.Sql {
+    if (!this.connectionPool) {
+      throw new Error("Database not connected. Call connect() first.");
+    }
+    return this.connectionPool;
+  }
+
+  async getHealth(): Promise<DatabaseHealthCheck> {
+    if (!this.connectionPool) {
+      return {
+        status: "unhealthy" as const,
+        responseTime: 0,
+        activeConnections: 0,
+        maxConnections: 0,
+        diskUsage: 0,
+        memoryUsage: 0,
+        errors: ["Database not connected"],
+        warnings: [],
+        timestamp: new Date(),
+      };
+    }
+
+    const startTime = Date.now();
+    try {
+      await this.connectionPool`SELECT 1`;
+      const responseTime = Date.now() - startTime;
+
+      this.healthMetrics = {
+        status: "healthy" as const,
+        responseTime,
+        activeConnections: 0, // Would need to query pg_stat_activity
+        maxConnections: databaseConfig.maxConnections,
+        diskUsage: 0,
+        memoryUsage: 0,
+        errors: [],
+        warnings: [],
+        timestamp: new Date(),
+      };
+
+      return this.healthMetrics;
+    } catch (error) {
+      logger.error("Database health check failed", "DATABASE", { error });
+      return {
+        status: "unhealthy" as const,
+        responseTime: Date.now() - startTime,
+        activeConnections: 0,
+        maxConnections: 0,
+        diskUsage: 0,
+        memoryUsage: 0,
+        errors: [error instanceof Error ? error.message : "Unknown error"],
+        warnings: [],
+        timestamp: new Date(),
+      };
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    if (this.connectionPool) {
+      try {
+        await this.connectionPool.end();
+        this.connectionPool = null;
+        this.drizzleInstance = null;
+        logger.info("Database connection closed", "DATABASE");
+      } catch (error) {
+        logger.error("Error closing database connection", "DATABASE", {
+          error,
+        });
+      }
+    }
+  }
+}
+
+// Helper function to ensure database is initialized
+async function ensureConnection(): Promise<{
+  sql: postgres.Sql;
+  db: ReturnType<typeof drizzle>;
+}> {
+  if (!sql || !db) {
+    const result = await initializeDatabase();
+    if (!result.success || !sql || !db) {
+      throw new Error("Failed to initialize database connection");
+    }
+  }
+  return { sql, db };
+}
+
+// Register cleanup with global cleanup manager
+cleanupManager.register('database-connection', () => {
+  if (sql) {
+    sql.end();
+    sql = undefined;
+    db = undefined;
+  }
+});
+
+// Helper function to categorize database errors
+function categorizeError(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return "Unknown database error";
+  }
+
+  const errorMessage = error.message.toLowerCase();
+
+  if (
+    errorMessage.includes("connect") ||
+    errorMessage.includes("econnrefused")
+  ) {
+    return "Database connection failed";
+  }
+  if (errorMessage.includes("timeout") || errorMessage.includes("etimedout")) {
+    return "Database operation timed out";
+  }
+  if (
+    errorMessage.includes("duplicate key") ||
+    errorMessage.includes("unique constraint")
+  ) {
+    return "Duplicate entry found";
+  }
+  if (
+    errorMessage.includes("foreign key") ||
+    errorMessage.includes("violates foreign key constraint")
+  ) {
+    return "Referenced record not found";
+  }
+  if (
+    errorMessage.includes("not null") ||
+    errorMessage.includes("violates not-null constraint")
+  ) {
+    return "Required field is missing";
+  }
+  if (errorMessage.includes("check constraint")) {
+    return "Data validation failed";
+  }
+  if (
+    errorMessage.includes("permission denied") ||
+    errorMessage.includes("insufficient privilege")
+  ) {
+    return "Insufficient database permissions";
+  }
+
+  return error.message;
+}
+
+// Safe database operation wrapper with enhanced error handling
 export async function withDatabase<T>(
   operation: (db: ReturnType<typeof drizzle>) => Promise<T>
+): Promise<{
+  success: boolean;
+  data?: T;
+  error?: string;
+  metrics?: QueryPerformanceMetrics;
+}> {
+  const startTime = Date.now();
+
+  try {
+    const { db: dbInstance } = await ensureConnection();
+
+    if (!db) {
+      throw new Error("Database not initialized");
+    }
+    const result = await operation(dbInstance);
+    const executionTime = Date.now() - startTime;
+
+    const metrics: QueryPerformanceMetrics = {
+      query: "database_operation",
+      executionTime,
+      planningTime: 0,
+      rowsReturned: Array.isArray(result) ? result.length : 1,
+      rowsExamined: Array.isArray(result) ? result.length : 1,
+      indexesUsed: [],
+      timestamp: new Date(),
+    };
+
+    // Log slow operations
+    if (executionTime > 1000) {
+      logger.warn("Slow database operation detected", "DATABASE", {
+        executionTime,
+        operation: operation.name || "anonymous",
+      });
+    }
+
+    return { success: true, data: result, metrics };
+  } catch (error) {
+    const executionTime = Date.now() - startTime;
+    logger.error("Database operation failed", "DATABASE", {
+      error,
+      executionTime,
+      operation: operation.name || "anonymous",
+    });
+
+    const errorMessage = categorizeError(error);
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+// Transaction wrapper with enhanced logging
+export async function withTransaction<T>(
+  operation: (sql: postgres.Sql) => Promise<T>
 ): Promise<{ success: boolean; data?: T; error?: string }> {
   try {
-    if (!db) {
-      await initializeDatabase();
-    }
-    
-    const data = await operation(db);
-    return { success: true, data };
+    logger.debug("Starting database transaction", "DATABASE");
+
+    const { sql: sqlInstance } = await ensureConnection();
+    const result = await sqlInstance.begin(async (transaction) => {
+      return await operation(transaction);
+    });
+
+    logger.debug("Database transaction committed successfully", "DATABASE");
+    return { success: true, data: result as unknown as T };
   } catch (error) {
-    console.error('Database operation failed:', error);
-    
-    // Handle specific database errors
-    if (error instanceof Error) {
-      if (error.message.includes('connect')) {
-        return { success: false, error: 'Database connection failed' };
-      }
-      if (error.message.includes('timeout')) {
-        return { success: false, error: 'Database operation timed out' };
-      }
-      if (error.message.includes('duplicate key')) {
-        return { success: false, error: 'Duplicate entry found' };
-      }
-      if (error.message.includes('foreign key')) {
-        return { success: false, error: 'Referenced record not found' };
-      }
-    }
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown database error' 
+    logger.error("Database transaction failed and rolled back", "DATABASE", {
+      error,
+    });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Transaction failed",
     };
   }
 }
 
-// Connection health check
-export async function checkDatabaseHealth(): Promise<{
-  healthy: boolean;
-  latency?: number;
-  error?: string;
+// Enhanced connection health check
+export async function checkDatabaseHealth(): Promise<DatabaseHealthCheck> {
+  const startTime = Date.now();
+
+  try {
+    const { sql: sqlInstance } = await ensureConnection();
+
+    // Test basic connectivity
+    await sqlInstance`SELECT 1 as health_check`;
+    const responseTime = Date.now() - startTime;
+
+    // Get connection pool stats (if available)
+    let activeConnections = 0;
+    try {
+      const poolStats = await sqlInstance`
+        SELECT count(*) as active_connections 
+        FROM pg_stat_activity 
+        WHERE state = 'active' AND datname = current_database()
+      `;
+      activeConnections = Number(poolStats[0]?.active_connections || 0);
+    } catch (error) {
+      logger.debug("Could not retrieve connection stats", "DATABASE", {
+        error,
+      });
+    }
+
+    const health: DatabaseHealthCheck = {
+      status: "healthy" as const,
+      responseTime,
+      activeConnections,
+      maxConnections: databaseConfig.maxConnections,
+      diskUsage: 0,
+      memoryUsage: 0,
+      errors: [],
+      warnings: [],
+      timestamp: new Date(),
+    };
+
+    // Log health status
+    if (responseTime > 1000) {
+      logger.warn("Database response time is slow", "DATABASE", {
+        responseTime,
+      });
+    }
+
+    if (activeConnections > databaseConfig.maxConnections * 0.8) {
+      logger.warn("Database connection pool is near capacity", "DATABASE", {
+        activeConnections,
+        maxConnections: databaseConfig.maxConnections,
+      });
+    }
+
+    return health;
+  } catch (error) {
+    logger.error("Database health check failed", "DATABASE", { error });
+    return {
+      status: "unhealthy" as const,
+      responseTime: Date.now() - startTime,
+      activeConnections: 0,
+      maxConnections: 0,
+      diskUsage: 0,
+      memoryUsage: 0,
+      errors: [error instanceof Error ? error.message : "Unknown error"],
+      warnings: [],
+      timestamp: new Date(),
+    };
+  }
+}
+
+// Comprehensive database diagnostics
+export async function getDatabaseDiagnostics(): Promise<{
+  health: DatabaseHealthCheck;
+  version: string;
+  size: string;
+  tableCount: number;
+  indexCount: number;
+  slowQueries: QueryPerformanceMetrics[];
 }> {
   try {
-    const start = Date.now();
-    await sql`SELECT 1`;
-    const latency = Date.now() - start;
-    
-    return { healthy: true, latency };
-  } catch (error) {
-    return { 
-      healthy: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    const health = await checkDatabaseHealth();
+
+    if (health.status !== "healthy") {
+      return {
+        health,
+        version: "Unknown",
+        size: "Unknown",
+        tableCount: 0,
+        indexCount: 0,
+        slowQueries: [],
+      };
+    }
+
+    const { sql: sqlInstance } = await ensureConnection();
+
+    // Get database version
+    const versionResult = await sqlInstance`SELECT version()`;
+    const version = versionResult[0]?.version || "Unknown";
+
+    // Get database size
+    const sizeResult = await sqlInstance`
+      SELECT pg_size_pretty(pg_database_size(current_database())) as size
+    `;
+    const size = sizeResult[0]?.size || "Unknown";
+
+    // Get table count
+    const tableResult = await sqlInstance`
+      SELECT count(*) as table_count 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `;
+    const tableCount = Number(tableResult[0]?.table_count || 0);
+
+    // Get index count
+    const indexResult = await sqlInstance`
+      SELECT count(*) as index_count 
+      FROM pg_indexes 
+      WHERE schemaname = 'public'
+    `;
+    const indexCount = Number(indexResult[0]?.index_count || 0);
+
+    // Get slow queries (if pg_stat_statements is available)
+    let slowQueries: QueryPerformanceMetrics[] = [];
+    try {
+      const slowQueryResults = await sqlInstance`
+        SELECT query, mean_time, calls, total_time
+        FROM pg_stat_statements 
+        WHERE mean_time > 1000 
+        ORDER BY mean_time DESC 
+        LIMIT 5
+      `;
+      slowQueries = slowQueryResults.map((row: Record<string, unknown>) => ({
+        query: String(row.query || ""),
+        executionTime: Number(row.mean_time || 0),
+        planningTime: 0,
+        rowsReturned: 0,
+        rowsExamined: 0,
+        indexesUsed: [],
+        timestamp: new Date(),
+      }));
+    } catch (error) {
+      logger.debug(
+        "pg_stat_statements not available for slow query analysis",
+        "DATABASE",
+        { error }
+      );
+    }
+
+    return {
+      health,
+      version,
+      size,
+      tableCount,
+      indexCount,
+      slowQueries,
     };
+  } catch (error) {
+    logger.error("Failed to get database diagnostics", "DATABASE", { error });
+    throw error;
   }
 }
 
-// Graceful shutdown
+// Graceful shutdown with enhanced cleanup
 export async function closeDatabaseConnection() {
   try {
     if (sql) {
+      logger.info("Closing database connection...", "DATABASE");
+
+      // Wait for any pending operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       await sql.end();
-      console.log('Database connection closed gracefully');
+      sql = undefined;
+      db = undefined;
+
+      logger.info("Database connection closed gracefully", "DATABASE");
     }
   } catch (error) {
-    console.error('Error closing database connection:', error);
+    logger.error("Error closing database connection", "DATABASE", { error });
+    // Handle error appropriately but don't throw
   }
 }
 
-// Migration utilities
+// Setup graceful shutdown handlers
+process.on("SIGINT", async () => {
+  logger.info("Received SIGINT, closing database connection...", "DATABASE");
+  await closeDatabaseConnection();
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  logger.info("Received SIGTERM, closing database connection...", "DATABASE");
+  await closeDatabaseConnection();
+  process.exit(0);
+});
+
+// Migration utilities (will be moved to DatabaseMigrator)
 export async function runMigrations() {
   try {
-    console.log('Running database migrations...');
-    
+    logger.info("Running database migrations...", "DATABASE");
+
+    const { sql: sqlInstance } = await ensureConnection();
+
     // Create tables if they don't exist
-    await sql`
+    await sqlInstance`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
@@ -135,7 +608,7 @@ export async function runMigrations() {
       )
     `;
 
-    await sql`
+    await sqlInstance`
       CREATE TABLE IF NOT EXISTS properties (
         id SERIAL PRIMARY KEY,
         owner_id INTEGER NOT NULL,
@@ -152,7 +625,7 @@ export async function runMigrations() {
       )
     `;
 
-    await sql`
+    await sqlInstance`
       CREATE TABLE IF NOT EXISTS reviews (
         id SERIAL PRIMARY KEY,
         property_id INTEGER NOT NULL,
@@ -165,51 +638,48 @@ export async function runMigrations() {
     `;
 
     // Create indexes for better performance
-    await sql`CREATE INDEX IF NOT EXISTS idx_properties_location ON properties(location)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_properties_price ON properties(price)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_properties_verification ON properties(verification_status)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_reviews_property ON reviews(property_id)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id)`;
+    await sqlInstance`CREATE INDEX IF NOT EXISTS idx_properties_location ON properties(location)`;
+    await sqlInstance`CREATE INDEX IF NOT EXISTS idx_properties_price ON properties(price)`;
+    await sqlInstance`CREATE INDEX IF NOT EXISTS idx_properties_verification ON properties(verification_status)`;
+    await sqlInstance`CREATE INDEX IF NOT EXISTS idx_reviews_property ON reviews(property_id)`;
+    await sqlInstance`CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id)`;
 
-    console.log('Database migrations completed successfully');
+    logger.info("Database migrations completed successfully", "DATABASE");
     return { success: true };
   } catch (error) {
-    console.error('Migration failed:', error);
+    logger.error("Migration failed", "DATABASE", { error });
     return { success: false, error };
   }
 }
 
-// Comprehensive data seeding for development and testing
+// Comprehensive data seeding for development and testing (will be moved to DatabaseSeeder)
 export async function seedDatabase() {
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Skipping database seeding in production');
+  if (process.env.NODE_ENV === "production") {
+    logger.info("Skipping database seeding in production", "DATABASE");
     return;
   }
 
   try {
-    console.log('🌱 Seeding database with comprehensive sample data...');
+    logger.info("Quick database check...", "DATABASE");
     
-    // Check if data already exists
-    const existingUsers = await sql`SELECT COUNT(*) FROM users`;
-    if (Number(existingUsers[0].count) > 0) {
-      console.log('Database already contains data, clearing and reseeding...');
-      
-      // Clear existing data for fresh seed
-      await sql`DELETE FROM reviews`;
-      await sql`DELETE FROM properties`;
-      await sql`DELETE FROM users`;
-      console.log('Existing data cleared');
+    const { sql: sqlInstance } = await ensureConnection();
+
+    // Quick check if data already exists
+    const existingUsers = await sqlInstance`SELECT COUNT(*) FROM users LIMIT 1`;
+    if (Number(existingUsers[0]?.count) > 0) {
+      logger.info("Database already has data, skipping seed", "DATABASE");
+      return; // Skip seeding entirely if data exists
     }
 
     // Insert comprehensive sample users with proper password hashing
-    console.log('Creating sample users...');
-    
+    logger.info("Creating sample users...", "DATABASE");
+
     // Create demo users with known passwords for testing
-    const bcrypt = await import('bcrypt');
-    const demoPassword = await bcrypt.hash('demo123', 10); // Simple password for testing
-    const agentPassword = await bcrypt.hash('agent123', 10); // Simple password for testing
-    
-    await sql`
+    const bcrypt = await import("bcrypt");
+    const demoPassword = await bcrypt.hash("demo123", 10);
+    const agentPassword = await bcrypt.hash("agent123", 10);
+
+    await sqlInstance`
       INSERT INTO users (username, password, trust_score, is_verified_agent)
       VALUES 
         ('demo_user', ${demoPassword}, 750, false),
@@ -224,8 +694,8 @@ export async function seedDatabase() {
     `;
 
     // Insert comprehensive sample properties with diverse data for testing
-    console.log('Creating sample properties...');
-    await sql`
+    logger.info("Creating sample properties...", "DATABASE");
+    await sqlInstance`
       INSERT INTO properties (owner_id, title, description, location, price, image_urls, features, verification_status, ai_verification_results)
       VALUES 
         -- Verified Properties with AI results
@@ -254,8 +724,8 @@ export async function seedDatabase() {
     `;
 
     // Insert sample reviews for testing review functionality
-    console.log('Creating sample reviews...');
-    await sql`
+    logger.info("Creating sample reviews...", "DATABASE");
+    await sqlInstance`
       INSERT INTO reviews (property_id, user_id, rating, comment)
       VALUES 
         (1, 1, 5, 'Excellent apartment! The location is perfect and the amenities are top-notch. Highly recommend for anyone looking in Westlands.'),
@@ -272,21 +742,21 @@ export async function seedDatabase() {
 
     // Create community trust data if tables exist
     try {
-      console.log('Creating community trust sample data...');
-      
+      logger.info("Creating community trust sample data...", "DATABASE");
+
       // Sample community references
-      await sql`
+      await sqlInstance`
         INSERT INTO community_references (user_id, reference_type, reference_name, reference_phone, relationship, years_known, trust_rating, verification_status)
         VALUES 
           (1, 'neighbor', 'Alice Wanjiku', '+254712345678', 'Neighbor for 3 years', 3, 9, 'verified'),
-          (1, 'colleague', 'Peter Mwangi', '+254723456789', 'Work colleague', 2, 8, 'verified'),
+          (1, 'colleague', 'Peter Makau', '+254723456789', 'Work colleague', 2, 8, 'verified'),
           (3, 'church_member', 'Grace Njeri', '+254734567890', 'Church member', 5, 10, 'verified'),
           (5, 'family', 'John Kamau', '+254745678901', 'Brother', 25, 10, 'verified')
         ON CONFLICT DO NOTHING
       `;
 
       // Sample trust scores
-      await sql`
+      await sqlInstance`
         INSERT INTO trust_scores (user_id, overall_score, trust_level, community_score, behavior_score, social_score, location_score, endorsement_score, transaction_score, risk_level, max_transaction_value)
         VALUES 
           (1, 750, 'verified', 80, 85, 70, 75, 60, 90, 'low', 500000),
@@ -297,31 +767,34 @@ export async function seedDatabase() {
           (6, 920, 'premium', 92, 90, 88, 85, 90, 98, 'very_low', 2500000)
         ON CONFLICT DO NOTHING
       `;
-
     } catch (error) {
-      console.log('Community trust tables not yet created, skipping community data seeding');
+      logger.info(
+        "Community trust tables not yet created, skipping community data seeding",
+        "DATABASE",
+        { error }
+      );
     }
 
-    console.log('✅ Database seeding completed successfully!');
-    console.log('📊 Sample data created:');
-    console.log('   - 6 users (tenants, agents, landlords)');
-    console.log('   - 10 properties (various types and locations)');
-    console.log('   - 9 reviews (different ratings)');
-    console.log('   - Community trust data (if tables exist)');
-    console.log('');
-    console.log('🔍 Test search with terms like:');
-    console.log('   - "apartment", "house", "studio"');
-    console.log('   - "Nairobi", "Mombasa", "Nakuru"');
-    console.log('   - "modern", "luxury", "family"');
-    console.log('   - "beach", "mountain", "garden"');
-    
+    logger.info("✅ Database seeding completed successfully!", "DATABASE");
+    logger.info("📊 Sample data created:", "DATABASE", {
+      users: 6,
+      properties: 10,
+      reviews: 9,
+      communityData: "conditional",
+    });
+    logger.info(
+      "🔍 Test search terms available: apartment, house, studio, Nairobi, Mombasa, modern, luxury, family, beach, mountain, garden",
+      "DATABASE"
+    );
   } catch (error) {
-    console.error('❌ Database seeding failed:', error);
+    logger.error("❌ Database seeding failed", "DATABASE", { error });
   }
 }
 
-// Export the database instance
+// Legacy compatibility - getDatabase function is already exported above
+
+// Export the database instance for backward compatibility
 export { db, sql };
 
-// Initialize database on module load
-initializeDatabase().catch(console.error);
+// Database initialization removed from module load to prevent startup crashes
+// Database will be initialized lazily when first accessed

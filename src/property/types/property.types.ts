@@ -1,4 +1,4 @@
-import { BaseEntity } from '../../shared/types';
+import { BaseEntity } from '@/shared/types';
 
 export interface Property extends BaseEntity {
   title: string;
@@ -24,6 +24,25 @@ export interface Property extends BaseEntity {
   status: 'active' | 'pending' | 'sold' | 'inactive';
   trustScore?: number;
   verificationStatus: 'pending' | 'verified' | 'rejected';
+  landVerification?: LandVerificationStatus;
+}
+
+export interface LandVerificationStatus {
+  sessionId?: string;
+  status: 'not_started' | 'in_progress' | 'completed' | 'suspended' | 'failed';
+  overallRiskScore: number; // 0-100
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  confidence: number; // 0-1
+  completedLayers: string[]; // Array of completed verification layer types
+  lastUpdated: Date;
+  badge?: LandVerificationBadge;
+}
+
+export interface LandVerificationBadge {
+  type: 'verified' | 'in_progress' | 'high_risk' | 'expert_required';
+  label: string;
+  color: 'green' | 'blue' | 'red' | 'orange';
+  description: string;
 }
 
 export interface PropertySearchParams {
@@ -37,8 +56,10 @@ export interface PropertySearchParams {
   areaMin?: number;
   areaMax?: number;
   amenities?: string[];
+  landVerified?: boolean;
+  landRiskLevel?: 'low' | 'medium' | 'high' | 'critical';
   page?: number;
   limit?: number;
-  sortBy?: 'price' | 'date' | 'relevance' | 'trustScore';
+  sortBy?: 'price' | 'date' | 'relevance' | 'trustScore' | 'landVerification';
   sortOrder?: 'asc' | 'desc';
 }

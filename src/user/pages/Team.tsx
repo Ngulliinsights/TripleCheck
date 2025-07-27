@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
+import { Badge } from "@shared/components/ui/badge";
 import { Linkedin, Mail } from "lucide-react";
 
 // Type definition for team member data structure
@@ -38,7 +38,7 @@ export default function TeamPage(): JSX.Element {
       email: "sarah@triplecheck.co.ke"
     },
     {
-      name: "David Mwangi",
+      name: "David Makau",
       role: "Head of Verification",
       bio: "Legal expert in property law and document authentication",
       image: "/api/placeholder/150/150",

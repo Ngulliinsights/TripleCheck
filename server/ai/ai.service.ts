@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { Request, Response } from 'express';
 import fileUpload from 'express-fileupload';
-import { storage } from './storage';
+import { storage } from '../infrastructure/storage/storage';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
@@ -905,7 +905,7 @@ export async function handleDocumentVerification(req: FileUploadRequest, res: Re
       });
     }
 
-    const propertyId = parseInt(req.params.id);
+    const propertyId = parseInt(req.params.id || '0');
     if (isNaN(propertyId)) {
       return res.status(400).json({ 
         success: false, 
@@ -924,7 +924,7 @@ export async function handleDocumentVerification(req: FileUploadRequest, res: Re
     const documentsFile = req.files.documents;
     const files = Array.isArray(documentsFile) ? documentsFile : [documentsFile];
 
-    const documents = files.map((file: fileUpload.UploadedFile) => ({
+    const documents = files.filter((file): file is fileUpload.UploadedFile => file !== undefined).map((file: fileUpload.UploadedFile) => ({
       buffer: file.data,
       name: file.name,
       type: req.body.documentTypes ? 
@@ -952,7 +952,7 @@ export async function handleDocumentVerification(req: FileUploadRequest, res: Re
 
 export async function handleFraudDetection(req: Request, res: Response) {
   try {
-    const propertyId = parseInt(req.params.id);
+    const propertyId = parseInt(req.params.id || '0');
     if (isNaN(propertyId)) {
       return res.status(400).json({ 
         success: false, 
@@ -987,7 +987,7 @@ export async function handleFraudDetection(req: Request, res: Response) {
 
 export async function handleGenerateReport(req: Request, res: Response) {
   try {
-    const propertyId = parseInt(req.params.id);
+    const propertyId = parseInt(req.params.id || '0');
     if (isNaN(propertyId)) {
       return res.status(400).json({ 
         success: false, 

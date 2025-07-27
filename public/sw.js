@@ -1,7 +1,16 @@
-// Service Worker for offline support and caching
-const CACHE_NAME = 'triplecheck-v1';
-const STATIC_CACHE = 'triplecheck-static-v1';
-const DYNAMIC_CACHE = 'triplecheck-dynamic-v1';
+// Enhanced Service Worker for offline support and advanced image caching
+const CACHE_NAME = 'triplecheck-v2';
+const STATIC_CACHE = 'triplecheck-static-v2';
+const DYNAMIC_CACHE = 'triplecheck-dynamic-v2';
+const IMAGE_CACHE = 'triplecheck-images-v2';
+const API_CACHE = 'triplecheck-api-v2';
+
+// Cache size limits
+const CACHE_LIMITS = {
+  images: 50, // Maximum number of images to cache
+  api: 100,   // Maximum number of API responses to cache
+  dynamic: 200, // Maximum number of dynamic resources
+};
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -9,6 +18,7 @@ const STATIC_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/favicon.ico',
+  '/offline.html',
   // Add other critical assets
 ];
 
@@ -18,7 +28,23 @@ const CACHEABLE_APIS = [
   '/api/users',
   '/api/trust',
   '/api/analytics',
+  '/api/search',
 ];
+
+// Image optimization settings
+const IMAGE_FORMATS = {
+  webp: 'image/webp',
+  avif: 'image/avif',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+};
+
+// Cache expiration times (in milliseconds)
+const CACHE_EXPIRATION = {
+  images: 7 * 24 * 60 * 60 * 1000, // 7 days
+  api: 60 * 60 * 1000, // 1 hour
+  static: 30 * 24 * 60 * 60 * 1000, // 30 days
+};
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -41,20 +67,23 @@ self.addEventListener('activate', (event) => {
   console.log('Service Worker activating...');
   
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
+            if (![STATIC_CACHE, DYNAMIC_CACHE, IMAGE_CACHE, API_CACHE].includes(cacheName)) {
               console.log('Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
-      })
-      .then(() => {
-        return self.clients.claim();
-      })
+      }),
+      // Initialize cache management
+      initializeCacheManagement(),
+      // Claim clients
+      self.clients.claim()
+    ])
   );
 });
 
@@ -119,30 +148,151 @@ async function networkFirstStrategy(request) {
   }
 }
 
-// Cache First Strategy (for images)
+// Advanced Image Caching Strategy with optimization
 async function cacheFirstStrategy(request) {
-  const cachedResponse = await caches.match(request);
+  const url = new URL(request.url);
   
+  // Check for cached image first
+  const cachedResponse = await getCachedImage(request);
   if (cachedResponse) {
     return cachedResponse;
   }
   
   try {
+    // Try to fetch optimized image format
+    const optimizedResponse = await fetchOptimizedImage(request);
+    
+    if (optimizedResponse && optimizedResponse.ok) {
+      // Cache the optimized image
+      await cacheImage(request, optimizedResponse.clone());
+      return optimizedResponse;
+    }
+    
+    // Fallback to original request
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
-      const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, networkResponse.clone());
+      await cacheImage(request, networkResponse.clone());
     }
     
     return networkResponse;
   } catch (error) {
-    // Return placeholder image for offline
-    return new Response(
-      '<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="200" fill="#f0f0f0"/><text x="100" y="100" text-anchor="middle" fill="#999">Offline</text></svg>',
-      { headers: { 'Content-Type': 'image/svg+xml' } }
-    );
+    console.log('Image fetch failed:', request.url, error);
+    
+    // Return optimized placeholder based on requested image type
+    return createImagePlaceholder(request);
   }
+}
+
+// Get cached image with format preference
+async function getCachedImage(request) {
+  const cache = await caches.open(IMAGE_CACHE);
+  
+  // Try to find cached version
+  let cachedResponse = await cache.match(request);
+  
+  if (cachedResponse) {
+    // Check if cached image is still fresh
+    const cachedDate = new Date(cachedResponse.headers.get('date') || 0);
+    const now = new Date();
+    
+    if (now - cachedDate > CACHE_EXPIRATION.images) {
+      // Image is stale, remove from cache
+      await cache.delete(request);
+      return null;
+    }
+    
+    return cachedResponse;
+  }
+  
+  return null;
+}
+
+// Fetch optimized image format (WebP/AVIF)
+async function fetchOptimizedImage(request) {
+  const url = new URL(request.url);
+  const acceptHeader = request.headers.get('accept') || '';
+  
+  // Check if browser supports modern formats
+  const supportsAvif = acceptHeader.includes('image/avif');
+  const supportsWebp = acceptHeader.includes('image/webp');
+  
+  // Try to get optimized version from server
+  if (supportsAvif || supportsWebp) {
+    const optimizedUrl = new URL(url);
+    
+    // Add format parameter if server supports it
+    if (supportsAvif) {
+      optimizedUrl.searchParams.set('format', 'avif');
+    } else if (supportsWebp) {
+      optimizedUrl.searchParams.set('format', 'webp');
+    }
+    
+    try {
+      const optimizedRequest = new Request(optimizedUrl.toString(), {
+        headers: request.headers,
+        mode: request.mode,
+        credentials: request.credentials,
+      });
+      
+      return await fetch(optimizedRequest);
+    } catch (error) {
+      console.log('Failed to fetch optimized image:', error);
+      return null;
+    }
+  }
+  
+  return null;
+}
+
+// Cache image with size management
+async function cacheImage(request, response) {
+  const cache = await caches.open(IMAGE_CACHE);
+  
+  // Check cache size and clean if necessary
+  await manageCacheSize(IMAGE_CACHE, CACHE_LIMITS.images);
+  
+  // Add metadata headers
+  const responseWithMetadata = new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: {
+      ...Object.fromEntries(response.headers.entries()),
+      'sw-cached-date': new Date().toISOString(),
+      'sw-cache-type': 'image',
+    },
+  });
+  
+  await cache.put(request, responseWithMetadata);
+  console.log('Cached image:', request.url);
+}
+
+// Create optimized placeholder for offline images
+function createImagePlaceholder(request) {
+  const url = new URL(request.url);
+  const filename = url.pathname.split('/').pop() || 'image';
+  
+  // Create SVG placeholder with image info
+  const svg = `
+    <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="300" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+      <circle cx="200" cy="120" r="30" fill="#6c757d"/>
+      <path d="M170 120 L200 90 L230 120 L200 150 Z" fill="#fff"/>
+      <text x="200" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#6c757d">
+        Image unavailable offline
+      </text>
+      <text x="200" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#adb5bd">
+        ${filename}
+      </text>
+    </svg>
+  `;
+  
+  return new Response(svg, {
+    headers: {
+      'Content-Type': 'image/svg+xml',
+      'Cache-Control': 'no-cache',
+    },
+  });
 }
 
 // Stale While Revalidate Strategy (for static assets)
@@ -228,6 +378,86 @@ async function doBackgroundSync() {
   } catch (error) {
     console.error('Background sync failed:', error);
   }
+}
+
+// Cache management functions
+async function initializeCacheManagement() {
+  console.log('Initializing cache management...');
+  
+  // Clean up expired entries on startup
+  await cleanExpiredCacheEntries();
+  
+  // Set up periodic cache cleanup
+  setInterval(cleanExpiredCacheEntries, 60 * 60 * 1000); // Every hour
+}
+
+async function manageCacheSize(cacheName, maxEntries) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  
+  if (keys.length >= maxEntries) {
+    // Remove oldest entries (FIFO)
+    const entriesToRemove = keys.length - maxEntries + 1;
+    
+    for (let i = 0; i < entriesToRemove; i++) {
+      await cache.delete(keys[i]);
+    }
+    
+    console.log(`Cleaned ${entriesToRemove} entries from ${cacheName}`);
+  }
+}
+
+async function cleanExpiredCacheEntries() {
+  const cacheNames = [IMAGE_CACHE, API_CACHE, DYNAMIC_CACHE];
+  
+  for (const cacheName of cacheNames) {
+    try {
+      const cache = await caches.open(cacheName);
+      const keys = await cache.keys();
+      
+      for (const request of keys) {
+        const response = await cache.match(request);
+        if (response) {
+          const cachedDate = new Date(response.headers.get('sw-cached-date') || response.headers.get('date') || 0);
+          const now = new Date();
+          const cacheType = response.headers.get('sw-cache-type') || 'dynamic';
+          
+          let maxAge = CACHE_EXPIRATION.dynamic;
+          if (cacheType === 'image') maxAge = CACHE_EXPIRATION.images;
+          if (cacheType === 'api') maxAge = CACHE_EXPIRATION.api;
+          
+          if (now - cachedDate > maxAge) {
+            await cache.delete(request);
+            console.log(`Removed expired entry: ${request.url}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error cleaning cache ${cacheName}:`, error);
+    }
+  }
+}
+
+// Enhanced API caching with expiration
+async function cacheApiResponse(request, response) {
+  const cache = await caches.open(API_CACHE);
+  
+  // Check cache size and clean if necessary
+  await manageCacheSize(API_CACHE, CACHE_LIMITS.api);
+  
+  // Add metadata headers
+  const responseWithMetadata = new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: {
+      ...Object.fromEntries(response.headers.entries()),
+      'sw-cached-date': new Date().toISOString(),
+      'sw-cache-type': 'api',
+    },
+  });
+  
+  await cache.put(request, responseWithMetadata);
+  console.log('Cached API response:', request.url);
 }
 
 // Helper functions for storing offline actions

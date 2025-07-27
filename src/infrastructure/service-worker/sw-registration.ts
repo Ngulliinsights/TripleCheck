@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Service Worker registration and management
 export interface ServiceWorkerConfig {
   swUrl: string;

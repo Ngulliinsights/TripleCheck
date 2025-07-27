@@ -5,7 +5,7 @@ export class AuthService {
       success: true,
       data: {
         user: { id: '1', email: credentials.email, firstName: 'John', lastName: 'Doe' },
-        token: 'mock-jwt-token'
+        token: process.env.MOCK_JWT_TOKEN || 'mock-jwt-token'
       }
     };
   }
@@ -16,7 +16,7 @@ export class AuthService {
       success: true,
       data: {
         user: { id: '1', ...userData },
-        token: 'mock-jwt-token'
+        token: process.env.MOCK_JWT_TOKEN || 'mock-jwt-token'
       },
       message: 'Registration successful'
     };

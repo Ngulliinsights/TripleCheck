@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { User } from '../../auth/types/auth.types';
-import { ApiResponse } from '../../shared/types';
+import { User } from '@/auth/types/auth.types';
+import { ApiResponse } from '@/shared/types';
 import { UserBusinessLogic } from '../services/user-business-logic';
 
 // Enhanced user API with business logic integration
@@ -296,8 +296,8 @@ export function useUpdateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ userId, updates }: { userId: string; updates: Partial<User> }) =>
-      userApi.updateUser(userId, updates),
+    mutationFn: ({ userId, updates, requestingUserId }: { userId: string; updates: Partial<User>; requestingUserId: string }) =>
+      userApi.updateUser(userId, updates, requestingUserId),
     onSuccess: (data, variables) => {
       // Update the specific user in cache
       queryClient.setQueryData(userKeys.user(variables.userId), data);

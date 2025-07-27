@@ -2,7 +2,7 @@ import { Express, Request, Response } from "express";
 import { z } from "zod";
 import { createMpesaService, STKPushRequest } from "../services/mpesa-service";
 import { asyncHandler } from "../middleware/error-handler";
-import { AuthenticatedRequest, requireAuth } from "../middleware/auth";
+import { AuthenticatedRequest, requireAuth } from "../middleware/auth.middleware";
 
 // Payment validation schemas
 const InitiatePaymentSchema = z.object({

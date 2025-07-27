@@ -1,7 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Progress } from "../../shared/components/ui/progress";
-import { Button } from "../../shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
+import { Progress } from "@shared/components/ui/progress";
+import { Button } from "@shared/components/ui/button";
 import { Shield, Award, Star, Users, CheckCircle, ArrowRight } from "lucide-react";
+import { formatDate } from "../../shared/utils/date-utils";
 
 export default function TrustPointsPage() {
   // Simulated user trust points data
@@ -122,7 +123,7 @@ export default function TrustPointsPage() {
                   <div>
                     <div className="font-medium">{activity.action}</div>
                     <div className="text-sm text-muted-foreground">
-                      {new Date(activity.date).toLocaleDateString()}
+                      {formatDate(activity.date)}
                     </div>
                   </div>
                   <div className="font-medium text-[#2C5282]">

@@ -1,514 +1,332 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { useLocation } from "wouter";
+// src/pages/Dashboard.tsx
+import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Badge } from '@shared/components/ui/badge';
+import { Button } from '@shared/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { Bell, Settings, Home, Eye, Heart, MessageSquare, Shield, TrendingUp } from 'lucide-react';
+import { formatDate } from '../../shared/utils/date-utils';
 
-interface DashboardStats {
-  totalProperties: number;
-  verifiedProperties: number;
-  totalViews: number;
-  totalInquiries: number;
-  trustScore: number;
-  pendingVerifications: number;
-}
+/* ---------- TYPES ---------- */
+type MembershipTier = 'basic' | 'premium' | 'enterprise';
 
 interface User {
   id: string;
-  username: string;
+  name: string;
   email: string;
-  membershipTier: "basic" | "premium" | "enterprise";
+  membershipTier: MembershipTier;
+  trustScore: number;
+  joinDate: string;
 }
 
 interface Property {
   id: number;
   title: string;
-  price: number;
   location: string;
-  verificationStatus: "verified" | "pending" | "draft";
-  imageUrls?: string[];
+  price: number;
+  image?: string;
+  status: 'verified' | 'pending' | 'draft';
 }
 
 interface ActivityItem {
   id: string;
-  type: "success" | "info" | "warning" | "inquiry";
+  type: 'verification' | 'message' | 'save';
   title: string;
   description: string;
-  timestamp: string;
-  actionRequired?: boolean;
+  time: string;
+  status: 'success' | 'info';
 }
 
-export function Dashboard() {
-  const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<"overview" | "properties" | "analytics">("overview");
-  const [filterStatus, setFilterStatus] = useState<"all" | "verified" | "pending" | "draft">("all");
+/* ---------- MOCK DATA ---------- */
+const user: User = {
+  id: 'usr-123',
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+  membershipTier: 'premium',
+  trustScore: 4.8,
+  joinDate: '2024-01-15',
+};
 
-  // Mock data - in real app, this would come from API
-  const user: User = {
-    id: "demo",
-    username: "Demo User",
-    email: "demo@triplecheck.com",
-    membershipTier: "basic",
-  };
+const properties: Property[] = [
+  {
+    id: 1,
+    title: 'Modern 3-Bedroom Apartment',
+    location: 'Westlands, Nairobi',
+    price: 150_000,
+    image: '/placeholder-1.jpg',
+    status: 'verified',
+  },
+  {
+    id: 2,
+    title: 'Villa in Karen',
+    location: 'Karen, Nairobi',
+    price: 350_000,
+    image: '/placeholder-2.jpg',
+    status: 'pending',
+  },
+  {
+    id: 3,
+    title: 'Office Space CBD',
+    location: 'Nairobi CBD',
+    price: 200_000,
+    image: '/placeholder-3.jpg',
+    status: 'draft',
+  },
+];
 
-  const properties: Property[] = [
-    {
-      id: 1,
-      title: "Modern Apartment in Westlands",
-      price: 150000,
-      location: "Westlands, Nairobi",
-      verificationStatus: "verified",
-      imageUrls: ["/placeholder-property.jpg"],
-    },
-    {
-      id: 2,
-      title: "Villa in Karen",
-      price: 350000,
-      location: "Karen, Nairobi",
-      verificationStatus: "pending",
-      imageUrls: ["/placeholder-property-2.jpg"],
-    },
-    {
-      id: 3,
-      title: "Office Space in CBD",
-      price: 200000,
-      location: "CBD, Nairobi",
-      verificationStatus: "draft",
-      imageUrls: ["/placeholder-property-3.jpg"],
-    },
-  ];
+const recentActivity: ActivityItem[] = [
+  {
+    id: 'a1',
+    type: 'verification',
+    title: 'Property verified successfully',
+    description: 'Modern Apartment in Westlands',
+    time: '2h ago',
+    status: 'success',
+  },
+  {
+    id: 'a2',
+    type: 'message',
+    title: 'New message received',
+    description: 'From Sarah Johnson about Karen House',
+    time: '5h ago',
+    status: 'info',
+  },
+  {
+    id: 'a3',
+    type: 'save',
+    title: 'Property saved to favorites',
+    description: 'Luxury Villa in Runda',
+    time: '1d ago',
+    status: 'info',
+  },
+];
 
-  const computedData = useMemo(() => {
-    const verified = properties.filter(p => p.verificationStatus === "verified");
-    const pending = properties.filter(p => p.verificationStatus === "pending");
-    const draft = properties.filter(p => p.verificationStatus === "draft");
+const stats = [
+  { title: 'Properties Verified', value: 23, icon: Shield, color: 'text-green-600', bg: 'bg-green-100' },
+  { title: 'Saved Properties', value: 12, icon: Heart, color: 'text-red-600', bg: 'bg-red-100' },
+  { title: 'Property Views', value: 156, icon: Eye, color: 'text-blue-600', bg: 'bg-blue-100' },
+  { title: 'Messages', value: 8, icon: MessageSquare, color: 'text-purple-600', bg: 'bg-purple-100' },
+];
 
-    const dashboardStats: DashboardStats = {
-      totalProperties: properties.length,
-      verifiedProperties: verified.length,
-      totalViews: 12450,
-      totalInquiries: 89,
-      trustScore: 85,
-      pendingVerifications: pending.length,
-    };
-
-    const filteredProperties = 
-      filterStatus === "all" ? properties :
-      filterStatus === "verified" ? verified :
-      filterStatus === "pending" ? pending : draft;
-
-    return {
-      verifiedProperties: verified,
-      pendingProperties: pending,
-      draftProperties: draft,
-      dashboardStats,
-      filteredProperties,
-    };
-  }, [filterStatus]);
-
-  const recentActivity: ActivityItem[] = [
-    {
-      id: "1",
-      type: "success",
-      title: "Property Verified",
-      description: "Modern Apartment in Westlands completed verification process",
-      timestamp: "2 hours ago",
-      actionRequired: false,
-    },
-    {
-      id: "2",
-      type: "inquiry",
-      title: "New Inquiry",
-      description: "Someone is interested in your Karen property",
-      timestamp: "3 hours ago",
-      actionRequired: true,
-    },
-    {
-      id: "3",
-      type: "warning",
-      title: "Documents Needed",
-      description: "Villa in Karen requires additional documents",
-      timestamp: "5 hours ago",
-      actionRequired: true,
-    },
-  ];
-
-  const handleListProperty = useCallback(() => {
-    setLocation("/services/list-property");
-  }, [setLocation]);
-
-  const handleVerifyProperty = useCallback(() => {
-    setLocation("/services/basic-checks");
-  }, [setLocation]);
-
-  const handleViewProperty = useCallback((propertyId: number) => {
-    setLocation(`/property/${propertyId}`);
-  }, [setLocation]);
-
-  const StatsCard = ({ 
-    title, 
-    value, 
-    description, 
-    icon 
-  }: { 
-    title: string; 
-    value: string | number; 
-    description: string; 
-    icon: string;
-  }) => (
-    <div className="bg-white p-6 rounded-lg border hover:shadow-lg transition-shadow">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-gray-600">{title}</h3>
-        <span className="text-2xl">{icon}</span>
+/* ---------- SUB-COMPONENTS ---------- */
+const StatCard: React.FC<typeof stats[0]> = ({ title, value, icon: Icon, color, bg }) => (
+  <Card>
+    <CardContent className="flex items-center p-4">
+      <div className={`p-2 rounded-lg ${bg}`}>
+        <Icon className={`w-5 h-5 ${color}`} />
       </div>
-      <div className="text-2xl font-bold mb-1">{value}</div>
-      <p className="text-xs text-gray-500">{description}</p>
+      <div className="ml-4">
+        <p className="text-sm font-medium text-gray-600">{title}</p>
+        <p className="text-2xl font-bold">{value}</p>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+      <img
+        src={property.image || '/placeholder.jpg'}
+        alt={property.title}
+        className="w-full h-40 object-cover"
+      />
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-semibold">{property.title}</h3>
+          <Badge variant={property.status === 'verified' ? 'default' : 'secondary'}>
+            {property.status}
+          </Badge>
+        </div>
+        <p className="text-sm text-gray-600 mb-2">{property.location}</p>
+        <p className="text-lg font-bold text-blue-600 mb-3">KES {property.price.toLocaleString()}</p>
+        <Button
+          size="sm"
+          className="w-full"
+          onClick={() => navigate(`/property/${property.id}`)}
+        >
+          View Details
+        </Button>
+      </div>
     </div>
   );
+};
 
-  const PropertyCard = ({ property }: { property: Property }) => (
-    <div className="bg-white rounded-lg border overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="aspect-video bg-gray-200 relative">
-        <img
-          src={property.imageUrls?.[0] || "/placeholder-property.jpg"}
-          alt={property.title}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute top-2 left-2">
-          <span className={`px-2 py-1 rounded text-xs font-medium ${
-            property.verificationStatus === 'verified' 
-              ? 'bg-green-100 text-green-800' 
-              : property.verificationStatus === 'pending'
-              ? 'bg-yellow-100 text-yellow-800'
-              : 'bg-gray-100 text-gray-800'
-          }`}>
-            {property.verificationStatus === 'verified' ? '✓ Verified' : 
-             property.verificationStatus === 'pending' ? '⏳ Pending' : '📝 Draft'}
-          </span>
-        </div>
-      </div>
-      <div className="p-4">
-        <h3 className="font-semibold mb-1">{property.title}</h3>
-        <p className="text-gray-600 text-sm mb-2">📍 {property.location}</p>
-        <p className="text-lg font-bold text-blue-600 mb-3">
-          KES {property.price.toLocaleString()}
-        </p>
-        <div className="flex gap-2">
-          <button
-            className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700 transition-colors"
-            onClick={() => handleViewProperty(property.id)}
-          >
-            👁️ View
-          </button>
-          <button className="flex-1 border border-gray-300 py-2 px-3 rounded text-sm hover:bg-gray-50 transition-colors">
-            ✏️ Edit
-          </button>
-        </div>
+const ActivityRow: React.FC<ActivityItem> = ({ type, title, description, time, status }) => {
+  const iconMap = {
+    verification: <Shield className="w-4 h-4 text-green-600" />,
+    message: <MessageSquare className="w-4 h-4 text-blue-600" />,
+    save: <Heart className="w-4 h-4 text-red-600" />,
+  };
+  const bgMap = {
+    success: 'bg-green-100',
+    info: 'bg-blue-100',
+  };
+  return (
+    <div className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50">
+      <div className={`p-2 rounded-full ${bgMap[status]}`}>{iconMap[type]}</div>
+      <div className="flex-1">
+        <h4 className="font-medium">{title}</h4>
+        <p className="text-sm text-gray-600">{description}</p>
+        <p className="text-xs text-gray-500 mt-1">{time}</p>
       </div>
     </div>
+  );
+};
+
+/* ---------- MAIN DASHBOARD ---------- */
+export default function DashboardPage() {
+  const navigate = useNavigate();
+  const [filter, setFilter] = useState<'all' | 'verified' | 'pending' | 'draft'>('all');
+
+  const filtered = useMemo(
+    () => {
+      if (!properties || !Array.isArray(properties)) return [];
+      
+      return filter === 'all'
+        ? properties
+        : properties.filter((p) => p && p.status === filter);
+    },
+    [properties, filter]
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">Welcome back, {user.username}!</h1>
-            <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm">
-              {user.membershipTier.charAt(0).toUpperCase() + user.membershipTier.slice(1)}
-            </span>
-          </div>
-          <p className="text-gray-600">
-            Manage your properties, track performance, and grow your real estate portfolio
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button className="relative border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-            🔔 Notifications
-            {computedData.dashboardStats.pendingVerifications > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
-                {computedData.dashboardStats.pendingVerifications}
-              </span>
-            )}
-          </button>
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            onClick={handleListProperty}
-          >
-            ➕ List Property
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatsCard
-          title="Total Properties"
-          value={computedData.dashboardStats.totalProperties}
-          description={`${computedData.verifiedProperties.length} verified`}
-          icon="🏠"
-        />
-        <StatsCard
-          title="Total Views"
-          value={computedData.dashboardStats.totalViews.toLocaleString()}
-          description={`${computedData.dashboardStats.totalInquiries} inquiries`}
-          icon="👁️"
-        />
-        <StatsCard
-          title="Trust Score"
-          value={computedData.dashboardStats.trustScore}
-          description="Based on verification & activity"
-          icon="🏆"
-        />
-        <StatsCard
-          title="Pending Verifications"
-          value={computedData.dashboardStats.pendingVerifications}
-          description="Require attention"
-          icon="⏳"
-        />
-      </div>
-
-      {/* Progress Indicators */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            🎯 Portfolio Health
-          </h3>
-          <div className="space-y-4">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <header className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Verification Progress</span>
-                <span className="font-medium">
-                  {Math.round((computedData.verifiedProperties.length / computedData.dashboardStats.totalProperties) * 100)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-green-500 h-2 rounded-full"
-                  style={{ 
-                    width: `${Math.round((computedData.verifiedProperties.length / computedData.dashboardStats.totalProperties) * 100)}%` 
-                  }}
-                />
-              </div>
+              <h1 className="text-3xl font-bold">Welcome back, {user.name}!</h1>
+              <p className="text-gray-600">
+                {user.membershipTier.charAt(0).toUpperCase() + user.membershipTier.slice(1)} Member since{' '}
+                {formatDate(user.joinDate)}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline">
+                <Bell className="w-4 h-4 mr-2" />
+                Notifications
+              </Button>
+              <Button variant="outline">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Button>
             </div>
           </div>
-        </div>
+        </header>
 
-        <div className="bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            📊 Recent Activity
-          </h3>
-          <div className="space-y-3">
-            {recentActivity.slice(0, 3).map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50">
-                <span className="text-lg">
-                  {activity.type === 'success' ? '✅' : 
-                   activity.type === 'inquiry' ? '💬' : '⚠️'}
-                </span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-sm">{activity.title}</p>
-                    {activity.actionRequired && (
-                      <span className="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs">
-                        Action Required
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">{activity.description}</p>
-                  <p className="text-xs text-gray-500 mt-1">{activity.timestamp}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <div className="flex space-x-8">
-          {[
-            { id: 'overview', label: 'Overview', icon: '📊' },
-            { id: 'properties', label: 'Properties', icon: '🏠' },
-            { id: 'analytics', label: 'Analytics', icon: '📈' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setActiveTab(tab.id as any)}
-            >
-              <span>{tab.icon}</span>
-              {tab.label}
-            </button>
+        {/* Stats */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((s) => (
+            <StatCard key={s.title} {...s} />
           ))}
-        </div>
-      </div>
+        </section>
 
-      {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-lg border">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              ⚡ Quick Actions
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left"
-                onClick={handleListProperty}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span>➕</span>
-                  <span className="font-medium">List New Property</span>
-                </div>
-                <span className="text-xs text-gray-600">Add a new property to your portfolio</span>
-              </button>
-              <button
-                className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left"
-                onClick={handleVerifyProperty}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span>🛡️</span>
-                  <span className="font-medium">Verify Properties</span>
-                </div>
-                <span className="text-xs text-gray-600">Complete verification for pending listings</span>
-              </button>
-            </div>
-          </div>
+        {/* Main Content */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="properties">My Properties</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
 
-          <div className="bg-white p-6 rounded-lg border">
-            <h3 className="text-lg font-semibold mb-4">📈 Performance Summary</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Views</span>
-                <span className="font-medium">{computedData.dashboardStats.totalViews.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Inquiries</span>
-                <span className="font-medium">{computedData.dashboardStats.totalInquiries}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Trust Score</span>
-                <span className="font-medium text-green-600">{computedData.dashboardStats.trustScore}/100</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'properties' && (
-        <div className="bg-white rounded-lg border">
-          <div className="p-6 border-b">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                🏠 Your Properties ({computedData.filteredProperties.length})
-              </h3>
-              <div className="flex items-center gap-2">
-                {(['all', 'verified', 'pending', 'draft'] as const).map((status) => (
-                  <button
-                    key={status}
-                    className={`px-3 py-1 rounded text-sm ${
-                      filterStatus === status
-                        ? 'bg-blue-600 text-white'
-                        : 'border border-gray-300 hover:bg-gray-50'
-                    }`}
-                    onClick={() => setFilterStatus(status)}
-                  >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </button>
+          <TabsContent value="overview" className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Activity */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {recentActivity.map((a) => (
+                  <ActivityRow key={a.id} {...a} />
                 ))}
-              </div>
-            </div>
-          </div>
-          <div className="p-6">
-            {computedData.filteredProperties.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {computedData.filteredProperties.map((property) => (
-                  <PropertyCard key={property.id} property={property} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">🏠</div>
-                <h3 className="text-xl font-semibold mb-2">No properties found</h3>
-                <p className="text-gray-600 mb-6">
-                  {filterStatus === "all" 
-                    ? "Start building your portfolio by listing your first property."
-                    : `No ${filterStatus} properties found. Try a different filter.`
-                  }
-                </p>
-                <button
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                  onClick={handleListProperty}
+                <Button variant="outline" className="w-full">
+                  View All Activity
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => navigate('/services/list-property')}
                 >
-                  ➕ List Your First Property
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+                  <Home className="w-4 h-4 mr-2" />
+                  List New Property
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => navigate('/services/basic-checks')}
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Verify Property
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Messages
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-      {activeTab === 'analytics' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-lg border">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              📊 Property Performance
-            </h3>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Views</span>
-                <span className="font-medium text-blue-600">{computedData.dashboardStats.totalViews.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Monthly Inquiries</span>
-                <span className="font-medium text-green-600">{computedData.dashboardStats.totalInquiries}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Active Listings</span>
-                <span className="font-medium text-purple-600">{computedData.verifiedProperties.length}</span>
-              </div>
-            </div>
-          </div>
+          <TabsContent value="properties" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Properties</CardTitle>
+                <div className="flex gap-2">
+                  {(['all', 'verified', 'pending', 'draft'] as const).map((f) => (
+                    <Button
+                      key={f}
+                      size="sm"
+                      variant={filter === f ? 'default' : 'outline'}
+                      onClick={() => setFilter(f)}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </Button>
+                  ))}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {filtered.length ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filtered.map((p) => (
+                      <PropertyCard key={p.id} property={p} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    No properties found for this filter.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          <div className="bg-white p-6 rounded-lg border">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              🎯 Goals & Targets
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Verification Target</span>
-                  <span>100%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full"
-                    style={{ 
-                      width: `${Math.round((computedData.verifiedProperties.length / computedData.dashboardStats.totalProperties) * 100)}%` 
-                    }}
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Trust Score Goal</span>
-                  <span>90+</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-yellow-500 h-2 rounded-full"
-                    style={{ width: `${computedData.dashboardStats.trustScore}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          <TabsContent value="analytics" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Advanced charts & insights coming soon.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
-
-export default Dashboard;

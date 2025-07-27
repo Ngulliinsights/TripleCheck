@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 import { Heart, Share2, Star, MapPin, Maximize2, Bed, Bath, Square } from "lucide-react";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../shared/components/ui/tooltip";
+import { Button } from "@shared/components/ui/button";
+import { Badge } from "@shared/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@shared/components/ui/tooltip";
 import { useState, useCallback, useMemo } from "react";
-import { cn } from "../../shared/utils/utils";
+import { cn } from "@shared/lib/utils";
 
 // More precise type definitions for better type safety
 type PropertyType = "residential" | "commercial";
@@ -56,6 +56,16 @@ export function PropertyCard({
     hover: { scale: 1.05, transition: { duration: 0.3 } }
   }), []);
 
+  // Validate required data before rendering - show placeholder if no images
+  const hasImages = property.images && property.images.length > 0;
+  const displayImages = useMemo(() => {
+    return hasImages ? property.images : ['/placeholder-property.jpg'];
+  }, [hasImages, property.images]);
+  
+  if (!hasImages) {
+    console.warn(`Property ${property.id} has no images, using placeholder`);
+  }
+
   // Memoized event handlers to prevent unnecessary re-renders
   const handleHoverStart = useCallback(() => {
     setIsHovered(true);
@@ -67,10 +77,10 @@ export function PropertyCard({
 
   const handleImageNavigation = useCallback((index: number) => {
     // Add bounds checking for extra safety
-    if (index >= 0 && index < property.images.length) {
+    if (index >= 0 && index < displayImages.length) {
       setCurrentImageIndex(index);
     }
-  }, [property.images.length]);
+  }, [displayImages.length]);
 
   const handleSave = useCallback(() => {
     onSave?.(property.id);
@@ -88,10 +98,10 @@ export function PropertyCard({
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     if (event.key === 'ArrowLeft' && currentImageIndex > 0) {
       setCurrentImageIndex(prev => prev - 1);
-    } else if (event.key === 'ArrowRight' && currentImageIndex < property.images.length - 1) {
+    } else if (event.key === 'ArrowRight' && currentImageIndex < displayImages.length - 1) {
       setCurrentImageIndex(prev => prev + 1);
     }
-  }, [currentImageIndex, property.images.length]);
+  }, [currentImageIndex, displayImages.length]);
 
   // Fixed badge variant calculation to match actual Badge component variants
   const badgeVariant = useMemo(() => {
@@ -146,12 +156,6 @@ export function PropertyCard({
     </div>
   ), [property.bedrooms, property.bathrooms, property.area]);
 
-  // Validate required data before rendering
-  if (!property.images.length) {
-    console.warn(`Property ${property.id} has no images`);
-    return null;
-  }
-
   return (
     <motion.div
       className={cn(
@@ -172,19 +176,19 @@ export function PropertyCard({
       {/* Property Images with Gallery */}
       <div className="relative aspect-[4/3] overflow-hidden">
         <motion.img
-          src={property.images[currentImageIndex]}
-          alt={`${property.title} - Image ${currentImageIndex + 1} of ${property.images.length}`}
+          src={displayImages[currentImageIndex]}
+          alt={`${property.title} - Image ${currentImageIndex + 1} of ${displayImages.length}`}
           className="w-full h-full object-cover"
           variants={imageVariants}
           loading="lazy" // Performance optimization
         />
         
         {/* Fixed Image Navigation with proper ARIA attributes */}
-        {property.images.length > 1 && (
+        {displayImages.length > 1 && hasImages && (
           <div 
             className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1"
           >
-            {property.images.map((_, index) => {
+            {displayImages.map((_, index) => {
               const isSelected = currentImageIndex === index;
               return (
                 <button
@@ -218,28 +222,42 @@ export function PropertyCard({
 
         {/* Fixed Quick Actions with proper Button variants and Tooltip usage */}
         <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Tooltip>
-            <Button 
-              size="icon" 
-              variant="secondary" // Fixed: removed "/10" which isn't supported
-              onClick={handleSave}
-              aria-label="Save property"
-              className="bg-white/10 hover:bg-white/20 backdrop-blur-sm" // Custom styling for transparency
-            >
-              <Heart className="w-4 h-4" />
-            </Button>
-          </Tooltip>
-          <Tooltip>
-            <Button 
-              size="icon" 
-              variant="secondary" // Fixed: removed "/10" which isn't supported
-              onClick={handleShare}
-              aria-label="Share property"
-              className="bg-white/10 hover:bg-white/20 backdrop-blur-sm" // Custom styling for transparency
-            >
-              <Share2 className="w-4 h-4" />
-            </Button>
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  size="icon" 
+                  variant="secondary" // Fixed: removed "/10" which isn't supported
+                  onClick={handleSave}
+                  aria-label="Save property"
+                  className="bg-white/10 hover:bg-white/20 backdrop-blur-sm" // Custom styling for transparency
+                >
+                  <Heart className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Save property</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  size="icon" 
+                  variant="secondary" // Fixed: removed "/10" which isn't supported
+                  onClick={handleShare}
+                  aria-label="Share property"
+                  className="bg-white/10 hover:bg-white/20 backdrop-blur-sm" // Custom styling for transparency
+                >
+                  <Share2 className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Share property</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
@@ -257,7 +275,7 @@ export function PropertyCard({
         {propertyFeatures}
 
         {/* Fixed Property Tags with proper list structure to address ARIA requirements */}
-        {property.features.length > 0 && (
+        {property.features && property.features.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {property.features.map((feature, index) => (
               <Badge 

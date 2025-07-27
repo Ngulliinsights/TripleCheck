@@ -1,15 +1,31 @@
 // Export all shared hooks here
 
+// Safe Effect and State Management Hooks
+export { useSafeEffect, useSafeState, useStableCallback } from '../../infrastructure/hooks';
+
 // Core Performance Hooks
-export { useSafeQuery } from './useSafeQuery';
+export { 
+  useSafeQuery,
+  useSafePropertiesQuery,
+  useSafePropertyQuery,
+  useSafeUserQuery,
+  useSafeTrustScoreQuery,
+  useSafeMessagesQuery
+} from './useSafeQuery';
 export { useOptimisticMutation } from './useOptimisticMutation';
+export { 
+  useComponentTracking,
+  useTrackedQuery,
+  useTrackedMutation,
+  useInteractionTracking,
+  useTrackedEffect,
+  useOperationDebug
+} from './useOperationTracking';
 export { useInfiniteScroll } from './useInfiniteScroll';
 export { 
   useDebounce, 
   useDebouncedCallback,
-  useDebouncedValue, 
-  useDebouncedValueSimple,
-  useDebouncedSearch 
+  useDebounceSimple
 } from './useDebounce';
 export { useVirtualization } from './useVirtualization';
 
@@ -18,6 +34,7 @@ export { useWebSocket } from './useWebSocket';
 export { usePolling } from './usePolling';
 
 // Business Logic
+export { useRecentPosts, useBlogPost, useBlogPosts } from './useCMS';
 export { useFormValidation } from './useFormValidation';
 export { useGeolocation } from './useGeolocation';
 export { useFileUpload } from './useFileUpload';
@@ -29,11 +46,7 @@ export {
   useInfiniteSearchScroll,
 } from './useInfiniteScroll';
 
-export {
-  useDebouncedPropertySearch,
-  useDebouncedUserSearch,
-  useDebouncedApiCall,
-} from './useDebounce';
+// Note: Specific debounced functions can be created using useDebouncedCallback
 
 export {
   usePropertyListVirtualization,

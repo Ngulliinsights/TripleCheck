@@ -7,12 +7,12 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { operationTracker, OperationRecord, RaceConditionPattern } from '@/utils/operation-tracker';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Button } from '@shared/components/ui/button';
+import { Badge } from '@shared/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { ScrollArea } from '@shared/components/ui/scroll-area';
+import { operationTracker, OperationRecord, RaceConditionPattern } from '@/infrastructure/monitoring/operation-tracker';
 import { 
   Activity, 
   AlertTriangle, 

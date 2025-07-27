@@ -1,15 +1,16 @@
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
+import { Button } from "@shared/components/ui/button";
+import { Badge } from "@shared/components/ui/badge";
+import { Input } from "@shared/components/ui/input";
+import { Label } from "@shared/components/ui/label";
+import { Textarea } from "@shared/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@shared/components/ui/dialog";
+import { Progress } from "@shared/components/ui/progress";
+import { useToast } from "@/shared/hooks/use-toast";
+import { apiRequest } from "@/infrastructure/api/queryClient";
 import { Property } from "@shared/schema";
 import { 
   Upload, 
@@ -105,13 +106,14 @@ export default function PropertyPhotosPage() {
     return { isValid: true };
   }, []);
 
-  // Fetch user's properties with better error handling
-  const { data: properties, isLoading, error } = useQuery<Property[]>({
-    queryKey: ['/api/properties'],
-    select: (data) => Array.isArray(data) ? data : [],
-    staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time
-  });
+  // Fetch user's properties with enhanced safety and validation
+  const { data: properties, isLoading, error, hasValidData } = useSafePropertiesQuery(
+    undefined,
+    {
+      context: 'property-photos',
+      staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
+      gcTime: 10 * 60 * 1000, // 10 minutes cache time
+    });
 
   // Optimized upload mutation with better error handling
   const uploadMutation = useMutation({
@@ -514,9 +516,9 @@ export default function PropertyPhotosPage() {
                   >
                     <CardContent className="p-4">
                       <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                        {property.imageUrls[0] ? (
+                        {property.imageUrls?.[0] ? (
                           <img 
-                            src={property.imageUrls[0]} 
+                            src={property.imageUrls?.[0]} 
                             alt={property.title}
                             className="w-full h-full object-cover"
                             loading="lazy"
@@ -533,8 +535,8 @@ export default function PropertyPhotosPage() {
                         <span className="font-semibold text-primary">
                           KES {property.price.toLocaleString()}
                         </span>
-                        <Badge variant={property.imageUrls.length > 0 ? "default" : "secondary"}>
-                          {property.imageUrls.length} photos
+                        <Badge variant={(property.imageUrls?.length || 0) > 0 ? "default" : "secondary"}>
+                          {property.imageUrls?.length || 0} photos
                         </Badge>
                       </div>
                     </CardContent>

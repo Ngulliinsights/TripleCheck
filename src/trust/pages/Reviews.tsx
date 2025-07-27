@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "../../shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Label } from "../../shared/components/ui/label";
-import { Textarea } from "../../shared/components/ui/textarea";
-import { Star, User, ThumbsUp, Flag } from "lucide-react";
-import { Progress } from "../../shared/components/ui/progress";
+import { Button } from "@shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
+import { Label } from "@shared/components/ui/label";
+import { Textarea } from "@shared/components/ui/textarea";
+import { Star, User, ThumbsUp, Flag, AlertCircle } from "lucide-react";
+import { Progress } from "@shared/components/ui/progress";
+import { formatDate } from "../../shared/utils/date-utils";
+import { useForm } from "../../shared/hooks/useForm";
+import { ValidationRule } from "../../shared/utils/form-validation";
+import { useToast } from "../../shared/hooks/use-toast";
+import FormField from "../../shared/components/forms/FormField";
 
 interface Review {
   id: number;
@@ -19,8 +24,7 @@ interface Review {
 }
 
 export default function ReviewsPage() {
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [comment, setComment] = useState("");
+  const { toast } = useToast();
 
   // Simulated reviews data with proper React Query configuration
   const { data: reviews, isLoading } = useQuery<Review[]>({
@@ -59,11 +63,62 @@ export default function ReviewsPage() {
     refetchOnReconnect: false,
   });
 
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle review submission
-    console.log({ rating: selectedRating, comment });
-  };
+  const {
+    values,
+    errors,
+    touched,
+    isValid,
+    isSubmitting,
+    handleSubmit,
+    setValue,
+    getFieldProps,
+    getFieldError
+  } = useForm({
+    initialValues: {
+      rating: 0,
+      comment: ''
+    },
+    validationRules: {
+      rating: {
+        required: true,
+        min: 1,
+        max: 5,
+        custom: (value: unknown) => {
+          if (!value || (typeof value === 'number' && value < 1)) {
+            return 'Please select a rating';
+          }
+          return null;
+        }
+      },
+      comment: {
+        required: true,
+        minLength: 10,
+        maxLength: 500
+      }
+    },
+    onSubmit: async (formData) => {
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        toast({
+          title: "Review submitted successfully!",
+          description: "Thank you for your feedback.",
+        });
+        
+        // Reset form after successful submission
+        setValue('rating', 0);
+        setValue('comment', '');
+      } catch (error) {
+        toast({
+          title: "Failed to submit review",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    }
+  });
 
   const renderStars = (rating: number) => {
     return Array(5).fill(0).map((_, index) => (
@@ -151,33 +206,56 @@ export default function ReviewsPage() {
             <CardTitle>Write a Review</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmitReview} className="space-y-4">
-              <div>
-                <Label htmlFor="rating">Rating</Label>
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <div className="space-y-2">
+                <Label htmlFor="rating" className={getFieldError('rating') ? 'text-red-600' : ''}>
+                  Rating *
+                </Label>
                 <div className="flex gap-1 mt-2">
                   {Array(5).fill(0).map((_, index) => (
                     <Star
                       key={index}
-                      className={`h-8 w-8 cursor-pointer ${
-                        index < selectedRating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                      className={`h-8 w-8 cursor-pointer transition-colors ${
+                        index < values.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 hover:text-yellow-200'
                       }`}
-                      onClick={() => setSelectedRating(index + 1)}
+                      onClick={() => setValue('rating', index + 1)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setValue('rating', index + 1);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Rate ${index + 1} star${index + 1 > 1 ? 's' : ''}`}
                     />
                   ))}
                 </div>
+                {getFieldError('rating') && (
+                  <p className="text-sm text-red-600" role="alert">
+                    {getFieldError('rating')}
+                  </p>
+                )}
               </div>
-              <div>
-                <Label htmlFor="comment">Your Review</Label>
-                <Textarea
-                  id="comment"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Share your experience..."
-                  className="h-32"
-                />
-              </div>
-              <Button type="submit" disabled={selectedRating === 0}>
-                Submit Review
+              
+              <FormField
+                label="Your Review"
+                type="textarea"
+                rows={4}
+                placeholder="Share your experience..."
+                required
+                helpText="Minimum 10 characters, maximum 500 characters"
+                error={getFieldError('comment')}
+                touched={touched.comment}
+                {...getFieldProps('comment')}
+              />
+              
+              <Button 
+                type="submit" 
+                disabled={isSubmitting || !isValid}
+                className="w-full"
+              >
+                {isSubmitting ? 'Submitting Review...' : 'Submit Review'}
               </Button>
             </form>
           </CardContent>
@@ -200,7 +278,7 @@ export default function ReviewsPage() {
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold">{review.userName}</h3>
                         <span className="text-sm text-muted-foreground">
-                          {new Date(review.createdAt).toLocaleDateString()}
+                          {formatDate(review.createdAt)}
                         </span>
                       </div>
                       <div className="flex gap-1 my-2">

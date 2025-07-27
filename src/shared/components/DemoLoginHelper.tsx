@@ -1,9 +1,10 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Button } from '@shared/components/ui/button';
+import { Badge } from '@shared/components/ui/badge';
 import { User, Shield, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
+import { Logo } from './ui/logo';
 
 interface DemoAccount {
   username: string;
@@ -17,7 +18,7 @@ interface DemoAccount {
 const DEMO_ACCOUNTS: DemoAccount[] = [
   {
     username: 'demo_user',
-    password: 'demo123',
+    password: import.meta.env.VITE_DEMO_USER_PASSWORD || 'demo123',
     role: 'Tenant',
     trustScore: 750,
     description: 'Regular user looking for properties',
@@ -25,7 +26,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
   },
   {
     username: 'demo_agent',
-    password: 'agent123',
+    password: import.meta.env.VITE_DEMO_AGENT_PASSWORD || 'agent123',
     role: 'Verified Agent',
     trustScore: 950,
     description: 'Verified real estate agent',
@@ -33,7 +34,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
   },
   {
     username: 'john_tenant',
-    password: 'demo123',
+    password: import.meta.env.VITE_DEMO_USER_PASSWORD || 'demo123',
     role: 'Tenant',
     trustScore: 750,
     description: 'Experienced tenant with good history',
@@ -41,7 +42,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
   },
   {
     username: 'sarah_agent',
-    password: 'agent123',
+    password: import.meta.env.VITE_DEMO_AGENT_PASSWORD || 'agent123',
     role: 'Verified Agent',
     trustScore: 950,
     description: 'Top-rated property agent',

@@ -282,15 +282,17 @@ export async function runSystemHealthCheck(): Promise<SystemHealth> {
     timestamp: new Date().toISOString()
   };
   
-  // Log the results
+  // Log the results (only in development or for critical errors)
   if (overall === 'error') {
-    logError({
-      message: 'System health check failed',
-      details: systemHealth
-    }, 'System Health Check');
-  } else if (overall === 'warning') {
+    if (process.env.NODE_ENV === 'development') {
+      logError({
+        message: 'System health check failed',
+        details: systemHealth
+      }, 'System Health Check');
+    }
+  } else if (overall === 'warning' && process.env.NODE_ENV === 'development') {
     console.warn('System health check has warnings:', systemHealth);
-  } else {
+  } else if (process.env.NODE_ENV === 'development') {
     console.log('System health check passed:', systemHealth);
   }
   
@@ -318,14 +320,20 @@ export async function quickHealthCheck(): Promise<boolean> {
  * Initialize system health monitoring
  */
 export function initializeHealthMonitoring() {
-  // Run initial health check
+  // Run initial health check (only log critical errors in production)
   runSystemHealthCheck().then(health => {
     if (health.overall === 'error') {
-      console.error('🚨 System health check failed! Some features may not work properly.');
-    } else if (health.overall === 'warning') {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('🚨 System health check failed! Some features may not work properly.');
+      }
+    } else if (health.overall === 'warning' && process.env.NODE_ENV === 'development') {
       console.warn('⚠️ System health check has warnings. Some features may be degraded.');
-    } else {
+    } else if (process.env.NODE_ENV === 'development') {
       console.log('✅ System health check passed. All systems operational.');
+    }
+  }).catch(error => {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Health check initialization failed:', error);
     }
   });
   
@@ -333,9 +341,13 @@ export function initializeHealthMonitoring() {
   if (typeof window !== 'undefined') {
     setInterval(() => {
       quickHealthCheck().then(isHealthy => {
-        if (!isHealthy) {
+        if (!isHealthy && process.env.NODE_ENV === 'development') {
           console.warn('⚠️ Quick health check failed. Running full health check...');
           runSystemHealthCheck();
+        }
+      }).catch(error => {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Periodic health check failed:', error);
         }
       });
     }, 5 * 60 * 1000);

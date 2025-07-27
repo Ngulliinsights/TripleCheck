@@ -226,12 +226,12 @@ class CheckpointManager {
     console.log('====================');
     console.log('');
     console.log('1. Resume from checkpoint:');
-    console.log('   npx tsx scripts/robust-data-loader.ts');
+    console.log('   npx tsx scripts/robust-batch-loader.ts');
     console.log('   (Automatically detects and resumes from latest checkpoint)');
     console.log('');
     console.log('2. Start fresh (clears checkpoints):');
     console.log('   npx tsx scripts/checkpoint-manager.ts cleanup');
-    console.log('   npx tsx scripts/robust-data-loader.ts');
+    console.log('   npx tsx scripts/robust-batch-loader.ts');
     console.log('');
     console.log('3. Analyze what went wrong:');
     console.log('   npx tsx scripts/checkpoint-manager.ts analyze');

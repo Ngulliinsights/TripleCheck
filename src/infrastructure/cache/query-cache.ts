@@ -1,6 +1,4 @@
 import { QueryClient } from '@tanstack/react-query';
-import { persistQueryClient } from '@tanstack/react-query-persist-client-core';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 
 // Enhanced query client with advanced caching strategies
 export const createEnhancedQueryClient = () => {
@@ -51,14 +49,10 @@ export const createEnhancedQueryClient = () => {
   return queryClient;
 };
 
-// Persistence configuration
+// Persistence configuration (disabled - requires additional packages)
 export const createQueryPersister = () => {
-  return createSyncStoragePersister({
-    storage: window.localStorage,
-    key: 'triplecheck-query-cache',
-    serialize: JSON.stringify,
-    deserialize: JSON.parse,
-  });
+  console.warn('Query persistence is disabled - install @tanstack/react-query-persist-client-core and @tanstack/query-sync-storage-persister to enable');
+  return null;
 };
 
 // Cache invalidation strategies
@@ -148,7 +142,7 @@ export const backgroundSync = {
 
     for (const mutation of pendingMutations) {
       try {
-        await mutation.execute();
+        await mutation.execute(mutation.state.variables);
       } catch (error) {
         console.error('Failed to sync mutation:', error);
       }
@@ -184,7 +178,7 @@ export const cachePerformanceMonitor = {
       cachedQueries: queries.filter(q => q.state.data).length,
       staleQueries: queries.filter(q => q.isStale()).length,
       errorQueries: queries.filter(q => q.state.error).length,
-      loadingQueries: queries.filter(q => q.state.isFetching).length,
+      loadingQueries: queries.filter(q => q.state.fetchStatus === 'fetching').length,
     };
 
     return {

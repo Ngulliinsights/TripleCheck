@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { AuthService } from './auth.service';
-import { validationMiddleware } from '../middleware/validation.middleware';
+import validateRequest, { UserValidationSchemas } from '../middleware/validation.middleware';
 
 const router = Router();
 const authService = new AuthService();
 
 // Login
-router.post('/login', validationMiddleware, async (req, res, next) => {
+router.post('/login', validateRequest({
+  body: UserValidationSchemas.login
+}), async (req, res, next) => {
   try {
     const result = await authService.login(req.body);
     res.json(result);
@@ -16,7 +18,9 @@ router.post('/login', validationMiddleware, async (req, res, next) => {
 });
 
 // Register
-router.post('/register', validationMiddleware, async (req, res, next) => {
+router.post('/register', validateRequest({
+  body: UserValidationSchemas.register
+}), async (req, res, next) => {
   try {
     const result = await authService.register(req.body);
     res.status(201).json(result);

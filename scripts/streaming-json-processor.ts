@@ -1,400 +1,331 @@
-import { Transform, Readable, pipeline } from 'stream';
-import { promisify } from 'util';
-import fs from 'fs';
-import path from 'path';
-import { EventEmitter } from 'events';
+/**
+ * Streaming JSON Processor
+ * Handles large JSON files by processing them in chunks to avoid memory issues
+ */
 
-const pipelineAsync = promisify(pipeline);
+import { Transform } from 'stream';
+import { createReadStream, createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
 
-// Types for our streaming processor
-interface ProcessorOptions {
-  batchSize?: number;
-  checkpointInterval?: number;
-  resumeFromCheckpoint?: boolean;
-  onProgress?: (stats: ProcessingStats) => void;
-  onRecord?: (record: any, index: number) => Promise<any> | any;
-  onBatch?: (batch: any[], startIndex: number) => Promise<void> | void;
-  onError?: (error: Error, record?: any, index?: number) => void;
+export interface StreamingOptions {
+  chunkSize?: number;
+  encoding?: BufferEncoding;
+  highWaterMark?: number;
 }
 
-interface ProcessingStats {
-  totalRecords: number;
-  processedRecords: number;
-  skippedRecords: number;
-  errorRecords: number;
-  currentBatch: number;
-  processingRate: number; // records per second
-  estimatedTimeRemaining: number; // seconds
-  startTime: Date;
-  lastCheckpoint: number;
-}
+export class StreamingJSONProcessor {
+  private options: Required<StreamingOptions>;
 
-interface CheckpointData {
-  lastProcessedIndex: number;
-  stats: ProcessingStats;
-  timestamp: Date;
-}
-
-class StreamingJSONProcessor extends EventEmitter {
-  private options: ProcessorOptions;
-  private stats: ProcessingStats;
-  private isPaused: boolean = false;
-  private isProcessing: boolean = false;
-  private checkpointPath: string;
-  private startTime: Date;
-
-  constructor(options: ProcessorOptions = {}) {
-    super();
+  constructor(options: StreamingOptions = {}) {
     this.options = {
-      batchSize: 100,
-      checkpointInterval: 1000,
-      resumeFromCheckpoint: false,
-      ...options
+      chunkSize: options.chunkSize || 1000,
+      encoding: options.encoding || 'utf8',
+      highWaterMark: options.highWaterMark || 16 * 1024, // 16KB
     };
-
-    this.stats = {
-      totalRecords: 0,
-      processedRecords: 0,
-      skippedRecords: 0,
-      errorRecords: 0,
-      currentBatch: 0,
-      processingRate: 0,
-      estimatedTimeRemaining: 0,
-      startTime: new Date(),
-      lastCheckpoint: 0
-    };
-
-    this.startTime = new Date();
-    this.checkpointPath = path.join(process.cwd(), '.streaming-checkpoint.json');
   }
 
-  async processFile(filePath: string): Promise<ProcessingStats> {
-    if (this.isProcessing) {
-      throw new Error('Processor is already running');
-    }
+  /**
+   * Process a JSON array file in chunks
+   */
+  async processJSONArray<T>(
+    inputPath: string,
+    processor: (items: T[]) => Promise<void> | void,
+    outputPath?: string
+  ): Promise<void> {
+    const readStream = createReadStream(inputPath, {
+      encoding: this.options.encoding,
+      highWaterMark: this.options.highWaterMark,
+    });
 
-    this.isProcessing = true;
-    this.emit('start');
-
-    try {
-      // Load checkpoint if resuming
-      if (this.options.resumeFromCheckpoint) {
-        await this.loadCheckpoint();
-      }
-
-      // Get file size for progress calculation
-      const fileStats = await fs.promises.stat(filePath);
-      const fileSize = fileStats.size;
-
-      // Create read stream
-      const readStream = fs.createReadStream(filePath, { encoding: 'utf8' });
-      
-      // Create JSON parser transform stream
-      const jsonParser = this.createJSONParserStream();
-      
-      // Create record processor transform stream
-      const recordProcessor = this.createRecordProcessorStream();
-
-      // Set up progress tracking
-      let bytesRead = 0;
-      readStream.on('data', (chunk) => {
-        bytesRead += chunk.length;
-        const progress = (bytesRead / fileSize) * 100;
-        this.updateProgress();
-      });
-
-      // Pipeline the streams
-      await pipelineAsync(
-        readStream,
-        jsonParser,
-        recordProcessor
-      );
-
-      this.emit('complete', this.stats);
-      return this.stats;
-
-    } catch (error) {
-      this.emit('error', error);
-      throw error;
-    } finally {
-      this.isProcessing = false;
-    }
-  }
-
-  private createJSONParserStream(): Transform {
     let buffer = '';
-    let recordCount = 0;
+    let itemCount = 0;
+    let currentChunk: T[] = [];
+    let inArray = false;
     let bracketDepth = 0;
     let inString = false;
     let escapeNext = false;
-    let currentRecord = '';
-    let inArray = false;
 
-    return new Transform({
-      objectMode: true,
-      transform(chunk: Buffer, encoding, callback) {
-        const chunkStr = chunk.toString();
-        buffer += chunkStr;
-        
-        // Process buffer in smaller chunks to prevent memory buildup
-        let processedLength = 0;
-        
-        for (let i = 0; i < buffer.length; i++) {
-          const char = buffer[i];
+    const processChunk = async () => {
+      if (currentChunk.length > 0) {
+        await processor(currentChunk);
+        itemCount += currentChunk.length;
+        currentChunk = [];
+      }
+    };
+
+    const writeStream = outputPath ? createWriteStream(outputPath) : null;
+    if (writeStream) {
+      writeStream.write('[');
+    }
+
+    const transform = new Transform({
+      objectMode: false,
+      transform: async (chunk: Buffer, _encoding, callback) => {
+        try {
+          buffer += chunk.toString();
           
-          if (escapeNext) {
-            escapeNext = false;
-            if (bracketDepth > 0) currentRecord += char;
-            continue;
-          }
-          
-          if (char === '\\') {
-            escapeNext = true;
-            if (bracketDepth > 0) currentRecord += char;
-            continue;
-          }
-          
-          if (char === '"') {
-            inString = !inString;
-            if (bracketDepth > 0) currentRecord += char;
-            continue;
-          }
-          
-          if (!inString) {
-            if (char === '[') {
-              inArray = true;
-            } else if (char === ']') {
-              inArray = false;
-            } else if (char === '{') {
-              if (bracketDepth === 0) {
-                currentRecord = char;
-              } else {
-                currentRecord += char;
-              }
-              bracketDepth++;
-            } else if (char === '}') {
-              currentRecord += char;
-              bracketDepth--;
-              
-              if (bracketDepth === 0 && currentRecord.trim()) {
-                try {
-                  const record = JSON.parse(currentRecord);
-                  this.push({ record, index: recordCount++ });
-                  currentRecord = '';
-                  processedLength = i + 1;
-                } catch (error) {
-                  // Skip malformed JSON
-                  currentRecord = '';
-                  processedLength = i + 1;
+          let i = 0;
+          while (i < buffer.length) {
+            const char = buffer[i];
+            
+            if (escapeNext) {
+              escapeNext = false;
+              i++;
+              continue;
+            }
+            
+            if (char === '\\' && inString) {
+              escapeNext = true;
+              i++;
+              continue;
+            }
+            
+            if (char === '"' && !escapeNext) {
+              inString = !inString;
+            }
+            
+            if (!inString) {
+              if (char === '[') {
+                inArray = true;
+                bracketDepth++;
+              } else if (char === ']') {
+                bracketDepth--;
+                if (bracketDepth === 0) {
+                  inArray = false;
+                }
+              } else if (char === '{' && inArray) {
+                bracketDepth++;
+              } else if (char === '}' && inArray) {
+                bracketDepth--;
+                
+                // Check if we've completed an object at the array level
+                if (bracketDepth === 1) {
+                  // Find the start of this object
+                  let objectStart = i;
+                  let objectBrackets = 1;
+                  
+                  while (objectStart > 0 && objectBrackets > 0) {
+                    objectStart--;
+                    if (buffer[objectStart] === '}' && !this.isInString(buffer, objectStart)) {
+                      objectBrackets++;
+                    } else if (buffer[objectStart] === '{' && !this.isInString(buffer, objectStart)) {
+                      objectBrackets--;
+                    }
+                  }
+                  
+                  try {
+                    const objectStr = buffer.substring(objectStart, i + 1);
+                    const parsedObject = JSON.parse(objectStr) as T;
+                    currentChunk.push(parsedObject);
+                    
+                    if (currentChunk.length >= this.options.chunkSize) {
+                      await processChunk();
+                    }
+                  } catch (parseError) {
+                    // Skip invalid JSON objects
+                    console.warn('Failed to parse JSON object:', parseError);
+                  }
                 }
               }
-            } else if (bracketDepth > 0) {
-              currentRecord += char;
             }
-          } else {
-            if (bracketDepth > 0) currentRecord += char;
+            
+            i++;
           }
-        }
-        
-        // Keep only unprocessed part of buffer to prevent memory buildup
-        if (processedLength > 0) {
-          buffer = buffer.slice(processedLength);
-        } else if (buffer.length > 1000000) { // 1MB limit
-          // If buffer gets too large without finding complete records, truncate
-          buffer = buffer.slice(-100000); // Keep last 100KB
-        }
-        
-        callback();
-      },
-      
-      flush(callback) {
-        if (currentRecord.trim()) {
-          try {
-            const record = JSON.parse(currentRecord);
-            this.push({ record, index: recordCount++ });
-          } catch (error) {
-            // Skip malformed JSON at end
-          }
-        }
-        callback();
-      }
-    });
-  }
-
-  private createRecordProcessorStream(): Transform {
-    const processor = this;
-    let batch: any[] = [];
-    let batchStartIndex = 0;
-
-    return new Transform({
-      objectMode: true,
-      async transform(data: { record: any, index: number }, encoding, callback) {
-        try {
-          // Check if paused
-          if (processor.isPaused) {
-            await processor.waitForResume();
-          }
-
-          // Skip if resuming from checkpoint
-          if (data.index < processor.stats.lastCheckpoint) {
-            processor.stats.skippedRecords++;
-            callback();
-            return;
-          }
-
-          // Process individual record if handler provided
-          let processedRecord = data.record;
-          if (processor.options.onRecord) {
-            try {
-              processedRecord = await processor.options.onRecord(data.record, data.index);
-            } catch (error) {
-              processor.stats.errorRecords++;
-              if (processor.options.onError) {
-                processor.options.onError(error as Error, data.record, data.index);
-              }
-              callback();
-              return;
-            }
-          }
-
-          // Add to batch
-          batch.push(processedRecord);
           
-          // Process batch when full
-          if (batch.length >= (processor.options.batchSize || 100)) {
-            await processor.processBatch(batch, batchStartIndex);
-            batch = [];
-            batchStartIndex = data.index + 1;
+          // Keep the last part of the buffer for the next chunk
+          const lastCompleteObject = buffer.lastIndexOf('}');
+          if (lastCompleteObject > -1 && lastCompleteObject < buffer.length - 1) {
+            buffer = buffer.substring(lastCompleteObject + 1);
+          } else if (!inArray) {
+            buffer = '';
           }
-
-          processor.stats.processedRecords++;
-          processor.updateProgress();
-
-          // Save checkpoint periodically
-          if (processor.stats.processedRecords % (processor.options.checkpointInterval || 1000) === 0) {
-            await processor.saveCheckpoint(data.index);
-          }
-
+          
           callback();
         } catch (error) {
           callback(error);
         }
       },
-
-      async flush(callback) {
-        // Process remaining batch
-        if (batch.length > 0) {
-          await processor.processBatch(batch, batchStartIndex);
+      
+      flush: async (callback) => {
+        try {
+          // Process any remaining items
+          await processChunk();
+          
+          if (writeStream) {
+            writeStream.write(']');
+            writeStream.end();
+          }
+          
+          console.log(`Processed ${itemCount} items total`);
+          callback();
+        } catch (error) {
+          callback(error);
         }
-        
-        // Clean up checkpoint
-        await processor.cleanupCheckpoint();
-        callback();
       }
     });
+
+    await pipeline(readStream, transform);
   }
 
-  private async processBatch(batch: any[], startIndex: number): Promise<void> {
-    if (this.options.onBatch) {
-      try {
-        await this.options.onBatch(batch, startIndex);
-        this.stats.currentBatch++;
-      } catch (error) {
-        this.stats.errorRecords += batch.length;
-        if (this.options.onError) {
-          this.options.onError(error as Error);
-        }
+  /**
+   * Check if a character position is inside a string
+   */
+  private isInString(buffer: string, position: number): boolean {
+    let inString = false;
+    let escapeNext = false;
+    
+    for (let i = 0; i < position; i++) {
+      const char = buffer[i];
+      
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+      
+      if (char === '\\' && inString) {
+        escapeNext = true;
+        continue;
+      }
+      
+      if (char === '"') {
+        inString = !inString;
       }
     }
+    
+    return inString;
   }
 
-  private updateProgress(): void {
-    const now = new Date();
-    const elapsedSeconds = (now.getTime() - this.startTime.getTime()) / 1000;
-    
-    this.stats.processingRate = this.stats.processedRecords / elapsedSeconds;
-    
-    if (this.stats.totalRecords > 0) {
-      const remainingRecords = this.stats.totalRecords - this.stats.processedRecords;
-      this.stats.estimatedTimeRemaining = remainingRecords / this.stats.processingRate;
-    }
+  /**
+   * Process a JSON Lines file (one JSON object per line)
+   */
+  async processJSONLines<T>(
+    inputPath: string,
+    processor: (items: T[]) => Promise<void> | void
+  ): Promise<void> {
+    const readStream = createReadStream(inputPath, {
+      encoding: this.options.encoding,
+    });
 
-    if (this.options.onProgress) {
-      this.options.onProgress(this.stats);
-    }
+    let buffer = '';
+    let currentChunk: T[] = [];
+    let lineCount = 0;
 
-    this.emit('progress', this.stats);
-  }
-
-  private async saveCheckpoint(lastIndex: number): Promise<void> {
-    const checkpoint: CheckpointData = {
-      lastProcessedIndex: lastIndex,
-      stats: { ...this.stats, lastCheckpoint: lastIndex },
-      timestamp: new Date()
+    const processChunk = async () => {
+      if (currentChunk.length > 0) {
+        await processor(currentChunk);
+        lineCount += currentChunk.length;
+        currentChunk = [];
+      }
     };
 
-    try {
-      await fs.promises.writeFile(
-        this.checkpointPath,
-        JSON.stringify(checkpoint, null, 2)
-      );
-    } catch (error) {
-      console.warn('Failed to save checkpoint:', error);
-    }
-  }
-
-  private async loadCheckpoint(): Promise<void> {
-    try {
-      const checkpointData = await fs.promises.readFile(this.checkpointPath, 'utf8');
-      const checkpoint: CheckpointData = JSON.parse(checkpointData);
-      
-      this.stats = { ...checkpoint.stats };
-      console.log(`Resuming from checkpoint: ${checkpoint.lastProcessedIndex} records processed`);
-    } catch (error) {
-      console.log('No checkpoint found, starting from beginning');
-    }
-  }
-
-  private async cleanupCheckpoint(): Promise<void> {
-    try {
-      await fs.promises.unlink(this.checkpointPath);
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  }
-
-  private async waitForResume(): Promise<void> {
-    return new Promise((resolve) => {
-      const checkResume = () => {
-        if (!this.isPaused) {
-          resolve();
-        } else {
-          setTimeout(checkResume, 100);
+    const transform = new Transform({
+      objectMode: false,
+      transform: async (chunk: Buffer, _encoding, callback) => {
+        try {
+          buffer += chunk.toString();
+          const lines = buffer.split('\n');
+          
+          // Keep the last line in buffer (might be incomplete)
+          buffer = lines.pop() || '';
+          
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine) {
+              try {
+                const parsedObject = JSON.parse(trimmedLine) as T;
+                currentChunk.push(parsedObject);
+                
+                if (currentChunk.length >= this.options.chunkSize) {
+                  await processChunk();
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse JSON line:', parseError);
+              }
+            }
+          }
+          
+          callback();
+        } catch (error) {
+          callback(error);
         }
-      };
-      checkResume();
+      },
+      
+      flush: async (callback) => {
+        try {
+          // Process the last line if it exists
+          if (buffer.trim()) {
+            try {
+              const parsedObject = JSON.parse(buffer.trim()) as T;
+              currentChunk.push(parsedObject);
+            } catch (parseError) {
+              console.warn('Failed to parse final JSON line:', parseError);
+            }
+          }
+          
+          // Process any remaining items
+          await processChunk();
+          
+          console.log(`Processed ${lineCount} lines total`);
+          callback();
+        } catch (error) {
+          callback(error);
+        }
+      }
     });
+
+    await pipeline(readStream, transform);
   }
 
-  // Control methods
-  pause(): void {
-    this.isPaused = true;
-    this.emit('paused');
+  /**
+   * Convert a large JSON array to JSON Lines format
+   */
+  async convertArrayToLines(inputPath: string, outputPath: string): Promise<void> {
+    const writeStream = createWriteStream(outputPath);
+    let isFirst = true;
+
+    await this.processJSONArray(
+      inputPath,
+      async (items) => {
+        for (const item of items) {
+          if (!isFirst) {
+            writeStream.write('\n');
+          }
+          writeStream.write(JSON.stringify(item));
+          isFirst = false;
+        }
+      }
+    );
+
+    writeStream.end();
   }
 
-  resume(): void {
-    this.isPaused = false;
-    this.emit('resumed');
-  }
+  /**
+   * Get statistics about a JSON file
+   */
+  async getFileStats(inputPath: string): Promise<{
+    totalItems: number;
+    fileSize: number;
+    estimatedMemoryUsage: number;
+  }> {
+    const fs = await import('fs/promises');
+    const stats = await fs.stat(inputPath);
+    
+    let totalItems = 0;
+    
+    await this.processJSONArray(
+      inputPath,
+      async (items) => {
+        totalItems += items.length;
+      }
+    );
 
-  stop(): void {
-    this.isProcessing = false;
-    this.emit('stopped');
-  }
-
-  getStats(): ProcessingStats {
-    return { ...this.stats };
+    return {
+      totalItems,
+      fileSize: stats.size,
+      estimatedMemoryUsage: stats.size * 2, // Rough estimate
+    };
   }
 }
 
-export { StreamingJSONProcessor, ProcessorOptions, ProcessingStats };
+// Export default instance
+export const streamingProcessor = new StreamingJSONProcessor();

@@ -1,23 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { propertyApi } from '../services/property-api';
 import { Property, PropertySearchParams } from '../types/property.types';
+import { cachePresets, queryKeys } from '../../infrastructure/api/queryClient';
 
-// Query keys for consistent caching
-export const propertyKeys = {
-  all: ['properties'] as const,
-  lists: () => [...propertyKeys.all, 'list'] as const,
-  list: (params: PropertySearchParams) => [...propertyKeys.lists(), params] as const,
-  details: () => [...propertyKeys.all, 'detail'] as const,
-  detail: (id: string) => [...propertyKeys.details(), id] as const,
-  owner: (ownerId: string) => [...propertyKeys.all, 'owner', ownerId] as const,
-};
+// Use standardized query keys from infrastructure
+export const propertyKeys = queryKeys.properties;
 
 // Get properties with search and filters
 export function useProperties(params: PropertySearchParams = {}) {
   return useQuery({
     queryKey: propertyKeys.list(params),
     queryFn: () => propertyApi.getProperties(params),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    ...cachePresets.listings, // Use standardized cache preset
   });
 }
 
@@ -27,6 +21,7 @@ export function useProperty(id: string) {
     queryKey: propertyKeys.detail(id),
     queryFn: () => propertyApi.getProperty(id),
     enabled: !!id,
+    ...cachePresets.listings, // Use standardized cache preset
   });
 }
 
@@ -36,6 +31,7 @@ export function useOwnerProperties(ownerId: string) {
     queryKey: propertyKeys.owner(ownerId),
     queryFn: () => propertyApi.getPropertiesByOwner(ownerId),
     enabled: !!ownerId,
+    ...cachePresets.listings, // Use standardized cache preset
   });
 }
 
@@ -47,7 +43,7 @@ export function useCreateProperty() {
     mutationFn: propertyApi.createProperty,
     onSuccess: () => {
       // Invalidate and refetch property lists
-      queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ['properties', 'list'] });
     },
   });
 }
@@ -57,13 +53,13 @@ export function useUpdateProperty() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Property> }) =>
-      propertyApi.updateProperty(id, updates),
+    mutationFn: ({ id, updates, userId }: { id: string; updates: Partial<Property>; userId: string }) =>
+      propertyApi.updateProperty(id, updates, userId),
     onSuccess: (data, variables) => {
       // Update the specific property in cache
       queryClient.setQueryData(propertyKeys.detail(variables.id), data);
       // Invalidate property lists to reflect changes
-      queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ['properties', 'list'] });
     },
   });
 }
@@ -73,12 +69,13 @@ export function useDeleteProperty() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: propertyApi.deleteProperty,
-    onSuccess: (_, id) => {
+    mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+      propertyApi.deleteProperty(id, userId),
+    onSuccess: (_, variables) => {
       // Remove from cache
-      queryClient.removeQueries({ queryKey: propertyKeys.detail(id) });
+      queryClient.removeQueries({ queryKey: propertyKeys.detail(variables.id) });
       // Invalidate lists
-      queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ['properties', 'list'] });
     },
   });
 }

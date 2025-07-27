@@ -1,10 +1,11 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { Button } from '../../shared/components/ui/button';
-import { Badge } from '../../shared/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '../../shared/components/ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Button } from '@shared/components/ui/button';
+import { Badge } from '@shared/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@shared/components/ui/avatar';
 import { User, Edit, Mail, Phone, MapPin, Calendar } from 'lucide-react';
-import { User as UserType } from '../../auth/types/auth.types';
+import { User as UserType } from '@/auth/types/auth.types';
+import { formatDate } from '../../shared/utils/date-utils';
 
 interface UserProfileProps {
   user: UserType;
@@ -111,11 +112,11 @@ export function UserProfile({ user, onEdit, isEditable = false }: UserProfilePro
           <div className="grid gap-3">
             <div className="flex items-center space-x-3">
               <Calendar className="h-4 w-4 text-gray-500" />
-              <span>Member since {new Date(user.createdAt).toLocaleDateString()}</span>
+              <span>Member since {formatDate(user.createdAt?.toISOString())}</span>
             </div>
             <div className="flex items-center space-x-3">
               <User className="h-4 w-4 text-gray-500" />
-              <span>Last updated {new Date(user.updatedAt).toLocaleDateString()}</span>
+              <span>Last updated {formatDate(user.updatedAt?.toISOString())}</span>
             </div>
           </div>
         </div>

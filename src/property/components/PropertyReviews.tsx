@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { useSafeUserQuery } from "@shared/hooks/useSafeQuery";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@shared/components/ui/card";
+import { Button } from "@shared/components/ui/button";
+import { Textarea } from "@shared/components/ui/textarea";
+import { Label } from "@shared/components/ui/label";
+import { Separator } from "@shared/components/ui/separator";
+import { Badge } from "@shared/components/ui/badge";
 import { Star, MessageCircle, ThumbsUp, Flag, User } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, getQueryFn } from "@/lib/queryClient";
+import { useToast } from "@/shared/hooks/use-toast";
+import { apiRequest, getQueryFn } from "@/infrastructure/api/queryClient";
+import { formatDate } from "../../shared/utils/date-utils";
 
 interface PropertyReviewsProps {
-  propertyId: number;
+  propertyId: string;
 }
 
 interface Review {
@@ -29,17 +31,17 @@ interface User {
   email: string;
 }
 
-export default function PropertyReviews({ propertyId }: PropertyReviewsProps) {
+export function PropertyReviews({ propertyId }: PropertyReviewsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
 
-  // Check if user is authenticated
-  const { data: user } = useQuery<User>({
-    queryKey: ['/api/auth/me'],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+  // Check if user is authenticated with enhanced safety
+  const { data: user, hasValidData: isAuthenticated } = useSafeUserQuery({
+    context: 'property-reviews',
+    retry: false, // Don't retry auth failures
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
@@ -97,13 +99,7 @@ export default function PropertyReviews({ propertyId }: PropertyReviewsProps) {
     createReviewMutation.mutate({ rating, comment: comment.trim() });
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (

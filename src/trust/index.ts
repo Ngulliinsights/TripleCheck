@@ -4,8 +4,8 @@ export * from './hooks/useTrustScore';
 export * from './hooks/useFraudDetection';
 
 // Components
-export { TrustScore } from './components/TrustScore';
-export { VerificationBadge } from './components/VerificationBadge';
+export { default as TrustScore } from './components/TrustScore';
+export { default as VerificationBadge } from './components/VerificationBadge';
 
 // Pages
 export { default as BasicChecks } from './pages/BasicChecks';

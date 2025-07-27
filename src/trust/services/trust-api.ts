@@ -1,6 +1,8 @@
-import { ApiResponse } from '../../shared/types';
+import { ApiResponse } from '@/shared/types';
 import { TrustScore, VerificationCheck, FraudAlert } from '../types/trust.types';
 import { TrustBusinessLogic } from './trust-business-logic';
+import { apiRequest } from '@/infrastructure/api/queryClient';
+import { requestManager } from '@/infrastructure/api/request-manager';
 
 const API_BASE = '/api/trust';
 
@@ -18,26 +20,43 @@ export const trustApi = {
     };
     history: Array<{ date: string; score: number; change: number }>;
   }>> => {
-    const response = await fetch(`${API_BASE}/score/${userId}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to fetch trust score');
+    try {
+      const data = await apiRequest<ApiResponse<{
+        trustScore: TrustScore;
+        analysis: {
+          score: number;
+          level: string;
+          color: string;
+          breakdown: Record<string, number>;
+          recommendations: string[];
+        };
+        history: Array<{ date: string; score: number; change: number }>;
+      }>>(
+        'GET',
+        `${API_BASE}/score/${userId}`,
+        undefined,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+          requestOptions: {
+            key: `trust-score:${userId}`,
+            priority: 'high',
+            cancelPrevious: true
+          }
+        }
+      );
+      
+      if (data.data) {
+        // Enhance with business logic analysis
+        const analysis = TrustBusinessLogic.calculateTrustScore(data.data.trustScore.factors);
+        data.data.analysis = analysis;
+      }
+      
+      return data;
+    } catch (error) {
+      throw new Error('Failed to fetch trust score');
     }
-    
-    const data = await response.json();
-    
-    if (data.data) {
-      // Enhance with business logic analysis
-      const analysis = TrustBusinessLogic.calculateTrustScore(data.data.trustScore.factors);
-      data.data.analysis = analysis;
-    }
-    
-    return data;
   },
 
   // Update trust score with validation
@@ -60,21 +79,26 @@ export const trustApi = {
       };
     }
 
-    const response = await fetch(`${API_BASE}/score/${userId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-      body: JSON.stringify({ factors }),
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to update trust score');
+    try {
+      return await apiRequest<ApiResponse<TrustScore>>(
+        'PATCH',
+        `${API_BASE}/score/${userId}`,
+        { factors },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+          requestOptions: {
+            key: `update-trust-score:${userId}`,
+            priority: 'high',
+            cancelPrevious: true
+          }
+        }
+      );
+    } catch (error) {
+      throw new Error('Failed to update trust score');
     }
-    
-    return response.json();
   },
 
   // Submit document for verification

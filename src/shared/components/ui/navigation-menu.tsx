@@ -3,7 +3,7 @@ import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu"
 import { cva } from "class-variance-authority"
 import { ChevronDown } from "lucide-react"
 
-import { cn } from "../../lib/utils"
+import { cn } from "@/shared/lib/utils"
 
 // Memoized viewport component to prevent unnecessary re-renders
 const NavigationMenuViewport = React.memo(React.forwardRef<

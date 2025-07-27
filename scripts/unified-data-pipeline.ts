@@ -14,8 +14,8 @@ import { fileURLToPath } from 'url';
 import { count } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 
-import { users, properties, reviews } from '../shared/schema';
-import type { InsertUser, InsertProperty, InsertReview } from '../shared/schema';
+import { users, properties, reviews } from '../src/shared/schema';
+import type { InsertUser, InsertProperty, InsertReview } from '../src/shared/schema';
 
 /* ---------- CONFIG ---------- */
 const __filename = fileURLToPath(import.meta.url);

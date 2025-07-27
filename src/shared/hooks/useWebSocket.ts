@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
 
 interface WebSocketMessage {
   type: string;
@@ -57,14 +59,13 @@ export function useWebSocket({
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
 
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const heartbeatTimeoutRef = useRef<NodeJS.Timeout>();
   const messageQueueRef = useRef<any[]>([]);
   const shouldReconnectRef = useRef(shouldReconnect);
   const urlRef = useRef(url);
+  const cleanupManager = useEnhancedCleanupManager();
 
   // Update refs when props change
-  useEffect(() => {
+  useSafeEffect(() => {
     shouldReconnectRef.current = shouldReconnect;
     urlRef.current = url;
   }, [shouldReconnect, url]);
@@ -79,16 +80,14 @@ export function useWebSocket({
   // Start heartbeat
   const startHeartbeat = useCallback(() => {
     if (heartbeatInterval > 0) {
-      heartbeatTimeoutRef.current = setInterval(sendHeartbeat, heartbeatInterval);
+      cleanupManager.addInterval(sendHeartbeat, heartbeatInterval, 'websocket-heartbeat');
     }
-  }, [sendHeartbeat, heartbeatInterval]);
+  }, [sendHeartbeat, heartbeatInterval, cleanupManager]);
 
   // Stop heartbeat
   const stopHeartbeat = useCallback(() => {
-    if (heartbeatTimeoutRef.current) {
-      clearInterval(heartbeatTimeoutRef.current);
-    }
-  }, []);
+    cleanupManager.removeCleanup('websocket-heartbeat');
+  }, [cleanupManager]);
 
   // Send queued messages
   const sendQueuedMessages = useCallback(() => {
@@ -126,9 +125,9 @@ export function useWebSocket({
         // Attempt reconnection if enabled and not a clean close
         if (shouldReconnectRef.current && !event.wasClean && connectionAttempts < reconnectAttempts) {
           setConnectionAttempts(prev => prev + 1);
-          reconnectTimeoutRef.current = setTimeout(() => {
+          cleanupManager.addTimeout(() => {
             connect();
-          }, reconnectInterval);
+          }, reconnectInterval, 'websocket-reconnect');
         }
       };
 
@@ -202,9 +201,7 @@ export function useWebSocket({
   const disconnect = useCallback(() => {
     shouldReconnectRef.current = false;
     
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
+    cleanupManager.removeCleanup('websocket-reconnect');
     
     stopHeartbeat();
     
@@ -212,7 +209,7 @@ export function useWebSocket({
       setConnectionStatus('Closing');
       socket.close(1000, 'Manual disconnect');
     }
-  }, [socket, stopHeartbeat]);
+  }, [socket, stopHeartbeat, cleanupManager]);
 
   // Reconnect function
   const reconnect = useCallback(() => {
@@ -223,15 +220,12 @@ export function useWebSocket({
   }, [disconnect, connect]);
 
   // Initial connection
-  useEffect(() => {
+  useSafeEffect(() => {
     connect();
     
     return () => {
       shouldReconnectRef.current = false;
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      stopHeartbeat();
+      cleanupManager.runAllCleanup();
       if (socket) {
         socket.close();
       }
@@ -239,14 +233,11 @@ export function useWebSocket({
   }, []);
 
   // Cleanup on unmount
-  useEffect(() => {
+  useSafeEffect(() => {
     return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      stopHeartbeat();
+      cleanupManager.runAllCleanup();
     };
-  }, [stopHeartbeat]);
+  }, [cleanupManager]);
 
   return {
     socket,
@@ -286,7 +277,11 @@ export function useMessagingWebSocket(userId: string) {
           setMessages(prev => [message.payload, ...prev]);
           break;
         case 'typing_start':
-          setTypingUsers(prev => new Set([...prev, message.payload.userId]));
+          setTypingUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.add(message.payload.userId);
+            return newSet;
+          });
           break;
         case 'typing_stop':
           setTypingUsers(prev => {

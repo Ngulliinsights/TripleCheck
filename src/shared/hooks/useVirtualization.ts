@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
 
 interface VirtualItem {
   index: number;
@@ -163,20 +165,21 @@ export function useVirtualization({
     }, scrollingDelay);
   }, [horizontal, scrollingDelay]);
 
+  const cleanupManager = useEnhancedCleanupManager();
+
   // Attach scroll listener
-  useEffect(() => {
+  useSafeEffect(() => {
     const element = containerRef.current;
     if (!element) return;
 
-    element.addEventListener('scroll', handleScroll, { passive: true });
+    cleanupManager.addEventListener(element, 'scroll', handleScroll, { passive: true }, 'scroll-listener');
     
-    return () => {
-      element.removeEventListener('scroll', handleScroll);
+    cleanupManager.addCleanup(() => {
       if (scrollingTimeoutRef.current) {
         clearTimeout(scrollingTimeoutRef.current);
       }
-    };
-  }, [handleScroll]);
+    }, 'scroll-timeout');
+  }, [handleScroll, cleanupManager]);
 
   // Scroll to index function
   const scrollToIndex = useCallback(
@@ -185,6 +188,8 @@ export function useVirtualization({
       if (!element || index < 0 || index >= itemCount) return;
 
       const itemStart = itemOffsets[index];
+      if (itemStart === undefined) return;
+      
       const itemSize = getItemSize(index);
       const itemEnd = itemStart + itemSize;
 

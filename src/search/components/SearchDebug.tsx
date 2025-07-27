@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@shared/components/ui/button';
+import { Input } from '@shared/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 
 export function SearchDebug() {
   const [searchTerm, setSearchTerm] = useState('');

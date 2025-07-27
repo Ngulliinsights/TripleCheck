@@ -162,22 +162,10 @@ export function truncateText(text: string | null | undefined, maxLength: number)
 }
 
 // Date formatting with fallback
-export function formatDate(dateString: string | null | undefined): string {
-  if (!dateString) return 'Date not available';
-  
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Invalid date';
-    
-    return new Intl.DateTimeFormat('en-KE', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    }).format(date);
-  } catch {
-    return 'Date not available';
-  }
-}
+import { formatKenyaDate } from '../../shared/utils/date-utils';
+
+// Re-export for backward compatibility
+export const formatDate = formatKenyaDate;
 
 // Rating calculation with safety
 export function calculateAverageRating(reviews: SafeReviewData[]): number {

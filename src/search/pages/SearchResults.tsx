@@ -1,614 +1,434 @@
-import { useQuery } from "@tanstack/react-query";
-import { useState, useCallback, useMemo } from "react";
-import { useLocation } from "wouter";
-import { Property } from "../../shared/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Input } from "../../shared/components/ui/input";
-import { Badge } from "../../shared/components/ui/badge";
-import { Skeleton } from "../../shared/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../shared/components/ui/select";
-import { Slider } from "../../shared/components/ui/slider";
-import { Checkbox } from "../../shared/components/ui/checkbox";
-import ListingCard from "../../shared/components/listing-card";
-import {
-  Search,
-  SlidersHorizontal,
-  Grid3X3,
-  List,
-  ArrowUpDown,
-  X,
-  MapPin,
-} from "lucide-react";
+import React, { useState, useCallback, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Button } from '../../shared/components/ui/button';
+import { Badge } from '../../shared/components/ui/badge';
+import ListingCard from '../../property/components/ListingCard';
+import PropertySearch from '../components/PropertySearch';
+import { Filter, SlidersHorizontal, MapPin } from 'lucide-react';
+import { Property } from '../../shared/types/property';
 
-// Type definitions for better type safety
+// Enhanced type definitions for better TypeScript safety
 interface SearchFilters {
-  location: string;
-  priceRange: [number, number];
-  propertyType: string;
+  minPrice: string;
+  maxPrice: string;
   bedrooms: string;
-  bathrooms: string;
-  amenities: string[];
-  verificationStatus: string;
-  sortBy: string;
+  propertyType: string;
+  location: string;
 }
 
-type ViewMode = "grid" | "list";
-type SortOption =
-  | "relevance"
-  | "price_low"
-  | "price_high"
-  | "newest"
-  | "oldest"
-  | "verified";
+type SortOption = 'price-asc' | 'price-desc' | 'newest' | 'relevance';
 
-// Constants moved outside component to prevent recreation on every render
-const PROPERTY_TYPES = [
-  { value: "all", label: "All Types" },
-  { value: "apartment", label: "Apartment" },
-  { value: "house", label: "House" },
-  { value: "villa", label: "Villa" },
-  { value: "townhouse", label: "Townhouse" },
-  { value: "studio", label: "Studio" },
+interface SortConfig {
+  label: string;
+  value: SortOption;
+}
+
+// Constants moved outside component to prevent recreation on each render
+const SORT_OPTIONS: SortConfig[] = [
+  { label: 'Price: Low to High', value: 'price-asc' },
+  { label: 'Price: High to Low', value: 'price-desc' },
+  { label: 'Newest First', value: 'newest' },
+  { label: 'Most Relevant', value: 'relevance' }
 ] as const;
 
 const BEDROOM_OPTIONS = [
-  { value: "all", label: "Any" },
-  { value: "1", label: "1+" },
-  { value: "2", label: "2+" },
-  { value: "3", label: "3+" },
-  { value: "4", label: "4+" },
-  { value: "5", label: "5+" },
+  { label: 'Any', value: '' },
+  { label: '1+', value: '1' },
+  { label: '2+', value: '2' },
+  { label: '3+', value: '3' },
+  { label: '4+', value: '4' }
 ] as const;
 
-const BATHROOM_OPTIONS = [
-  { value: "all", label: "Any" },
-  { value: "1", label: "1+" },
-  { value: "2", label: "2+" },
-  { value: "3", label: "3+" },
-  { value: "4", label: "4+" },
+const PROPERTY_TYPE_OPTIONS = [
+  { label: 'Any', value: '' },
+  { label: 'Apartment', value: 'apartment' },
+  { label: 'House', value: 'house' },
+  { label: 'Condo', value: 'condo' },
+  { label: 'Townhouse', value: 'townhouse' }
 ] as const;
 
-const AMENITIES = [
-  "Swimming Pool",
-  "Gym",
-  "Parking",
-  "Security",
-  "Garden",
-  "Balcony",
-  "Air Conditioning",
-  "Internet",
-  "Furnished",
-  "Pet Friendly",
-] as const;
-
-const SORT_OPTIONS = [
-  { value: "relevance", label: "Most Relevant" },
-  { value: "price_low", label: "Price: Low to High" },
-  { value: "price_high", label: "Price: High to Low" },
-  { value: "newest", label: "Newest First" },
-  { value: "oldest", label: "Oldest First" },
-  { value: "verified", label: "Verified First" },
-] as const;
-
-// Default filter values as a constant to prevent object recreation
-const DEFAULT_FILTERS: SearchFilters = {
-  location: "",
-  priceRange: [0, 1000000],
-  propertyType: "all",
-  bedrooms: "all",
-  bathrooms: "all",
-  amenities: [],
-  verificationStatus: "all",
-  sortBy: "relevance",
+// Initial filter state - extracted for reusability
+const INITIAL_FILTERS: SearchFilters = {
+  minPrice: '',
+  maxPrice: '',
+  bedrooms: '',
+  propertyType: '',
+  location: ''
 };
 
-// Helper function to extract search query from URL
-const extractSearchQuery = (location: string): string => {
-  const searchParams = location.split("?")[1];
-  if (!searchParams) return "";
-  const urlParams = new URLSearchParams(searchParams);
-  return urlParams.get("q") || "";
-};
-
-// Helper function to build query parameters
-const buildQueryParams = (
-  searchQuery: string,
-  filters: SearchFilters
-): Record<string, any> => {
-  const params: Record<string, any> = {};
-
-  if (searchQuery) params.q = searchQuery;
-  if (filters.location) params.location = filters.location;
-  if (filters.propertyType !== "all")
-    params.propertyType = filters.propertyType;
-  if (filters.bedrooms !== "all") params.bedrooms = filters.bedrooms;
-  if (filters.bathrooms !== "all") params.bathrooms = filters.bathrooms;
-  if (filters.verificationStatus !== "all")
-    params.verificationStatus = filters.verificationStatus;
-  if (filters.amenities.length > 0)
-    params.amenities = filters.amenities.join(",");
-  if (filters.priceRange[0] > 0 || filters.priceRange[1] < 1000000) {
-    params.minPrice = filters.priceRange[0];
-    params.maxPrice = filters.priceRange[1];
+// Mock data with enhanced TypeScript compliance
+const mockProperties: Property[] = [
+  {
+    id: '1',
+    title: 'Modern 3-Bedroom Apartment in Westlands',
+    description: 'Beautiful modern apartment with city views and premium amenities',
+    location: 'Westlands, Nairobi',
+    price: 150000,
+    images: ['/placeholder-property.jpg'],
+    features: {
+      bedrooms: 3,
+      bathrooms: 2,
+      squareFeet: 1200,
+      parkingSpaces: 2,
+      yearBuilt: 2020,
+      amenities: ['Swimming Pool', 'Gym', '24/7 Security'],
+      propertyType: 'Apartment',
+      petFriendly: true,
+      furnished: false
+    },
+    status: 'verified'
+  },
+  {
+    id: '2',
+    title: 'Spacious Family Home in Karen',
+    description: 'Perfect family home with large garden and quiet neighborhood setting',
+    location: 'Karen, Nairobi',
+    price: 280000,
+    images: ['/placeholder-property.jpg'],
+    features: {
+      bedrooms: 4,
+      bathrooms: 3,
+      squareFeet: 2500,
+      parkingSpaces: 3,
+      yearBuilt: 2018,
+      amenities: ['Private Garden', 'Gated Community', 'Covered Parking'],
+      propertyType: 'House',
+      petFriendly: true,
+      furnished: false
+    },
+    status: 'verified'
   }
-  params.sortBy = filters.sortBy;
+];
 
-  return params;
-};
+export default function SearchResults() {
+  // State management with proper TypeScript typing
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [filters, setFilters] = useState<SearchFilters>(INITIAL_FILTERS);
+  const [sortBy, setSortBy] = useState<SortOption>('relevance');
 
-// Helper function to count active filters
-const countActiveFilters = (filters: SearchFilters): number => {
-  let count = 0;
-  if (filters.location) count++;
-  if (filters.propertyType !== "all") count++;
-  if (filters.bedrooms !== "all") count++;
-  if (filters.bathrooms !== "all") count++;
-  if (filters.verificationStatus !== "all") count++;
-  if (filters.amenities.length > 0) count++;
-  if (filters.priceRange[0] > 0 || filters.priceRange[1] < 1000000) count++;
-  return count;
-};
+  // Optimized event handlers using useCallback to prevent unnecessary re-renders
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    // In a real application, this would trigger an API call with debouncing
+    // Example: debouncedSearchAPI(query, filters)
+  }, []); // No dependencies since we're just setting state
 
-// Helper function to sort properties
-const sortProperties = (
-  properties: Property[],
-  sortBy: SortOption
-): Property[] => {
-  const result = [...properties];
-
-  switch (sortBy) {
-    case "price_low":
-      return result.sort((a, b) => a.price - b.price);
-    case "price_high":
-      return result.sort((a, b) => b.price - a.price);
-    case "newest":
-      return result.sort(
-        (a, b) =>
-          new Date(b.createdAt || 0).getTime() -
-          new Date(a.createdAt || 0).getTime()
-      );
-    case "oldest":
-      return result.sort(
-        (a, b) =>
-          new Date(a.createdAt || 0).getTime() -
-          new Date(b.createdAt || 0).getTime()
-      );
-    case "verified":
-      return result.sort((a, b) => {
-        if (
-          a.verificationStatus === "verified" &&
-          b.verificationStatus !== "verified"
-        )
-          return -1;
-        if (
-          a.verificationStatus !== "verified" &&
-          b.verificationStatus === "verified"
-        )
-          return 1;
-        return 0;
-      });
-    default:
-      return result; // Keep original order for relevance
-  }
-};
-
-export default function SearchResultsPage() {
-  const [location, setLocation] = useLocation();
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
-
-  // Memoized search query extraction
-  const searchQuery = useMemo(() => extractSearchQuery(location), [location]);
-
-  // Memoized query parameters for API
-  const queryParams = useMemo(
-    () => buildQueryParams(searchQuery, filters),
-    [searchQuery, filters]
-  );
-
-  // React Query for fetching properties - FIXED RACE CONDITION
-  const {
-    data: properties,
-    isLoading,
-    error,
-  } = useQuery<Property[]>({
-    queryKey: ["/api/properties/search", queryParams],
-    queryFn: async ({ queryKey }) => {
-      const [, params] = queryKey;
-      const searchParams = new URLSearchParams();
-      
-      // Build search parameters safely
-      Object.entries(params as Record<string, any>).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          searchParams.append(key, String(value));
-        }
-      });
-      
-      const url = `/api/properties/search?${searchParams.toString()}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`Search failed: ${response.status}`);
-      }
-      
-      return response.json();
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    retry: (failureCount, error: any) => {
-      // Don't retry on client errors
-      if (error?.message?.includes('4')) {
-        return false;
-      }
-      return failureCount < 2;
-    },
-  });
-
-  // Memoized active filters count
-  const activeFiltersCount = useMemo(
-    () => countActiveFilters(filters),
-    [filters]
-  );
-
-  // Memoized sorted properties
-  const sortedProperties = useMemo(() => {
-    if (!properties) return [];
-    return sortProperties(properties, filters.sortBy as SortOption);
-  }, [properties, filters.sortBy]);
-
-  // Optimized filter change handler with proper typing
-  const handleFilterChange = useCallback(
-    <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => {
-      setFilters((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
-
-  // Optimized amenity toggle handler
-  const handleAmenityToggle = useCallback((amenity: string) => {
-    setFilters((prev) => ({
+  const handleFilterChange = useCallback((key: keyof SearchFilters, value: string) => {
+    setFilters(prev => ({
       ...prev,
-      amenities:
-        prev.amenities.includes(amenity) ?
-          prev.amenities.filter((a) => a !== amenity)
-        : [...prev.amenities, amenity],
+      [key]: value
     }));
   }, []);
 
-  // Clear filters handler
-  const clearFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS);
+  const handleClearFilters = useCallback(() => {
+    setFilters(INITIAL_FILTERS);
   }, []);
 
-  // View mode toggle handlers
-  const setGridView = useCallback(() => setViewMode("grid"), []);
-  const setListView = useCallback(() => setViewMode("list"), []);
-  const toggleFilters = useCallback(() => setShowFilters((prev) => !prev), []);
+  const handleSortChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(event.target.value as SortOption);
+  }, []);
 
-  // Error state component
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
-            <h3 className="text-lg font-medium text-red-800 mb-2">
-              Search Error
-            </h3>
-            <p className="text-red-600 mb-4">
-              There was an error performing your search. Please try again.
-            </p>
-            <Button onClick={() => window.location.reload()} variant="outline">
-              Try Again
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Memoized filtered and sorted results to prevent unnecessary recalculations
+  const processedProperties = useMemo(() => {
+    let filtered = mockProperties;
 
-  // Calculate grid classes based on view mode
-  const gridClasses =
-    viewMode === "grid" ?
-      "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-    : "grid-cols-1";
+    // Apply filters - in a real app, this would be handled by the backend
+    if (filters.minPrice) {
+      const minPrice = parseInt(filters.minPrice, 10);
+      filtered = filtered.filter(property => property.price >= minPrice);
+    }
+
+    if (filters.maxPrice) {
+      const maxPrice = parseInt(filters.maxPrice, 10);
+      filtered = filtered.filter(property => property.price <= maxPrice);
+    }
+
+    if (filters.bedrooms) {
+      const minBedrooms = parseInt(filters.bedrooms, 10);
+      filtered = filtered.filter(property => property.features?.bedrooms && property.features.bedrooms >= minBedrooms);
+    }
+
+    if (filters.propertyType) {
+      filtered = filtered.filter(property => 
+        property.features?.propertyType && property.features.propertyType.toLowerCase() === filters.propertyType.toLowerCase()
+      );
+    }
+
+    if (filters.location) {
+      filtered = filtered.filter(property =>
+        property.location.toLowerCase().includes(filters.location.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'price-asc':
+          return a.price - b.price;
+        case 'price-desc':
+          return b.price - a.price;
+        case 'newest':
+          return (b.features.yearBuilt || 0) - (a.features.yearBuilt || 0);
+        case 'relevance':
+        default:
+          // In a real app, this would use a relevance score from the search API
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [filters, sortBy, searchQuery]); // Include searchQuery for future search implementation
+
+  // Memoized results count to prevent unnecessary recalculations
+  const resultCount = useMemo(() => processedProperties.length, [processedProperties]);
+
+  // Enhanced filter input component for better reusability
+  const FilterInput = ({ 
+    label, 
+    type = 'text', 
+    value, 
+    onChange, 
+    placeholder,
+    options 
+  }: {
+    label: string;
+    type?: 'text' | 'number' | 'select';
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    options?: readonly { label: string; value: string }[];
+  }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+      </label>
+      {type === 'select' ? (
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          aria-label={label}
+          title={label}
+        >
+          {options?.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          placeholder={placeholder}
+        />
+      )}
+    </div>
+  );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header Section */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">
-            {searchQuery ?
-              `Search Results for "${searchQuery}"`
-            : "Browse Properties"}
-          </h1>
-          <p className="text-muted-foreground">
-            {isLoading ?
-              "Searching..."
-            : `${sortedProperties.length} properties found`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={toggleFilters}>
-            <SlidersHorizontal className="w-4 h-4 mr-2" />
-            Filters
-            {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {activeFiltersCount}
-              </Badge>
-            )}
-          </Button>
-          <div className="flex border rounded-md">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Enhanced search header with better accessibility */}
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold mb-4 text-gray-900">Search Properties</h1>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <PropertySearch 
+                onSearch={handleSearch}
+                placeholder="Search by location, property type, or features..."
+              />
+            </div>
             <Button
-              variant={viewMode === "grid" ? "default" : "ghost"}
-              size="sm"
-              onClick={setGridView}
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center transition-colors"
+              aria-expanded={showFilters}
+              aria-controls="filters-panel"
             >
-              <Grid3X3 className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={setListView}
-            >
-              <List className="w-4 h-4" />
+              <SlidersHorizontal className="w-4 h-4 mr-2" />
+              Filters
+              {Object.values(filters).some(value => value !== '') && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  Active
+                </Badge>
+              )}
             </Button>
           </div>
-        </div>
-      </div>
+        </header>
 
-      <div className="flex gap-6">
-        {/* Filters Sidebar */}
+        {/* Enhanced filters panel with better organization */}
         {showFilters && (
-          <div className="w-80 space-y-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <CardTitle className="text-lg">Filters</CardTitle>
-                {activeFiltersCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters}>
-                    <X className="w-4 h-4 mr-1" />
-                    Clear All
+          <Card className="mb-8" id="filters-panel">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Filter className="w-5 h-5 mr-2 text-blue-600" />
+                Search Filters
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <FilterInput
+                  label="Min Price"
+                  type="number"
+                  value={filters.minPrice}
+                  onChange={(value) => handleFilterChange('minPrice', value)}
+                  placeholder="$0"
+                />
+                
+                <FilterInput
+                  label="Max Price"
+                  type="number"
+                  value={filters.maxPrice}
+                  onChange={(value) => handleFilterChange('maxPrice', value)}
+                  placeholder="No maximum"
+                />
+                
+                <FilterInput
+                  label="Bedrooms"
+                  type="select"
+                  value={filters.bedrooms}
+                  onChange={(value) => handleFilterChange('bedrooms', value)}
+                  options={BEDROOM_OPTIONS}
+                />
+                
+                <FilterInput
+                  label="Property Type"
+                  type="select"
+                  value={filters.propertyType}
+                  onChange={(value) => handleFilterChange('propertyType', value)}
+                  options={PROPERTY_TYPE_OPTIONS}
+                />
+                
+                <FilterInput
+                  label="Location"
+                  value={filters.location}
+                  onChange={(value) => handleFilterChange('location', value)}
+                  placeholder="Enter location"
+                />
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mt-6">
+                <Button className="transition-colors">
+                  Apply Filters
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleClearFilters}
+                  className="transition-colors"
+                >
+                  Clear All
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Enhanced search results section */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Results list with improved header */}
+          <main className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Search Results</h2>
+                <p className="text-gray-600">
+                  {resultCount} {resultCount === 1 ? 'property' : 'properties'} found
+                  {searchQuery && (
+                    <span className="ml-1">
+                      for "<span className="font-medium">{searchQuery}</span>"
+                    </span>
+                  )}
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <label htmlFor="sort-select" className="text-sm text-gray-600 whitespace-nowrap">
+                  Sort by:
+                </label>
+                <select 
+                  id="sort-select"
+                  value={sortBy}
+                  onChange={handleSortChange}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  title="Sort search results by different criteria"
+                  aria-label="Sort search results"
+                >
+                  {SORT_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Results grid with conditional rendering */}
+            {resultCount > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {processedProperties.map((property) => (
+                  <ListingCard key={property.id} property={property} />
+                ))}
+              </div>
+            ) : (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <p className="text-gray-600 mb-4">No properties found matching your criteria.</p>
+                  <Button variant="outline" onClick={handleClearFilters}>
+                    Clear Filters
                   </Button>
-                )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Enhanced pagination with proper accessibility */}
+            {resultCount > 0 && (
+              <nav className="flex justify-center mt-8" aria-label="Search results pagination">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" disabled aria-label="Previous page">
+                    Previous
+                  </Button>
+                  <Button variant="outline" className="bg-blue-600 text-white" aria-current="page">
+                    1
+                  </Button>
+                  <Button variant="outline" aria-label="Go to page 2">
+                    2
+                  </Button>
+                  <Button variant="outline" aria-label="Go to page 3">
+                    3
+                  </Button>
+                  <Button variant="outline" aria-label="Next page">
+                    Next
+                  </Button>
+                </div>
+              </nav>
+            )}
+          </main>
+
+          {/* Enhanced map sidebar */}
+          <aside className="lg:w-96">
+            <Card className="sticky top-4">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+                  Map View
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Location Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Location
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Enter location..."
-                      value={filters.location}
-                      onChange={(e) =>
-                        handleFilterChange("location", e.target.value)
-                      }
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-
-                {/* Price Range Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Price Range: KES {filters.priceRange[0].toLocaleString()} -
-                    KES {filters.priceRange[1].toLocaleString()}
-                  </label>
-                  <Slider
-                    value={filters.priceRange}
-                    onValueChange={(value) =>
-                      handleFilterChange(
-                        "priceRange",
-                        value as [number, number]
-                      )
-                    }
-                    max={1000000}
-                    min={0}
-                    step={10000}
-                    className="w-full"
-                  />
-                </div>
-
-                {/* Property Type Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Property Type
-                  </label>
-                  <Select
-                    value={filters.propertyType}
-                    onValueChange={(value) =>
-                      handleFilterChange("propertyType", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PROPERTY_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Bedrooms Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Bedrooms
-                  </label>
-                  <Select
-                    value={filters.bedrooms}
-                    onValueChange={(value) =>
-                      handleFilterChange("bedrooms", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BEDROOM_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Bathrooms Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Bathrooms
-                  </label>
-                  <Select
-                    value={filters.bathrooms}
-                    onValueChange={(value) =>
-                      handleFilterChange("bathrooms", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BATHROOM_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Verification Status Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Verification Status
-                  </label>
-                  <Select
-                    value={filters.verificationStatus}
-                    onValueChange={(value) =>
-                      handleFilterChange("verificationStatus", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Properties</SelectItem>
-                      <SelectItem value="verified">Verified Only</SelectItem>
-                      <SelectItem value="pending">
-                        Pending Verification
-                      </SelectItem>
-                      <SelectItem value="unverified">Unverified</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Amenities Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Amenities
-                  </label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {AMENITIES.map((amenity) => (
-                      <div
-                        key={amenity}
-                        className="flex items-center space-x-2"
-                      >
-                        <Checkbox
-                          id={amenity}
-                          checked={filters.amenities.includes(amenity)}
-                          onCheckedChange={() => handleAmenityToggle(amenity)}
-                        />
-                        <label
-                          htmlFor={amenity}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {amenity}
-                        </label>
-                      </div>
-                    ))}
+              <CardContent>
+                <div className="bg-gray-200 h-64 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                  <div className="text-center">
+                    <MapPin className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600 text-sm">Interactive map will display here</p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Showing {resultCount} properties
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        )}
-
-        {/* Main Content Area */}
-        <div className="flex-1">
-          {/* Sort Controls */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <Select
-                value={filters.sortBy}
-                onValueChange={(value) => handleFilterChange("sortBy", value)}
-              >
-                <SelectTrigger className="w-48">
-                  <ArrowUpDown className="w-4 h-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Results Display */}
-          {isLoading ?
-            <div className={`grid gap-6 ${gridClasses}`}>
-              {Array.from({ length: 9 }, (_, i) => (
-                <Skeleton key={i} className="h-64 w-full" />
-              ))}
-            </div>
-          : sortedProperties.length > 0 ?
-            <div className={`grid gap-6 ${gridClasses}`}>
-              {sortedProperties.map((property) => (
-                <ListingCard key={property.id} property={property} />
-              ))}
-            </div>
-          : <div className="text-center py-12">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">
-                <Search className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-xl font-medium mb-2">
-                  No properties found
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  Try adjusting your search criteria or browse all properties.
-                </p>
-                <div className="space-y-2">
-                  <Button
-                    onClick={clearFilters}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Clear Filters
-                  </Button>
-                  <Button onClick={() => setLocation("/")} className="w-full">
-                    Browse All Properties
-                  </Button>
-                </div>
-              </div>
-            </div>
-          }
+          </aside>
         </div>
       </div>
     </div>

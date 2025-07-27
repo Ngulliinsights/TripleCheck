@@ -2,12 +2,12 @@
 export * from './hooks/useSearch';
 
 // Components
-export { SearchBar } from './components/SearchBar';
-export { SearchFilters } from './components/SearchFilters';
-export { SearchResults } from './components/SearchResults';
+export { default as SearchBar } from './components/SearchBar';
+export { default as SearchFilters } from './components/SearchFilters';
+export { default as AdvancedSearch } from './components/AdvancedSearch';
 export { SearchDebug } from './components/SearchDebug';
-export { SearchDebugger } from './components/SearchDebugger';
-export { PropertySearch } from './components/PropertySearch';
+export { default as SearchDebugger } from './components/SearchDebugger';
+export { default as PropertySearch } from './components/PropertySearch';
 
 // Pages
-export { default as SearchResults as SearchResultsPage } from './pages/SearchResults';
+export { default as SearchResultsPage } from './pages/SearchResults';

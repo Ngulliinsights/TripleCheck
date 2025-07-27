@@ -26,11 +26,23 @@
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     
-    // Type Checking
+    // Type Checking - Enhanced strict mode
     "strict": true,
-    "noUncheckedIndexedAccess": false,
+    "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "exactOptionalPropertyTypes": false,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
     
     // Import/Export
     "esModuleInterop": true,
@@ -56,6 +68,8 @@
       "@property/*": ["./src/property/*"],
       "@trust/*": ["./src/trust/*"],
       "@user/*": ["./src/user/*"],
+      "@auth/*": ["./src/auth/*"],
+      "@search/*": ["./src/search/*"],
       "@communication/*": ["./src/communication/*"],
       "@analytics/*": ["./src/analytics/*"],
       "@infrastructure/*": ["./src/infrastructure/*"],

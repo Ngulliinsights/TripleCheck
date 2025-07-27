@@ -45,10 +45,11 @@ async function fixDatabase() {
     // Create test users with known credentials
     console.log("👥 Creating test users...");
     
+    const defaultPassword = process.env.DEFAULT_TEST_PASSWORD || 'password123';
     const testUsers = [
-      { username: 'demo_user', password: 'password123' },
-      { username: 'test_user', password: 'test123' },
-      { username: 'admin', password: 'admin123' }
+      { username: 'demo_user', password: defaultPassword },
+      { username: 'test_user', password: process.env.TEST_USER_PASSWORD || 'test123' },
+      { username: 'admin', password: process.env.ADMIN_TEST_PASSWORD || 'admin123' }
     ];
 
     const createdUsers: User[] = [];

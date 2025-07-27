@@ -125,7 +125,7 @@ class UnifiedDataGenerator {
   ]);
   
   private readonly kenyanLastNames = createRandomSelector([
-    'Kamau', 'Wanjiku', 'Mwangi', 'Njeri', 'Kiprotich', 'Achieng', 'Maina', 'Wambui', 
+    'Kamau', 'Wanjiku', 'Makau', 'Njeri', 'Kiprotich', 'Achieng', 'Maina', 'Wambui', 
     'Ochieng', 'Nyong', 'Kimani', 'Wanjiru', 'Mutua', 'Mwende', 'Kiplagat', 'Chebet'
   ]);
   

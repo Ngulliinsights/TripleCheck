@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
 import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
 import { Button } from "../../shared/components/ui/button";
 import { Badge } from "../../shared/components/ui/badge";
@@ -67,10 +68,12 @@ export default function PropertyOptimizePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch user's properties
-  const { data: properties, isLoading } = useQuery<Property[]>({
-    queryKey: ['/api/properties'],
-    select: (data) => Array.isArray(data) ? data : []
+  // Fetch user's properties with enhanced safety
+  const { data: properties, isLoading, hasValidData } = useSafePropertiesQuery(
+    undefined,
+    {
+      context: 'property-optimize',
+      staleTime: 5 * 60 * 1000
   });
 
   // Mock analytics data
@@ -241,9 +244,9 @@ export default function PropertyOptimizePage() {
                   >
                     <CardContent className="p-4">
                       <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                        {property.imageUrls[0] ? (
+                        {property.imageUrls?.[0] ? (
                           <img 
-                            src={property.imageUrls[0]} 
+                            src={property.imageUrls?.[0]} 
                             alt={property.title}
                             className="w-full h-full object-cover"
                           />

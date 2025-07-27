@@ -1,3 +1,5 @@
+import React from 'react';
+
 // WebSocket client for real-time features
 export interface WebSocketMessage {
   type: string;

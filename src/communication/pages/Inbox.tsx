@@ -1,21 +1,21 @@
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
-import { Input } from "../../shared/components/ui/input";
-import { Textarea } from "../../shared/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger } from "../../shared/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
+import { Button } from "@shared/components/ui/button";
+import { Badge } from "@shared/components/ui/badge";
+import { Input } from "@shared/components/ui/input";
+import { Textarea } from "@shared/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "../../shared/components/ui/dialog";
-import { Label } from "../../shared/components/ui/label";
-import { Separator } from "../../shared/components/ui/separator";
-import { useToast } from "../../shared/hooks/use-toast";
-import { apiRequest } from "../../infrastructure/api/queryClient";
+} from "@shared/components/ui/dialog";
+import { Label } from "@shared/components/ui/label";
+import { Separator } from "@shared/components/ui/separator";
+import { useToast } from "@/shared/hooks/use-toast";
+import { apiRequest } from "@/infrastructure/api/queryClient";
 import {
   MessageSquare,
   Send,

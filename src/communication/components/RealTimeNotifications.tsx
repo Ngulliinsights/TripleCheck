@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
 import { Button } from '../../shared/components/ui/button';
 import { Badge } from '../../shared/components/ui/badge';
@@ -36,9 +38,10 @@ export function RealTimeNotifications({
   const { lastMessage } = useWebSocketMessage<RealTimeNotification>('notification');
   const [notifications, setNotifications] = useState<RealTimeNotification[]>([]);
   const [isMinimized, setIsMinimized] = useState(false);
+  const cleanupManager = useEnhancedCleanupManager();
 
   // Handle new notifications from WebSocket
-  useEffect(() => {
+  useSafeEffect(() => {
     if (lastMessage && lastMessage.payload && user) {
       const notification = lastMessage.payload as RealTimeNotification;
       
@@ -51,9 +54,9 @@ export function RealTimeNotifications({
 
         // Auto-hide low priority notifications
         if (notification.priority === 'low' && autoHideDelay > 0) {
-          setTimeout(() => {
+          cleanupManager.addTimeout(() => {
             handleDismiss(notification.id);
-          }, autoHideDelay);
+          }, autoHideDelay, `auto-hide-${notification.id}`);
         }
 
         // Show browser notification for high priority
@@ -62,7 +65,7 @@ export function RealTimeNotifications({
         }
       }
     }
-  }, [lastMessage, user, maxVisible, autoHideDelay]);
+  }, [lastMessage, user, maxVisible, autoHideDelay, cleanupManager]);
 
   const showBrowserNotification = (notification: RealTimeNotification) => {
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -244,7 +247,7 @@ export function RealTimeNotifications({
 export function useNotificationPermission() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
 
-  useEffect(() => {
+  useSafeEffect(() => {
     if ('Notification' in window) {
       setPermission(Notification.permission);
     }

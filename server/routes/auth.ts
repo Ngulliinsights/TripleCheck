@@ -1,25 +1,24 @@
-import { Express, Request, Response } from "express";
+import { Express, Router, Request, Response } from "express";
 import { z } from "zod";
 import {
   AuthenticatedRequest,
+  AUTH_ERRORS,
+  SessionManager,
+  authRateLimit,
+  validateSession
+} from "../middleware/auth.middleware";
+import {
   LoginSchema,
   RegisterSchema,
   hashPassword,
-  verifyPassword,
-  getUserIdFromSession,
-  setUserSession,
-  clearUserSession,
-  clearAuthAttempts,
-  AUTH_ERRORS,
-  authRateLimit,
-  validateSession
+  verifyPassword
 } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 
 // Import storage (you'll need to adjust this import based on your storage implementation)
-// import { storage } from "../storage";
+// import { storage } from "../infrastructure/storage/storage";
 
-export function registerAuthRoutes(app: Express, storage: any) {
+export function registerAuthRoutes(app: Express | Router, storage: any) {
   
   // Register endpoint
   app.post("/api/auth/register", 
@@ -50,10 +49,10 @@ export function registerAuthRoutes(app: Express, storage: any) {
         
         // Set session
         const authReq = req as AuthenticatedRequest;
-        setUserSession(authReq, user.id);
+        SessionManager.setUserSession(authReq, user.id);
         
         // Clear rate limiting for this IP on successful registration
-        clearAuthAttempts(req.ip || 'unknown');
+        // clearAuthAttempts(req.ip || 'unknown'); // TODO: Implement rate limiting
         
         // Return user data (without password)
         const { password, ...userWithoutPassword } = user;
@@ -116,10 +115,10 @@ export function registerAuthRoutes(app: Express, storage: any) {
         
         // Set session
         const authReq = req as AuthenticatedRequest;
-        setUserSession(authReq, user.id);
+        SessionManager.setUserSession(authReq, user.id);
         
         // Clear rate limiting for this IP on successful login
-        clearAuthAttempts(req.ip || 'unknown');
+        // clearAuthAttempts(req.ip || 'unknown'); // TODO: Implement rate limiting
         
         // Return user data (without password)
         const { password, ...userWithoutPassword } = user;
@@ -156,7 +155,7 @@ export function registerAuthRoutes(app: Express, storage: any) {
   app.post("/api/auth/logout",
     asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
       try {
-        await clearUserSession(req);
+        SessionManager.clearUserSession(req);
         
         res.json({
           success: true,
@@ -178,7 +177,7 @@ export function registerAuthRoutes(app: Express, storage: any) {
   app.get("/api/auth/me",
     validateSession,
     asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-      const userId = getUserIdFromSession(req);
+      const userId = SessionManager.getUserIdFromSession(req);
       
       if (!userId) {
         return res.status(401).json({
@@ -193,7 +192,7 @@ export function registerAuthRoutes(app: Express, storage: any) {
         
         if (!user) {
           // User was deleted but session still exists
-          await clearUserSession(req);
+          SessionManager.clearUserSession(req);
           return res.status(401).json({
             success: false,
             error: "User not found",
@@ -224,7 +223,7 @@ export function registerAuthRoutes(app: Express, storage: any) {
   app.post("/api/auth/change-password",
     validateSession,
     asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-      const userId = getUserIdFromSession(req);
+      const userId = SessionManager.getUserIdFromSession(req);
       
       if (!userId) {
         return res.status(401).json({
@@ -305,7 +304,7 @@ export function registerAuthRoutes(app: Express, storage: any) {
   // Session validation endpoint
   app.get("/api/auth/validate-session",
     asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-      const userId = getUserIdFromSession(req);
+      const userId = SessionManager.getUserIdFromSession(req);
       
       res.json({
         success: true,

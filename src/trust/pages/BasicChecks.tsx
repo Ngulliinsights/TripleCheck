@@ -1,124 +1,139 @@
-import { useState } from "react";
-import { Button } from "../../shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Input } from "../../shared/components/ui/input";
-import { Label } from "../../shared/components/ui/label";
-import { Textarea } from "../../shared/components/ui/textarea";
-import { CheckCircle, AlertTriangle, Shield } from "lucide-react";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Button } from '../../shared/components/ui/button';
+import { Shield, CheckCircle, LucideIcon } from 'lucide-react';
 
-export default function BasicChecksPage() {
-  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'checking' | 'complete'>('idle');
-  const [results, setResults] = useState<{
-    propertyExists: boolean;
-    ownershipVerified: boolean;
-    riskLevel: 'low' | 'medium' | 'high';
-  } | null>(null);
+// Define types for better type safety and code organization
+interface CheckItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setVerificationStatus('checking');
-    
-    // Simulate verification process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setResults({
-      propertyExists: true,
-      ownershipVerified: true,
-      riskLevel: 'low'
-    });
-    setVerificationStatus('complete');
-  };
+// Extract check items to a constant for easier maintenance and better performance
+const CHECK_ITEMS: CheckItem[] = [
+  {
+    id: 'document-verification',
+    title: 'Document Verification',
+    description: 'Verify ownership documents, title deeds, and legal certificates',
+    icon: CheckCircle,
+  },
+  {
+    id: 'image-authentication', 
+    title: 'Image Authentication',
+    description: 'Analyze property images for authenticity and detect manipulated photos',
+    icon: CheckCircle,
+  },
+  {
+    id: 'background-check',
+    title: 'Basic Background Check', 
+    description: 'Verify property owner identity and basic credibility checks',
+    icon: CheckCircle,
+  },
+] as const;
+
+// Extract CheckCard as a separate component for better reusability and testing
+interface CheckCardProps {
+  item: CheckItem;
+}
+
+const CheckCard: React.FC<CheckCardProps> = React.memo(({ item }) => {
+  const IconComponent = item.icon;
+  
+  return (
+    <Card className="h-full transition-shadow duration-200 hover:shadow-md">
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <IconComponent 
+            className="w-5 h-5 mr-2 text-green-600" 
+            aria-hidden="true"
+          />
+          {item.title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-gray-600 leading-relaxed">
+          {item.description}
+        </p>
+      </CardContent>
+    </Card>
+  );
+});
+
+// Add display name for better debugging experience
+CheckCard.displayName = 'CheckCard';
+
+// Main component with improved structure and accessibility
+const BasicChecks: React.FC = () => {
+  // Handler functions for better maintainability and potential future logic
+  const handleStartCheck = React.useCallback(() => {
+    // Future implementation: navigation or modal opening logic
+    console.log('Starting basic property check...');
+  }, []);
+
+  const handleLearnMore = React.useCallback(() => {
+    // Future implementation: navigation to documentation or help
+    console.log('Opening learn more section...');
+  }, []);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">Basic Property Checks</h1>
-          <p className="text-muted-foreground">
-            Verify basic property information and ownership details quickly and securely.
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Hero section with improved semantic structure */}
+        <header className="text-center mb-12">
+          <Shield 
+            className="h-16 w-16 text-blue-600 mx-auto mb-4" 
+            aria-hidden="true"
+          />
+          <h1 className="text-4xl font-bold mb-4 text-gray-900">
+            Basic Property Checks
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Essential verification services to ensure property authenticity and safety
           </p>
-        </div>
+        </header>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Property Verification Form</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="propertyId">Property ID/Title Number</Label>
-                <Input id="propertyId" placeholder="Enter property ID or title number" required />
-              </div>
-              
-              <div>
-                <Label htmlFor="location">Property Location</Label>
-                <Input id="location" placeholder="Enter full property address" required />
-              </div>
-              
-              <div>
-                <Label htmlFor="ownerDetails">Current Owner Details</Label>
-                <Input id="ownerDetails" placeholder="Enter owner's name" required />
-              </div>
-              
-              <div>
-                <Label htmlFor="additionalInfo">Additional Information</Label>
-                <Textarea 
-                  id="additionalInfo" 
-                  placeholder="Any additional details that might help with verification"
-                  className="h-24"
-                />
-              </div>
+        {/* Main content section with improved grid and accessibility */}
+        <main>
+          <section aria-labelledby="services-heading" className="mb-12">
+            <h2 id="services-heading" className="sr-only">
+              Available verification services
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+              {CHECK_ITEMS.map((item) => (
+                <CheckCard key={item.id} item={item} />
+              ))}
+            </div>
+          </section>
 
+          {/* Call-to-action section with improved button styling and accessibility */}
+          <section aria-labelledby="cta-heading" className="text-center">
+            <h2 id="cta-heading" className="sr-only">
+              Get started with property verification
+            </h2>
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
               <Button 
-                type="submit" 
-                className="w-full"
-                disabled={verificationStatus === 'checking'}
+                size="lg" 
+                onClick={handleStartCheck}
+                className="w-full sm:w-auto transition-colors duration-200"
               >
-                {verificationStatus === 'checking' ? 'Verifying...' : 'Start Verification'}
+                Start Basic Check
               </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {verificationStatus === 'complete' && results && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-[#2C5282]" />
-                Verification Results
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2">
-                {results.propertyExists ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                )}
-                <span>Property Registration Status: {results.propertyExists ? 'Verified' : 'Not Found'}</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {results.ownershipVerified ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                )}
-                <span>Ownership Status: {results.ownershipVerified ? 'Verified' : 'Unverified'}</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Shield className={`h-5 w-5 ${
-                  results.riskLevel === 'low' ? 'text-green-500' :
-                  results.riskLevel === 'medium' ? 'text-yellow-500' :
-                  'text-red-500'
-                }`} />
-                <span>Risk Level: {results.riskLevel.charAt(0).toUpperCase() + results.riskLevel.slice(1)}</span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={handleLearnMore}
+                className="w-full sm:w-auto transition-colors duration-200"
+              >
+                Learn More
+              </Button>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
   );
-}
+};
+
+export default BasicChecks;

@@ -1,24 +1,26 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Input } from "../../shared/components/ui/input";
-import { Label } from "../../shared/components/ui/label";
-import { Textarea } from "../../shared/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../shared/components/ui/select";
-import { Checkbox } from "../../shared/components/ui/checkbox";
-import { Badge } from "../../shared/components/ui/badge";
-import { Separator } from "../../shared/components/ui/separator";
-import { useToast } from "../../shared/hooks/use-toast";
-import { apiRequest } from "../../infrastructure/api/queryClient";
-import { Property, PropertyFeatures } from "../../shared/schema";
+import { useSafePropertyQuery } from "@shared/hooks/useSafeQuery";
+import { useOptimisticMutation } from "@shared/hooks/useOptimisticMutation";
+import { useComponentTracking, useInteractionTracking } from "@shared/hooks/useOperationTracking";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
+import { Button } from "@shared/components/ui/button";
+import { Input } from "@shared/components/ui/input";
+import { Label } from "@shared/components/ui/label";
+import { Textarea } from "@shared/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/components/ui/select";
+import { Checkbox } from "@shared/components/ui/checkbox";
+import { Badge } from "@shared/components/ui/badge";
+import { Separator } from "@shared/components/ui/separator";
+import { useToast } from "@/shared/hooks/use-toast";
+import { apiRequest } from "@/infrastructure/api/queryClient";
+import { Property, PropertyFeatures } from "@shared/schema";
 import { 
   Save, 
   ArrowLeft, 
   Upload, 
-  Trash2, 
-  Plus,
+  Trash2,
   Home,
   MapPin,
   DollarSign,
@@ -27,18 +29,20 @@ import {
   Square,
   Car,
   Calendar,
-  Shield,
-  Eye,
-  Edit
+  Eye
 } from "lucide-react";
 
 interface PropertyEditPageProps {
-  id: string;
+  id?: string;
 }
 
 export default function PropertyEditPage({ id }: PropertyEditPageProps) {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Add operation tracking for performance monitoring
+  const { renderCount } = useComponentTracking('PropertyEditPage', [id]);
+  const { trackInteraction } = useInteractionTracking('PropertyEditPage');
   const queryClient = useQueryClient();
   
   const [formData, setFormData] = useState({
@@ -58,10 +62,13 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
     imageUrls: [] as string[]
   });
 
-  // Fetch property data
-  const { data: property, isLoading, error } = useQuery<Property>({
-    queryKey: [`/api/properties/${id}`],
-    enabled: !!id
+  // Fetch property data with enhanced safety
+  const { data: property, isLoading, error, hasValidData } = useSafePropertyQuery(
+    id || '',
+    {
+      context: 'property-edit',
+      enabled: !!id,
+      staleTime: 2 * 60 * 1000 // 2 minutes for edit data
   });
 
   // Update form data when property loads
@@ -87,10 +94,16 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
     }
   }, [property]);
 
-  const updateMutation = useMutation({
-    mutationFn: async (data: any) => {
+  const updateMutation = useOptimisticMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
       return apiRequest("PUT", `/api/properties/${id}`, data);
     },
+    queryKey: [`/api/properties/${id}`],
+    optimisticUpdate: (oldData, variables) => ({
+      ...oldData,
+      ...variables,
+      updatedAt: new Date().toISOString()
+    }),
     onSuccess: () => {
       toast({
         title: "Property updated successfully",
@@ -99,7 +112,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
       queryClient.invalidateQueries({ queryKey: [`/api/properties/${id}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Failed to update property",
         description: error.message || "Please try again later",
@@ -108,7 +121,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
     },
   });
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -175,9 +188,9 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-2xl font-bold mb-4">Property not found</h1>
           <p className="text-muted-foreground mb-6">
-            The property you're trying to edit doesn't exist or you don't have permission to edit it.
+            The property you&apos;re trying to edit doesn&apos;t exist or you don&apos;t have permission to edit it.
           </p>
-          <Button onClick={() => setLocation('/dashboard')}>
+          <Button onClick={() => navigate('/dashboard')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Button>
@@ -192,7 +205,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => setLocation('/dashboard')}>
+            <Button variant="ghost" onClick={() => navigate('/dashboard')}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
@@ -202,7 +215,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setLocation(`/property/${id}`)}>
+            <Button variant="outline" onClick={() => navigate(`/property/${id}`)}>
               <Eye className="w-4 h-4 mr-2" />
               Preview
             </Button>
@@ -472,7 +485,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
 
           {/* Actions */}
           <div className="flex items-center justify-between">
-            <Button type="button" variant="outline" onClick={() => setLocation('/dashboard')}>
+            <Button type="button" variant="outline" onClick={() => navigate('/dashboard')}>
               Cancel
             </Button>
             <Button type="submit" disabled={updateMutation.isPending}>

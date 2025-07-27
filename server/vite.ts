@@ -1,200 +1,259 @@
 import express, { type Express } from "express";
-import fs from "fs";
+import fs from "fs/promises";
+import fsSync from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 
+// Calculate __dirname once at module level for better performance
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Create Vite logger instance once to avoid repeated instantiation
 const viteLogger = createLogger();
 
 /**
- * Enhanced logging function with better formatting and error handling
- * Provides consistent timestamp formatting and source identification
+ * Enhanced logging function with consistent formatting and source identification
+ * Uses more efficient date formatting and provides better visual separation
  */
 export function log(message: string, source = "express"): void {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-  
-  console.log(`${formattedTime} [${source}] ${message}`);
+  // Use toISOString for better performance and ISO standard formatting
+  const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  console.log(`[${timestamp}] ${source.toUpperCase()} | ${message}`);
 }
 
 /**
- * Sets up Vite development server with enhanced error handling and middleware configuration
- * This function integrates Vite's HMR and development features into Express
+ * Validates that a file exists and is readable
+ * Centralizes file existence checking with proper error context
+ */
+async function validateFileExists(filePath: string, description: string): Promise<void> {
+  try {
+    await fs.access(filePath, fsSync.constants.F_OK | fsSync.constants.R_OK);
+  } catch (error) {
+    const errorMessage = `${description} not found or not readable: ${filePath}`;
+    log(errorMessage, "validation");
+    throw new Error(errorMessage);
+  }
+}
+
+/**
+ * Sets up Vite development server with comprehensive error handling and optimization
+ * Integrates Vite's HMR capabilities while providing graceful error recovery
  */
 export async function setupVite(app: Express, server: Server): Promise<void> {
+  log("Initializing Vite development server", "vite");
+  
   try {
-    // Configure Vite server options with proper middleware mode
-    const serverOptions = {
+    // Validate template file exists before setting up Vite server
+    const templatePath = path.resolve(__dirname, "..", "index.html");
+    await validateFileExists(templatePath, "HTML template file");
+
+    // Configure Vite server with optimized settings for development
+    const viteServerOptions = {
       middlewareMode: true as const,
-      hmr: { server },
+      hmr: { 
+        server,
+        // Add overlay configuration for better error visibility
+        overlay: true,
+      },
       allowedHosts: true as const,
+      // Optimize dependency pre-bundling for faster startup
+      optimizeDeps: {
+        force: false, // Allow caching of dependencies
+      },
     };
 
-    // Create Vite server instance with enhanced error handling
+    // Create Vite server with enhanced error handling and logging
     const vite = await createViteServer({
       ...viteConfig,
       configFile: false,
       customLogger: {
         ...viteLogger,
+        // Enhance error logging without terminating the process
         error: (msg, options) => {
-          log(`Vite error: ${msg}`, "vite");
+          log(`Error occurred: ${msg}`, "vite");
           viteLogger.error(msg, options);
-          // More graceful error handling - don't immediately exit
-          // Allow the application to continue running in many cases
+          // Graceful error handling - continue operation when possible
+        },
+        warn: (msg, options) => {
+          log(`Warning: ${msg}`, "vite");
+          viteLogger.warn(msg, options);
         },
       },
-      server: serverOptions,
+      server: viteServerOptions,
       appType: "custom",
     });
 
-    // Apply Vite middleware to Express app
+    // Apply Vite middleware to Express application
     app.use(vite.middlewares);
     
-    // Enhanced catch-all route handler with better error handling
+    // Enhanced catch-all route handler with robust error recovery
     app.use("*", async (req, res, next) => {
-      const url = req.originalUrl;
+      const requestUrl = req.originalUrl;
       
       try {
-        const clientTemplate = path.resolve(
-          __dirname,
-          "..",
-          "client",
-          "index.html",
-        );
-
-        // Check if template file exists before attempting to read
-        if (!fs.existsSync(clientTemplate)) {
-          throw new Error(`Template file not found: ${clientTemplate}`);
+        // Read template with proper error handling
+        let template: string;
+        try {
+          template = await fs.readFile(templatePath, "utf-8");
+        } catch (readError) {
+          log(`Failed to read template file: ${(readError as Error).message}`, "vite");
+          throw new Error(`Template file read error: ${templatePath}`);
         }
-
-        // Read and process the HTML template
-        // Always reload from disk to catch changes during development
-        let template = await fs.promises.readFile(clientTemplate, "utf-8");
         
-        // Add cache-busting parameter to prevent stale module loading
+        // Add cache-busting with more efficient timestamp approach
+        const cacheBuster = Date.now().toString(36); // More compact than nanoid for this use case
         template = template.replace(
-          `src="/src/main.tsx"`,
-          `src="/src/main.tsx?v=${nanoid()}"`,
+          'src="/src/main.tsx"',
+          `src="/src/main.tsx?v=${cacheBuster}"`
         );
         
-        // Transform the HTML with Vite's processing pipeline
-        const page = await vite.transformIndexHtml(url, template);
+        // Process HTML through Vite transformation pipeline
+        const transformedPage = await vite.transformIndexHtml(requestUrl, template);
         
-        // Send the processed HTML with proper headers
-        res.status(200).set({ "Content-Type": "text/html" }).end(page);
+        // Send response with proper headers and caching directives
+        res
+          .status(200)
+          .set({
+            "Content-Type": "text/html",
+            "Cache-Control": "no-cache, no-store, must-revalidate", // Prevent caching in development
+            "Pragma": "no-cache",
+            "Expires": "0"
+          })
+          .end(transformedPage);
+          
       } catch (error) {
-        // Enhanced error handling with proper stack trace fixing
         const err = error as Error;
-        log(`Error processing request for ${url}: ${err.message}`, "vite");
+        log(`Request processing failed for ${requestUrl}: ${err.message}`, "vite");
         
-        // Fix stack trace for better debugging in development
+        // Apply Vite's stack trace enhancement for better debugging
         vite.ssrFixStacktrace(err);
         next(err);
       }
     });
 
-    log("Vite development server setup complete", "vite");
+    log("Vite development server configuration completed successfully", "vite");
   } catch (error) {
     const err = error as Error;
-    log(`Failed to setup Vite server: ${err.message}`, "vite");
-    throw err; // Re-throw to allow calling code to handle
+    log(`Vite server setup failed: ${err.message}`, "vite");
+    throw err; // Propagate error to caller for appropriate handling
   }
 }
 
 /**
- * Sets up static file serving for production builds
- * Includes comprehensive error checking and fallback handling
+ * Configures static file serving for production environments
+ * Includes comprehensive validation and platform-specific optimizations
  */
 export function serveStatic(app: Express): void {
-  // In Vercel, the static files are served directly, so we need to handle this differently
-  const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
+  log("Configuring static file serving for production", "static");
   
-  if (isVercel) {
-    // In Vercel, static files are handled by the platform
-    // We only need to handle the SPA fallback
-    log("Running in Vercel environment - static files handled by platform", "static");
-    return;
+  // Check for Vercel deployment environment
+  const isVercelEnvironment = !!(process.env.VERCEL || process.env.VERCEL_ENV);
+  
+  if (isVercelEnvironment) {
+    log("Detected Vercel environment - delegating static file serving to platform", "static");
+    return; // Vercel handles static files automatically
   }
   
-  const distPath = path.resolve(__dirname, "public");
+  const staticDirectory = path.resolve(__dirname, "public");
+  const indexFilePath = path.resolve(staticDirectory, "index.html");
   
-  // Enhanced directory existence check with better error messaging
-  if (!fs.existsSync(distPath)) {
-    const errorMessage = `Could not find the build directory: ${distPath}. Make sure to build the client first using your build command.`;
+  // Validate build directory and required files exist
+  if (!fsSync.existsSync(staticDirectory)) {
+    const errorMessage = `Build directory missing: ${staticDirectory}. Execute build command before starting production server.`;
     log(errorMessage, "static");
     throw new Error(errorMessage);
   }
 
-  // Verify the directory contains the expected index.html file
-  const indexPath = path.resolve(distPath, "index.html");
-  if (!fs.existsSync(indexPath)) {
-    const errorMessage = `Build directory exists but index.html not found at: ${indexPath}. Ensure your build process completed successfully.`;
+  if (!fsSync.existsSync(indexFilePath)) {
+    const errorMessage = `Index file missing: ${indexFilePath}. Verify build process completed successfully.`;
     log(errorMessage, "static");
     throw new Error(errorMessage);
   }
 
-  // Configure static file serving with enhanced options
-  app.use(express.static(distPath, {
-    // Add proper caching headers for static assets
-    maxAge: process.env.NODE_ENV === "production" ? "1y" : "0",
-    // Enable etag for better caching
-    etag: true,
-    // Set proper index file
+  // Configure Express static middleware with production optimizations
+  const staticOptions = {
+    // Aggressive caching for production assets
+    maxAge: process.env.NODE_ENV === "production" ? "365d" : "0",
+    etag: true, // Enable ETag for conditional requests
     index: "index.html",
-  }));
+    // Add compression support indicators
+    immutable: process.env.NODE_ENV === "production",
+    // Set proper fallthrough behavior
+    fallthrough: false,
+  };
 
-  // Enhanced catch-all route with better error handling
+  app.use(express.static(staticDirectory, staticOptions));
+
+  // SPA fallback route with comprehensive error handling
   app.use("*", (req, res) => {
-    const requestedPath = req.originalUrl;
+    const requestedRoute = req.originalUrl;
     
-    try {
-      // Log the fallback for debugging purposes
-      log(`Serving index.html for route: ${requestedPath}`, "static");
-      
-      // Send the index.html file for client-side routing
-      res.sendFile(indexPath, (err) => {
-        if (err) {
-          log(`Error serving index.html: ${err.message}`, "static");
-          res.status(500).send("Internal Server Error");
+    log(`Serving SPA fallback for route: ${requestedRoute}`, "static");
+    
+    // Send index.html with proper error handling
+    res.sendFile(indexFilePath, {
+      // Add headers for SPA routing
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      }
+    }, (sendError) => {
+      if (sendError) {
+        log(`Failed to serve index.html: ${sendError.message}`, "static");
+        
+        // Attempt graceful degradation
+        if (!res.headersSent) {
+          res.status(500).json({
+            error: "Application temporarily unavailable",
+            timestamp: new Date().toISOString(),
+          });
         }
-      });
-    } catch (error) {
-      const err = error as Error;
-      log(`Error in catch-all route: ${err.message}`, "static");
-      res.status(500).send("Internal Server Error");
-    }
+      }
+    });
   });
 
-  log(`Static file serving configured for: ${distPath}`, "static");
+  log(`Static file serving configured successfully: ${staticDirectory}`, "static");
 }
 
 /**
- * Utility function to determine if we're in development mode
- * Useful for conditional logic throughout the application
+ * Environment detection utility with caching for performance
+ * Determines runtime environment for conditional application behavior
  */
+let cachedEnvironmentCheck: boolean | null = null;
+
 export function isDevelopment(): boolean {
-  return process.env.NODE_ENV !== "production";
+  // Cache the environment check since NODE_ENV doesn't change during runtime
+  if (cachedEnvironmentCheck === null) {
+    cachedEnvironmentCheck = process.env.NODE_ENV !== "production";
+  }
+  return cachedEnvironmentCheck;
 }
 
 /**
- * Enhanced setup function that chooses the appropriate serving method
- * This provides a single entry point for server configuration
+ * Main server setup orchestrator that selects appropriate configuration
+ * Provides unified entry point with comprehensive error handling and logging
  */
 export async function setupServer(app: Express, server: Server): Promise<void> {
-  if (isDevelopment()) {
-    log("Setting up development server with Vite", "setup");
-    await setupVite(app, server);
-  } else {
-    log("Setting up production server with static files", "setup");
-    serveStatic(app);
+  const environment = isDevelopment() ? "development" : "production";
+  log(`Initializing ${environment} server configuration`, "setup");
+  
+  try {
+    if (isDevelopment()) {
+      await setupVite(app, server);
+      log("Development server with Vite HMR ready", "setup");
+    } else {
+      serveStatic(app);
+      log("Production server with static file serving ready", "setup");
+    }
+  } catch (error) {
+    const err = error as Error;
+    log(`Server setup failed: ${err.message}`, "setup");
+    
+    // In production, this should probably exit the process
+    // In development, we might want to continue with degraded functionality
+    throw err;
   }
 }
