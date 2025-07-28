@@ -93,7 +93,7 @@ export function useInfiniteScroll<TData = any, TError = Error>({
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        if (entry.isIntersecting) {
+        if (entry?.isIntersecting) {
           setIsNearBottom(true);
           query.fetchNextPage();
         } else {
@@ -169,7 +169,7 @@ export function useInfinitePropertyScroll(filters: Record<string, any> = {}) {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json',
         },
-        signal,
+        signal: signal || null,
       });
       
       if (!response.ok) {
@@ -195,7 +195,7 @@ export function useInfiniteMessageScroll(threadId: string) {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json',
         },
-        signal,
+        signal: signal || null,
       });
       
       if (!response.ok) {
@@ -228,7 +228,7 @@ export function useInfiniteSearchScroll(query: string, filters: Record<string, a
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json',
         },
-        signal,
+        signal: signal || null,
       });
       
       if (!response.ok) {

@@ -54,7 +54,7 @@ const properties: Property[] = [
     title: 'Modern 3-Bedroom Apartment',
     location: 'Westlands, Nairobi',
     price: 150_000,
-    image: '/placeholder-1.jpg',
+    image: '/assets/apartment-luxury-1.jpg',
     status: 'verified',
   },
   {

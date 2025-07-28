@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+// Removed Framer Motion for better performance and stability
 import { Heart, Share2, Star, MapPin, Maximize2, Bed, Bath, Square } from "lucide-react";
 import { Button } from "@shared/components/ui/button";
 import { Badge } from "@shared/components/ui/badge";
@@ -44,22 +44,12 @@ export function PropertyCard({
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Memoized animation variants to prevent unnecessary re-creation
-  const cardVariants = useMemo(() => ({
-    initial: { y: 20, opacity: 0 },
-    animate: { y: 0, opacity: 1 },
-    hover: { y: -5, transition: { duration: 0.2 } }
-  }), []);
-
-  const imageVariants = useMemo(() => ({
-    initial: { scale: 1 },
-    hover: { scale: 1.05, transition: { duration: 0.3 } }
-  }), []);
+  // Removed complex animation variants for better performance
 
   // Validate required data before rendering - show placeholder if no images
   const hasImages = property.images && property.images.length > 0;
   const displayImages = useMemo(() => {
-    return hasImages ? property.images : ['/placeholder-property.jpg'];
+    return hasImages ? property.images : ['/assets/apartment-luxury-1.jpg'];
   }, [hasImages, property.images]);
   
   if (!hasImages) {
@@ -157,17 +147,13 @@ export function PropertyCard({
   ), [property.bedrooms, property.bathrooms, property.area]);
 
   return (
-    <motion.div
+    <div
       className={cn(
-        "group relative bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow",
+        "group relative bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1",
         className
       )}
-      variants={cardVariants}
-      initial="initial"
-      animate="animate"
-      whileHover="hover"
-      onHoverStart={handleHoverStart}
-      onHoverEnd={handleHoverEnd}
+      onMouseEnter={handleHoverStart}
+      onMouseLeave={handleHoverEnd}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="article"
@@ -175,11 +161,10 @@ export function PropertyCard({
     >
       {/* Property Images with Gallery */}
       <div className="relative aspect-[4/3] overflow-hidden">
-        <motion.img
+        <img
           src={displayImages[currentImageIndex]}
           alt={`${property.title} - Image ${currentImageIndex + 1} of ${displayImages.length}`}
-          className="w-full h-full object-cover"
-          variants={imageVariants}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy" // Performance optimization
         />
         
@@ -309,6 +294,6 @@ export function PropertyCard({
           </Button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

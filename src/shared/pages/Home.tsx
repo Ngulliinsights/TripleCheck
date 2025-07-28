@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, memo, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import ListingCard from "../../property/components/ListingCard";
+import { CompareProvider } from "../../property/contexts/CompareContext";
 import { EnhancedHero } from "../components/hero/EnhancedHero";
 import { NewsBlog } from "../components/NewsBlog";
 import { Badge } from "../components/ui/badge";
@@ -568,7 +569,8 @@ export default function HomePage() {
   /* ---------------------------------------------------------------- */
 
   return (
-    <div className="min-h-screen bg-background">
+    <CompareProvider>
+      <div className="min-h-screen bg-background">
       {/* Hero Section with Enhanced Search */}
       <EnhancedHero
         variant="A"
@@ -721,6 +723,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </CompareProvider>
   );
 }

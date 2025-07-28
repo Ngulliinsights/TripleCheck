@@ -78,16 +78,16 @@ export function EnhancedNavigation() {
       window.addEventListener("scroll", throttledScrollHandler, {
         passive: true,
       });
-    } catch (error) {
-      console.warn("Failed to add scroll listener:", error);
+    } catch {
+      // Failed to add scroll listener - continue without scroll optimization
     }
 
     return () => {
       isActive = false;
       try {
         window.removeEventListener("scroll", throttledScrollHandler);
-      } catch (error) {
-        console.warn("Failed to remove scroll listener:", error);
+      } catch {
+        // Failed to remove scroll listener - continue cleanup
       }
       if (timeoutId) {
         clearTimeout(timeoutId);
@@ -284,30 +284,30 @@ export function EnhancedNavigation() {
       )}
     >
       <nav
-        className="container mx-auto px-4 py-3"
+        className="py-3"
         role="navigation"
         aria-label="Main navigation"
       >
-        <div className="flex items-center justify-between">
-          {/* Logo and main navigation */}
-          <div className="flex items-center space-x-8">
-            <div className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-            
-              <Logo
-                size="md"
-                variant={scrolled ? "default" : "light"}
-                interactive={true}
-                href="/"
-              />
-              <Wordmark
-                size="md"
-                variant={scrolled ? "default" : "light"}
-                animated={true}
-                interactive={true}
-                href="/"
-              />
-            </div>
+        <div className="container mx-auto px-1 flex items-center justify-between">
+          {/* Logo with reduced padding - 4px instead of 16px */}
+          <div className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+            <Logo
+              size="md"
+              variant={scrolled ? "default" : "light"}
+              interactive={true}
+              href="/"
+            />
+            <Wordmark
+              size="md"
+              variant={scrolled ? "default" : "light"}
+              animated={true}
+              interactive={true}
+              href="/"
+            />
+          </div>
 
+          {/* Main navigation moved to center */}
+          <div className="flex items-center space-x-8 flex-1 justify-center">
             <NavigationMenu>
               <NavigationMenuList>
                 {navigationSections.map((section) => (
@@ -406,6 +406,20 @@ export function EnhancedNavigation() {
               >
                 <HelpCircle className="w-5 h-5" />
               </Button>
+
+              {/* Developer Dashboard - Only show in development */}
+              {import.meta.env.MODE === "development" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden md:flex items-center gap-2 hover:bg-gray-100 text-xs"
+                  aria-label="Developer Dashboard"
+                  onClick={() => window.location.href = '/dev'}
+                >
+                  <BarChart3 className="w-3 h-3" />
+                  Dev
+                </Button>
+              )}
 
               <Button
                 variant="outline"

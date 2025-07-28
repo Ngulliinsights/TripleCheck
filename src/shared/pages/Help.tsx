@@ -175,10 +175,10 @@ export default function Help() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary to-primary/80 text-white py-20">
+      <section className="bg-gradient-hero-primary text-white py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6">
+            <h1 className="text-5xl font-bold mb-6 text-coral-dark">
               How Can We Help You?
             </h1>
             <p className="text-xl mb-8 text-white/90">

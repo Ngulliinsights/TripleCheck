@@ -1,12 +1,26 @@
+
 import { Button } from "@shared/components/ui/button";
 import { Input } from "@shared/components/ui/input";
 import { Logo } from "@shared/components/ui/logo";
 import { Wordmark } from "@shared/components/ui/wordmark";
 import { cn } from "@shared/lib/utils";
+import {
+  safeNavigate,
+  safeSearchNavigate,
+  NAVIGATION_TIMEOUTS,
+} from "@shared/utils/safe-navigation";
 import { Menu, X, Search, User, LogOut, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { safeNavigate, safeSearchNavigate, NAVIGATION_TIMEOUTS } from "@shared/utils/safe-navigation";
+
+// Simple logging utility for development
+const logError = (message: string, error?: unknown) => {
+  if (process.env.NODE_ENV === "development") {
+    // Only log in development mode
+    // eslint-disable-next-line no-console
+    console.warn(message, error);
+  }
+};
 
 // Safe accessibility hook - moved outside component to avoid conditional hook calls
 const createSafeAccessibilityHook = () => {
@@ -17,14 +31,16 @@ const createSafeAccessibilityHook = () => {
         const focusableElements = element.querySelectorAll(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
-        
+
         if (focusableElements.length === 0) {
-          console.warn("No focusable elements found for focus trap");
+          logError("No focusable elements found for focus trap");
           return () => {}; // Return empty cleanup function
         }
 
         const firstElement = focusableElements[0] as HTMLElement;
-        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+        const lastElement = focusableElements[
+          focusableElements.length - 1
+        ] as HTMLElement;
 
         const handleTabKey = (e: KeyboardEvent) => {
           if (e.key === "Tab") {
@@ -41,25 +57,25 @@ const createSafeAccessibilityHook = () => {
                 }
               }
             } catch (focusError) {
-              console.warn("Focus trap tab handling error:", focusError);
+              logError("Focus trap tab handling error:", focusError);
             }
           }
         };
 
         document.addEventListener("keydown", handleTabKey, { passive: false });
-        
+
         // Focus first element safely
         try {
           firstElement?.focus();
         } catch (focusError) {
-          console.warn("Failed to focus first element:", focusError);
+          logError("Failed to focus first element:", focusError);
         }
 
         return () => {
           document.removeEventListener("keydown", handleTabKey);
         };
       } catch (error) {
-        console.warn("Focus trap setup error:", error);
+        logError("Focus trap setup error:", error);
         return () => {}; // Return empty cleanup function
       }
     },
@@ -73,10 +89,10 @@ const createSafeAccessibilityHook = () => {
         announcement.setAttribute("aria-atomic", "true");
         announcement.className = "sr-only";
         announcement.textContent = message;
-        
+
         if (document.body) {
           document.body.appendChild(announcement);
-          
+
           // Use a more reliable cleanup method
           const timeoutId = setTimeout(() => {
             try {
@@ -84,15 +100,15 @@ const createSafeAccessibilityHook = () => {
                 announcement.parentNode.removeChild(announcement);
               }
             } catch (cleanupError) {
-              console.warn("Failed to cleanup announcement element:", cleanupError);
+              logError("Failed to cleanup announcement element:", cleanupError);
             }
           }, 1000);
-          
+
           // Store timeout ID for potential cleanup
-          announcement.setAttribute('data-timeout-id', timeoutId.toString());
+          announcement.setAttribute("data-timeout-id", timeoutId.toString());
         }
       } catch (error) {
-        console.warn("Failed to create live region announcement:", error);
+        logError("Failed to create live region announcement:", error);
       }
     },
   };
@@ -153,11 +169,11 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
         timeout: NAVIGATION_TIMEOUTS.NORMAL,
         fallbackUrl: "/",
         onError: (error) => {
-          console.warn("Mobile navigation error:", error);
+          logError("Mobile navigation error:", error);
         },
         onTimeout: () => {
-          console.warn("Mobile navigation timeout");
-        }
+          logError("Mobile navigation timeout");
+        },
       });
     },
     [navigate]
@@ -175,11 +191,11 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
         timeout: NAVIGATION_TIMEOUTS.NORMAL,
         fallbackUrl: "/search",
         onError: (error) => {
-          console.warn("Mobile search navigation error:", error);
+          logError("Mobile search navigation error:", error);
         },
         onTimeout: () => {
-          console.warn("Mobile search navigation timeout");
-        }
+          logError("Mobile search navigation timeout");
+        },
       });
     },
     [navigate]
@@ -232,7 +248,7 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
         startTimeRef.current = Date.now();
       }
     } catch (error) {
-      console.warn("Touch start error:", error);
+      logError("Touch start error:", error);
     }
   }, []);
 
@@ -244,13 +260,13 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
 
       const deltaX = touch.clientX - startXRef.current;
       const deltaTime = Date.now() - startTimeRef.current;
-      
+
       // Simple left swipe detection to close menu
       if (deltaX < -50 && deltaTime < 500) {
         setIsOpen(false);
       }
     } catch (error) {
-      console.warn("Touch end error:", error);
+      logError("Touch end error:", error);
     }
   }, []);
 
@@ -269,7 +285,11 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
     let isActive = true;
 
     const handleClickOutside = (event: Event) => {
-      if (isActive && overlayRef.current && event.target === overlayRef.current) {
+      if (
+        isActive &&
+        overlayRef.current &&
+        event.target === overlayRef.current
+      ) {
         setIsOpen(false);
       }
     };
@@ -284,9 +304,13 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
     if (isOpen) {
       try {
         // Add event listeners with better error handling
-        document.addEventListener("mousedown", handleClickOutside, { passive: true });
-        document.addEventListener("keydown", handleEscapeKey, { passive: true });
-        
+        document.addEventListener("mousedown", handleClickOutside, {
+          passive: true,
+        });
+        document.addEventListener("keydown", handleEscapeKey, {
+          passive: true,
+        });
+
         // Prevent background scroll safely
         const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
@@ -295,7 +319,7 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
         try {
           announceLiveRegion("Navigation menu opened", "polite");
         } catch (error) {
-          console.warn("Failed to announce menu opening:", error);
+          logError("Failed to announce menu opening:", error);
         }
 
         // Set up focus trap for accessibility with error handling
@@ -303,7 +327,7 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
           try {
             focusCleanup = trapFocus(panelRef.current);
           } catch (error) {
-            console.warn("Failed to set up focus trap:", error);
+            logError("Failed to set up focus trap:", error);
           }
         }
 
@@ -315,19 +339,19 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
             document.removeEventListener("keydown", handleEscapeKey);
             document.body.style.overflow = originalOverflow;
           } catch (error) {
-            console.warn("Failed to cleanup event listeners:", error);
+            logError("Failed to cleanup event listeners:", error);
           }
-          
+
           if (focusCleanup) {
             try {
               focusCleanup();
             } catch (error) {
-              console.warn("Failed to cleanup focus trap:", error);
+              logError("Failed to cleanup focus trap:", error);
             }
           }
         };
       } catch (error) {
-        console.warn("Failed to set up mobile nav listeners:", error);
+        logError("Failed to set up mobile nav listeners:", error);
         return () => {
           isActive = false;
         };
@@ -353,10 +377,10 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
     return () => {
       try {
         // Clean up any remaining timeouts or intervals
-        const announcements = document.querySelectorAll('[data-timeout-id]');
+        const announcements = document.querySelectorAll("[data-timeout-id]");
         announcements.forEach((announcement) => {
           try {
-            const timeoutId = announcement.getAttribute('data-timeout-id');
+            const timeoutId = announcement.getAttribute("data-timeout-id");
             if (timeoutId) {
               clearTimeout(parseInt(timeoutId, 10));
             }
@@ -364,14 +388,14 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
               announcement.parentNode.removeChild(announcement);
             }
           } catch (error) {
-            console.warn('Failed to cleanup announcement:', error);
+            logError("Failed to cleanup announcement:", error);
           }
         });
-        
+
         // Reset body overflow in case component unmounts while menu is open
         document.body.style.overflow = "unset";
       } catch (error) {
-        
+        logError("Failed to cleanup mobile nav component:", error);
       }
     };
   }, []);
@@ -403,7 +427,7 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
         <div
           ref={overlayRef}
           className={cn(
-            "fixed inset-0 z-50 bg-black/70 backdrop-blur-md transition-opacity duration-300",
+            "fixed inset-0 z-50 mobile-nav-overlay transition-opacity duration-300",
             isOpen ? "opacity-100" : "opacity-0"
           )}
           role="dialog"
@@ -414,14 +438,14 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
           <div
             ref={panelRef}
             className={cn(
-              "fixed top-0 left-0 h-full w-80 bg-white/95 backdrop-blur-lg shadow-2xl border-r border-gray-200/50 transform transition-transform duration-300 ease-out",
+              "fixed top-0 left-0 h-full w-80 mobile-nav-panel shadow-2xl border-r border-gray-300 transform transition-transform duration-300 ease-out",
               isOpen ? "translate-x-0" : "-translate-x-full"
             )}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
             {/* Header Section */}
-            <div className="flex items-center justify-between p-4 border-b bg-primary/95 backdrop-blur-sm text-white shadow-sm">
+            <div className="flex items-center justify-between pl-1 pr-4 py-4 border-b mobile-nav-header text-white shadow-sm">
               <div className="flex items-center gap-2">
                 <Logo
                   size="sm"
@@ -451,7 +475,7 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
             </div>
 
             {/* Search Section */}
-            <div className="p-4 border-b bg-gray-50/80 backdrop-blur-sm">
+            <div className="p-4 border-b bg-gray-50 backdrop-blur-sm">
               <form onSubmit={handleSearchSubmit} className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -459,14 +483,14 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
                   placeholder="Search properties..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-white/90 backdrop-blur-sm border-gray-300/50 focus:bg-white focus:border-primary"
+                  className="pl-10 bg-white backdrop-blur-sm border-gray-300 focus:bg-white focus:border-primary"
                   aria-label="Search properties"
                 />
               </form>
             </div>
 
             {/* Navigation Content - Optimized for Mobile */}
-            <div className="flex-1 overflow-y-auto bg-white/50 backdrop-blur-sm">
+            <div className="flex-1 overflow-y-auto bg-white backdrop-blur-sm">
               {/* Quick Actions Grid */}
               <div className="p-4 border-b border-gray-200/50">
                 <div className="grid grid-cols-2 gap-2">
@@ -559,7 +583,7 @@ export function MobileNav({ className, variant = "default" }: MobileNavProps) {
             </div>
 
             {/* Footer Actions - Authentication-aware */}
-            <div className="border-t bg-gray-50/90 backdrop-blur-sm p-3 shadow-inner">
+            <div className="border-t bg-gray-50 backdrop-blur-sm p-3 shadow-inner">
               {
                 isAuthenticated ?
                   // Authenticated user actions

@@ -57,27 +57,43 @@ export function NavigationSearch({
     {
       id: '1',
       title: '3 Bedroom Apartment in Victoria Island',
-      description: 'Modern apartment with ocean view',
+      description: 'Modern apartment with ocean view - Verified Documents',
       category: 'property',
       href: '/properties/1',
       icon: <Building className="w-4 h-4" />,
-      metadata: { price: 'KSh 50M', location: 'Westlands', type: 'Apartment' }
+      metadata: { price: 'KSh 50M', location: 'Westlands', type: 'Apartment', verificationStatus: 'verified' }
     },
     {
       id: '2',
       title: 'Nairobi Properties',
-      description: 'Browse all properties in Nairobi',
+      description: 'Browse all verified properties in Nairobi',
       category: 'location',
-      href: '/properties?location=nairobi',
+      href: '/properties?location=nairobi&verified=true',
       icon: <MapPin className="w-4 h-4" />
     },
     {
       id: '3',
-      title: 'Property Verification Service',
-      description: 'Verify property authenticity',
+      title: 'Document Verification Service',
+      description: 'AI-powered document authenticity verification',
       category: 'service',
-      href: '/services/verification',
+      href: '/services/document-verification',
       icon: <Search className="w-4 h-4" />
+    },
+    {
+      id: '4',
+      title: 'Land Verification Kenya',
+      description: 'Comprehensive Kenya land verification with expert coordination',
+      category: 'service',
+      href: '/services/land-verification',
+      icon: <Search className="w-4 h-4" />
+    },
+    {
+      id: '5',
+      title: 'Trust Score Dashboard',
+      description: 'View your community trust score and document history',
+      category: 'page',
+      href: '/dashboard/trust',
+      icon: <TrendingUp className="w-4 h-4" />
     }
   ], []);
 

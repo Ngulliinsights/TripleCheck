@@ -73,7 +73,7 @@ const RealEstateFraudCommunity = memo(() => {
   const queryClient = useQueryClient();
 
   // Debounce search term for better performance
-  const { debouncedValue: debouncedSearchTerm } = useDebounce(searchTerm, 300);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Fetch experiences with React Query
   const {

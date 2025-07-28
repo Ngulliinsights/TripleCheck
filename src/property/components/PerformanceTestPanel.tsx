@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../shared/component
 import { Button } from '../../shared/components/ui/button';
 import { Badge } from '../../shared/components/ui/badge';
 import { usePerformanceMonitor } from '../utils/performanceMonitor';
+import { raceConditionTester } from '../utils/raceConditionTest';
 import { AlertTriangle, CheckCircle, Activity, Zap } from 'lucide-react';
 
 interface PerformanceTestPanelProps {
@@ -44,36 +45,23 @@ export const PerformanceTestPanel: React.FC<PerformanceTestPanelProps> = ({ clas
   }, [performanceMonitor]);
 
   const analyzePerformance = (currentStats: typeof stats) => {
+    // Use the enhanced race condition tester
+    const testResults = raceConditionTester.runAllTests();
+    
     const results = {
-      raceConditions: false,
-      infiniteLoops: false,
-      excessiveRenders: false,
-      performanceScore: 'excellent' as const
+      raceConditions: !testResults.tests.raceConditions.passed,
+      infiniteLoops: !testResults.tests.debouncing.passed,
+      excessiveRenders: !testResults.tests.excessiveRenders.passed,
+      performanceScore: testResults.overall === 'PASS' ? 'excellent' as const : 'poor' as const
     };
 
-    // Check for race conditions
-    performanceMonitor.detectRaceConditions();
-
-    // Check for infinite loops (more than 20 API calls in last minute)
-    if (currentStats.recentApiCalls > 20) {
-      results.infiniteLoops = true;
+    // Adjust score based on severity
+    if (results.infiniteLoops) {
       results.performanceScore = 'critical';
-    }
-
-    // Check for excessive renders (more than 100 renders total)
-    if (currentStats.totalRenders > 100) {
-      results.excessiveRenders = true;
-      if (results.performanceScore !== 'critical') {
-        results.performanceScore = 'poor';
-      }
-    }
-
-    // Check average time between calls (should be > 300ms due to debouncing)
-    if (currentStats.averageTimeBetweenCalls < 300 && currentStats.totalApiCalls > 5) {
-      results.raceConditions = true;
-      if (results.performanceScore === 'excellent') {
-        results.performanceScore = 'good';
-      }
+    } else if (results.raceConditions || results.excessiveRenders) {
+      results.performanceScore = 'poor';
+    } else if (currentStats.averageTimeBetweenCalls < 300 && currentStats.totalApiCalls > 5) {
+      results.performanceScore = 'good';
     }
 
     setTestResults(results);

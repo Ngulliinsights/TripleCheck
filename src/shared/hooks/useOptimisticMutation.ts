@@ -42,7 +42,7 @@ export function useOptimisticMutation<TData = unknown, TError = Error, TVariable
   // Handle error callback using useEffect (React Query v5 pattern)
   useEffect(() => {
     if (mutation.isError && options.onError && mutation.error) {
-      options.onError(mutation.error as TError, mutation.variables as TVariables, mutation.context as TContext);
+      options.onError(mutation.error as TError, mutation.variables as TVariables, mutation.context as TContext | undefined);
       
       // Roll back optimistic update on error
       const context = mutation.context as { previousData?: unknown };

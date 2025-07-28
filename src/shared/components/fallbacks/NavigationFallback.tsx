@@ -73,6 +73,8 @@ export function NavigationFallback() {
         {/* Mobile menu button */}
         <button
           className="md:hidden p-2 rounded-md text-gray-700 hover:text-primary hover:bg-gray-100"
+          aria-label="Toggle mobile menu"
+          title="Toggle mobile menu"
           onClick={() => {
             // Simple mobile menu toggle
             const mobileMenu = document.getElementById('mobile-menu-fallback');

@@ -327,7 +327,13 @@ export function useFormValidation(config: FormConfig): UseFormValidationReturn {
   const setTouched = useCallback((fieldName: string, touched: boolean = true) => {
     setFields(prev => ({
       ...prev,
-      [fieldName]: { ...prev[fieldName], touched },
+      [fieldName]: { 
+        value: prev[fieldName]?.value || '',
+        error: prev[fieldName]?.error || null,
+        validating: prev[fieldName]?.validating || false,
+        dirty: prev[fieldName]?.dirty || false,
+        touched 
+      },
     }));
   }, []);
 

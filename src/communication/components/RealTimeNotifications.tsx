@@ -7,7 +7,7 @@ import { Badge } from '../../shared/components/ui/badge';
 import { Bell, X, Check, AlertTriangle, Info, MessageSquare, Home } from 'lucide-react';
 import { useWebSocketMessage } from '../../infrastructure/realtime/websocket-client';
 import { useAuth } from '../../auth/hooks/useAuth';
-import { motion, AnimatePresence } from 'framer-motion';
+// Removed Framer Motion for better performance and stability
 
 interface RealTimeNotification {
   id: string;
@@ -71,7 +71,7 @@ export function RealTimeNotifications({
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(notification.title, {
         body: notification.message,
-        icon: '/favicon.ico',
+        icon: '/assets/Artmark.svg',
         tag: notification.id,
       });
     }
@@ -161,14 +161,11 @@ export function RealTimeNotifications({
       </div>
 
       {/* Notifications List */}
-      <AnimatePresence>
+      <div className="space-y-2">
         {!isMinimized && notifications.map((notification) => (
-          <motion.div
+          <div
             key={notification.id}
-            initial={{ opacity: 0, x: 300, scale: 0.8 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 300, scale: 0.8 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="animate-in slide-in-from-right-full duration-300 ease-out"
           >
             <Card className={`shadow-lg border-l-4 ${!notification.isRead ? 'bg-white' : 'bg-gray-50'}`}>
               <CardHeader className="pb-2">
@@ -236,9 +233,9 @@ export function RealTimeNotifications({
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         ))}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

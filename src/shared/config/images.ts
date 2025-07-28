@@ -49,7 +49,7 @@ export const brandAssets = {
   } as LogoAsset,
   
   favicon: {
-    ico: '/assets/TripleCheck.ico',
+    ico: '/assets/Artmark.svg',
     alt: 'TripleCheck Favicon'
   }
 } as const;

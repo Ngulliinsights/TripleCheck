@@ -141,6 +141,8 @@
     "setup:monitoring:dev": "npm run setup:monitoring development",
     "setup:monitoring:staging": "npm run setup:monitoring staging",
     "setup:monitoring:prod": "npm run setup:monitoring production",
+    "disable-route-preloader": "node scripts/disable-route-preloader.js",
+    "enable-route-preloader": "node scripts/disable-route-preloader.js enable",
     "clean": "rm -rf dist coverage .turbo",
     "prepare": "husky install"
   },

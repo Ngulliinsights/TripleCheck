@@ -512,6 +512,15 @@ export const WorkingRoutes = {
     preloadPriority: "normal",
   }),
 
+  // Developer tools - only available in development
+  DeveloperDashboard: createLazyRoute(() => import(
+    /* webpackChunkName: "dev-dashboard" */
+    "../shared/pages/DeveloperDashboard"
+  ), {
+    routePath: "/dev",
+    preloadPriority: "low",
+  }),
+
   // Service pages with comprehensive fallback handling
   Services: createRouteWithFallback(
     () => import("../shared/pages/Services"),

@@ -323,17 +323,17 @@ export function initializeHealthMonitoring() {
   // Run initial health check (only log critical errors in production)
   runSystemHealthCheck().then(health => {
     if (health.overall === 'error') {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('🚨 System health check failed! Some features may not work properly.');
+      if (import.meta.env.MODE === 'development') {
+        console.warn('🚨 System health check failed! Some features may not work properly.');
       }
-    } else if (health.overall === 'warning' && process.env.NODE_ENV === 'development') {
-      console.warn('⚠️ System health check has warnings. Some features may be degraded.');
-    } else if (process.env.NODE_ENV === 'development') {
-      console.log('✅ System health check passed. All systems operational.');
+    } else if (health.overall === 'warning' && import.meta.env.MODE === 'development') {
+      console.info('⚠️ System health check has warnings. Some features may be degraded.');
+    } else if (import.meta.env.MODE === 'development') {
+      console.info('✅ System health check passed. All systems operational.');
     }
   }).catch(error => {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Health check initialization failed:', error);
+    if (import.meta.env.MODE === 'development') {
+      console.info('Health check initialization failed:', error);
     }
   });
   

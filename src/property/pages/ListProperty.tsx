@@ -4,6 +4,8 @@ import { Check, Home, Upload, Building, Map, Info } from "lucide-react";
 import { useState, useCallback } from "react";
 
 import { apiRequest } from "../../infrastructure/api/queryClient";
+import { ImageSelector } from "../components/ImageSelector";
+import { PropertyImage, imagesToUrls } from "../utils/propertyImages";
 import { Button } from "../../shared/components/ui/button";
 import {
   Card,
@@ -44,6 +46,7 @@ interface PropertyFormData {
   location: string;
   description: string;
   ownershipStatus: string;
+  selectedImages: PropertyImage[];
 }
 
 /** Shape expected by the back-end */
@@ -96,7 +99,7 @@ const STEPS = [
   { id: 1, label: "Basic Details", icon: Home },
   { id: 2, label: "Features", icon: Building },
   { id: 3, label: "Location", icon: Map },
-  { id: 4, label: "Documents", icon: Upload },
+  { id: 4, label: "Photos & Documents", icon: Upload },
 ] as const;
 
 const API_PROPERTIES_ENDPOINT = "/api/properties";
@@ -114,6 +117,7 @@ const INITIAL_PROPERTY_DATA: PropertyFormData = {
   location: "",
   description: "",
   ownershipStatus: "freehold",
+  selectedImages: [],
 };
 
 /* -------------------------------------------------------------------------
@@ -200,6 +204,10 @@ export default function ListPropertyPage() {
 
   const handleSelectChange = useCallback((name: string, value: string) => {
     setPropertyData((prev) => ({ ...prev, [name]: value }));
+  }, []);
+
+  const handleImagesChange = useCallback((images: PropertyImage[]) => {
+    setPropertyData((prev) => ({ ...prev, selectedImages: images }));
   }, []);
 
   const validateStep1 = useCallback(() => {
@@ -349,7 +357,7 @@ export default function ListPropertyPage() {
         description: propertyData.description.trim(),
         location: propertyData.location.trim(),
         price: numericValues.price,
-        imageUrls: [],
+        imageUrls: imagesToUrls(propertyData.selectedImages),
         features: {
           bedrooms: numericValues.beds,
           bathrooms: numericValues.baths,
@@ -742,13 +750,6 @@ export default function ListPropertyPage() {
                             format: DOCUMENT_FORMAT_TEXT,
                             required: true,
                           },
-                          {
-                            title: "Property Photos",
-                            description:
-                              "High-quality interior and exterior photos",
-                            format: "JPG, PNG (max 2MB each, up to 20 photos)",
-                            required: false,
-                          },
                         ].map((doc, index) => (
                           <div
                             key={index}
@@ -780,6 +781,24 @@ export default function ListPropertyPage() {
                             </div>
                           </div>
                         ))}
+                      </div>
+
+                      {/* Property Images Section */}
+                      <div className="border border-gray-200 rounded-lg p-4">
+                        <div className="mb-4">
+                          <h4 className="font-medium text-gray-900 mb-1">
+                            Property Photos
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Add high-quality photos to showcase your property
+                          </p>
+                        </div>
+                        <ImageSelector
+                          propertyType={propertyData.type}
+                          selectedImages={propertyData.selectedImages}
+                          onImagesChange={handleImagesChange}
+                          maxImages={10}
+                        />
                       </div>
                     </div>
 

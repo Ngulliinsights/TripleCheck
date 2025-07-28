@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { LoadingSkeleton } from "../shared/components/ui/loading-skeleton";
 import { AppLayout } from "../shared/components/layout/AppLayout";
 import { ErrorBoundary } from "./error-boundary";
-import { RoutePerformanceMonitor } from "../infrastructure/routing/RoutePerformanceMonitor";
+
 import { WorkingRoutes } from "./lazy-routes";
 import {
   Card,
@@ -295,9 +295,6 @@ export function AppRouter() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Route Performance Monitor - only visible in development */}
-      <RoutePerformanceMonitor position="bottom-right" minimized={true} />
-
       <AppLayout>
         <main>
           <ErrorBoundary level="route" onError={(error) => setRouteError(error)}>
@@ -538,6 +535,16 @@ export function AppRouter() {
                 <Route
                   path="/resources/fraud"
                   element={<WorkingRoutes.FraudResources />}
+                />
+
+                {/* Developer Dashboard - Only accessible in development */}
+                <Route 
+                  path="/dev" 
+                  element={
+                    import.meta.env.MODE === "development" ? 
+                      <WorkingRoutes.DeveloperDashboard /> : 
+                      <WorkingRoutes.NotFound />
+                  } 
                 />
 
                 {/* Catch all route for 404 handling */}

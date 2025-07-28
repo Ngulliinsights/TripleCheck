@@ -70,7 +70,7 @@ export function useVirtualization({
     const offsets: number[] = [paddingStart];
     
     for (let i = 0; i < itemCount; i++) {
-      offsets[i + 1] = offsets[i] + getItemSize(i);
+      offsets[i + 1] = (offsets[i] || 0) + getItemSize(i);
     }
     
     return offsets;
@@ -78,7 +78,7 @@ export function useVirtualization({
 
   // Total size including padding
   const totalSize = useMemo(() => {
-    return itemOffsets[itemCount] + paddingEnd;
+    return (itemOffsets[itemCount] || 0) + paddingEnd;
   }, [itemOffsets, itemCount, paddingEnd]);
 
   // Find visible range
@@ -92,7 +92,7 @@ export function useVirtualization({
     
     while (startIndex <= endIndex) {
       const mid = Math.floor((startIndex + endIndex) / 2);
-      const offset = itemOffsets[mid];
+      const offset = itemOffsets[mid] || 0;
       
       if (offset < start) {
         startIndex = mid + 1;
@@ -109,7 +109,7 @@ export function useVirtualization({
     
     while (startIndex <= endIndex) {
       const mid = Math.floor((startIndex + endIndex) / 2);
-      const offset = itemOffsets[mid];
+      const offset = itemOffsets[mid] || 0;
       
       if (offset <= end) {
         startIndex = mid + 1;
@@ -136,9 +136,9 @@ export function useVirtualization({
       
       items.push({
         index: i,
-        start,
+        start: start || 0,
         size,
-        end: start + size,
+        end: (start || 0) + size,
         key: getItemKey(i),
       });
     }

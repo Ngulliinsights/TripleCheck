@@ -17,15 +17,16 @@
     --radius: 0.75rem;
 
     /* 
-      PRIMARY TRUST SYSTEM: Teal (#14B8A6)
+      PRIMARY TRUST SYSTEM: Darker Teal (#0F766E)
       ====================================
       Establishes credibility and professional competence for real estate decisions.
+      Updated for better contrast with white text (WCAG AA compliance).
     */
-    --primary: 180 100% 25%;
+    --primary: 180 84% 15%;
     --primary-foreground: 210 40% 98%;
-    --primary-hover: 180 100% 20%;
-    --primary-active: 180 100% 15%;
-    --primary-muted: 180 100% 95%;
+    --primary-hover: 180 84% 12%;
+    --primary-active: 180 84% 10%;
+    --primary-muted: 180 84% 95%;
 
     /* 
       SECONDARY WARMTH SYSTEM: Coral (#FF6B5A)
@@ -35,7 +36,7 @@
     --secondary: 7 86% 69%;
     --secondary-foreground: 210 40% 98%;
     --secondary-hover: 7 86% 64%;
-    --secondary-active: 7 86% 59%;
+    --secondary-active: 7 65% 45%;
     --secondary-muted: 7 86% 95%;
 
     /* 
@@ -108,10 +109,10 @@
       --background: 222.2 84% 4.9%;
       --foreground: 210 40% 98%;
 
-      --primary: 180 100% 40%;
+      --primary: 180 84% 35%;
       --primary-foreground: 222.2 84% 4.9%;
-      --primary-hover: 180 100% 45%;
-      --primary-muted: 180 100% 10%;
+      --primary-hover: 180 84% 40%;
+      --primary-muted: 180 84% 10%;
 
       --secondary: 7 86% 75%;
       --secondary-foreground: 222.2 84% 4.9%;
@@ -182,6 +183,24 @@
     outline: 2px solid hsl(var(--primary));
     outline-offset: 2px;
     border-radius: calc(var(--radius) - 2px);
+  }
+
+  /* Mobile Navigation Enhancements */
+  .mobile-nav-panel {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .mobile-nav-header {
+    background: rgb(15, 118, 110); /* teal-700 */
+    background: linear-gradient(135deg, rgb(15, 118, 110) 0%, rgb(13, 148, 136) 100%);
+  }
+
+  .mobile-nav-overlay {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
   /* Smooth scrolling */
@@ -556,6 +575,25 @@
     );
   }
 
+  /* High contrast hero gradients for accessibility */
+  .bg-gradient-hero-primary {
+    background: linear-gradient(
+      135deg,
+      hsl(222.2 84% 4.9%),
+      hsl(var(--primary)),
+      hsl(var(--primary) / 0.9)
+    );
+  }
+
+  .bg-gradient-hero-dark {
+    background: linear-gradient(
+      135deg,
+      hsl(222.2 84% 4.9%),
+      hsl(220 13% 18%),
+      hsl(215 28% 17%)
+    );
+  }
+
   /* Fluid typography */
   .text-fluid-xs {
     font-size: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
@@ -598,6 +636,9 @@
   /* Coral theme utilities */
   .text-coral {
     color: hsl(var(--secondary));
+  }
+  .text-coral-dark {
+    color: hsl(var(--secondary-active));
   }
   .bg-coral {
     background-color: hsl(var(--secondary));
@@ -693,6 +734,11 @@
     .mobile-nav-drag[data-drag-offset="-200"] { transform: translateX(-200px); }
     .mobile-nav-drag[data-drag-offset="-250"] { transform: translateX(-250px); }
     .mobile-nav-drag[data-drag-offset="-300"] { transform: translateX(-300px); }
+  }
+
+  /* Progress bar width utility for developer dashboard */
+  .progress-bar[data-width] {
+    width: calc(var(--progress-width, 0) * 1%);
   }
 }
 

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../shared/component
 import { Button } from '../../shared/components/ui/button';
 import { Badge } from '../../shared/components/ui/badge';
 import ListingCard from '../../property/components/ListingCard';
+import { CompareProvider } from '../../property/contexts/CompareContext';
 import PropertySearch from '../components/PropertySearch';
 import { Filter, SlidersHorizontal, MapPin } from 'lucide-react';
 import { Property } from '../../shared/types/property';
@@ -64,7 +65,7 @@ const mockProperties: Property[] = [
     description: 'Beautiful modern apartment with city views and premium amenities',
     location: 'Westlands, Nairobi',
     price: 150000,
-    images: ['/placeholder-property.jpg'],
+    images: ['/assets/apartment-luxury-1.jpg', '/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg'],
     features: {
       bedrooms: 3,
       bathrooms: 2,
@@ -84,7 +85,7 @@ const mockProperties: Property[] = [
     description: 'Perfect family home with large garden and quiet neighborhood setting',
     location: 'Karen, Nairobi',
     price: 280000,
-    images: ['/placeholder-property.jpg'],
+    images: ['/assets/house-executive-1.jpg', '/assets/Residential/luke-van-zyl-koH7IVuwRLw-unsplash.jpg'],
     features: {
       bedrooms: 4,
       bathrooms: 3,
@@ -230,7 +231,8 @@ export default function SearchResults() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <CompareProvider>
+      <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Enhanced search header with better accessibility */}
         <header className="mb-8">
@@ -431,6 +433,7 @@ export default function SearchResults() {
           </aside>
         </div>
       </div>
-    </div>
+      </div>
+    </CompareProvider>
   );
 }

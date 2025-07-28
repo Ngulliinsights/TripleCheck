@@ -17,8 +17,8 @@ export class APIError extends Error implements AppError {
   constructor(message: string, status?: number, code?: string, details?: any) {
     super(message);
     this.name = 'APIError';
-    this.status = status || undefined;
-    this.code = code || undefined;
+    this.status = status;
+    this.code = code;
     this.details = details;
   }
 }

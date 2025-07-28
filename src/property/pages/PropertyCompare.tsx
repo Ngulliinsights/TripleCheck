@@ -1,138 +1,238 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
-import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
-import { Button } from "@shared/components/ui/button";
 import { Badge } from "@shared/components/ui/badge";
-import { Progress } from "@shared/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/components/ui/select";
-import { 
-  Home, 
-  MapPin, 
-  DollarSign, 
-  Bed, 
-  Bath, 
-  Car, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@shared/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@shared/components/ui/select";
+import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
+import { cn } from "@shared/lib/utils";
+import type { PropertyFeatures } from "@shared/schema";
+import {
+  Home,
+  MapPin,
+  DollarSign,
+  Bed,
+  Bath,
+  Car,
   Calendar,
   Shield,
-  Star,
   ArrowLeftRight,
   TrendingUp,
   CheckCircle,
   XCircle,
-  Minus
+  Minus,
 } from "lucide-react";
-import { cn } from "@shared/lib/utils";
-import type { Property, PropertyFeatures } from "@shared/schema";
+import { useState } from "react";
+
+import type { Property } from "../../shared/types/property";
 
 export default function PropertyComparePage() {
   const [selectedProperty1, setSelectedProperty1] = useState<string>("");
   const [selectedProperty2, setSelectedProperty2] = useState<string>("");
 
   // Fetch all properties with enhanced safety and validation
-  const { data: properties, isLoading, hasValidData } = useSafePropertiesQuery(
-    undefined,
-    {
-      context: 'property-compare',
-      staleTime: 10 * 60 * 1000, // 10 minutes for comparison data
+  const { data: properties } = useSafePropertiesQuery(undefined, {
+    context: "property-compare",
+    staleTime: 10 * 60 * 1000, // 10 minutes for comparison data
   });
 
   // Get selected properties data with null checks
-  const property1 = Array.isArray(properties) 
-    ? properties.find((p: Property) => p.id.toString() === selectedProperty1)
+  const property1 =
+    Array.isArray(properties) ?
+      properties.find((p: Property) => p.id.toString() === selectedProperty1)
     : undefined;
-  const property2 = Array.isArray(properties)
-    ? properties.find((p: Property) => p.id.toString() === selectedProperty2)
+  const property2 =
+    Array.isArray(properties) ?
+      properties.find((p: Property) => p.id.toString() === selectedProperty2)
     : undefined;
 
   // Helper function to safely get features
-  const getFeatures = (property: Property | undefined): PropertyFeatures | null => {
+  const getFeatures = (
+    property: Property | undefined
+  ): PropertyFeatures | null => {
     if (!property?.features) return null;
     return property.features as PropertyFeatures;
   };
 
-  // Calculate comparison metrics
-  const getComparisonValue = (prop1: any, prop2: any, key: string) => {
-    const val1 = prop1?.[key];
-    const val2 = prop2?.[key];
-    
-    if (val1 === val2) return "equal";
-    if (val1 > val2) return "higher";
-    return "lower";
+  // Calculate comparison metrics with type safety
+  // Safe property access helper to avoid security warnings
+  const getPropertyValue = (
+    property: Property | undefined,
+    key: keyof Property
+  ): unknown => {
+    if (!property) return undefined;
+
+    // Type-safe property access
+    switch (key) {
+      case "price":
+        return property.price;
+      case "location":
+        return property.location;
+      case "title":
+        return property.title;
+      case "status":
+        return property.status;
+      case "id":
+        return property.id;
+      case "description":
+        return property.description;
+      case "images":
+        return property.images;
+      case "features":
+        return property.features;
+      default:
+        // For any other properties, return undefined to avoid security issues
+        return undefined;
+    }
   };
 
-  const getFeatureComparison = (prop1: Property, prop2: Property, feature: keyof PropertyFeatures) => {
-    const features1 = prop1?.features as PropertyFeatures;
-    const features2 = prop2?.features as PropertyFeatures;
-    const val1 = features1?.[feature];
-    const val2 = features2?.[feature];
-    
+  const getComparisonValue = (
+    prop1: Property | undefined,
+    prop2: Property | undefined,
+    key: keyof Property
+  ) => {
+    const val1 = getPropertyValue(prop1, key);
+    const val2 = getPropertyValue(prop2, key);
+
     if (val1 === val2) return "equal";
-    if (typeof val1 === 'number' && typeof val2 === 'number') {
+    if (typeof val1 === "number" && typeof val2 === "number") {
+      if (val1 > val2) return "higher";
+      return "lower";
+    }
+    return "different";
+  };
+
+  // Safe feature access helper
+  const getFeatureValue = (
+    property: Property,
+    feature: keyof PropertyFeatures
+  ): unknown => {
+    const features = property?.features as PropertyFeatures;
+    if (!features) return undefined;
+
+    // Type-safe feature access
+    switch (feature) {
+      case "bedrooms":
+        return features.bedrooms;
+      case "bathrooms":
+        return features.bathrooms;
+      case "squareFeet":
+        return features.squareFeet;
+      case "parkingSpaces":
+        return features.parkingSpaces;
+      case "yearBuilt":
+        return features.yearBuilt;
+      default:
+        return features[feature];
+    }
+  };
+
+  const getFeatureComparison = (
+    prop1: Property,
+    prop2: Property,
+    feature: keyof PropertyFeatures
+  ) => {
+    const val1 = getFeatureValue(prop1, feature);
+    const val2 = getFeatureValue(prop2, feature);
+
+    if (val1 === val2) return "equal";
+    if (typeof val1 === "number" && typeof val2 === "number") {
       return val1 > val2 ? "higher" : "lower";
     }
     return "different";
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0
+    return new Intl.NumberFormat("en-KE", {
+      style: "currency",
+      currency: "KES",
+      minimumFractionDigits: 0,
     }).format(price);
   };
 
   const getVerificationBadge = (status?: string) => {
     switch (status) {
-      case 'verified':
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Verified</Badge>;
-      case 'failed':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>;
-      case 'pending':
-        return <Badge variant="secondary"><Minus className="w-3 h-3 mr-1" />Pending</Badge>;
+      case "verified":
+        return (
+          <Badge className="bg-green-100 text-green-800">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Verified
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge variant="destructive">
+            <XCircle className="w-3 h-3 mr-1" />
+            Failed
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge variant="secondary">
+            <Minus className="w-3 h-3 mr-1" />
+            Pending
+          </Badge>
+        );
       default:
-        return <Badge variant="outline"><Minus className="w-3 h-3 mr-1" />Unverified</Badge>;
+        return (
+          <Badge variant="outline">
+            <Minus className="w-3 h-3 mr-1" />
+            Unverified
+          </Badge>
+        );
     }
   };
 
-  const ComparisonRow = ({ 
-    label, 
-    value1, 
-    value2, 
-    icon, 
+  const ComparisonRow = ({
+    label,
+    value1,
+    value2,
+    icon,
     comparison,
-    formatter = (v: any) => v
+    formatter = (v: unknown) => String(v ?? ""),
   }: {
     label: string;
-    value1: any;
-    value2: any;
+    value1: unknown;
+    value2: unknown;
     icon: React.ReactNode;
     comparison?: string;
-    formatter?: (value: any) => any;
+    formatter?: (value: unknown) => React.ReactNode;
   }) => (
     <div className="grid grid-cols-7 gap-4 py-3 border-b border-border/40">
       <div className="col-span-2 flex items-center gap-2 text-sm font-medium">
         {icon}
         {label}
       </div>
-      <div className={cn(
-        "col-span-2 text-sm flex items-center justify-center p-2 rounded",
-        comparison === "higher" && "bg-green-50 text-green-700 font-semibold",
-        comparison === "lower" && "bg-red-50 text-red-600",
-        comparison === "equal" && "bg-blue-50 text-blue-700"
-      )}>
-        {formatter(value1) || "—"}
+      <div
+        className={cn(
+          "col-span-2 text-sm flex items-center justify-center p-2 rounded",
+          comparison === "higher" && "bg-green-50 text-green-700 font-semibold",
+          comparison === "lower" && "bg-red-50 text-red-600",
+          comparison === "equal" && "bg-blue-50 text-blue-700"
+        )}
+      >
+        {formatter(value1) ?? "—"}
       </div>
       <div className="col-span-1 flex items-center justify-center">
         <ArrowLeftRight className="w-4 h-4 text-muted-foreground" />
       </div>
-      <div className={cn(
-        "col-span-2 text-sm flex items-center justify-center p-2 rounded",
-        comparison === "lower" && "bg-green-50 text-green-700 font-semibold",
-        comparison === "higher" && "bg-red-50 text-red-600",
-        comparison === "equal" && "bg-blue-50 text-blue-700"
-      )}>
-        {formatter(value2) || "—"}
+      <div
+        className={cn(
+          "col-span-2 text-sm flex items-center justify-center p-2 rounded",
+          comparison === "lower" && "bg-green-50 text-green-700 font-semibold",
+          comparison === "higher" && "bg-red-50 text-red-600",
+          comparison === "equal" && "bg-blue-50 text-blue-700"
+        )}
+      >
+        {formatter(value2) ?? "—"}
       </div>
     </div>
   );
@@ -159,15 +259,23 @@ export default function PropertyComparePage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Property 1</label>
-                <Select value={selectedProperty1} onValueChange={setSelectedProperty1}>
-                  <SelectTrigger>
+                <label
+                  htmlFor="property1-select"
+                  className="text-sm font-medium"
+                >
+                  Property 1
+                </label>
+                <Select
+                  value={selectedProperty1}
+                  onValueChange={setSelectedProperty1}
+                >
+                  <SelectTrigger id="property1-select">
                     <SelectValue placeholder="Select first property" />
                   </SelectTrigger>
                   <SelectContent>
                     {properties?.map((property) => (
-                      <SelectItem 
-                        key={property.id} 
+                      <SelectItem
+                        key={property.id}
                         value={property.id.toString()}
                         disabled={property.id.toString() === selectedProperty2}
                       >
@@ -177,17 +285,25 @@ export default function PropertyComparePage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">Property 2</label>
-                <Select value={selectedProperty2} onValueChange={setSelectedProperty2}>
-                  <SelectTrigger>
+                <label
+                  htmlFor="property2-select"
+                  className="text-sm font-medium"
+                >
+                  Property 2
+                </label>
+                <Select
+                  value={selectedProperty2}
+                  onValueChange={setSelectedProperty2}
+                >
+                  <SelectTrigger id="property2-select">
                     <SelectValue placeholder="Select second property" />
                   </SelectTrigger>
                   <SelectContent>
                     {properties?.map((property) => (
-                      <SelectItem 
-                        key={property.id} 
+                      <SelectItem
+                        key={property.id}
                         value={property.id.toString()}
                         disabled={property.id.toString() === selectedProperty1}
                       >
@@ -220,17 +336,16 @@ export default function PropertyComparePage() {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                      {property1.images?.[0] ? (
-                        <img 
-                          src={property1.images[0]} 
+                      {property1.images?.[0] ?
+                        <img
+                          src={property1.images[0]}
                           alt={property1.title}
                           className="w-full h-full object-cover"
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
+                      : <div className="w-full h-full flex items-center justify-center">
                           <Home className="w-12 h-12 text-muted-foreground" />
                         </div>
-                      )}
+                      }
                     </div>
                     <div className="text-2xl font-bold text-green-600">
                       {formatPrice(property1.price)}
@@ -256,17 +371,16 @@ export default function PropertyComparePage() {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                      {property2.images?.[0] ? (
-                        <img 
-                          src={property2.images[0]} 
+                      {property2.images?.[0] ?
+                        <img
+                          src={property2.images[0]}
                           alt={property2.title}
                           className="w-full h-full object-cover"
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
+                      : <div className="w-full h-full flex items-center justify-center">
                           <Home className="w-12 h-12 text-muted-foreground" />
                         </div>
-                      )}
+                      }
                     </div>
                     <div className="text-2xl font-bold text-green-600">
                       {formatPrice(property2.price)}
@@ -292,8 +406,14 @@ export default function PropertyComparePage() {
                     value1={property1.price}
                     value2={property2.price}
                     icon={<DollarSign className="w-4 h-4" />}
-                    comparison={getComparisonValue(property1, property2, 'price')}
-                    formatter={formatPrice}
+                    comparison={getComparisonValue(
+                      property1,
+                      property2,
+                      "price"
+                    )}
+                    formatter={(value: unknown) =>
+                      typeof value === "number" ? formatPrice(value) : "—"
+                    }
                   />
 
                   {/* Location */}
@@ -310,7 +430,11 @@ export default function PropertyComparePage() {
                     value1={getFeatures(property1)?.bedrooms}
                     value2={getFeatures(property2)?.bedrooms}
                     icon={<Bed className="w-4 h-4" />}
-                    comparison={getFeatureComparison(property1, property2, 'bedrooms')}
+                    comparison={getFeatureComparison(
+                      property1,
+                      property2,
+                      "bedrooms"
+                    )}
                   />
 
                   {/* Bathrooms */}
@@ -319,7 +443,11 @@ export default function PropertyComparePage() {
                     value1={getFeatures(property1)?.bathrooms}
                     value2={getFeatures(property2)?.bathrooms}
                     icon={<Bath className="w-4 h-4" />}
-                    comparison={getFeatureComparison(property1, property2, 'bathrooms')}
+                    comparison={getFeatureComparison(
+                      property1,
+                      property2,
+                      "bathrooms"
+                    )}
                   />
 
                   {/* Square Feet */}
@@ -328,8 +456,16 @@ export default function PropertyComparePage() {
                     value1={getFeatures(property1)?.squareFeet}
                     value2={getFeatures(property2)?.squareFeet}
                     icon={<Home className="w-4 h-4" />}
-                    comparison={getFeatureComparison(property1, property2, 'squareFeet')}
-                    formatter={(v: number) => v ? `${v.toLocaleString()} sq ft` : undefined}
+                    comparison={getFeatureComparison(
+                      property1,
+                      property2,
+                      "squareFeet"
+                    )}
+                    formatter={(value: unknown) =>
+                      typeof value === "number" && value > 0 ?
+                        `${value.toLocaleString()} sq ft`
+                      : "—"
+                    }
                   />
 
                   {/* Parking Spaces */}
@@ -338,7 +474,11 @@ export default function PropertyComparePage() {
                     value1={getFeatures(property1)?.parkingSpaces}
                     value2={getFeatures(property2)?.parkingSpaces}
                     icon={<Car className="w-4 h-4" />}
-                    comparison={getFeatureComparison(property1, property2, 'parkingSpaces')}
+                    comparison={getFeatureComparison(
+                      property1,
+                      property2,
+                      "parkingSpaces"
+                    )}
                   />
 
                   {/* Year Built */}
@@ -347,7 +487,11 @@ export default function PropertyComparePage() {
                     value1={getFeatures(property1)?.yearBuilt}
                     value2={getFeatures(property2)?.yearBuilt}
                     icon={<Calendar className="w-4 h-4" />}
-                    comparison={getFeatureComparison(property1, property2, 'yearBuilt')}
+                    comparison={getFeatureComparison(
+                      property1,
+                      property2,
+                      "yearBuilt"
+                    )}
                   />
 
                   {/* Verification Status */}
@@ -380,24 +524,28 @@ export default function PropertyComparePage() {
                   <div>
                     <h4 className="font-medium mb-3">{property1.title}</h4>
                     <div className="space-y-2">
-                      {(getFeatures(property1)?.amenities || []).map((amenity: string, index: number) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span className="text-sm">{amenity}</span>
-                        </div>
-                      ))}
+                      {(getFeatures(property1)?.amenities || []).map(
+                        (amenity: string, index: number) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <span className="text-sm">{amenity}</span>
+                          </div>
+                        )
+                      )}
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="font-medium mb-3">{property2.title}</h4>
                     <div className="space-y-2">
-                      {(getFeatures(property2)?.amenities || []).map((amenity: string, index: number) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span className="text-sm">{amenity}</span>
-                        </div>
-                      ))}
+                      {(getFeatures(property2)?.amenities || []).map(
+                        (amenity: string, index: number) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <span className="text-sm">{amenity}</span>
+                          </div>
+                        )
+                      )}
                     </div>
                   </div>
                 </div>
@@ -420,34 +568,46 @@ export default function PropertyComparePage() {
                       <div className="flex justify-between text-sm">
                         <span>Price per sq ft:</span>
                         <span className="font-medium">
-                          {getFeatures(property1)?.squareFeet 
-                            ? formatPrice(Math.round(property1.price / (getFeatures(property1)?.squareFeet || 1)))
-                            : "—"
-                          }
+                          {getFeatures(property1)?.squareFeet ?
+                            formatPrice(
+                              Math.round(
+                                property1.price /
+                                  (getFeatures(property1)?.squareFeet || 1)
+                              )
+                            )
+                          : "—"}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Total Price:</span>
-                        <span className="font-medium">{formatPrice(property1.price)}</span>
+                        <span className="font-medium">
+                          {formatPrice(property1.price)}
+                        </span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <h4 className="font-medium">{property2.title}</h4>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Price per sq ft:</span>
                         <span className="font-medium">
-                          {getFeatures(property2)?.squareFeet 
-                            ? formatPrice(Math.round(property2.price / (getFeatures(property2)?.squareFeet || 1)))
-                            : "—"
-                          }
+                          {getFeatures(property2)?.squareFeet ?
+                            formatPrice(
+                              Math.round(
+                                property2.price /
+                                  (getFeatures(property2)?.squareFeet || 1)
+                              )
+                            )
+                          : "—"}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Total Price:</span>
-                        <span className="font-medium">{formatPrice(property2.price)}</span>
+                        <span className="font-medium">
+                          {formatPrice(property2.price)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -462,9 +622,12 @@ export default function PropertyComparePage() {
           <Card>
             <CardContent className="py-16 text-center">
               <Home className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">Select Two Properties to Compare</h3>
+              <h3 className="text-lg font-medium mb-2">
+                Select Two Properties to Compare
+              </h3>
               <p className="text-muted-foreground">
-                Choose properties from the dropdowns above to see a detailed side-by-side comparison
+                Choose properties from the dropdowns above to see a detailed
+                side-by-side comparison
               </p>
             </CardContent>
           </Card>

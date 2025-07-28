@@ -278,7 +278,7 @@ export function useTrackedMutation<TData = unknown, TError = Error, TVariables =
     }
   }, [result.isSuccess, result.isError, result.data, result.error, result.variables, result.context, options.onSettled]);
 
-  return result as UseMutationResult<TData, TError, TVariables> & { operationId?: string };
+  return result as any;
 }
 
 /**

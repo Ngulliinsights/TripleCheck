@@ -94,7 +94,7 @@ export class DebouncedNavigator {
   private isNavigating = false;
 
   constructor(
-    private navigate: (url: string) => void,
+    private navigateFunction: (url: string) => void,
     private debounceMs = 300
   ) {}
 
@@ -113,7 +113,7 @@ export class DebouncedNavigator {
     this.timeoutId = setTimeout(() => {
       this.isNavigating = true;
       
-      safeNavigate(this.navigate, url, {
+      safeNavigate(this.navigateFunction, url, {
         ...options,
         onError: (error) => {
           this.isNavigating = false;

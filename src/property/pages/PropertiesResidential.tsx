@@ -7,6 +7,7 @@ import React, {
   startTransition,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -33,8 +34,10 @@ import {
 } from "lucide-react";
 import { Skeleton } from "../../shared/components/ui/skeleton";
 import ListingCard from "../components/ListingCard";
-import { usePerformanceMonitor } from "../utils/performanceMonitor";
-import PerformanceTestPanel from "../components/PerformanceTestPanel";
+import { useComponentPerformance } from "../../shared/hooks/useComponentPerformance";
+import { useDebounce } from "../../shared/hooks/useDebounce";
+import { CompareProvider } from "../contexts/CompareContext";
+import { CompareBar } from "../components/CompareBar";
 
 import { Property } from "../../shared/types/property";
 
@@ -152,7 +155,7 @@ const DEFAULT_FILTERS: ResidentialFilters = {
   verified: false,
 };
 
-// Enhanced mock data with comprehensive residential properties
+// Enhanced mock data with comprehensive residential properties using real images
 const MOCK_PROPERTIES: ResidentialProperty[] = [
   {
     id: "RES-001",
@@ -167,7 +170,11 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     size: 180,
     parking: 2,
     yearBuilt: 2020,
-    images: ["/assets/apartment-luxury-1.jpg"],
+    images: [
+      "/assets/Residential/alejandra-cifre-gonzalez-ylyn5r4vxcA-unsplash.jpg",
+      "/assets/Residential/alexander-andrews-A3DPhhAL6Zg-unsplash.jpg",
+      "/assets/Residential/caroline-badran-aaONSK4BKxc-unsplash.jpg"
+    ],
     features: [
       "City View",
       "Balcony",
@@ -202,7 +209,11 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     size: 280,
     parking: 3,
     yearBuilt: 2019,
-    images: ["/assets/duplex-modern-1.jpg"],
+    images: [
+      "/assets/Residential/billy-jo-catbagan-ysUyvjCocWo-unsplash.jpg",
+      "/assets/Residential/caroline-badran-nf7iKpydFR4-unsplash.jpg",
+      "/assets/Residential/dillon-kydd-XGvwt544g8k-unsplash.jpg"
+    ],
     features: [
       "Master Suite",
       "Guest Room",
@@ -237,7 +248,11 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     size: 120,
     parking: 1,
     yearBuilt: 2018,
-    images: ["/assets/apartment-cozy-1.jpg"],
+    images: [
+      "/assets/Residential/etienne-beauregard-riverin-B0aCvAVSX8E-unsplash.jpg",
+      "/assets/Residential/frames-for-your-heart-2d4lAQAlbDA-unsplash.jpg",
+      "/assets/Residential/jason-briscoe-AQl-J19ocWE-unsplash.jpg"
+    ],
     features: [
       "City View",
       "Open Plan",
@@ -266,7 +281,11 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     size: 450,
     parking: 4,
     yearBuilt: 2021,
-    images: ["/assets/house-executive-1.jpg"],
+    images: [
+      "/assets/Residential/joel-filipe-RFDP7_80v5A-unsplash.jpg",
+      "/assets/Residential/krzysztof-hepner-V7Q0Oh3Az-c-unsplash.jpg",
+      "/assets/Residential/luke-van-zyl-koH7IVuwRLw-unsplash.jpg"
+    ],
     features: [
       "Master Suite",
       "Guest Rooms",
@@ -301,7 +320,11 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     size: 45,
     parking: 1,
     yearBuilt: 2020,
-    images: ["/assets/studio-stylish-1.jpg"],
+    images: [
+      "/assets/Residential/michael-oxendine-GHCVUtBECuY-unsplash (1).jpg",
+      "/assets/Residential/rebecca-chandler-z6Yn9hhlrJw-unsplash.jpg",
+      "/assets/Residential/sebastien-lavalaye-gNY6RsMIsPo-unsplash.jpg"
+    ],
     features: [
       "Open Plan",
       "Modern Fixtures",
@@ -336,7 +359,11 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     size: 320,
     parking: 3,
     yearBuilt: 2022,
-    images: ["/assets/penthouse-elegant-1.jpg"],
+    images: [
+      "/assets/Residential/terrah-holly-pmhdkgRCbtE-unsplash.jpg",
+      "/assets/Residential/webaliser-_TPTXZd9mOo-unsplash.jpg",
+      "/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg"
+    ],
     features: [
       "Panoramic Views",
       "Private Terrace",
@@ -349,6 +376,82 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     verified: true,
     rating: 4.8,
     views: 2789,
+    furnished: true,
+    petFriendly: true,
+  },
+  {
+    id: "RES-007",
+    title: "Family Townhouse - Lavington",
+    description:
+      "Spacious family townhouse in quiet Lavington neighborhood with garden.",
+    type: "townhouse",
+    location: "Lavington, Nairobi",
+    price: 32000000,
+    bedrooms: 4,
+    bathrooms: 3,
+    size: 220,
+    parking: 2,
+    yearBuilt: 2019,
+    images: [
+      "/assets/Residential/caroline-badran-OZIdKtn8pKs-unsplash.jpg",
+      "/assets/Residential/alejandra-cifre-gonzalez-ylyn5r4vxcA-unsplash.jpg"
+    ],
+    features: [
+      "Private Garden",
+      "Family Room",
+      "Modern Kitchen",
+      "Master Suite",
+      "Guest Bathroom",
+    ],
+    amenities: [
+      "Community Pool",
+      "Playground",
+      "Security",
+      "Backup Power",
+      "Water Supply",
+    ],
+    status: "for-sale",
+    verified: true,
+    rating: 4.6,
+    views: 1567,
+    furnished: false,
+    petFriendly: true,
+  },
+  {
+    id: "RES-008",
+    title: "Modern Villa - Runda Estate",
+    description:
+      "Luxurious villa with contemporary design and premium finishes.",
+    type: "villa",
+    location: "Runda, Nairobi",
+    price: 85000000,
+    bedrooms: 5,
+    bathrooms: 5,
+    size: 400,
+    parking: 4,
+    yearBuilt: 2021,
+    images: [
+      "/assets/Residential/alexander-andrews-A3DPhhAL6Zg-unsplash.jpg",
+      "/assets/Residential/billy-jo-catbagan-ysUyvjCocWo-unsplash.jpg"
+    ],
+    features: [
+      "Swimming Pool",
+      "Home Theater",
+      "Wine Cellar",
+      "Staff Quarters",
+      "Solar Power",
+    ],
+    amenities: [
+      "Private Pool",
+      "Landscaped Garden",
+      "24/7 Security",
+      "Generator",
+      "Borehole",
+    ],
+    status: "for-sale",
+    verified: true,
+    rating: 4.9,
+    views: 2890,
     furnished: true,
     petFriendly: true,
   },
@@ -466,46 +569,27 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
   className,
 }) => {
   // Performance monitoring
-  const performanceMonitor = usePerformanceMonitor("ResidentialProperties");
+  const { trackApiCall } = useComponentPerformance("ResidentialProperties");
+  const navigate = useNavigate();
 
   // State management with proper typing
   const [filters, setFilters] = useState<ResidentialFilters>(DEFAULT_FILTERS);
-  const [debouncedFilters, setDebouncedFilters] =
-    useState<ResidentialFilters>(DEFAULT_FILTERS);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
-  // Debounce timer ref
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Use the enhanced debounce hook to prevent race conditions
+  const debouncedFilters = useDebounce(filters, 300);
+  
+  // Additional debounce for query key to prevent excessive queries
+  const stableQueryKey = useMemo(() => {
+    const key = ["residential-properties", debouncedFilters];
+    return key;
+  }, [debouncedFilters]);
 
-  // Track renders for performance monitoring
-  useEffect(() => {
-    performanceMonitor.trackRender();
-  });
+  // Performance monitoring automatically tracks renders
 
-  // Debounce filters to prevent excessive API calls
-  useEffect(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
 
-    debounceTimerRef.current = setTimeout(() => {
-      setDebouncedFilters(filters);
-    }, 300); // 300ms debounce
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [filters]);
-
-  // Memoized query key to prevent unnecessary re-renders
-  const queryKey = useMemo(
-    () => ["residential-properties", JSON.stringify(debouncedFilters)],
-    [debouncedFilters]
-  );
 
   // React Query for data fetching with proper error handling and race condition protection
   const {
@@ -513,11 +597,12 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
     isLoading,
     error,
     refetch,
+    isFetching,
   } = useQuery({
-    queryKey,
+    queryKey: stableQueryKey,
     queryFn: ({ signal }) => {
       // Track API call for performance monitoring
-      performanceMonitor.trackApiCall(debouncedFilters);
+      trackApiCall(debouncedFilters);
 
       // Use React Query's built-in signal for proper cancellation
       return fetchResidentialProperties(debouncedFilters, signal);
@@ -526,6 +611,7 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
     gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
     refetchOnMount: false, // Prevent refetch on component mount if data exists
+    enabled: !!debouncedFilters, // Only run query when filters are available
     retry: (failureCount, error) => {
       // Don't retry if request was cancelled
       if (error?.message === "Request was cancelled") {
@@ -584,13 +670,11 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
     setViewMode(mode);
   }, []);
 
-  // Property click handler - avoid full page reload
+  // Property click handler - navigate to property details
   const handlePropertyClick = useCallback((property: ResidentialProperty) => {
-    // TODO: Navigate to property details page using React Router
-    // For now, we'll use console.log to avoid page reload performance issues
-    console.log("Navigate to property:", property.id);
-    // window.location.href = `/properties/${property.id}`;
-  }, []);
+    // Navigate to property details page using React Router
+    navigate(`/property/${property.id}`);
+  }, [navigate]);
 
   // Memoized property type options for better performance
   const propertyTypeOptions = useMemo(
@@ -665,7 +749,8 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
   }
 
   return (
-    <div className={`min-h-screen bg-background ${className || ""}`}>
+    <CompareProvider>
+      <div className={`min-h-screen bg-background ${className || ""}`}>
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-secondary/10 via-primary/5 to-accent/10 py-16">
         <div className="container mx-auto px-4">
@@ -708,10 +793,7 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Development Performance Monitor - Only show in development */}
-        {import.meta.env.MODE === "development" && (
-          <PerformanceTestPanel className="mb-6" />
-        )}
+
 
         {/* Search and Filters */}
         <Card className="mb-6">
@@ -982,7 +1064,11 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
           </CardContent>
         </Card>
       </div>
+      
+      {/* Compare Bar */}
+      <CompareBar />
     </div>
+    </CompareProvider>
   );
 };
 

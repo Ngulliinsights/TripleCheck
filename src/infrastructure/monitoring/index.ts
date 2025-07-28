@@ -71,9 +71,11 @@ export const performanceUtils = {
   formatBytes: (bytes: number): string => {
     if (bytes === 0) return '0 B';
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const sizes = ['B', 'KB', 'MB', 'GB'] as const;
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    const sizeIndex = Math.min(i, sizes.length - 1);
+    const formattedValue = parseFloat((bytes / Math.pow(k, sizeIndex)).toFixed(2));
+    return `${formattedValue} ${sizes[sizeIndex]}`;
   },
 
   // Calculate performance score based on Core Web Vitals
@@ -85,18 +87,24 @@ export const performanceUtils = {
     let score = 0;
     let count = 0;
 
+    const calculateMetricScore = (value: number, goodThreshold: number, needsImprovementThreshold: number): number => {
+      if (value <= goodThreshold) return 100;
+      if (value <= needsImprovementThreshold) return 50;
+      return 0;
+    };
+
     if (metrics.lcp !== null && metrics.lcp !== undefined) {
-      score += metrics.lcp <= 2500 ? 100 : metrics.lcp <= 4000 ? 50 : 0;
+      score += calculateMetricScore(metrics.lcp, 2500, 4000);
       count++;
     }
 
     if (metrics.fid !== null && metrics.fid !== undefined) {
-      score += metrics.fid <= 100 ? 100 : metrics.fid <= 300 ? 50 : 0;
+      score += calculateMetricScore(metrics.fid, 100, 300);
       count++;
     }
 
     if (metrics.cls !== null && metrics.cls !== undefined) {
-      score += metrics.cls <= 0.1 ? 100 : metrics.cls <= 0.25 ? 50 : 0;
+      score += calculateMetricScore(metrics.cls, 0.1, 0.25);
       count++;
     }
 
@@ -116,34 +124,24 @@ export const performanceUtils = {
   isLowEndDevice: (): boolean => {
     if (typeof navigator === 'undefined') return false;
     
-    const connection = (navigator as any).connection;
-    const memory = (navigator as any).deviceMemory;
+    const { connection, deviceMemory } = navigator as any;
     const cores = navigator.hardwareConcurrency;
 
     // Check for slow connection
-    if (connection && (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')) {
+    if (connection?.effectiveType && ['slow-2g', '2g'].includes(connection.effectiveType)) {
       return true;
     }
 
-    // Check for low memory
-    if (memory && memory <= 2) {
-      return true;
-    }
-
-    // Check for few CPU cores
-    if (cores && cores <= 2) {
-      return true;
-    }
-
-    return false;
+    // Check for low memory or few CPU cores
+    return (deviceMemory && deviceMemory <= 2) || (cores && cores <= 2) || false;
   },
 
   // Get connection speed estimate
   getConnectionSpeed: (): string => {
     if (typeof navigator === 'undefined') return 'unknown';
     
-    const connection = (navigator as any).connection;
-    return connection ? connection.effectiveType || 'unknown' : 'unknown';
+    const { connection } = navigator as any;
+    return connection?.effectiveType || 'unknown';
   },
 
   // Debounce function for performance-sensitive operations
@@ -159,7 +157,7 @@ export const performanceUtils = {
   },
 
   // Throttle function for performance-sensitive operations
-  throttle: <T extends (...args: any[]) => any>(
+  throttle: <T extends (...args: any[]) => unknown>(
     func: T,
     limit: number
   ): ((...args: Parameters<T>) => void) => {

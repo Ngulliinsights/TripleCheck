@@ -18,9 +18,9 @@ export default function PropertyDetails({ id }: PropertyDetailsProps) {
     location: 'Westlands, Nairobi',
     price: 150000,
     images: [
-      '/placeholder-property.jpg',
-      '/placeholder-property.jpg',
-      '/placeholder-property.jpg'
+      '/assets/apartment-luxury-1.jpg',
+      '/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg',
+      '/assets/Residential/frames-for-your-heart-2d4lAQAlbDA-unsplash.jpg'
     ],
     features: {
       bedrooms: 3,

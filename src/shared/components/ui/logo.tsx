@@ -110,12 +110,24 @@ export function Logo({
     const validSizes = ["sm", "md", "lg", "xl"] as const;
     const validVariants = ["default", "light", "dark"] as const;
 
-    const sizeClass =
-      validSizes.includes(size) ? SIZE_CLASSES[size] : SIZE_CLASSES.md;
-    const variantFilter =
-      validVariants.includes(variant) ?
-        VARIANT_FILTERS[variant]
-      : VARIANT_FILTERS.default;
+    const sizeClass = (() => {
+      switch (size) {
+        case "sm": return SIZE_CLASSES.sm;
+        case "md": return SIZE_CLASSES.md;
+        case "lg": return SIZE_CLASSES.lg;
+        case "xl": return SIZE_CLASSES.xl;
+        default: return SIZE_CLASSES.md;
+      }
+    })();
+    
+    const variantFilter = (() => {
+      switch (variant) {
+        case "default": return VARIANT_FILTERS.default;
+        case "light": return VARIANT_FILTERS.light;
+        case "dark": return VARIANT_FILTERS.dark;
+        default: return VARIANT_FILTERS.default;
+      }
+    })();
 
     return cn(
       // Core sizing with consistent aspect ratio handling

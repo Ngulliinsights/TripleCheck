@@ -16,7 +16,7 @@ const ASSET_PATHS = {
 // Logo assets with variants
 export const LOGOS = {
   primary: `${ASSET_PATHS.logos}/Artmark.svg`,
-  favicon: `${ASSET_PATHS.icons}/TripleCheck.ico`
+  favicon: `/assets/Artmark.svg`
 } as const;
 
 // Hero background images for different variants

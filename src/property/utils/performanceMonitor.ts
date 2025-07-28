@@ -1,3 +1,5 @@
+import { raceConditionTester } from './raceConditionTest';
+
 // Performance monitoring utility for detecting race conditions and infinite API calls
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor;
@@ -6,6 +8,7 @@ export class PerformanceMonitor {
   private renderCount = 0;
   private lastRenderTime = 0;
   private componentName = '';
+  private lastApiCallTime = 0;
 
   static getInstance(): PerformanceMonitor {
     if (!PerformanceMonitor.instance) {
@@ -19,11 +22,35 @@ export class PerformanceMonitor {
   }
 
   trackApiCall(filters: any): void {
-    this.apiCallCount++;
     const timestamp = Date.now();
     const filterString = JSON.stringify(filters);
     
+    // Throttle API call tracking to prevent overwhelming the monitor
+    if (timestamp - this.lastApiCallTime < 50) {
+      if (import.meta.env.MODE === "development") {
+        console.warn(`[${this.componentName}] API call tracking throttled (${timestamp - this.lastApiCallTime}ms since last)`);
+      }
+      return;
+    }
+    
+    this.lastApiCallTime = timestamp;
+    
+    // Check if this is a duplicate of the last call within a short timeframe
+    const lastCall = this.apiCallHistory[this.apiCallHistory.length - 1];
+    if (lastCall && 
+        lastCall.filters === filterString && 
+        timestamp - lastCall.timestamp < 200) {
+      if (import.meta.env.MODE === "development") {
+        console.warn(`[${this.componentName}] Duplicate API call detected within 200ms - skipping track`);
+      }
+      return;
+    }
+    
+    this.apiCallCount++;
     this.apiCallHistory.push({ timestamp, filters: filterString });
+    
+    // Record in race condition tester
+    raceConditionTester.recordApiCall();
     
     // Keep only last 50 calls for memory efficiency
     if (this.apiCallHistory.length > 50) {
@@ -33,21 +60,30 @@ export class PerformanceMonitor {
     // Detect potential infinite API calls
     this.detectInfiniteApiCalls();
     
-    console.log(`[${this.componentName}] API Call #${this.apiCallCount}:`, filterString);
+    if (import.meta.env.MODE === "development") {
+      const timeSinceLastCall = lastCall ? timestamp - lastCall.timestamp : 0;
+      console.log(`[${this.componentName}] API Call #${this.apiCallCount} (${timeSinceLastCall}ms since last):`, filterString);
+    }
   }
 
   trackRender(): void {
     this.renderCount++;
     const currentTime = Date.now();
     const timeSinceLastRender = currentTime - this.lastRenderTime;
-    this.lastRenderTime = currentTime;
-
-    // Detect excessive re-renders
-    if (timeSinceLastRender < 16) { // Less than 1 frame (60fps)
+    
+    // Record in race condition tester
+    raceConditionTester.recordRender();
+    
+    // Only warn if we have a previous render time and it's very recent
+    if (this.lastRenderTime > 0 && timeSinceLastRender < 16) { // Less than 1 frame (60fps)
       console.warn(`[${this.componentName}] Potential excessive re-render detected. Time since last render: ${timeSinceLastRender}ms`);
     }
+    
+    this.lastRenderTime = currentTime;
 
-    console.log(`[${this.componentName}] Render #${this.renderCount}`);
+    if (import.meta.env.MODE === "development") {
+      console.log(`[${this.componentName}] Render #${this.renderCount}`);
+    }
   }
 
   private detectInfiniteApiCalls(): void {
@@ -64,6 +100,20 @@ export class PerformanceMonitor {
       
       if (identicalCalls.length > 3) {
         console.error(`[${this.componentName}] RACE CONDITION DETECTED: ${identicalCalls.length} identical consecutive API calls!`);
+      }
+    }
+
+    // Check for calls that are too frequent (less than 300ms apart)
+    const recentCallsWithTiming = this.apiCallHistory.slice(-5);
+    if (recentCallsWithTiming.length >= 2) {
+      const intervals = [];
+      for (let i = 1; i < recentCallsWithTiming.length; i++) {
+        intervals.push(recentCallsWithTiming[i].timestamp - recentCallsWithTiming[i - 1].timestamp);
+      }
+      
+      const averageInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
+      if (averageInterval < 300 && recentCallsWithTiming.length >= 3) {
+        console.warn(`[${this.componentName}] API calls too frequent. Average interval: ${averageInterval.toFixed(0)}ms (expected: 300ms+)`);
       }
     }
   }
@@ -112,6 +162,10 @@ export class PerformanceMonitor {
     this.apiCallHistory = [];
     this.renderCount = 0;
     this.lastRenderTime = 0;
+    this.lastApiCallTime = 0;
+    
+    // Reset race condition tester as well
+    raceConditionTester.reset();
   }
 }
 

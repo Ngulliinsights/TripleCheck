@@ -1,8 +1,18 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render as originalRender, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import ListingCard from '../ListingCard';
+import { CompareProvider } from '../../contexts/CompareContext';
 import { Property } from '../../../shared/types/property';
+
+// Override render to always include CompareProvider
+const render = (ui: React.ReactElement) => {
+  return originalRender(
+    <CompareProvider>
+      {ui}
+    </CompareProvider>
+  );
+};
 
 // Mock the UI components
 vi.mock('../../../shared/components/ui/card', () => ({
@@ -79,7 +89,7 @@ describe('ListingCard', () => {
     });
 
     it('shows verified badge for verified properties', () => {
-      render(<ListingCard property={mockProperty} />);
+      renderWithProvider(<ListingCard property={mockProperty} />);
       
       const badge = screen.getByText('Verified');
       expect(badge).toBeInTheDocument();

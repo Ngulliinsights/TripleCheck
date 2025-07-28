@@ -1,8 +1,11 @@
+import { MapPin, Bed, Bath, Square, Camera, Plus, Check } from 'lucide-react';
 import React from 'react';
-import { Property } from '../../shared/types/property';
-import { Card, CardContent } from '../../shared/components/ui/card';
+
 import { Badge } from '../../shared/components/ui/badge';
-import { MapPin, Bed, Bath, Square, Camera } from 'lucide-react';
+import { Card, CardContent } from '../../shared/components/ui/card';
+import { Button } from '../../shared/components/ui/button';
+import { Property } from '../../shared/types/property';
+import { useCompare } from '../contexts/CompareContext';
 
 interface ListingCardProps {
   property: Property;
@@ -24,19 +27,16 @@ const formatPriceWithFallback = (price?: number): string => {
   return 'Price on request';
 };
 
-// Alternative simpler formatter from deleted component for comparison
-const formatPriceSimple = (price?: number): string => {
-  if (price && typeof price === 'number') {
-    return `KES ${price.toLocaleString()}`;
-  }
-  return 'Price on request';
-};
-
-export default React.memo<ListingCardProps>(function ListingCard({ 
+// Named export component with explicit display name for React DevTools
+const ListingCard = React.memo<ListingCardProps>(({ 
   property, 
   className = '',
   onClick 
-}) {
+}) => {
+  // Compare functionality
+  const { addToCompare, removeFromCompare, isSelected, canAddMore } = useCompare();
+  const isInCompare = isSelected(property.id);
+  
   // Extract features once to avoid repeated property access
   const { bedrooms, bathrooms, squareFeet, propertyType } = property.features || {};
   
@@ -46,19 +46,34 @@ export default React.memo<ListingCardProps>(function ListingCard({
     [property.price]
   );
 
-  // Enhanced image source handling - combines safety from deleted component
+  // Enhanced image source handling with loading state and stable references
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+  
+  // Stable image source to prevent unnecessary re-renders
   const imageSrc = React.useMemo(() => {
-    // Check for both possible property structures to be fully compatible
     const imageUrls = property.images;
-    return imageUrls?.[0] || "/placeholder-property.jpg";
+    const primaryImage = imageUrls?.[0];
+    
+    // Return the primary image if it exists, otherwise use inline SVG placeholder
+    if (primaryImage) {
+      return primaryImage;
+    }
+    
+    // Inline SVG placeholder to avoid any network requests
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='225' viewBox='0 0 400 225'%3E%3Crect width='400' height='225' fill='%23f3f4f6'/%3E%3Ctext x='200' y='112.5' text-anchor='middle' dy='.3em' fill='%23374151' font-family='Arial, sans-serif' font-size='16'%3EProperty%3C/text%3E%3C/svg%3E";
   }, [property.images]);
+  
+  // Reset image loaded state when property ID changes (not just image src)
+  React.useEffect(() => {
+    setImageLoaded(false);
+  }, [property.id]);
 
   // Flexible onClick handler that supports both callback patterns
   const handleCardClick = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
       if (onClick) {
-        // Try calling with property first (new pattern), fallback to no args (deleted component pattern)
+        // Try calling with property first (new pattern), fallback to no args (old pattern)
         try {
           (onClick as (property: Property) => void)(property);
         } catch {
@@ -70,17 +85,28 @@ export default React.memo<ListingCardProps>(function ListingCard({
     [onClick, property]
   );
 
-  // Enhanced keyboard handler from deleted component pattern
+  // Compare button handler
+  const handleCompareClick = React.useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation(); // Prevent card click
+      if (isInCompare) {
+        removeFromCompare(property.id);
+      } else if (canAddMore) {
+        addToCompare(property);
+      }
+    },
+    [isInCompare, canAddMore, addToCompare, removeFromCompare, property]
+  );
+
+  // Enhanced keyboard handler for accessibility
   const handleKeyDown = React.useCallback(
     (event: React.KeyboardEvent) => {
       if (onClick && (event.key === 'Enter' || event.key === ' ')) {
         event.preventDefault();
-        if (onClick) {
-          try {
-            (onClick as (property: Property) => void)(property);
-          } catch {
-            (onClick as () => void)();
-          }
+        try {
+          (onClick as (property: Property) => void)(property);
+        } catch {
+          (onClick as () => void)();
         }
       }
     },
@@ -91,13 +117,37 @@ export default React.memo<ListingCardProps>(function ListingCard({
   const handleImageError = React.useCallback(
     (event: React.SyntheticEvent<HTMLImageElement>) => {
       const target = event.currentTarget;
-      // Prevent infinite loops by checking current src before setting fallback
-      if (target.src !== "/placeholder-property.jpg") {
-        target.src = "/placeholder-property.jpg";
+      const fallbackSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='225' viewBox='0 0 400 225'%3E%3Crect width='400' height='225' fill='%23f3f4f6'/%3E%3Ctext x='200' y='112.5' text-anchor='middle' dy='.3em' fill='%23374151' font-family='Arial, sans-serif' font-size='16'%3EProperty%3C/text%3E%3C/svg%3E";
+      
+      // Only set fallback if we're not already using an SVG
+      if (!target.src.includes('data:image/svg+xml')) {
+        target.src = fallbackSvg;
       }
+      
+      setImageLoaded(true); // Consider error state as "loaded" to prevent flickering
     },
     []
   );
+  
+  // Handle successful image load
+  const handleImageLoad = React.useCallback(() => {
+    setImageLoaded(true);
+  }, []);
+  
+  // Preload image to reduce flickering - using standard Image constructor
+  React.useEffect(() => {
+    if (imageSrc && !imageSrc.includes('data:image/svg+xml')) {
+      const img = new Image(); // Use Image constructor instead of HTMLImageElement
+      img.onload = () => setImageLoaded(true);
+      img.onerror = () => {
+        setImageLoaded(true);
+      };
+      img.src = imageSrc;
+    } else {
+      // SVG images load immediately
+      setImageLoaded(true);
+    }
+  }, [imageSrc]);
 
   // Determine if card should be interactive
   const isInteractive = Boolean(onClick);
@@ -119,26 +169,39 @@ export default React.memo<ListingCardProps>(function ListingCard({
       role={isInteractive ? 'button' : undefined}
       tabIndex={isInteractive ? 0 : undefined}
       onKeyDown={isInteractive ? handleKeyDown : undefined}
-      // Enhanced accessibility label from deleted component approach
+      // Enhanced accessibility label
       aria-label={isInteractive ? `View property ${property.title}` : undefined}
     >
-      {/* Image container with improved accessibility */}
+      {/* Image container with improved accessibility and loading states */}
       <div className="relative aspect-video overflow-hidden bg-gray-100">
+        {/* Loading placeholder */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
+            <div className="w-12 h-12 bg-gray-300 rounded-full animate-pulse"></div>
+          </div>
+        )}
+        
         <img
           src={imageSrc}
-          alt={`${property.title} - Property image`}
+          alt={`${property.title} property`} // Simplified alt text to avoid redundancy
           className={`
-            w-full h-full object-cover transition-transform duration-300
+            w-full h-full object-cover transition-all duration-300
             ${isInteractive ? 'group-hover:scale-110' : ''}
+            ${imageLoaded ? 'opacity-100' : 'opacity-0'}
           `}
           loading="lazy"
           onError={handleImageError}
+          onLoad={handleImageLoad}
           // Add image dimensions for better performance
           width={400}
           height={225}
+          // Prevent dragging to reduce flickering
+          draggable={false}
+          // Stable key based on property ID to prevent unnecessary re-renders
+          key={`${property.id}-${imageSrc}`}
         />
         
-        {/* Multi-photo indicator from deleted component - adds valuable UX info */}
+        {/* Multi-photo indicator - adds valuable UX info */}
         {imageCount > 1 && (
           <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1.5 rounded-md flex items-center gap-1 shadow-sm">
             <Camera className="w-3 h-3" aria-hidden="true" />
@@ -155,6 +218,24 @@ export default React.memo<ListingCardProps>(function ListingCard({
             Verified
           </Badge>
         )}
+        
+        {/* Compare button */}
+        <Button
+          size="sm"
+          variant={isInCompare ? "default" : "outline"}
+          className={`absolute bottom-2 right-2 h-8 w-8 p-0 shadow-sm ${
+            !canAddMore && !isInCompare ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          onClick={handleCompareClick}
+          disabled={!canAddMore && !isInCompare}
+          title={isInCompare ? 'Remove from comparison' : 'Add to comparison'}
+        >
+          {isInCompare ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+        </Button>
       </div>
       
       <CardContent className="p-4 space-y-3">
@@ -215,3 +296,8 @@ export default React.memo<ListingCardProps>(function ListingCard({
     </Card>
   );
 });
+
+// Set display name for React DevTools
+ListingCard.displayName = 'ListingCard';
+
+export default ListingCard;

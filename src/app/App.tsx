@@ -1,9 +1,10 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, Suspense, lazy } from "react";
 
+import { RouterFallback } from "../shared/components/fallbacks/RouterFallback";
+
 import { ErrorBoundary } from "./error-boundary";
 import { AppRouter } from "./router";
-import { RouterFallback } from "../shared/components/fallbacks/RouterFallback";
 
 import { queryClient } from "@/infrastructure/api/queryClient";
 

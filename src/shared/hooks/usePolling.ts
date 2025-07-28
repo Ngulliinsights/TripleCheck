@@ -97,7 +97,7 @@ export function usePolling<TData = any, TError = Error>({
   }, [currentInterval, interval, adaptiveInterval]);
 
   // Execute query with error handling
-  const executeQuery = useCallback(async () => {
+  const executeQuery = useCallback(async (): Promise<void> => {
     try {
       const data = await query.refetch();
       

@@ -186,7 +186,7 @@ export default function DocumentAuthentication(): JSX.Element {
             doc.id === document.id ?
               {
                 ...doc,
-                status: 'error' as const,
+                status: 'failed' as const,
                 progress: 0,
                 error: error instanceof Error ? error.message : 'Verification failed',
               }

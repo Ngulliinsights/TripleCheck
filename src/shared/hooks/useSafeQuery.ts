@@ -102,7 +102,7 @@ class OperationTracker {
       id,
       type,
       description,
-      context,
+      context: context || '',
       startTime: Date.now(),
       status: 'pending'
     };
@@ -122,7 +122,7 @@ class OperationTracker {
     
     operation.status = error ? 'failed' : 'completed';
     operation.duration = Date.now() - operation.startTime;
-    operation.error = error?.message;
+    operation.error = error?.message || '';
     
     if (process.env.NODE_ENV === 'development') {
       const icon = operation.status === 'completed' ? '✅' : '❌';
