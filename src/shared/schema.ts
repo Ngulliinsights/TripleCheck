@@ -1538,3 +1538,219 @@ export const VALIDATION_CONSTANTS = {
   MIN_TRUST_SCORE: 0,
   MAX_TRUST_SCORE: 100,
 } as const;
+
+// Fraud Intelligence Tables
+export const fraudAlerts = pgTable(
+  "fraud_alerts",
+  {
+    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+    type: varchar("type", { length: 50 }).notNull(), // 'active_threat', 'pattern_detected', 'area_warning'
+    severity: varchar("severity", { length: 20 }).notNull(), // 'high', 'medium', 'low'
+    title: varchar("title", { length: 200 }).notNull(),
+    description: text("description").notNull(),
+    location: varchar("location", { length: 100 }).notNull(),
+    affectedCount: integer("affected_count").notNull().default(0),
+    timeDetected: timestamp("time_detected").notNull().defaultNow(),
+    status: varchar("status", { length: 20 }).notNull().default('active'), // 'active', 'resolved', 'investigating'
+    evidence: text("evidence"), // JSON array of evidence
+    recommendations: text("recommendations"), // JSON array of recommendations
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    typeIdx: index("fraud_alerts_type_idx").on(table.type),
+    severityIdx: index("fraud_alerts_severity_idx").on(table.severity),
+    locationIdx: index("fraud_alerts_location_idx").on(table.location),
+    statusIdx: index("fraud_alerts_status_idx").on(table.status),
+    timeIdx: index("fraud_alerts_time_idx").on(table.timeDetected),
+  })
+);
+
+export const fraudTrends = pgTable(
+  "fraud_trends",
+  {
+    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => `trend_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+    fraudType: varchar("fraud_type", { length: 50 }).notNull(),
+    location: varchar("location", { length: 100 }).notNull(),
+    period: varchar("period", { length: 20 }).notNull(), // 'week', 'month', 'quarter', 'year'
+    caseCount: integer("case_count").notNull().default(0),
+    averageAmount: decimal("average_amount", { precision: 15, scale: 2 }),
+    changePercentage: decimal("change_percentage", { precision: 5, scale: 2 }),
+    calculatedAt: timestamp("calculated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    typeIdx: index("fraud_trends_type_idx").on(table.fraudType),
+    locationIdx: index("fraud_trends_location_idx").on(table.location),
+    periodIdx: index("fraud_trends_period_idx").on(table.period),
+    calculatedIdx: index("fraud_trends_calculated_idx").on(table.calculatedAt),
+  })
+);
+
+export const fraudSubscriptions = pgTable(
+  "fraud_subscriptions",
+  {
+    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+    userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    locations: text("locations").notNull(), // JSON array
+    alertTypes: text("alert_types").notNull(), // JSON array
+    severity: text("severity").notNull(), // JSON array
+    notificationMethods: text("notification_methods").notNull(), // JSON array
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdx: index("fraud_subscriptions_user_idx").on(table.userId),
+    activeIdx: index("fraud_subscriptions_active_idx").on(table.active),
+  })
+);
+
+// Community Resources Tables
+export const communityExperiences = pgTable(
+  "community_experiences",
+  {
+    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => `exp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+    title: varchar("title", { length: 200 }).notNull(),
+    location: varchar("location", { length: 100 }).notNull(),
+    fraudType: varchar("fraud_type", { length: 50 }).notNull(),
+    amountLost: varchar("amount_lost", { length: 50 }),
+    whatHappened: text("what_happened").notNull(),
+    personalVulnerabilities: text("personal_vulnerabilities"),
+    systemicChallenges: text("systemic_challenges"),
+    lessonsLearned: text("lessons_learned"),
+    resolutionStatus: varchar("resolution_status", { length: 20 }).notNull(), // 'resolved', 'partial', 'unresolved'
+    resolutionDetails: text("resolution_details"),
+    anonymous: boolean("anonymous").notNull().default(false),
+    userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    datePosted: timestamp("date_posted").notNull().defaultNow(),
+    likes: integer("likes").notNull().default(0),
+    comments: integer("comments").notNull().default(0),
+    views: integer("views").notNull().default(0),
+    helpful: integer("helpful").notNull().default(0),
+    tags: text("tags"), // JSON array
+    status: varchar("status", { length: 20 }).notNull().default('active'), // 'active', 'hidden', 'removed'
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdx: index("community_experiences_user_idx").on(table.userId),
+    fraudTypeIdx: index("community_experiences_fraud_type_idx").on(table.fraudType),
+    locationIdx: index("community_experiences_location_idx").on(table.location),
+    resolutionIdx: index("community_experiences_resolution_idx").on(table.resolutionStatus),
+    dateIdx: index("community_experiences_date_idx").on(table.datePosted),
+    statusIdx: index("community_experiences_status_idx").on(table.status),
+  })
+);
+
+export const experienceComments = pgTable(
+  "experience_comments",
+  {
+    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => `comment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+    experienceId: varchar("experience_id", { length: 255 }).notNull().references(() => communityExperiences.id, { onDelete: "cascade" }),
+    userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    anonymous: boolean("anonymous").notNull().default(false),
+    likes: integer("likes").notNull().default(0),
+    status: varchar("status", { length: 20 }).notNull().default('active'), // 'active', 'hidden', 'removed'
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    experienceIdx: index("experience_comments_experience_idx").on(table.experienceId),
+    userIdx: index("experience_comments_user_idx").on(table.userId),
+    createdIdx: index("experience_comments_created_idx").on(table.createdAt),
+    statusIdx: index("experience_comments_status_idx").on(table.status),
+  })
+);
+
+export const experienceInteractions = pgTable(
+  "experience_interactions",
+  {
+    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => `interaction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+    userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    experienceId: varchar("experience_id", { length: 255 }).notNull().references(() => communityExperiences.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 20 }).notNull(), // 'like', 'helpful'
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    userExperienceIdx: index("experience_interactions_user_experience_idx").on(table.userId, table.experienceId),
+    typeIdx: index("experience_interactions_type_idx").on(table.type),
+    uniqueInteraction: uniqueIndex("unique_user_experience_interaction").on(table.userId, table.experienceId, table.type),
+  })
+);
+
+export const contentReports = pgTable(
+  "content_reports",
+  {
+    id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+    contentId: varchar("content_id", { length: 255 }).notNull(),
+    contentType: varchar("content_type", { length: 20 }).notNull(), // 'experience', 'comment'
+    reason: varchar("reason", { length: 50 }).notNull(),
+    details: text("details"),
+    reporterId: integer("reporter_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    status: varchar("status", { length: 20 }).notNull().default('pending'), // 'pending', 'reviewed', 'resolved', 'dismissed'
+    reviewedBy: integer("reviewed_by").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at"),
+    timestamp: timestamp("timestamp").notNull().defaultNow(),
+  },
+  (table) => ({
+    contentIdx: index("content_reports_content_idx").on(table.contentId, table.contentType),
+    reporterIdx: index("content_reports_reporter_idx").on(table.reporterId),
+    statusIdx: index("content_reports_status_idx").on(table.status),
+    timestampIdx: index("content_reports_timestamp_idx").on(table.timestamp),
+  })
+);
+
+// Relations for new tables
+export const fraudAlertsRelations = relations(fraudAlerts, ({ many }) => ({
+  subscriptions: many(fraudSubscriptions),
+}));
+
+export const fraudSubscriptionsRelations = relations(fraudSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [fraudSubscriptions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const communityExperiencesRelations = relations(communityExperiences, ({ one, many }) => ({
+  user: one(users, {
+    fields: [communityExperiences.userId],
+    references: [users.id],
+  }),
+  comments: many(experienceComments),
+  interactions: many(experienceInteractions),
+}));
+
+export const experienceCommentsRelations = relations(experienceComments, ({ one }) => ({
+  experience: one(communityExperiences, {
+    fields: [experienceComments.experienceId],
+    references: [communityExperiences.id],
+  }),
+  user: one(users, {
+    fields: [experienceComments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const experienceInteractionsRelations = relations(experienceInteractions, ({ one }) => ({
+  user: one(users, {
+    fields: [experienceInteractions.userId],
+    references: [users.id],
+  }),
+  experience: one(communityExperiences, {
+    fields: [experienceInteractions.experienceId],
+    references: [communityExperiences.id],
+  }),
+}));
+
+export const contentReportsRelations = relations(contentReports, ({ one }) => ({
+  reporter: one(users, {
+    fields: [contentReports.reporterId],
+    references: [users.id],
+  }),
+  reviewer: one(users, {
+    fields: [contentReports.reviewedBy],
+    references: [users.id],
+  }),
+}));

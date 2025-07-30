@@ -471,7 +471,7 @@ export default function CommercialProperties() {
                     onClick={() => handleViewModeChange("grid")}
                     className={`p-2 rounded ${viewMode === "grid" ? "bg-background shadow-sm" : ""}`}
                     aria-label="Grid view"
-                    aria-pressed={viewMode === "grid" ? "true" : "false"}
+                    aria-pressed={`${viewMode === "grid"}`}
                   >
                     <Grid className="w-4 h-4" />
                   </button>
@@ -480,7 +480,7 @@ export default function CommercialProperties() {
                     onClick={() => handleViewModeChange("list")}
                     className={`p-2 rounded ${viewMode === "list" ? "bg-background shadow-sm" : ""}`}
                     aria-label="List view"
-                    aria-pressed={viewMode === "list" ? "true" : "false"}
+                    aria-pressed={`${viewMode === "list"}`}
                   >
                     <List className="w-4 h-4" />
                   </button>

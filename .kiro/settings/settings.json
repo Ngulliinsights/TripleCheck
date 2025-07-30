@@ -1,0 +1,9 @@
+{
+  "autofix": {
+    "enabled": false,
+    "onSave": false
+  },
+  "formatting": {
+    "enabled": false
+  }
+}

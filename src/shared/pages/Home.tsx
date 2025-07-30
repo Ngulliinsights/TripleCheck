@@ -1,10 +1,11 @@
-import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
+import { useSafePropertiesQuery } from "../hooks/useSafeQuery";
 import { Search, ArrowRight, CheckCircle, Globe, Star, Shield } from "lucide-react";
 import { useState, useEffect, useCallback, memo, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import ListingCard from "../../property/components/ListingCard";
 import { CompareProvider } from "../../property/contexts/CompareContext";
+import FraudIntelligence from "../components/CommunityInsights";
 import { EnhancedHero } from "../components/hero/EnhancedHero";
 import { NewsBlog } from "../components/NewsBlog";
 import { Badge } from "../components/ui/badge";
@@ -470,11 +471,14 @@ export default function HomePage() {
     parseSearchQuery(search)
   );
 
-  // Sync search query with URL changes
+  // Sync search query with URL changes (with debouncing to prevent infinite loops)
   useEffect(() => {
     const newQuery = parseSearchQuery(search);
-    setSearchQuery(newQuery);
-  }, [search]);
+    // Only update if the query actually changed
+    if (newQuery !== searchQuery) {
+      setSearchQuery(newQuery);
+    }
+  }, [search]); // Removed searchQuery from dependencies to prevent infinite loop
 
   // Fetch properties data with optimized query configuration
   const {
@@ -641,37 +645,8 @@ export default function HomePage() {
         onCategorySelect={handleServiceSelect}
       />
 
-      {/* Pricing Section - Enhanced with consistent spacing */}
-      <section
-        id="pricing"
-        className="py-24 bg-background"
-        aria-label="Pricing plans"
-      >
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-6 text-foreground">Choose Your Plan</h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Select the perfect plan for your property verification needs across Africa
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
-            {PRICING_PLANS.map((plan, index) => (
-              <PricingCard key={plan.id} plan={plan} index={index} />
-            ))}
-          </div>
-          
-          {/* Trust badge for pricing */}
-          <div className="text-center mt-12">
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-status-success/10 rounded-full border border-status-success/20">
-              <CheckCircle className="w-5 h-5 text-status-success" />
-              <span className="text-sm font-medium text-status-success">
-                30-day money-back guarantee • Cancel anytime
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Fraud Intelligence Section - Strategic storytelling replacement for pricing */}
+      <FraudIntelligence />
 
       {/* Testimonials Section */}
       <Testimonials variant="carousel" showStats autoPlay />
@@ -720,6 +695,41 @@ export default function HomePage() {
               View All Properties
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Schedule Demo Section */}
+      <section className="py-24 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl font-bold text-foreground mb-6">
+              Ready to Secure Your Property Investment?
+            </h2>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+              Experience our comprehensive verification platform and see how we protect property investments across Africa.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                size="lg" 
+                onClick={() => navigate("/mvp-demo")}
+                className="bg-primary hover:bg-primary/90 px-8 py-3"
+              >
+                <Shield className="w-5 h-5 mr-2" />
+                Try Live Demo
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={() => navigate("/contact")}
+                className="px-8 py-3"
+              >
+                Schedule Consultation
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mt-4">
+              No signup required • Full access to verification tools
+            </p>
           </div>
         </div>
       </section>

@@ -1,14 +1,14 @@
 
-import { Button } from "@shared/components/ui/button";
-import { Input } from "@shared/components/ui/input";
-import { Logo } from "@shared/components/ui/logo";
-import { Wordmark } from "@shared/components/ui/wordmark";
-import { cn } from "@shared/lib/utils";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Logo } from "../ui/logo";
+import { Wordmark } from "../ui/wordmark";
+import { cn } from "../../lib/utils";
 import {
   safeNavigate,
   safeSearchNavigate,
   NAVIGATION_TIMEOUTS,
-} from "@shared/utils/safe-navigation";
+} from "../../utils/safe-navigation";
 import { Menu, X, Search, User, LogOut, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";

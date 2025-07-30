@@ -145,10 +145,10 @@ export function PropertyMap({
   /* ---------- Nearby Places ---------- */
   const loadNearby = useCallback(
     (map: google.maps.Map, center: google.maps.LatLngLiteral) => {
-      const service = new google.maps.places.PlacesService(map);
+      const service = new (google.maps as any).places.PlacesService(map);
       const collected: NearbyPlace[] = [];
 
-      const types: Array<{ type: string; icon: React.ComponentType<{ className?: string }> }> = [
+      const types: Array<{ type: string; icon: React.ComponentType<any> }> = [
         { type: "school", icon: School },
         { type: "hospital", icon: Hospital },
         { type: "shopping_mall", icon: ShoppingCart },
@@ -164,7 +164,7 @@ export function PropertyMap({
             status: google.maps.places.PlacesServiceStatus
           ) => {
             if (
-              status === google.maps.places.PlacesServiceStatus.OK &&
+              status === (google.maps as any).places.PlacesServiceStatus.OK &&
               results
             ) {
               results
@@ -179,7 +179,7 @@ export function PropertyMap({
                     name: place.name,
                     type,
                     distance: Math.round(d * 100) / 100,
-                    rating: place.rating,
+                    rating: place.rating || 0,
                     icon,
                   });
                 });

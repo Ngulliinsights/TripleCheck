@@ -237,7 +237,14 @@ export function useFormValidation(config: FormConfig): UseFormValidationReturn {
 
     setFields(prev => ({
       ...prev,
-      [fieldName]: { ...prev[fieldName], validating: true },
+      [fieldName]: { 
+        ...prev[fieldName], 
+        validating: true,
+        value: prev[fieldName]?.value ?? '',
+        error: prev[fieldName]?.error ?? null,
+        touched: prev[fieldName]?.touched ?? false,
+        dirty: prev[fieldName]?.dirty ?? false
+      },
     }));
 
     try {
@@ -254,7 +261,10 @@ export function useFormValidation(config: FormConfig): UseFormValidationReturn {
         [fieldName]: { 
           ...prev[fieldName], 
           error, 
-          validating: false 
+          validating: false,
+          value: prev[fieldName]?.value ?? '',
+          touched: prev[fieldName]?.touched ?? false,
+          dirty: prev[fieldName]?.dirty ?? false
         },
       }));
 
@@ -265,7 +275,10 @@ export function useFormValidation(config: FormConfig): UseFormValidationReturn {
         [fieldName]: { 
           ...prev[fieldName], 
           error: 'Validation error', 
-          validating: false 
+          validating: false,
+          value: prev[fieldName]?.value ?? '',
+          touched: prev[fieldName]?.touched ?? false,
+          dirty: prev[fieldName]?.dirty ?? false
         },
       }));
       return false;
@@ -291,6 +304,8 @@ export function useFormValidation(config: FormConfig): UseFormValidationReturn {
         value: transformedValue,
         dirty: true,
         error: null, // Clear error when value changes
+        touched: prev[fieldName]?.touched ?? false,
+        validating: prev[fieldName]?.validating ?? false
       },
     }));
 
@@ -319,7 +334,14 @@ export function useFormValidation(config: FormConfig): UseFormValidationReturn {
   const setError = useCallback((fieldName: string, error: string | null) => {
     setFields(prev => ({
       ...prev,
-      [fieldName]: { ...prev[fieldName], error },
+      [fieldName]: { 
+        ...prev[fieldName], 
+        error,
+        value: prev[fieldName]?.value ?? '',
+        touched: prev[fieldName]?.touched ?? false,
+        validating: prev[fieldName]?.validating ?? false,
+        dirty: prev[fieldName]?.dirty ?? false
+      },
     }));
   }, []);
 

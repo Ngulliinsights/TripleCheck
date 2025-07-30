@@ -141,7 +141,7 @@ export function DataContainer<T>({
       <ErrorState 
         title="Failed to load data"
         message={error.message || "An unexpected error occurred"}
-        onRetry={onRetry}
+        {...(onRetry && { onRetry })}
       />
     );
   }

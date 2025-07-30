@@ -2,6 +2,24 @@ import { Property } from "@shared/schema";
 import { db } from '../infrastructure/database/connection';
 import { properties, landVerificationSessions, verificationLayers } from '../../src/shared/schema';
 import { eq, and, desc, asc, sql, like, gte, lte, inArray } from 'drizzle-orm';
+// Create a simple query tracker as fallback
+const queryMonitor = {
+  trackQuery: async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
+    const startTime = Date.now();
+    try {
+      const result = await fn();
+      const duration = Date.now() - startTime;
+      if (duration > 1000) {
+        console.warn(`[QUERY] Slow query detected: ${name} took ${duration}ms`);
+      }
+      return result;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error(`[QUERY] Query failed: ${name} after ${duration}ms`, error);
+      throw error;
+    }
+  }
+};
 
 export class PropertyRepository {
   async findMany(filters: any) {
@@ -308,6 +326,91 @@ export class PropertyRepository {
       console.error('Error in findByOwner:', error);
       return [];
     }
+  }
+
+  async findSimilar(params: any) {
+    return await queryMonitor.trackQuery(
+      'findSimilar',
+      async () => {
+        const { propertyType, city, minPrice, maxPrice, limit = 10, excludeId } = params;
+        
+        const conditions = [];
+        
+        // Exclude the current property if specified
+        if (excludeId) {
+          conditions.push(sql`${properties.id} != ${parseInt(excludeId)}`);
+        }
+        
+        // More flexible location matching - match city or broader location
+        if (city) {
+          conditions.push(like(properties.location, `%${city}%`));
+        }
+        
+        // Price range matching instead of exact price (optimized for index usage)
+        if (minPrice && maxPrice) {
+          conditions.push(
+            and(
+              gte(properties.price, minPrice),
+              lte(properties.price, maxPrice)
+            )
+          );
+        } else if (minPrice) {
+          conditions.push(gte(properties.price, minPrice));
+        } else if (maxPrice) {
+          conditions.push(lte(properties.price, maxPrice));
+        }
+        
+        // Property type matching if available (optimized JSON query)
+        if (propertyType && properties.features) {
+          conditions.push(
+            sql`${properties.features}->>'propertyType' = ${propertyType}`
+          );
+        }
+        
+        // Only active properties
+        conditions.push(eq(properties.isActive, true));
+        
+        // Optimized query with proper ordering for consistent results
+        let queryBuilder = db.select({
+          id: properties.id,
+          title: properties.title,
+          description: properties.description,
+          price: properties.price,
+          location: properties.location,
+          address: properties.address,
+          coordinates: properties.coordinates,
+          imageUrls: properties.imageUrls,
+          verificationStatus: properties.verificationStatus,
+          features: properties.features,
+          ownerId: properties.ownerId,
+          viewCount: properties.viewCount,
+          favoriteCount: properties.favoriteCount,
+          isActive: properties.isActive,
+          isFeatured: properties.isFeatured,
+          availableFrom: properties.availableFrom,
+          availableUntil: properties.availableUntil,
+          createdAt: properties.createdAt,
+          updatedAt: properties.updatedAt
+        })
+        .from(properties)
+        .orderBy(desc(properties.isFeatured), desc(properties.createdAt)) // Featured first, then newest
+        .limit(parseInt(limit));
+        
+        if (conditions.length > 0) {
+          queryBuilder = queryBuilder.where(and(...conditions));
+        }
+        
+        const results = await queryBuilder;
+        
+        // Log query performance in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[PERF] Similar properties query returned ${results.length} results for city: ${city}, price range: ${minPrice}-${maxPrice}`);
+        }
+        
+        return results;
+      },
+      [params]
+    );
   }
 
   async create(propertyData: any) {

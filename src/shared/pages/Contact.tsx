@@ -209,43 +209,73 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-hero-primary text-white py-20">
-        <div className="container mx-auto px-4">
+      <section className="relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-white py-24 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
+        </div>
+        
+        <div className="container mx-auto px-4 relative">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6 text-coral-dark">
+            {/* Icon */}
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full mb-6">
+              <MessageCircle className="h-10 w-10 text-white" />
+            </div>
+            
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white">
               Get in Touch with Our Experts
             </h1>
-            <p className="text-xl mb-8 text-white/90">
+            <p className="text-xl md:text-2xl mb-12 text-white/90 max-w-3xl mx-auto leading-relaxed">
               Have questions about property verification? Need help with our services? 
               Our team of experts is here to help you make informed real estate decisions.
             </p>
+            
+            {/* Quick Contact Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-3xl mx-auto">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-2">{'< 4hrs'}</div>
+                <div className="text-white/80">Response Time</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-2">24/7</div>
+                <div className="text-white/80">Live Chat Support</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-2">99.8%</div>
+                <div className="text-white/80">Customer Satisfaction</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Contact Methods */}
-      <section className="py-16 -mt-8">
+      <section className="py-20 -mt-12 relative z-10">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {contactMethods.map((method, index) => {
               const IconComponent = method.icon;
               return (
                 <div 
                   key={index}
-                  className={`bg-white rounded-xl shadow-lg border-2 p-8 text-center hover:shadow-xl transition-all duration-300 cursor-pointer ${
-                    method.primary ? 'border-primary' : 'border-gray-200'
+                  className={`group bg-white rounded-2xl shadow-xl border-2 p-8 text-center hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer ${
+                    method.primary ? 'border-primary ring-2 ring-primary/20' : 'border-gray-100'
                   }`}
                 >
-                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-6 ${
-                    method.primary ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
+                  <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 transition-colors duration-300 ${
+                    method.primary 
+                      ? 'bg-gradient-to-br from-primary to-primary/80 text-white' 
+                      : 'bg-gradient-to-br from-primary/10 to-primary/5 text-primary group-hover:from-primary/20 group-hover:to-primary/10'
                   }`}>
-                    <IconComponent className="h-8 w-8" />
+                    <IconComponent className="h-10 w-10" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{method.title}</h3>
-                  <p className="text-gray-600 mb-4">{method.description}</p>
-                  <p className="text-sm text-gray-500 mb-6">{method.details}</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{method.title}</h3>
+                  <p className="text-gray-600 mb-4 leading-relaxed">{method.description}</p>
+                  <p className="text-sm text-gray-500 mb-8 bg-gray-50 rounded-full px-4 py-2 inline-block">{method.details}</p>
                   <Button 
-                    className="w-full"
+                    className="w-full group-hover:shadow-lg transition-shadow duration-300"
                     variant={method.primary ? 'default' : 'outline'}
                   >
                     {method.action}

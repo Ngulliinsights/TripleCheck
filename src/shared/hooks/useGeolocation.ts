@@ -68,8 +68,8 @@ export function useGeolocation({
       accuracy: coords.accuracy,
       altitude: coords.altitude ?? 0,
       altitudeAccuracy: coords.altitudeAccuracy ?? 0,
-      heading: coords.heading || undefined,
-      speed: coords.speed || undefined,
+      ...(coords.heading !== null && { heading: coords.heading }),
+      ...(coords.speed !== null && { speed: coords.speed }),
       timestamp,
     };
   }, []);

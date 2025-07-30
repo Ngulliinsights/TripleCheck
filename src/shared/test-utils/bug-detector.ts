@@ -127,7 +127,8 @@ export class BugDetector {
           );
           if (importMatch) {
             const importPath = importMatch[1];
-            const resolvedPath = this.resolveImportPath(file, importPath);
+            if (importPath) {
+              const resolvedPath = this.resolveImportPath(file, importPath);
 
             // Skip built-in modules and only report actual import errors
             if (
@@ -148,6 +149,7 @@ export class BugDetector {
                 reproducible: true,
                 fixSuggestion: `Check if the file exists at ${importPath} or update the import path`,
               });
+            }
             }
           }
         });
@@ -430,9 +432,11 @@ export class BugDetector {
 
         while ((match = exportRegex.exec(content)) !== null) {
           const name = match[1];
-          const lineIndex =
-            content.substring(0, match.index).split("\n").length - 1;
-          exports.push({ name, line: lineIndex + 1 });
+          if (name) {
+            const lineIndex =
+              content.substring(0, match.index).split("\n").length - 1;
+            exports.push({ name, line: lineIndex + 1 });
+          }
         }
 
         // Find duplicates
@@ -483,7 +487,8 @@ export class BugDetector {
         let match: RegExpExecArray | null;
 
         while ((match = importRegex.exec(content)) !== null) {
-          const imports = match[1].split(",").map((imp) => imp.trim());
+          if (match[1]) {
+            const imports = match[1].split(",").map((imp) => imp.trim());
           const matchContext = match[0]; // Capture the match context before forEach
 
           imports.forEach((importName) => {
@@ -508,6 +513,7 @@ export class BugDetector {
               });
             }
           });
+          }
         }
       } catch (error) {
         // eslint-disable-next-line no-console

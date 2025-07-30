@@ -4,15 +4,31 @@ import { createMpesaService, STKPushRequest } from "../services/mpesa-service";
 import { asyncHandler } from "../middleware/error-handler";
 import { AuthenticatedRequest, requireAuth } from "../middleware/auth.middleware";
 
+// Critical payment warning for property transactions
+const CRITICAL_PAYMENT_WARNING = {
+  title: "Important: Property Purchase Payments",
+  message: "For property purchases, deposits, or large transactions, use bank transfers or escrow services. M-Pesa payments cannot be reversed.",
+  recommendedMethods: ["Bank Transfer", "Escrow Service", "Lawyer's Trust Account"],
+  maxSafeAmount: 10000 // KES
+};
+
 // Payment validation schemas
 const InitiatePaymentSchema = z.object({
   phoneNumber: z.string()
     .regex(/^(\+254|254|0)?[17]\d{8}$/, "Invalid Kenyan phone number format"),
   amount: z.number()
     .min(1, "Amount must be at least KES 1")
-    .max(70000, "Amount cannot exceed KES 70,000 per transaction"),
+    .max(10000, "Amount cannot exceed KES 10,000 per transaction for safety. For larger amounts, use bank transfers."),
   propertyId: z.number().int().positive().optional(),
-  serviceType: z.enum(['property_verification', 'premium_listing', 'background_check', 'document_authentication']),
+  serviceType: z.enum([
+    'property_verification', 
+    'premium_listing', 
+    'background_check', 
+    'document_authentication',
+    'tour_booking',
+    'consultation_fee'
+    // Explicitly excludes: 'property_purchase', 'deposit', 'down_payment'
+  ]),
   description: z.string().min(1).max(100)
 });
 
@@ -109,7 +125,8 @@ export function registerPaymentRoutes(app: Express) {
             checkoutRequestId: stkResponse.CheckoutRequestID,
             customerMessage: stkResponse.CustomerMessage
           },
-          message: "Payment initiated successfully. Please check your phone for M-Pesa prompt."
+          message: "Payment initiated successfully. Please check your phone for M-Pesa prompt.",
+          warning: "M-Pesa payments are irreversible. Only use for service fees, not property purchases."
         });
 
       } catch (error: any) {
@@ -336,6 +353,76 @@ export function registerPaymentRoutes(app: Express) {
   );
 
   /**
+   * Get payment method guidance
+   */
+  app.get("/api/payments/guidance",
+    asyncHandler(async (req: Request, res: Response) => {
+      const guidance = {
+        mpesa: {
+          name: "M-Pesa",
+          description: "Mobile money payment system",
+          suitableFor: [
+            "Service fees (verification, listings)",
+            "Small consultation fees",
+            "Tour bookings",
+            "Document authentication"
+          ],
+          notSuitableFor: [
+            "Property purchases",
+            "Property deposits",
+            "Rent payments above KES 10,000",
+            "Large service packages"
+          ],
+          maxRecommendedAmount: 10000,
+          warnings: [
+            "Payments are irreversible",
+            "No dispute resolution mechanism",
+            "Limited to registered M-Pesa users"
+          ]
+        },
+        bankTransfer: {
+          name: "Bank Transfer",
+          description: "Direct bank-to-bank transfer",
+          suitableFor: [
+            "Property purchases",
+            "Large deposits",
+            "High-value services",
+            "Escrow transactions"
+          ],
+          advantages: [
+            "Reversible with proper documentation",
+            "Bank dispute resolution available",
+            "Higher transaction limits",
+            "Better audit trail"
+          ]
+        },
+        escrow: {
+          name: "Escrow Service",
+          description: "Third-party secured payment holding",
+          suitableFor: [
+            "Property purchases",
+            "Large transactions",
+            "International buyers",
+            "High-risk transactions"
+          ],
+          advantages: [
+            "Maximum security for both parties",
+            "Professional dispute resolution",
+            "Legal protection",
+            "Conditional release of funds"
+          ]
+        }
+      };
+
+      res.json({
+        success: true,
+        data: guidance,
+        recommendation: "Use M-Pesa only for service fees under KES 10,000. For property transactions, always use bank transfers or escrow services."
+      });
+    })
+  );
+
+  /**
    * Get payment service pricing
    */
   app.get("/api/payments/pricing",
@@ -345,31 +432,50 @@ export function registerPaymentRoutes(app: Express) {
           name: "Property Verification",
           price: 500, // KES
           description: "Complete property verification including ownership and legal checks",
-          features: ["Ownership verification", "Legal status check", "Market value assessment"]
+          features: ["Ownership verification", "Legal status check", "Market value assessment"],
+          paymentMethods: ["M-Pesa", "Bank Transfer"]
         },
         premium_listing: {
           name: "Premium Property Listing",
           price: 1000, // KES
           description: "Featured listing with enhanced visibility and analytics",
-          features: ["Featured placement", "Enhanced photos", "Analytics dashboard", "Priority support"]
+          features: ["Featured placement", "Enhanced photos", "Analytics dashboard", "Priority support"],
+          paymentMethods: ["M-Pesa", "Bank Transfer"]
         },
         background_check: {
           name: "Tenant Background Check",
           price: 300, // KES
           description: "Comprehensive tenant screening and verification",
-          features: ["Identity verification", "Credit check", "Reference verification"]
+          features: ["Identity verification", "Credit check", "Reference verification"],
+          paymentMethods: ["M-Pesa", "Bank Transfer"]
         },
         document_authentication: {
           name: "Document Authentication",
           price: 200, // KES
           description: "AI-powered document verification and authentication",
-          features: ["Document authenticity check", "Data extraction", "Fraud detection"]
+          features: ["Document authenticity check", "Data extraction", "Fraud detection"],
+          paymentMethods: ["M-Pesa", "Bank Transfer"]
+        },
+        tour_booking: {
+          name: "Property Tour Booking",
+          price: 100, // KES
+          description: "Schedule and secure a property viewing appointment",
+          features: ["Confirmed appointment", "Expert guide", "Detailed property walkthrough"],
+          paymentMethods: ["M-Pesa"]
+        },
+        consultation_fee: {
+          name: "Expert Consultation",
+          price: 800, // KES
+          description: "One-on-one consultation with property experts",
+          features: ["30-minute session", "Expert advice", "Written recommendations"],
+          paymentMethods: ["M-Pesa", "Bank Transfer"]
         }
       };
 
       res.json({
         success: true,
-        data: pricing
+        data: pricing,
+        paymentGuidance: CRITICAL_PAYMENT_WARNING
       });
     })
   );

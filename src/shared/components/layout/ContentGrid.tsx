@@ -98,7 +98,7 @@ export function ContentGrid({
 
   // Masonry fallback for browsers that don't support CSS Grid masonry
   useEffect(() => {
-    if (layout !== 'masonry' || !gridRef.current) return;
+    if (layout !== 'masonry' || !gridRef.current) return () => {};
 
     const grid = gridRef.current;
     const items = Array.from(grid.children) as HTMLElement[];
@@ -132,6 +132,8 @@ export function ContentGrid({
       
       return () => resizeObserver.disconnect();
     }
+    
+    return () => {}; // Return empty cleanup function when masonry is supported
   }, [layout, dynamicColumns, gap]);
 
   return (

@@ -73,12 +73,15 @@ SMTP_PASS="your-app-password"
 UPLOAD_DIR="./uploads"
 MAX_FILE_SIZE="10485760"
 
-# Payment (M-Pesa for Kenya)
+# Payment (M-Pesa for Kenya - SERVICE FEES ONLY)
+# CRITICAL: M-Pesa is configured for service payments only (verification, listings, etc.)
+# Property purchases should use bank transfers or escrow services
 MPESA_CONSUMER_KEY="your-mpesa-consumer-key"
 MPESA_CONSUMER_SECRET="your-mpesa-consumer-secret"
 MPESA_BUSINESS_SHORT_CODE="your-business-short-code"
 MPESA_PASSKEY="your-mpesa-passkey"
 MPESA_ENVIRONMENT="production"
+MPESA_MAX_SAFE_AMOUNT="10000"
 ```
 
 ## 🗄️ Database Setup

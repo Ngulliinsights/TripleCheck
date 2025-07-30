@@ -117,7 +117,7 @@ export function OptimizedImage({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry?.isIntersecting) {
           setIsInView(true);
           observer.disconnect();
         }
@@ -396,8 +396,8 @@ export function ImageGallery({
           <OptimizedImage
             src={image.src}
             alt={image.alt}
-            width={image.width}
-            height={image.height}
+            width={image.width || 300}
+            height={image.height || 200}
             loading={lazy ? 'lazy' : 'eager'}
             quality={quality}
             responsive

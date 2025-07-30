@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
 import { Badge } from "@shared/components/ui/badge";
-import { Linkedin, Mail } from "lucide-react";
+import { Button } from "@shared/components/ui/button";
+import { Linkedin, Mail, Users, Briefcase, ArrowRight } from "lucide-react";
 
 // Type definition for team member data structure
 interface TeamMember {
@@ -16,6 +17,7 @@ interface TeamMember {
 interface JobOpening {
   title: string;
   id: string;
+  department: string;
 }
 
 export default function TeamPage(): JSX.Element {
@@ -24,7 +26,7 @@ export default function TeamPage(): JSX.Element {
     {
       name: "John Kariuki",
       role: "CEO & Co-Founder",
-      bio: "Real estate veteran with 15+ years experience in Kenya's property market",
+      bio: "Real estate veteran with 15+ years experience in Kenya's property market, leading our mission to eliminate property fraud.",
       image: "/api/placeholder/150/150",
       linkedin: "#",
       email: "john@triplecheck.co.ke"
@@ -32,7 +34,7 @@ export default function TeamPage(): JSX.Element {
     {
       name: "Sarah Wanjiku",
       role: "CTO & Co-Founder", 
-      bio: "Tech leader specializing in AI/ML and blockchain verification systems",
+      bio: "Tech leader specializing in AI/ML and blockchain verification systems, architecting our fraud detection platform.",
       image: "/api/placeholder/150/150",
       linkedin: "#",
       email: "sarah@triplecheck.co.ke"
@@ -40,7 +42,7 @@ export default function TeamPage(): JSX.Element {
     {
       name: "David Makau",
       role: "Head of Verification",
-      bio: "Legal expert in property law and document authentication",
+      bio: "Legal expert in property law and document authentication, ensuring compliance with Kenyan regulations.",
       image: "/api/placeholder/150/150",
       linkedin: "#",
       email: "david@triplecheck.co.ke"
@@ -48,7 +50,7 @@ export default function TeamPage(): JSX.Element {
     {
       name: "Grace Achieng",
       role: "Community Manager",
-      bio: "Building trust networks and user engagement across Kenya",
+      bio: "Building trust networks and user engagement across Kenya, fostering our community-driven approach.",
       image: "/api/placeholder/150/150",
       linkedin: "#",
       email: "grace@triplecheck.co.ke"
@@ -57,116 +59,164 @@ export default function TeamPage(): JSX.Element {
 
   // Job openings data with proper typing
   const jobOpenings: JobOpening[] = [
-    { title: "Senior Software Engineer", id: "sse-001" },
-    { title: "Data Scientist - Fraud Detection", id: "ds-002" },
-    { title: "Regional Sales Manager", id: "rsm-003" },
-    { title: "Customer Success Specialist", id: "css-004" }
+    { title: "Senior Software Engineer", id: "sse-001", department: "Engineering" },
+    { title: "Data Scientist - Fraud Detection", id: "ds-002", department: "AI/ML" },
+    { title: "Regional Sales Manager", id: "rsm-003", department: "Sales" },
+    { title: "Customer Success Specialist", id: "css-004", department: "Support" }
   ];
 
   // Constants for maintainability
-  const BRAND_COLOR = "#2C5282";
   const CAREER_EMAIL = "careers@triplecheck.co.ke";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header Section */}
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-[#2C5282] mb-4">
-            Meet Our Team
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            The passionate professionals behind Kenya's most trusted property verification platform
-          </p>
-        </header>
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="flex justify-center mb-6">
+              <div className="p-4 bg-primary/10 rounded-full">
+                <Users className="w-12 h-12 text-primary" />
+              </div>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+              Meet Our Team
+            </h1>
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              The passionate professionals behind Kenya's most trusted property verification platform
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="container mx-auto px-4 py-16">
 
         {/* Team Members Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          {teamMembers.map((member, index) => (
-            <Card 
-              key={`team-member-${index}`} 
-              className="text-center hover:shadow-lg transition-shadow duration-300"
-            >
-              <CardContent className="pt-6">
-                {/* Profile Picture Placeholder */}
-                <div 
-                  className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center"
-                  role="img"
-                  aria-label={`Profile picture of ${member.name}`}
-                >
-                  <span className="text-4xl text-gray-500" aria-hidden="true">
-                    👤
-                  </span>
-                </div>
-
-                {/* Member Information */}
-                <h3 className="text-xl font-bold text-[#2C5282] mb-2">
-                  {member.name}
-                </h3>
-                <Badge className="mb-3 bg-[#2C5282] text-white">
-                  {member.role}
-                </Badge>
-                <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                  {member.bio}
-                </p>
-
-                {/* Social Links */}
-                <div className="flex justify-center space-x-3">
-                  <a 
-                    href={member.linkedin} 
-                    className="text-[#2C5282] hover:text-blue-700 transition-colors duration-200"
-                    aria-label={`${member.name}'s LinkedIn profile`}
+        <section className="mb-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">Leadership Team</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Meet the experienced professionals driving innovation in Kenya's real estate verification
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {teamMembers.map((member, index) => (
+              <Card 
+                key={`team-member-${index}`} 
+                className="text-center hover:shadow-lg transition-all duration-300 hover:scale-105 border-border"
+              >
+                <CardContent className="pt-6">
+                  {/* Profile Picture Placeholder */}
+                  <div 
+                    className="w-24 h-24 bg-muted rounded-full mx-auto mb-4 flex items-center justify-center border-2 border-border"
+                    role="img"
+                    aria-label={`Profile picture of ${member.name}`}
                   >
-                    <Linkedin className="h-5 w-5" />
-                  </a>
-                  <a 
-                    href={`mailto:${member.email}`} 
-                    className="text-[#2C5282] hover:text-blue-700 transition-colors duration-200"
-                    aria-label={`Email ${member.name}`}
-                  >
-                    <Mail className="h-5 w-5" />
-                  </a>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    <Users className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
+                  </div>
+
+                  {/* Member Information */}
+                  <h3 className="text-lg font-bold text-foreground mb-2">
+                    {member.name}
+                  </h3>
+                  <Badge className="mb-3 bg-primary text-primary-foreground">
+                    {member.role}
+                  </Badge>
+                  <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
+                    {member.bio}
+                  </p>
+
+                  {/* Social Links */}
+                  <div className="flex justify-center space-x-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="h-8 w-8 p-0"
+                    >
+                      <a 
+                        href={member.linkedin} 
+                        aria-label={`${member.name}'s LinkedIn profile`}
+                      >
+                        <Linkedin className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="h-8 w-8 p-0"
+                    >
+                      <a 
+                        href={`mailto:${member.email}`} 
+                        aria-label={`Email ${member.name}`}
+                      >
+                        <Mail className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </section>
 
         {/* Careers Section */}
         <section>
-          <Card>
+          <Card className="border-border">
             <CardHeader>
-              <CardTitle className="text-center text-2xl text-[#2C5282]">
-                Join Our Mission
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-gray-700 mb-6 leading-relaxed">
-                We're always looking for passionate individuals to join our team and help transform Kenya's real estate landscape.
-              </p>
-              
-              <div className="space-y-2">
-                <p className="font-semibold text-[#2C5282]">
-                  Open Positions:
+              <div className="text-center">
+                <div className="flex justify-center mb-4">
+                  <div className="p-3 bg-secondary/10 rounded-full">
+                    <Briefcase className="w-8 h-8 text-secondary" />
+                  </div>
+                </div>
+                <CardTitle className="text-3xl text-foreground mb-4">
+                  Join Our Mission
+                </CardTitle>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  We're always looking for passionate individuals to join our team and help transform Kenya's real estate landscape.
                 </p>
-                <ul className="text-gray-600 space-y-1" role="list">
-                  {jobOpenings.map((job) => (
-                    <li key={job.id} role="listitem">
-                      • {job.title}
-                    </li>
-                  ))}
-                </ul>
               </div>
-              
-              <p className="mt-6 text-sm text-gray-500">
-                Send your CV to{" "}
-                <a 
-                  href={`mailto:${CAREER_EMAIL}`}
-                  className="text-[#2C5282] hover:text-blue-700 transition-colors duration-200"
-                >
-                  {CAREER_EMAIL}
-                </a>
-              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="max-w-4xl mx-auto">
+                <div className="mb-8">
+                  <h3 className="text-xl font-semibold text-foreground mb-6 text-center">
+                    Open Positions
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {jobOpenings.map((job) => (
+                      <div 
+                        key={job.id} 
+                        className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border hover:shadow-md transition-shadow"
+                      >
+                        <div>
+                          <h4 className="font-medium text-foreground">{job.title}</h4>
+                          <p className="text-sm text-muted-foreground">{job.department}</p>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="text-center p-6 bg-primary/5 rounded-lg border border-primary/20">
+                  <p className="text-muted-foreground mb-4">
+                    Ready to make a difference in Kenya's real estate industry?
+                  </p>
+                  <Button asChild>
+                    <a href={`mailto:${CAREER_EMAIL}`}>
+                      <Mail className="w-4 h-4 mr-2" />
+                      Send Your CV
+                    </a>
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    {CAREER_EMAIL}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </section>

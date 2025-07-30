@@ -68,11 +68,11 @@ export const GlobalPerformanceTestPanel: React.FC<GlobalPerformanceTestPanelProp
     const avgCallInterval = Object.values(stats).reduce((sum: number, stat: any) => sum + stat.averageTimeBetweenCalls, 0) / Object.keys(stats).length;
 
     if (results.infiniteLoops || globalIssues.length > 5) {
-      results.performanceScore = 'critical';
+      results.performanceScore = 'poor' as const;
     } else if (results.raceConditions || results.excessiveRenders || globalIssues.length > 2) {
-      results.performanceScore = 'poor';
+      results.performanceScore = 'poor' as const;
     } else if (avgCallInterval < 300 && totalApiCalls > 10) {
-      results.performanceScore = 'good';
+      results.performanceScore = 'excellent' as const;
     }
 
     setTestResults(results);
@@ -94,6 +94,8 @@ export const GlobalPerformanceTestPanel: React.FC<GlobalPerformanceTestPanelProp
     // Simulate rapid interactions across components
     for (let i = 0; i < testScenarios.length; i++) {
       const scenario = testScenarios[i];
+      
+      if (!scenario) continue;
       
       // Simulate multiple rapid calls for each component
       for (let j = 0; j < 3; j++) {

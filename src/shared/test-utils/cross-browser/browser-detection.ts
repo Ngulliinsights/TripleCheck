@@ -26,22 +26,22 @@ export class BrowserDetector {
     if (ua.includes('chrome') && !ua.includes('edge')) {
       name = 'chrome';
       const match = ua.match(/chrome\/(\d+)/);
-      version = match ? match[1] : 'unknown';
+      version = match?.[1] ?? 'unknown';
       engine = 'blink';
     } else if (ua.includes('firefox')) {
       name = 'firefox';
       const match = ua.match(/firefox\/(\d+)/);
-      version = match ? match[1] : 'unknown';
+      version = match?.[1] ?? 'unknown';
       engine = 'gecko';
     } else if (ua.includes('safari') && !ua.includes('chrome')) {
       name = 'safari';
       const match = ua.match(/version\/(\d+)/);
-      version = match ? match[1] : 'unknown';
+      version = match?.[1] ?? 'unknown';
       engine = 'webkit';
     } else if (ua.includes('edge')) {
       name = 'edge';
       const match = ua.match(/edge\/(\d+)/);
-      version = match ? match[1] : 'unknown';
+      version = match?.[1] ?? 'unknown';
       engine = 'blink';
     }
     

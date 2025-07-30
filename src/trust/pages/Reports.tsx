@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Button } from "@shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@shared/components/ui/card";
-import { Input } from "@shared/components/ui/input";
-import { Label } from "@shared/components/ui/label";
+import { Button } from "../../shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../../shared/components/ui/card";
+import { Input } from "../../shared/components/ui/input";
+import { Label } from "../../shared/components/ui/label";
 import { 
   FileText, 
   Download, 
@@ -13,12 +13,12 @@ import {
   Search,
   Building
 } from "lucide-react";
-import { Progress } from "@shared/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
+import { Progress } from "../../shared/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../shared/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../shared/components/ui/tabs";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/infrastructure/api/queryClient";
-import { useToast } from "@/shared/hooks/use-toast";
+import { apiRequest } from "../../infrastructure/api/queryClient";
+import { useToast } from "../../shared/hooks/use-toast";
 import { formatDate } from "../../shared/utils/date-utils";
 
 interface ReportType {

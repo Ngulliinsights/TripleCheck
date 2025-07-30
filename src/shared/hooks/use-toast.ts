@@ -215,7 +215,7 @@ function useToast(): UseToastReturn {
   }, []) // Removed state dependency to prevent unnecessary re-runs
 
   const dismiss = React.useCallback((toastId?: string): void => {
-    dispatch({ type: "DISMISS_TOAST", toastId })
+    dispatch({ type: "DISMISS_TOAST", ...(toastId && { toastId }) })
   }, [])
 
   return {

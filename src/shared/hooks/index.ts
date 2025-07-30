@@ -25,7 +25,8 @@ export { useInfiniteScroll } from './useInfiniteScroll';
 export { 
   useDebounce, 
   useDebouncedCallback,
-  useDebounceSimple
+  useThrottle,
+  useThrottledCallback
 } from './useDebounce';
 export { useVirtualization } from './useVirtualization';
 

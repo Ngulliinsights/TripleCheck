@@ -1,20 +1,25 @@
-import React from "react";
-import { Routes, Route, useParams, useLocation, useNavigate } from "react-router-dom";
-import { Suspense, useEffect, useState } from "react";
-import { LoadingSkeleton } from "../shared/components/ui/loading-skeleton";
-import { AppLayout } from "../shared/components/layout/AppLayout";
-import { ErrorBoundary } from "./error-boundary";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import React, { Suspense, useEffect, useState } from "react";
+import {
+  Routes,
+  Route,
+  useParams,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
-import { WorkingRoutes } from "./lazy-routes";
+import { AppLayout } from "../shared/components/layout/AppLayout";
+import { Button } from "../shared/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "../shared/components/ui/card";
-import { AlertTriangle, RefreshCw, Home } from "lucide-react";
-import { Button } from "../shared/components/ui/button";
-import { logger } from "../shared/utils/logger";
+import { LoadingSkeleton } from "../shared/components/ui/loading-skeleton";
+
+import { ErrorBoundary } from "./error-boundary";
+import { WorkingRoutes } from "./lazy-routes";
 
 /**
  * Enhanced wrapper components for handling URL parameters with react-router-dom v6
@@ -23,187 +28,129 @@ import { logger } from "../shared/utils/logger";
 
 // Enhanced interface for route parameters with validation
 interface RouteParams {
-  id?: string;
-  [key: string]: string | undefined;
+  readonly id?: string;
+  readonly [key: string]: string | undefined;
 }
 
 // Enhanced component props interface - compatible with LazyComponent
+// Fixed to handle undefined id properly for TypeScript exactOptionalPropertyTypes
 interface ComponentWithParams extends Record<string, unknown> {
-  id?: string;
-  params?: RouteParams;
-  isLoading?: boolean;
-  error?: Error | null;
+  readonly id?: string | undefined;
+  readonly params?: RouteParams;
+  readonly isLoading?: boolean;
+  readonly error?: Error | null;
 }
 
 // Utility function to validate route parameters
 const validateRouteParams = (
   params: RouteParams,
-  requiredParams: string[] = []
-): { isValid: boolean; errors: string[] } => {
+  requiredParams: readonly string[] = []
+): { readonly isValid: boolean; readonly errors: readonly string[] } => {
   const errors: string[] = [];
 
   for (const param of requiredParams) {
-    if (!params[param] || params[param]?.trim() === "") {
+    const paramValue = params[param];
+    if (!paramValue || paramValue.trim() === "") {
       errors.push(`Missing required parameter: ${param}`);
     }
   }
 
   // Validate ID format if present
-  if (params.id) {
-    // Check if ID is a valid format (numbers, letters, hyphens, underscores)
-    if (!/^[a-zA-Z0-9_-]+$/.test(params.id)) {
-      errors.push("Invalid ID format");
-    }
+  if (params.id && !/^[a-zA-Z0-9_-]+$/.test(params.id)) {
+    errors.push("Invalid ID format");
   }
 
   return {
     isValid: errors.length === 0,
-    errors,
+    errors: Object.freeze(errors),
   };
 };
 
-// Simplified PropertyDetailsWrapper without complex preloading
-function PropertyDetailsWrapper({
-  component: Component,
-}: {
-  component: React.ComponentType<ComponentWithParams>;
-}) {
-  const params = useParams<{ id: string }>();
+// Component for displaying parameter validation errors
+const ParameterValidationError: React.FC<{
+  readonly title: string;
+  readonly description: string;
+  readonly errors: readonly string[];
+}> = ({ title, description, errors }) => (
+  <ErrorBoundary level="route">
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Card className="max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600">
+            <AlertTriangle className="h-5 w-5" />
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">{description}</p>
+          <ul className="text-sm text-red-600 space-y-1">
+            {errors.map((error, index) => (
+              <li key={index}>• {error}</li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  </ErrorBoundary>
+);
 
-  // Validate parameters
-  const validation = validateRouteParams(params, ["id"]);
+// Generic wrapper for components that require ID parameter validation
+const createParameterWrapper = (
+  requiredParams: readonly string[],
+  errorConfig: {
+    readonly title: string;
+    readonly description: string;
+  }
+) => {
+  return function ParameterWrapper({
+    component: Component,
+  }: {
+    readonly component: React.ComponentType<ComponentWithParams>;
+  }) {
+    const params = useParams<{ readonly id: string }>();
 
-  // Handle parameter validation errors
-  if (!validation.isValid) {
+    // Validate parameters
+    const validation = validateRouteParams(params, requiredParams);
+
+    // Handle parameter validation errors
+    if (!validation.isValid) {
+      return (
+        <ParameterValidationError
+          title={errorConfig.title}
+          description={errorConfig.description}
+          errors={validation.errors}
+        />
+      );
+    }
+
     return (
-      <ErrorBoundary level="route">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="h-5 w-5" />
-                Invalid Route Parameters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                The URL parameters are invalid or missing:
-              </p>
-              <ul className="text-sm text-red-600 space-y-1">
-                {validation.errors.map((error, index) => (
-                  <li key={index}>• {error}</li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+      <ErrorBoundary level="component">
+        <Component
+          id={params.id}
+          params={params}
+          isLoading={false}
+          error={null}
+        />
       </ErrorBoundary>
     );
-  }
+  };
+};
 
-  return (
-    <ErrorBoundary level="component">
-      <Component
-        id={params.id}
-        params={params}
-        isLoading={false}
-        error={null}
-      />
-    </ErrorBoundary>
-  );
-}
+// Specialized wrappers using the generic factory
+const PropertyDetailsWrapper = createParameterWrapper(["id"], {
+  title: "Invalid Route Parameters",
+  description: "The URL parameters are invalid or missing:",
+});
 
-// Enhanced PropertyEditWrapper with parameter validation and error handling
-function PropertyEditWrapper({
-  component: Component,
-}: {
-  component: React.ComponentType<ComponentWithParams>;
-}) {
-  const params = useParams<{ id: string }>();
+const PropertyEditWrapper = createParameterWrapper(["id"], {
+  title: "Invalid Property ID",
+  description: "Cannot edit property with invalid parameters:",
+});
 
-  // Validate parameters
-  const validation = validateRouteParams(params, ["id"]);
-
-  // Handle parameter validation errors
-  if (!validation.isValid) {
-    return (
-      <ErrorBoundary level="route">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="h-5 w-5" />
-                Invalid Property ID
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                Cannot edit property with invalid parameters:
-              </p>
-              <ul className="text-sm text-red-600 space-y-1">
-                {validation.errors.map((error, index) => (
-                  <li key={index}>• {error}</li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      </ErrorBoundary>
-    );
-  }
-
-  return (
-    <ErrorBoundary level="component">
-      <Component
-        id={params.id}
-        params={params}
-        isLoading={false}
-        error={null}
-      />
-    </ErrorBoundary>
-  );
-}
-
-// Enhanced BlogPostWrapper with parameter validation
-function BlogPostWrapper({
-  component: Component,
-}: {
-  component: React.ComponentType<ComponentWithParams>;
-}) {
-  const params = useParams<{ id: string }>();
-
-  // Validate parameters
-  const validation = validateRouteParams(params, ["id"]);
-
-  // Handle parameter validation errors
-  if (!validation.isValid) {
-    return (
-      <ErrorBoundary level="route">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="h-5 w-5" />
-                Blog Post Not Found
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                The blog post ID is invalid or missing.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </ErrorBoundary>
-    );
-  }
-
-  return (
-    <ErrorBoundary level="component">
-      <Component id={params.id} params={params} />
-    </ErrorBoundary>
-  );
-}
+const BlogPostWrapper = createParameterWrapper(["id"], {
+  title: "Blog Post Not Found",
+  description: "The blog post ID is invalid or missing.",
+});
 
 /**
  * Enhanced routing component with comprehensive error handling
@@ -216,23 +163,32 @@ function BlogPostWrapper({
  * - Navigation crash prevention
  * - Route preloading optimization for improved performance
  */
-export function AppRouter() {
+export function AppRouter(): JSX.Element {
   const location = useLocation();
   const navigate = useNavigate();
   const [routeError, setRouteError] = useState<Error | null>(null);
 
   // Safe navigation helper to prevent crashes
-  const safeNavigate = React.useCallback((path: string) => {
-    try {
-      setRouteError(null);
-      navigate(path);
-    } catch (error) {
-      console.error('Navigation failed:', error);
-      setRouteError(error instanceof Error ? error : new Error('Navigation failed'));
-      // Fallback to window.location
-      window.location.href = path;
-    }
-  }, [navigate]);
+  const safeNavigate = React.useCallback(
+    (path: string): void => {
+      try {
+        setRouteError(null);
+        navigate(path);
+      } catch (error) {
+        // Log navigation error in development only
+        if (process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
+          console.error("Navigation failed:", error);
+        }
+        setRouteError(
+          error instanceof Error ? error : new Error("Navigation failed")
+        );
+        // Fallback to window.location
+        window.location.href = path;
+      }
+    },
+    [navigate]
+  );
 
   // Simple route change handling without complex preloading
   useEffect(() => {
@@ -241,7 +197,7 @@ export function AppRouter() {
   }, [location.pathname]);
 
   // Route error recovery component
-  const RouteErrorRecovery = () => (
+  const RouteErrorRecovery = (): JSX.Element => (
     <div className="flex items-center justify-center min-h-[60vh] p-4">
       <Card className="max-w-md mx-auto">
         <CardHeader>
@@ -252,7 +208,8 @@ export function AppRouter() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            {routeError?.message || 'Something went wrong while navigating. This is usually temporary.'}
+            {routeError?.message ||
+              "Something went wrong while navigating. This is usually temporary."}
           </p>
           <div className="flex gap-2">
             <Button
@@ -269,7 +226,7 @@ export function AppRouter() {
             <Button
               onClick={() => {
                 setRouteError(null);
-                safeNavigate('/');
+                safeNavigate("/");
               }}
               className="flex items-center gap-2"
             >
@@ -293,11 +250,23 @@ export function AppRouter() {
     );
   }
 
+  // Add production debugging
+  useEffect(() => {
+    console.log('Router rendering, current path:', location.pathname);
+    
+  }, [location.pathname, routeError]);
+
   return (
     <div className="min-h-screen bg-background">
       <AppLayout>
         <main>
-          <ErrorBoundary level="route" onError={(error) => setRouteError(error)}>
+          <ErrorBoundary
+            level="route"
+            onError={(error) => {
+              
+              setRouteError(error);
+            }}
+          >
             <Suspense
               fallback={
                 <div className="flex items-center justify-center min-h-screen">
@@ -311,19 +280,21 @@ export function AppRouter() {
               }
             >
               <Routes>
-                {/* Critical user paths - Home and marketing pages */}
+                {/* Core application pages */}
                 <Route path="/" element={<WorkingRoutes.Home />} />
                 <Route path="/features" element={<WorkingRoutes.Features />} />
                 <Route path="/pricing" element={<WorkingRoutes.Pricing />} />
 
                 {/* Authentication routes */}
                 <Route path="/auth/login" element={<WorkingRoutes.Login />} />
-                <Route
-                  path="/auth/register"
-                  element={<WorkingRoutes.Register />}
-                />
+                <Route path="/auth/register" element={<WorkingRoutes.Register />} />
 
-                {/* Property routes with parameter handling and preloading */}
+                {/* User dashboard and management */}
+                <Route path="/dashboard" element={<WorkingRoutes.Dashboard />} />
+                <Route path="/team" element={<WorkingRoutes.Team />} />
+                <Route path="/tenants" element={<WorkingRoutes.Tenants />} />
+
+                {/* Property routes with parameter handling */}
                 <Route
                   path="/property/:id"
                   element={
@@ -341,127 +312,6 @@ export function AppRouter() {
                   }
                 />
                 <Route
-                  path="/compare"
-                  element={<WorkingRoutes.PropertyCompare />}
-                />
-
-                {/* User management routes */}
-                <Route
-                  path="/dashboard"
-                  element={<WorkingRoutes.Dashboard />}
-                />
-                <Route path="/team" element={<WorkingRoutes.Team />} />
-
-                {/* Services landing and individual service routes */}
-                <Route path="/services" element={<WorkingRoutes.Services />} />
-                <Route
-                  path="/services/basic-checks"
-                  element={<WorkingRoutes.BasicChecks />}
-                />
-                <Route
-                  path="/services/fraud-detection"
-                  element={<WorkingRoutes.FraudDetection />}
-                />
-                <Route
-                  path="/services/document-auth"
-                  element={<WorkingRoutes.DocumentAuth />}
-                />
-                <Route
-                  path="/services/reports"
-                  element={<WorkingRoutes.Reports />}
-                />
-                <Route
-                  path="/services/alerts"
-                  element={<WorkingRoutes.Alerts />}
-                />
-                <Route
-                  path="/services/karma"
-                  element={<WorkingRoutes.Karma />}
-                />
-                <Route
-                  path="/services/reputation"
-                  element={<WorkingRoutes.Reputation />}
-                />
-                <Route
-                  path="/services/trust-points"
-                  element={<WorkingRoutes.TrustPoints />}
-                />
-                <Route
-                  path="/services/reviews"
-                  element={<WorkingRoutes.Reviews />}
-                />
-                <Route
-                  path="/services/list-property"
-                  element={<WorkingRoutes.ListProperty />}
-                />
-                <Route
-                  path="/services/resources"
-                  element={<WorkingRoutes.Resources />}
-                />
-                <Route
-                  path="/services/tenants"
-                  element={<WorkingRoutes.Tenants />}
-                />
-
-                {/* Solution-specific routes for different user types */}
-                <Route
-                  path="/solutions"
-                  element={<WorkingRoutes.Solutions />}
-                />
-                <Route
-                  path="/solutions/buyers"
-                  element={<WorkingRoutes.SolutionsBuyers />}
-                />
-                <Route
-                  path="/solutions/sellers"
-                  element={<WorkingRoutes.SolutionsSellers />}
-                />
-                <Route
-                  path="/solutions/agents"
-                  element={<WorkingRoutes.SolutionsAgents />}
-                />
-                <Route
-                  path="/solutions/developers"
-                  element={<WorkingRoutes.SolutionsDevelopers />}
-                />
-
-                {/* Help and support routes */}
-                <Route path="/help" element={<WorkingRoutes.Help />} />
-                <Route
-                  path="/help/getting-started"
-                  element={<WorkingRoutes.HelpGettingStarted />}
-                />
-                <Route
-                  path="/help/verification-guide"
-                  element={<WorkingRoutes.HelpVerification />}
-                />
-                <Route path="/help/faq" element={<WorkingRoutes.HelpFAQ />} />
-                <Route path="/contact" element={<WorkingRoutes.Contact />} />
-
-                {/* Property browsing routes */}
-                <Route
-                  path="/properties"
-                  element={<WorkingRoutes.Properties />}
-                />
-                <Route
-                  path="/properties/my"
-                  element={<WorkingRoutes.MyProperties />}
-                />
-                <Route
-                  path="/properties/residential"
-                  element={<WorkingRoutes.PropertiesResidential />}
-                />
-                <Route
-                  path="/properties/commercial"
-                  element={<WorkingRoutes.PropertiesCommercial />}
-                />
-                <Route
-                  path="/properties/land"
-                  element={<WorkingRoutes.PropertiesLand />}
-                />
-
-                {/* Additional property management routes */}
-                <Route
                   path="/property/:id/photos"
                   element={
                     <PropertyDetailsWrapper
@@ -477,77 +327,94 @@ export function AppRouter() {
                     />
                   }
                 />
+                <Route path="/compare" element={<WorkingRoutes.PropertyCompare />} />
+                <Route path="/list-property" element={<WorkingRoutes.ListProperty />} />
+                <Route path="/services/list-property" element={<WorkingRoutes.ListProperty />} />
 
-                {/* Search functionality routes */}
-                <Route
-                  path="/search"
-                  element={<WorkingRoutes.SearchResults />}
-                />
+                {/* Property browsing routes */}
+                <Route path="/properties" element={<WorkingRoutes.Properties />} />
+                <Route path="/properties/my" element={<WorkingRoutes.MyProperties />} />
+                <Route path="/properties/residential" element={<WorkingRoutes.PropertiesResidential />} />
+                <Route path="/properties/commercial" element={<WorkingRoutes.PropertiesCommercial />} />
+                <Route path="/properties/land" element={<WorkingRoutes.PropertiesLand />} />
 
-                {/* Land Verification routes - Kenya-specific land verification system */}
-                <Route
-                  path="/land-verification/*"
-                  element={<WorkingRoutes.LandVerification />}
-                />
-                <Route
-                  path="/land-verification/dashboard"
-                  element={<WorkingRoutes.LandVerificationDashboard />}
-                />
-                <Route
-                  path="/land-verification/new"
-                  element={<WorkingRoutes.NewLandVerification />}
-                />
+                {/* Services and trust features */}
+                <Route path="/services" element={<WorkingRoutes.Services />} />
+                <Route path="/services/basic-checks" element={<WorkingRoutes.BasicChecks />} />
+                <Route path="/services/fraud-detection" element={<WorkingRoutes.FraudDetection />} />
+                <Route path="/services/document-auth" element={<WorkingRoutes.DocumentAuth />} />
+                <Route path="/services/reports" element={<WorkingRoutes.Reports />} />
+                <Route path="/services/alerts" element={<WorkingRoutes.Alerts />} />
+                <Route path="/services/karma" element={<WorkingRoutes.Karma />} />
+                <Route path="/services/reputation" element={<WorkingRoutes.Reputation />} />
+                <Route path="/services/trust-points" element={<WorkingRoutes.TrustPoints />} />
+                <Route path="/services/reviews" element={<WorkingRoutes.Reviews />} />
 
-                {/* Communication and messaging routes */}
+                {/* Solutions for different user types */}
+                <Route path="/solutions" element={<WorkingRoutes.Solutions />} />
+                <Route path="/solutions/buyers" element={<WorkingRoutes.SolutionsBuyers />} />
+                <Route path="/solutions/sellers" element={<WorkingRoutes.SolutionsSellers />} />
+                <Route path="/solutions/agents" element={<WorkingRoutes.SolutionsAgents />} />
+                <Route path="/solutions/developers" element={<WorkingRoutes.SolutionsDevelopers />} />
+                <Route path="/solutions/legal-experts" element={<WorkingRoutes.SolutionsLegalExperts />} />
+
+                {/* Land Verification System - Kenya-specific */}
+                <Route path="/land-verification/*" element={<WorkingRoutes.LandVerification />} />
+                <Route path="/land-verification/dashboard" element={<WorkingRoutes.LandVerificationDashboard />} />
+                <Route path="/land-verification/new" element={<WorkingRoutes.NewLandVerification />} />
+
+                {/* Search and discovery */}
+                <Route path="/search" element={<WorkingRoutes.SearchResults />} />
+
+                {/* Communication */}
                 <Route path="/inbox" element={<WorkingRoutes.Inbox />} />
 
-                {/* Static content and informational routes */}
-                <Route path="/about" element={<WorkingRoutes.OurStory />} />
-                <Route
-                  path="/static/our-story"
-                  element={<WorkingRoutes.OurStory />}
-                />
-                <Route
-                  path="/static/partners"
-                  element={<WorkingRoutes.Partners />}
-                />
-                <Route
-                  path="/static/press-media"
-                  element={<WorkingRoutes.PressMedia />}
-                />
+                {/* Help and support */}
+                <Route path="/help" element={<WorkingRoutes.Help />} />
+                <Route path="/help/getting-started" element={<WorkingRoutes.HelpGettingStarted />} />
+                <Route path="/help/verification-guide" element={<WorkingRoutes.HelpVerification />} />
+                <Route path="/help/faq" element={<WorkingRoutes.HelpFAQ />} />
+                <Route path="/contact" element={<WorkingRoutes.Contact />} />
+
+                {/* Content and resources */}
+                <Route path="/resources" element={<WorkingRoutes.Resources />} />
                 <Route path="/blog" element={<WorkingRoutes.Blog />} />
                 <Route
                   path="/blog/:id"
-                  element={
-                    <BlogPostWrapper component={WorkingRoutes.BlogPost} />
-                  }
+                  element={<BlogPostWrapper component={WorkingRoutes.BlogPost} />}
                 />
 
                 {/* Community and fraud resources */}
-                <Route
-                  path="/community"
-                  element={<WorkingRoutes.Community />}
-                />
-                <Route
-                  path="/fraud-resources"
-                  element={<WorkingRoutes.FraudResources />}
-                />
-                <Route
-                  path="/resources/fraud"
-                  element={<WorkingRoutes.FraudResources />}
-                />
+                <Route path="/community-resources" element={<WorkingRoutes.CommunityAndResources />} />
+                <Route path="/community" element={<WorkingRoutes.Community />} />
+                <Route path="/fraud-guide" element={<WorkingRoutes.FraudResourcesStandalone />} />
+                <Route path="/fraud-resources" element={<WorkingRoutes.FraudResourcesStandalone />} />
+                <Route path="/resources/fraud" element={<WorkingRoutes.FraudResourcesStandalone />} />
 
-                {/* Developer Dashboard - Only accessible in development */}
-                <Route 
-                  path="/dev" 
+                {/* Company information */}
+                <Route path="/about" element={<WorkingRoutes.OurStory />} />
+                <Route path="/static/our-story" element={<WorkingRoutes.OurStory />} />
+                <Route path="/static/partners" element={<WorkingRoutes.Partners />} />
+                <Route path="/static/press-media" element={<WorkingRoutes.PressMedia />} />
+
+                {/* Legal pages */}
+                <Route path="/privacy" element={<WorkingRoutes.Privacy />} />
+                <Route path="/terms" element={<WorkingRoutes.Terms />} />
+                <Route path="/cookies" element={<WorkingRoutes.Cookies />} />
+                <Route path="/security" element={<WorkingRoutes.Security />} />
+
+                {/* Demo and development */}
+                <Route path="/mvp-demo" element={<WorkingRoutes.MVPDemo />} />
+                <Route
+                  path="/dev"
                   element={
-                    import.meta.env.MODE === "development" ? 
-                      <WorkingRoutes.DeveloperDashboard /> : 
-                      <WorkingRoutes.NotFound />
-                  } 
+                    import.meta.env.MODE === "development" ?
+                      <WorkingRoutes.DeveloperDashboard />
+                    : <WorkingRoutes.NotFound />
+                  }
                 />
 
-                {/* Catch all route for 404 handling */}
+                {/* 404 fallback */}
                 <Route path="*" element={<WorkingRoutes.NotFound />} />
               </Routes>
             </Suspense>

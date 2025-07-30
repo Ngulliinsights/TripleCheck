@@ -43,9 +43,9 @@ function createOptimizedChunkStrategy() {
       ) {
         chunkName = "react-core";
       }
-      // Routing libraries - moderate change frequency, route-specific usage
+      // Routing libraries - bundle with React to avoid context issues
       else if (id.includes("react-router") || id.includes("@remix-run")) {
-        chunkName = "navigation";
+        chunkName = "react-core";
       }
       // State management and data fetching - business logic dependencies
       else if (
@@ -190,6 +190,7 @@ export default defineConfig({
     include: [
       "react",
       "react-dom",
+      "react-dom/client",
       "react-router-dom",
       "@tanstack/react-query",
     ],

@@ -1,20 +1,20 @@
-import { Badge } from "@shared/components/ui/badge";
+import { Badge } from "../../shared/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@shared/components/ui/card";
+} from "../../shared/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@shared/components/ui/select";
-import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
-import { cn } from "@shared/lib/utils";
-import type { PropertyFeatures } from "@shared/schema";
+} from "../../shared/components/ui/select";
+import { useSafePropertiesQuery } from "../../shared/hooks/useSafeQuery";
+import { cn } from "../../shared/lib/utils";
+import type { PropertyFeatures } from "../../shared/schema";
 import {
   Home,
   MapPin,

@@ -22,7 +22,11 @@ import { registerMLRoutes } from './routes/ml-routes';
 import { registerAIRoutes } from './routes/ai-routes';
 import { registerAuthRoutes } from './routes/auth';
 import { registerPaymentRoutes } from './routes/payments';
+import { registerFraudIntelligenceRoutes } from './routes/fraud-intelligence.routes';
+import { registerCommunityResourcesRoutes } from './routes/community-resources.routes';
 import emailRouter from './routes/email-routes';
+import documentVerificationRouter from './routes/document-verification.routes';
+import communityIntelligenceRouter from './routes/community-intelligence.routes';
 import { storage } from './infrastructure/storage/storage';
 
 // Land verification and monitoring imports
@@ -213,11 +217,15 @@ app.use('/api/ai', aiRouter);
 
 // Register additional routes from moved files
 app.use('/api/email', emailRouter);
+app.use('/api/documents', documentVerificationRouter);
+app.use('/api/community', communityIntelligenceRouter);
 registerCommunityTrustRoutes(app);
 registerMLRoutes(app);
 registerAIRoutes(app);
 registerAuthRoutes(app, storage);
 registerPaymentRoutes(app);
+registerFraudIntelligenceRoutes(app);
+registerCommunityResourcesRoutes(app);
 
 // Development seed route (only in development)
 if (process.env.NODE_ENV === 'development') {

@@ -131,7 +131,7 @@ export function EnhancedNavigation() {
 
   interface NavigationSection {
     title: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: React.ComponentType<any>;
     items: NavigationItem[];
   }
 
@@ -190,7 +190,7 @@ export function EnhancedNavigation() {
   };
 
   return (
-    <motion.header
+    <header
       className={cn(
         "fixed top-0 w-full z-50 transition-all duration-300",
         scrolled 
@@ -203,9 +203,7 @@ export function EnhancedNavigation() {
         <div className="flex items-center justify-between">
           {/* Logo and main navigation */}
           <div className="flex items-center space-x-8">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <div
               className="flex items-center gap-3"
             >
               <Logo
@@ -221,7 +219,7 @@ export function EnhancedNavigation() {
                 interactive={true}
                 href="/"
               />
-            </motion.div>
+            </div>
 
             <NavigationMenu>
               <NavigationMenuList>
@@ -269,10 +267,9 @@ export function EnhancedNavigation() {
 
           {/* Enhanced search and user actions */}
           <div className="flex items-center space-x-4">
-            <motion.div
+            <div
               className="relative"
-              animate={{ width: searchFocused ? 384 : 256 }}
-              transition={{ type: "spring", stiffness: 200, damping: 25 }}
+              style={{ width: searchFocused ? 384 : 256 }}
             >
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -288,9 +285,9 @@ export function EnhancedNavigation() {
                 />
               </div>
               
-              <AnimatePresence>
+              <div>
                 {searchFocused && (
-                  <motion.div
+                  <div
                     className="absolute top-full left-0 w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-10"
                     {...searchDropdownVariants}
                   >
@@ -330,10 +327,10 @@ export function EnhancedNavigation() {
                         </div>
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
-            </motion.div>
+              </div>
+            </div>
 
             <div className="flex items-center space-x-2">
               <Button 
@@ -368,6 +365,6 @@ export function EnhancedNavigation() {
           </div>
         </div>
       </nav>
-    </motion.header>
+    </header>
   );
 }

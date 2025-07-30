@@ -72,6 +72,7 @@ export function OperationDebugger({
       updateDebugData(); // Initial update
       return () => clearInterval(interval);
     }
+    return () => {}; // Return empty cleanup function when condition is false
   }, [autoRefresh, isVisible, isPaused, refreshInterval, updateDebugData]);
 
   // Keyboard shortcuts

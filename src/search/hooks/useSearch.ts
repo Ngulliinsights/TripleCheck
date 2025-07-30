@@ -35,11 +35,6 @@ export function useSearch() {
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     location: '',
-    priceMin: undefined,
-    priceMax: undefined,
-    propertyType: undefined,
-    bedrooms: undefined,
-    bathrooms: undefined,
   });
 
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -81,11 +76,6 @@ export function useSearch() {
     setFilters({
       query: '',
       location: '',
-      priceMin: undefined,
-      priceMax: undefined,
-      propertyType: undefined,
-      bedrooms: undefined,
-      bathrooms: undefined,
     });
     setIsSearchActive(false);
   }, []);

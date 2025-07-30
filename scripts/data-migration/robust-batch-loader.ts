@@ -2,7 +2,7 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { users, properties, reviews } from "../src/shared/schema";
+import { users, properties, reviews } from "../../src/shared/schema";
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as bcrypt from "bcrypt";

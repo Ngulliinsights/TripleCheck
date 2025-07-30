@@ -739,33 +739,68 @@ export default function Properties(): JSX.Element {
           </div>
         </section>
 
-        {/* CTA Section with improved accessibility */}
-        <section className="py-20 bg-blue-600 text-white">
+        {/* CTA Section with improved design and accessibility */}
+        <section className="py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 border-t border-gray-100">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-4">
-              Can&apos;t Find What You&apos;re Looking For?
-            </h2>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-8">
-              Let us help you find the perfect property or list your own with
-              our verification services.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="px-8 bg-white text-blue-600 hover:bg-gray-100"
-                onClick={() => navigate("/services/list-property")}
-              >
-                List Your Property
-                <ArrowRight className="w-5 h-5 ml-2" aria-hidden="true" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white hover:text-blue-600"
-                onClick={() => navigate("/contact")}
-              >
-                Contact Agent
-              </Button>
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Can&apos;t Find What You&apos;re Looking For?
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8 leading-relaxed">
+                Let us help you find the perfect property or list your own with
+                our comprehensive verification services.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  size="lg"
+                  className="px-8 py-3 bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  onClick={() => navigate("/services/list-property")}
+                >
+                  List Your Property
+                  <ArrowRight className="w-5 h-5 ml-2" aria-hidden="true" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="px-8 py-3 border-2 border-gray-300 text-gray-700 hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 shadow-md hover:shadow-lg transition-all duration-300"
+                  onClick={() => navigate("/contact")}
+                >
+                  Contact Agent
+                </Button>
+              </div>
+              
+              {/* Additional trust indicators */}
+              <div className="mt-12 pt-8 border-t border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-1">Verified Properties</h3>
+                    <p className="text-sm text-gray-600">Every listing is thoroughly authenticated</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-1">Fraud Protection</h3>
+                    <p className="text-sm text-gray-600">Advanced fraud detection and prevention</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3">
+                      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-1">Expert Support</h3>
+                    <p className="text-sm text-gray-600">Professional guidance throughout your journey</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

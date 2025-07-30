@@ -166,7 +166,9 @@ export function ImagesStep({ data, onUpdate, onValidation }: ImagesStepProps) {
   const moveImage = (fromIndex: number, toIndex: number) => {
     const updatedFiles = [...imageFiles];
     const [movedFile] = updatedFiles.splice(fromIndex, 1);
-    updatedFiles.splice(toIndex, 0, movedFile);
+    if (movedFile) {
+      updatedFiles.splice(toIndex, 0, movedFile);
+    }
     
     setImageFiles(updatedFiles);
     onUpdate({

@@ -1,4 +1,3 @@
-import React, { useState, useCallback, useRef } from "react";
 import {
   Upload,
   FileText,
@@ -11,6 +10,7 @@ import {
   Camera,
   Scan,
 } from "lucide-react";
+import React, { useState, useCallback, useRef } from "react";
 
 interface DocumentFile {
   id: string;
@@ -76,6 +76,135 @@ export default function DocumentAuthentication(): JSX.Element {
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const updateDocumentStatus = useCallback(
+    (id: string, status: DocumentFile["status"], progress: number) => {
+      setDocuments((prev) =>
+        prev.map((doc) => (doc.id === id ? { ...doc, status, progress } : doc))
+      );
+    },
+    []
+  );
+
+  const mapVerificationStatus = useCallback(
+    (status: VerificationResult["status"]): DocumentFile["status"] => {
+      if (status === "authentic") return "verified";
+      if (status === "suspicious") return "suspicious";
+      return "failed";
+    },
+    []
+  );
+
+  const processDocument = useCallback(
+    async (document: DocumentFile) => {
+      try {
+        // Update status to processing
+        updateDocumentStatus(document.id, "processing", 10);
+
+        // Simulate file upload progress
+        for (let progress = 20; progress <= 80; progress += 20) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          updateDocumentStatus(document.id, "processing", progress);
+        }
+
+        // Call document verification API
+        const formData = new FormData();
+        formData.append("document", document.file);
+        formData.append("documentId", document.id);
+
+        try {
+          const response = await fetch("/api/documents/verify", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Verification failed");
+          }
+
+          const responseData = await response.json();
+          if (!responseData.success) {
+            throw new Error(responseData.error || "Verification failed");
+          }
+
+          const result: VerificationResult = responseData.data;
+
+          // Update document with verification result
+          setDocuments((prev) =>
+            prev.map((doc) =>
+              doc.id === document.id ?
+                {
+                  ...doc,
+                  status: mapVerificationStatus(result.status),
+                  progress: 100,
+                  verificationResult: result,
+                }
+              : doc
+            )
+          );
+        } catch (error) {
+          // Log error for debugging
+          if (process.env.NODE_ENV === "development") {
+            
+          }
+          // Update document with error status
+          setDocuments((prev) =>
+            prev.map((doc) =>
+              doc.id === document.id ?
+                {
+                  ...doc,
+                  status: "failed" as const,
+                  progress: 0,
+                  error:
+                    error instanceof Error ?
+                      error.message
+                    : "Verification failed",
+                }
+              : doc
+            )
+          );
+          throw error;
+        }
+      } catch (error) {
+        // Log error for debugging in development
+        if (process.env.NODE_ENV === "development") {
+          
+        }
+        updateDocumentStatus(document.id, "failed", 100);
+      }
+    },
+    [updateDocumentStatus, mapVerificationStatus]
+  );
+
+  const handleFiles = useCallback(
+    (files: File[]) => {
+      const validFiles = files.filter((file) => {
+        return (
+          SUPPORTED_TYPES.includes(file.type) && file.size <= MAX_FILE_SIZE
+        );
+      });
+
+      const newDocuments: DocumentFile[] = validFiles.map((file) => ({
+        id: `doc-${Date.now()}-${Date.now().toString(36)}`,
+        file,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        uploadedAt: new Date(),
+        status: "uploading",
+        progress: 0,
+      }));
+
+      setDocuments((prev) => [...prev, ...newDocuments]);
+
+      // Start processing each document
+      newDocuments.forEach((doc) => {
+        processDocument(doc);
+      });
+    },
+    [processDocument]
+  );
+
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -86,14 +215,17 @@ export default function DocumentAuthentication(): JSX.Element {
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    handleFiles(files);
-  }, []);
+      const files = Array.from(e.dataTransfer.files);
+      handleFiles(files);
+    },
+    [handleFiles]
+  );
 
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,128 +234,8 @@ export default function DocumentAuthentication(): JSX.Element {
         handleFiles(files);
       }
     },
-    []
+    [handleFiles]
   );
-
-  const handleFiles = useCallback((files: File[]) => {
-    const validFiles = files.filter((file) => {
-      if (!SUPPORTED_TYPES.includes(file.type)) {
-        // Show error notification for unsupported file type
-        return false;
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        // Show error notification for file too large
-        return false;
-      }
-      return true;
-    });
-
-    const newDocuments: DocumentFile[] = validFiles.map((file) => ({
-      id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-      file,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      uploadedAt: new Date(),
-      status: "uploading",
-      progress: 0,
-    }));
-
-    setDocuments((prev) => [...prev, ...newDocuments]);
-
-    // Start processing each document
-    newDocuments.forEach((doc) => {
-      processDocument(doc);
-    });
-  }, []);
-
-  const processDocument = async (document: DocumentFile) => {
-    try {
-      // Update status to processing
-      updateDocumentStatus(document.id, "processing", 10);
-
-      // Simulate file upload progress
-      for (let progress = 20; progress <= 80; progress += 20) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        updateDocumentStatus(document.id, "processing", progress);
-      }
-
-      // Call document verification API
-      const formData = new FormData();
-      formData.append("document", document.file);
-      formData.append("documentId", document.id);
-
-      try {
-        const response = await fetch("/api/documents/verify", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error("Verification failed");
-        }
-
-        const result: VerificationResult = await response.json();
-
-        // Update document with verification result
-        setDocuments((prev) =>
-          prev.map((doc) =>
-            doc.id === document.id ?
-              {
-                ...doc,
-                status: mapVerificationStatus(result.status),
-                progress: 100,
-                verificationResult: result,
-              }
-            : doc
-          )
-        );
-      } catch (error) {
-        console.error('Document verification failed:', error);
-        // Update document with error status
-        setDocuments((prev) =>
-          prev.map((doc) =>
-            doc.id === document.id ?
-              {
-                ...doc,
-                status: 'failed' as const,
-                progress: 0,
-                error: error instanceof Error ? error.message : 'Verification failed',
-              }
-            : doc
-          )
-        );
-        throw error;
-      }
-    } catch (error) {
-      updateDocumentStatus(document.id, "failed", 100);
-    }
-  };
-
-  const updateDocumentStatus = (
-    id: string,
-    status: DocumentFile["status"],
-    progress: number
-  ) => {
-    setDocuments((prev) =>
-      prev.map((doc) => (doc.id === id ? { ...doc, status, progress } : doc))
-    );
-  };
-
-  const mapVerificationStatus = (
-    status: VerificationResult["status"]
-  ): DocumentFile["status"] => {
-    switch (status) {
-      case "authentic":
-        return "verified";
-      case "suspicious":
-        return "suspicious";
-      case "forged":
-        return "failed";
-      default:
-        return "failed";
-    }
-  };
 
   const removeDocument = (id: string) => {
     setDocuments((prev) => prev.filter((doc) => doc.id !== id));
@@ -268,7 +280,7 @@ export default function DocumentAuthentication(): JSX.Element {
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
 
   return (
@@ -513,7 +525,7 @@ export default function DocumentAuthentication(): JSX.Element {
         )}
 
         {/* Detailed Results Modal */}
-        {selectedDocument && selectedDocument.verificationResult && (
+        {selectedDocument?.verificationResult && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b">
@@ -657,7 +669,7 @@ export default function DocumentAuthentication(): JSX.Element {
                           {selectedDocument.verificationResult.metadata.hash}
                         </span>
                       </div>
-                      {selectedDocument.verificationResult.metadata.author && (
+                      {selectedDocument.verificationResult.metadata?.author && (
                         <div>
                           <span className="font-medium">Author:</span>
                           <span className="ml-2">
@@ -669,7 +681,7 @@ export default function DocumentAuthentication(): JSX.Element {
                         </div>
                       )}
                       {selectedDocument.verificationResult.metadata
-                        .software && (
+                        ?.software && (
                         <div>
                           <span className="font-medium">Software:</span>
                           <span className="ml-2">
@@ -681,7 +693,7 @@ export default function DocumentAuthentication(): JSX.Element {
                         </div>
                       )}
                       {selectedDocument.verificationResult.metadata
-                        .creationDate && (
+                        ?.creationDate && (
                         <div>
                           <span className="font-medium">Created:</span>
                           <span className="ml-2">
@@ -690,7 +702,7 @@ export default function DocumentAuthentication(): JSX.Element {
                         </div>
                       )}
                       {selectedDocument.verificationResult.metadata
-                        .modificationDate && (
+                        ?.modificationDate && (
                         <div>
                           <span className="font-medium">Modified:</span>
                           <span className="ml-2">

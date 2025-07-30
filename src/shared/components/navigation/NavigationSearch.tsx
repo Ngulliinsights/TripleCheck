@@ -25,6 +25,7 @@ interface SearchResult {
     price?: string;
     location?: string;
     type?: string;
+    verificationStatus?: string;
   };
 }
 
@@ -382,6 +383,15 @@ export function NavigationSearch({
                       )}
                       {result.metadata.type && (
                         <span>• {result.metadata.type}</span>
+                      )}
+                      {result.metadata.verificationStatus && (
+                        <span
+                          className={`• ${result.metadata.verificationStatus === "verified" ? "text-green-600" : "text-yellow-600"}`}
+                        >
+                          {result.metadata.verificationStatus === "verified" ?
+                            "✓ Verified"
+                          : "⏳ Pending"}
+                        </span>
                       )}
                     </div>
                   )}

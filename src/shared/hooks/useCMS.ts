@@ -24,7 +24,7 @@ export interface BlogPost {
 }
 
 // Transform BLOG_POSTS data to match BlogPost interface
-const transformBlogPost = (post: typeof BLOG_POSTS[0]): BlogPost => ({
+const transformBlogPost = (post: any): BlogPost => ({
   id: post.id,
   title: post.title,
   excerpt: post.excerpt,
@@ -60,8 +60,7 @@ const transformBlogPost = (post: typeof BLOG_POSTS[0]): BlogPost => ({
   featured: BLOG_POSTS.indexOf(post) < 2, // First 2 posts are featured
   category: post.category,
   readTime: post.readTime,
-  viewCount: Math.floor(Math.random() * 2000) + 500, // Random view count for demo
-  externalUrl: undefined
+  viewCount: Math.floor(Math.random() * 2000) + 500 // Random view count for demo
 });
 
 const mockPosts: BlogPost[] = BLOG_POSTS.map(transformBlogPost);

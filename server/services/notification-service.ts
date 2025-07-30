@@ -39,13 +39,21 @@ export class NotificationService {
   private notifications: Map<string, Notification> = new Map();
   private templates: Map<string, NotificationTemplate> = new Map();
 
-  constructor(server: any) {
-    this.wss = new WebSocketServer({ 
-      server,
-      path: '/ws/notifications'
-    });
+  constructor(server?: any) {
+    // Only initialize WebSocket server if a proper server is provided
+    if (server && typeof server.on === 'function') {
+      this.wss = new WebSocketServer({ 
+        server,
+        path: '/ws/notifications'
+      });
+      this.setupWebSocketServer();
+    } else {
+      // Create a mock WebSocket server for testing/development
+      this.wss = new WebSocketServer({ 
+        noServer: true
+      });
+    }
 
-    this.setupWebSocketServer();
     this.setupNotificationTemplates();
     this.startCleanupInterval();
   }
@@ -373,6 +381,45 @@ export class NotificationService {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Send fraud report notification to fraud team
+   */
+  async sendFraudReportNotification(report: any): Promise<void> {
+    // This would send notifications to fraud investigation team
+    console.log('Fraud report notification:', report.id);
+    
+    // In a real implementation, this would:
+    // 1. Send email to fraud team
+    // 2. Create internal notifications
+    // 3. Trigger alerts if high-severity
+  }
+
+  /**
+   * Send community moderation notification
+   */
+  async sendCommunityModerationNotification(experience: any): Promise<void> {
+    // This would send notifications to community moderators
+    console.log('Community moderation notification:', experience.id);
+    
+    // In a real implementation, this would:
+    // 1. Send notifications to moderators
+    // 2. Auto-flag content based on keywords
+    // 3. Queue for review if needed
+  }
+
+  /**
+   * Send content report notification
+   */
+  async sendContentReportNotification(report: any): Promise<void> {
+    // This would send notifications to content moderators
+    console.log('Content report notification:', report.id);
+    
+    // In a real implementation, this would:
+    // 1. Send notifications to content moderators
+    // 2. Escalate based on report type
+    // 3. Auto-hide content if multiple reports
   }
 }
 

@@ -69,7 +69,7 @@ const DeveloperDashboard: React.FC = () => {
   const [isTracking, setIsTracking] = useState(false);
 
   // Initialize Core Web Vitals tracking
-  useEffect((): void => {
+  useEffect(() => {
     if (import.meta.env.MODE !== "development") {
       return;
     }
@@ -106,6 +106,7 @@ const DeveloperDashboard: React.FC = () => {
       updateSystemMetrics();
       const interval = setInterval(updateSystemMetrics, 5000);
 
+      // Return cleanup function
       return () => {
         unsubscribe();
         clearInterval(interval);
@@ -115,6 +116,8 @@ const DeveloperDashboard: React.FC = () => {
       // eslint-disable-next-line no-console
       console.error("Failed to initialize Core Web Vitals tracking:", error);
       setIsTracking(false);
+      // Return empty cleanup function for error case
+      return () => {};
     }
   }, []);
 

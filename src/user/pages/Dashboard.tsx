@@ -1,15 +1,35 @@
 // src/pages/Dashboard.tsx
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Badge } from '@shared/components/ui/badge';
-import { Button } from '@shared/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
-import { Bell, Settings, Home, Eye, Heart, MessageSquare, Shield, TrendingUp } from 'lucide-react';
-import { formatDate } from '../../shared/utils/date-utils';
+import { Badge } from "@shared/components/ui/badge";
+import { Button } from "@shared/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@shared/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@shared/components/ui/tabs";
+import {
+  Bell,
+  Settings,
+  Home,
+  Eye,
+  Heart,
+  MessageSquare,
+  Shield,
+  TrendingUp,
+} from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { formatDate } from "../../shared/utils/date-utils";
 
 /* ---------- TYPES ---------- */
-type MembershipTier = 'basic' | 'premium' | 'enterprise';
+type MembershipTier = "basic" | "premium" | "enterprise";
 
 interface User {
   id: string;
@@ -26,126 +46,176 @@ interface Property {
   location: string;
   price: number;
   image?: string;
-  status: 'verified' | 'pending' | 'draft';
+  status: "verified" | "pending" | "draft";
 }
 
 interface ActivityItem {
   id: string;
-  type: 'verification' | 'message' | 'save';
+  type: "verification" | "message" | "save";
   title: string;
   description: string;
   time: string;
-  status: 'success' | 'info';
+  status: "success" | "info";
 }
 
 /* ---------- MOCK DATA ---------- */
 const user: User = {
-  id: 'usr-123',
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  membershipTier: 'premium',
+  id: "usr-123",
+  name: "John Doe",
+  email: "john.doe@example.com",
+  membershipTier: "premium",
   trustScore: 4.8,
-  joinDate: '2024-01-15',
+  joinDate: "2024-01-15",
 };
 
 const properties: Property[] = [
   {
     id: 1,
-    title: 'Modern 3-Bedroom Apartment',
-    location: 'Westlands, Nairobi',
+    title: "Modern 3-Bedroom Apartment",
+    location: "Westlands, Nairobi",
     price: 150_000,
-    image: '/assets/apartment-luxury-1.jpg',
-    status: 'verified',
+    image: "/assets/apartment-luxury-1.jpg",
+    status: "verified",
   },
   {
     id: 2,
-    title: 'Villa in Karen',
-    location: 'Karen, Nairobi',
+    title: "Villa in Karen",
+    location: "Karen, Nairobi",
     price: 350_000,
-    image: '/placeholder-2.jpg',
-    status: 'pending',
+    image: "/placeholder-2.jpg",
+    status: "pending",
   },
   {
     id: 3,
-    title: 'Office Space CBD',
-    location: 'Nairobi CBD',
+    title: "Office Space CBD",
+    location: "Nairobi CBD",
     price: 200_000,
-    image: '/placeholder-3.jpg',
-    status: 'draft',
+    image: "/placeholder-3.jpg",
+    status: "draft",
   },
 ];
 
 const recentActivity: ActivityItem[] = [
   {
-    id: 'a1',
-    type: 'verification',
-    title: 'Property verified successfully',
-    description: 'Modern Apartment in Westlands',
-    time: '2h ago',
-    status: 'success',
+    id: "a1",
+    type: "verification",
+    title: "Property verified successfully",
+    description: "Modern Apartment in Westlands",
+    time: "2h ago",
+    status: "success",
   },
   {
-    id: 'a2',
-    type: 'message',
-    title: 'New message received',
-    description: 'From Sarah Johnson about Karen House',
-    time: '5h ago',
-    status: 'info',
+    id: "a2",
+    type: "message",
+    title: "New message received",
+    description: "From Sarah Johnson about Karen House",
+    time: "5h ago",
+    status: "info",
   },
   {
-    id: 'a3',
-    type: 'save',
-    title: 'Property saved to favorites',
-    description: 'Luxury Villa in Runda',
-    time: '1d ago',
-    status: 'info',
+    id: "a3",
+    type: "save",
+    title: "Property saved to favorites",
+    description: "Luxury Villa in Runda",
+    time: "1d ago",
+    status: "info",
   },
 ];
 
 const stats = [
-  { title: 'Properties Verified', value: 23, icon: Shield, color: 'text-green-600', bg: 'bg-green-100' },
-  { title: 'Saved Properties', value: 12, icon: Heart, color: 'text-red-600', bg: 'bg-red-100' },
-  { title: 'Property Views', value: 156, icon: Eye, color: 'text-blue-600', bg: 'bg-blue-100' },
-  { title: 'Messages', value: 8, icon: MessageSquare, color: 'text-purple-600', bg: 'bg-purple-100' },
+  {
+    title: "Properties Verified",
+    value: 23,
+    icon: Shield,
+    color: "text-green-600",
+    bg: "bg-green-100",
+  },
+  {
+    title: "Saved Properties",
+    value: 12,
+    icon: Heart,
+    color: "text-red-600",
+    bg: "bg-red-100",
+  },
+  {
+    title: "Property Views",
+    value: 156,
+    icon: Eye,
+    color: "text-blue-600",
+    bg: "bg-blue-100",
+  },
+  {
+    title: "Messages",
+    value: 8,
+    icon: MessageSquare,
+    color: "text-purple-600",
+    bg: "bg-purple-100",
+  },
 ];
 
 /* ---------- SUB-COMPONENTS ---------- */
-const StatCard: React.FC<typeof stats[0]> = ({ title, value, icon: Icon, color, bg }) => (
-  <Card>
-    <CardContent className="flex items-center p-4">
-      <div className={`p-2 rounded-lg ${bg}`}>
-        <Icon className={`w-5 h-5 ${color}`} />
-      </div>
-      <div className="ml-4">
-        <p className="text-sm font-medium text-gray-600">{title}</p>
-        <p className="text-2xl font-bold">{value}</p>
-      </div>
-    </CardContent>
-  </Card>
-);
+const StatCard: React.FC<
+  (typeof stats)[0] & { onClick?: (() => void) | undefined }
+> = ({ title, value, icon: Icon, color, bg, onClick }) => {
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (onClick && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      onClick();
+    }
+  };
 
-const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
-  const navigate = useNavigate();
+  return (
+    <Card
+      className={
+        onClick ? "cursor-pointer hover:shadow-md transition-shadow" : ""
+      }
+      onClick={onClick}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={onClick ? `View ${title}` : undefined}
+    >
+      <CardContent className="flex items-center p-4">
+        <div className={`p-2 rounded-lg ${bg}`}>
+          <Icon className={`w-5 h-5 ${color}`} />
+        </div>
+        <div className="ml-4">
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const PropertyCard: React.FC<{
+  property: Property;
+  onNavigate: (path: string) => void;
+}> = ({ property, onNavigate }) => {
   return (
     <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
       <img
-        src={property.image || '/placeholder.jpg'}
+        src={property.image || "/placeholder.jpg"}
         alt={property.title}
         className="w-full h-40 object-cover"
       />
       <div className="p-4">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-semibold">{property.title}</h3>
-          <Badge variant={property.status === 'verified' ? 'default' : 'secondary'}>
+          <Badge
+            variant={property.status === "verified" ? "default" : "secondary"}
+          >
             {property.status}
           </Badge>
         </div>
         <p className="text-sm text-gray-600 mb-2">{property.location}</p>
-        <p className="text-lg font-bold text-blue-600 mb-3">KES {property.price.toLocaleString()}</p>
+        <p className="text-lg font-bold text-blue-600 mb-3">
+          KES {property.price.toLocaleString()}
+        </p>
         <Button
           size="sm"
           className="w-full"
-          onClick={() => navigate(`/property/${property.id}`)}
+          onClick={() => onNavigate(`/property/${property.id}`)}
         >
           View Details
         </Button>
@@ -154,19 +224,56 @@ const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
   );
 };
 
-const ActivityRow: React.FC<ActivityItem> = ({ type, title, description, time, status }) => {
+const ActivityRow: React.FC<
+  ActivityItem & { onClick?: (() => void) | undefined }
+> = ({ type, title, description, time, status, onClick }) => {
   const iconMap = {
     verification: <Shield className="w-4 h-4 text-green-600" />,
     message: <MessageSquare className="w-4 h-4 text-blue-600" />,
     save: <Heart className="w-4 h-4 text-red-600" />,
-  };
+  } as const;
+
   const bgMap = {
-    success: 'bg-green-100',
-    info: 'bg-blue-100',
+    success: "bg-green-100",
+    info: "bg-blue-100",
+  } as const;
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (onClick && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      onClick();
+    }
   };
+
+  // Safe access to prevent object injection
+  const getIcon = (activityType: ActivityItem["type"]) => {
+    const validTypes = ["verification", "message", "save"] as const;
+    return validTypes.includes(activityType) ?
+        iconMap[activityType]
+      : iconMap.verification;
+  };
+
+  const getBgClass = (activityStatus: ActivityItem["status"]) => {
+    const validStatuses = ["success", "info"] as const;
+    return validStatuses.includes(activityStatus) ?
+        bgMap[activityStatus]
+      : bgMap.info;
+  };
+
   return (
-    <div className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50">
-      <div className={`p-2 rounded-full ${bgMap[status]}`}>{iconMap[type]}</div>
+    <div
+      className={`flex items-start space-x-3 p-3 rounded-lg bg-gray-50 ${
+        onClick ? "cursor-pointer hover:bg-gray-100 transition-colors" : ""
+      }`}
+      onClick={onClick}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={onClick ? `View ${title}` : undefined}
+    >
+      <div className={`p-2 rounded-full ${getBgClass(status)}`}>
+        {getIcon(type)}
+      </div>
       <div className="flex-1">
         <h4 className="font-medium">{title}</h4>
         <p className="text-sm text-gray-600">{description}</p>
@@ -179,18 +286,17 @@ const ActivityRow: React.FC<ActivityItem> = ({ type, title, description, time, s
 /* ---------- MAIN DASHBOARD ---------- */
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<'all' | 'verified' | 'pending' | 'draft'>('all');
+  const [filter, setFilter] = useState<
+    "all" | "verified" | "pending" | "draft"
+  >("all");
 
-  const filtered = useMemo(
-    () => {
-      if (!properties || !Array.isArray(properties)) return [];
-      
-      return filter === 'all'
-        ? properties
-        : properties.filter((p) => p && p.status === filter);
-    },
-    [properties, filter]
-  );
+  const filtered = useMemo(() => {
+    if (!Array.isArray(properties)) return [];
+
+    return filter === "all" ? properties : (
+        properties.filter((p) => p && p.status === filter)
+      );
+  }, [filter]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -201,8 +307,9 @@ export default function DashboardPage() {
             <div>
               <h1 className="text-3xl font-bold">Welcome back, {user.name}!</h1>
               <p className="text-gray-600">
-                {user.membershipTier.charAt(0).toUpperCase() + user.membershipTier.slice(1)} Member since{' '}
-                {formatDate(user.joinDate)}
+                {user.membershipTier.charAt(0).toUpperCase() +
+                  user.membershipTier.slice(1)}{" "}
+                Member since {formatDate(user.joinDate)}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -221,7 +328,13 @@ export default function DashboardPage() {
         {/* Stats */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((s) => (
-            <StatCard key={s.title} {...s} />
+            <StatCard
+              key={s.title}
+              {...s}
+              onClick={
+                s.title === "Messages" ? () => navigate("/inbox") : undefined
+              }
+            />
           ))}
         </section>
 
@@ -233,7 +346,10 @@ export default function DashboardPage() {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <TabsContent
+            value="overview"
+            className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
             {/* Recent Activity */}
             <Card className="lg:col-span-2">
               <CardHeader>
@@ -244,7 +360,15 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {recentActivity.map((a) => (
-                  <ActivityRow key={a.id} {...a} />
+                  <ActivityRow
+                    key={a.id}
+                    {...a}
+                    onClick={
+                      a.type === "message" ?
+                        () => navigate("/inbox")
+                      : undefined
+                    }
+                  />
                 ))}
                 <Button variant="outline" className="w-full">
                   View All Activity
@@ -261,7 +385,7 @@ export default function DashboardPage() {
                 <Button
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => navigate('/services/list-property')}
+                  onClick={() => navigate("/services/list-property")}
                 >
                   <Home className="w-4 h-4 mr-2" />
                   List New Property
@@ -269,14 +393,26 @@ export default function DashboardPage() {
                 <Button
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => navigate('/services/basic-checks')}
+                  onClick={() => navigate("/services/basic-checks")}
                 >
                   <Shield className="w-4 h-4 mr-2" />
                   Verify Property
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => navigate("/inbox")}
+                >
                   <MessageSquare className="w-4 h-4 mr-2" />
-                  Messages
+                  View All Messages
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => navigate("/properties")}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Browse Properties
                 </Button>
               </CardContent>
             </Card>
@@ -287,30 +423,35 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle>My Properties</CardTitle>
                 <div className="flex gap-2">
-                  {(['all', 'verified', 'pending', 'draft'] as const).map((f) => (
-                    <Button
-                      key={f}
-                      size="sm"
-                      variant={filter === f ? 'default' : 'outline'}
-                      onClick={() => setFilter(f)}
-                    >
-                      {f.charAt(0).toUpperCase() + f.slice(1)}
-                    </Button>
-                  ))}
+                  {(["all", "verified", "pending", "draft"] as const).map(
+                    (f) => (
+                      <Button
+                        key={f}
+                        size="sm"
+                        variant={filter === f ? "default" : "outline"}
+                        onClick={() => setFilter(f)}
+                      >
+                        {f.charAt(0).toUpperCase() + f.slice(1)}
+                      </Button>
+                    )
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
-                {filtered.length ? (
+                {filtered.length ?
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filtered.map((p) => (
-                      <PropertyCard key={p.id} property={p} />
+                      <PropertyCard
+                        key={p.id}
+                        property={p}
+                        onNavigate={navigate}
+                      />
                     ))}
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
+                : <div className="text-center py-12 text-gray-500">
                     No properties found for this filter.
                   </div>
-                )}
+                }
               </CardContent>
             </Card>
           </TabsContent>
@@ -321,7 +462,9 @@ export default function DashboardPage() {
                 <CardTitle>Analytics</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">Advanced charts & insights coming soon.</p>
+                <p className="text-gray-600">
+                  Advanced charts & insights coming soon.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>

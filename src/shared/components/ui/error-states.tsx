@@ -82,19 +82,19 @@ ErrorState.displayName = "ErrorState";
 // Specific error components for common use cases
 export const NetworkError = memo<Pick<ErrorStateProps, 'onRetry' | 'isRetrying'>>(
   ({ onRetry, isRetrying }) => (
-    <ErrorState variant="network" onRetry={onRetry} isRetrying={isRetrying} />
+    <ErrorState variant="network" {...(onRetry && { onRetry })} {...(isRetrying !== undefined && { isRetrying })} />
   )
 );
 
 export const ServerError = memo<Pick<ErrorStateProps, 'onRetry' | 'isRetrying'>>(
   ({ onRetry, isRetrying }) => (
-    <ErrorState variant="server" onRetry={onRetry} isRetrying={isRetrying} />
+    <ErrorState variant="server" {...(onRetry && { onRetry })} {...(isRetrying !== undefined && { isRetrying })} />
   )
 );
 
 export const TimeoutError = memo<Pick<ErrorStateProps, 'onRetry' | 'isRetrying'>>(
   ({ onRetry, isRetrying }) => (
-    <ErrorState variant="timeout" onRetry={onRetry} isRetrying={isRetrying} />
+    <ErrorState variant="timeout" {...(onRetry && { onRetry })} {...(isRetrying !== undefined && { isRetrying })} />
   )
 );
 

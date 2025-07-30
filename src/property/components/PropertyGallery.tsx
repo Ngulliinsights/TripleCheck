@@ -82,7 +82,7 @@ function SortableThumbnail({ image, index, isSelected, onSelect, allowEdit }: So
       >
         <OptimizedImage
           src={image.thumbnailUrl || image.url}
-          webpSrc={image.webpUrl}
+          {...(image.webpUrl && { webpSrc: image.webpUrl })}
           alt={image.alt}
           className="w-full h-full object-cover"
           loading="lazy"
@@ -255,7 +255,7 @@ function FullscreenViewer({
                 <div className="relative w-full h-full flex items-center justify-center">
                   <OptimizedImage
                     src={image.url}
-                    webpSrc={image.webpUrl}
+                    {...(image.webpUrl && { webpSrc: image.webpUrl })}
                     alt={image.alt}
                     className="max-w-full max-h-full object-contain"
                     onLoad={() => setIsLoading(false)}
@@ -270,7 +270,7 @@ function FullscreenViewer({
               ) : (
                 <OptimizedImage
                   src={image.url}
-                  webpSrc={image.webpUrl}
+                  {...(image.webpUrl && { webpSrc: image.webpUrl })}
                   alt={image.alt}
                   className="max-w-full max-h-full object-contain"
                   onLoad={() => setIsLoading(false)}
@@ -327,7 +327,9 @@ export function PropertyGallery({
   const handleImageSelect = useCallback((index: number) => {
     setSelectedIndex(index);
     const image = orderedImages[index];
-    onImageClick?.(image, index);
+    if (image) {
+      onImageClick?.(image, index);
+    }
   }, [orderedImages, onImageClick]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
@@ -411,6 +413,10 @@ export function PropertyGallery({
 
   const currentImage = orderedImages[selectedIndex];
 
+  if (!currentImage) {
+    return <div>No image available</div>;
+  }
+
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Main Image Display */}
@@ -426,7 +432,7 @@ export function PropertyGallery({
 
             <OptimizedImage
               src={currentImage.url}
-              webpSrc={currentImage.webpUrl}
+              {...(currentImage.webpUrl && { webpSrc: currentImage.webpUrl })}
               alt={currentImage.alt}
               className="w-full h-full object-cover"
               loading={lazyLoading ? 'lazy' : 'eager'}

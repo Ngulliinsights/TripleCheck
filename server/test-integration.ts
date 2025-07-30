@@ -9,6 +9,26 @@
 
 import 'dotenv/config';
 
+// Enhanced fetch with race condition protection
+async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function testIntegration() {
   console.log('🧪 Testing Backend-Frontend Integration...\n');
 
@@ -18,7 +38,7 @@ async function testIntegration() {
   // Test 1: Basic API Health Check
   try {
     console.log('1️⃣ Testing API Health Check...');
-    const response = await fetch(`${baseUrl}/api/health`);
+    const response = await safeFetch(`${baseUrl}/api/health`);
     
     if (response.ok) {
       const data = await response.json();
@@ -36,7 +56,7 @@ async function testIntegration() {
   // Test 2: Properties API (No Search)
   try {
     console.log('\n2️⃣ Testing Properties API (No Search)...');
-    const response = await fetch(`${baseUrl}/api/properties`);
+    const response = await safeFetch(`${baseUrl}/api/properties`);
     
     if (response.ok) {
       const data = await response.json();
@@ -56,7 +76,7 @@ async function testIntegration() {
   try {
     console.log('\n3️⃣ Testing Search API...');
     const searchTerm = 'apartment';
-    const response = await fetch(`${baseUrl}/api/properties?q=${encodeURIComponent(searchTerm)}`);
+    const response = await safeFetch(`${baseUrl}/api/properties?q=${encodeURIComponent(searchTerm)}`);
     
     if (response.ok) {
       const data = await response.json();
@@ -75,7 +95,7 @@ async function testIntegration() {
   // Test 4: CORS Headers
   try {
     console.log('\n4️⃣ Testing CORS Headers...');
-    const response = await fetch(`${baseUrl}/api/properties`, {
+    const response = await safeFetch(`${baseUrl}/api/properties`, {
       method: 'OPTIONS'
     });
     
@@ -95,7 +115,7 @@ async function testIntegration() {
   // Test 5: Database Connection (via API)
   try {
     console.log('\n5️⃣ Testing Database Connection...');
-    const response = await fetch(`${baseUrl}/api/properties`);
+    const response = await safeFetch(`${baseUrl}/api/properties`);
     
     if (response.ok) {
       const data = await response.json();

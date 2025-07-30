@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
-import { Label } from "@shared/components/ui/label";
-import { Textarea } from "@shared/components/ui/textarea";
+import { Button } from "../../shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
+import { Label } from "../../shared/components/ui/label";
+import { Textarea } from "../../shared/components/ui/textarea";
 import { Star, User, ThumbsUp, Flag, AlertCircle } from "lucide-react";
-import { Progress } from "@shared/components/ui/progress";
+import { Progress } from "../../shared/components/ui/progress";
 import { formatDate } from "../../shared/utils/date-utils";
 import { useForm } from "../../shared/hooks/useForm";
 import { ValidationRule } from "../../shared/utils/form-validation";

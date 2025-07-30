@@ -264,7 +264,7 @@ export function EnhancedHero({
   const [isLocationEnabled, setIsLocationEnabled] = useState<boolean>(false);
 
   const currentSlideData = useMemo<HeroSlide>(
-    () => ENHANCED_HERO_SLIDES[currentSlide],
+    () => ENHANCED_HERO_SLIDES[currentSlide] || ENHANCED_HERO_SLIDES[0],
     [currentSlide]
   );
 

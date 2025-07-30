@@ -34,20 +34,30 @@ function ProtectedRoute({
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // Simulate auth check
-    fetch('/api/auth/profile')
+    const controller = new AbortController();
+    
+    // Simulate auth check with race condition protection
+    fetch('/api/auth/profile', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (data.data) {
           setUser(data.data);
         }
       })
-      .catch(() => {
-        setUser(null);
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          setUser(null);
+        }
       })
       .finally(() => {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       });
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   if (loading) {

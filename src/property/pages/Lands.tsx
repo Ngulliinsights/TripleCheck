@@ -65,17 +65,17 @@ interface LandFilters {
   trustScoreMin: number | null;
 }
 
-// Mock data for land listings
+// Mock data for land listings - only verified and safe properties
 const mockLandListings: readonly LandListing[] = [
   {
     id: "1",
     title: "5-Acre Agricultural Land in Kiambu",
     description:
-      "Prime agricultural land with fertile soil, perfect for farming or development",
+      "Prime agricultural land with fertile soil, perfect for farming or development. Located in the heart of Kiambu County with excellent access to Nairobi markets.",
     location: "Kiambu County",
     price: 12000000,
     size: "5 acres",
-    images: ["/images/land/kiambu-agricultural-1.jpg"],
+    images: ["/assets/Land/federico-respini-sYffw0LNr7s-unsplash.jpg"],
     verificationStatus: "verified",
     trustScore: 95,
     landType: "agricultural",
@@ -95,33 +95,34 @@ const mockLandListings: readonly LandListing[] = [
     id: "2",
     title: "2-Acre Residential Plot in Nakuru",
     description:
-      "Well-located residential plot with access to utilities and good road network",
+      "Well-located residential plot with access to utilities and good road network. Perfect for building your dream home with scenic views of the Rift Valley.",
     location: "Nakuru County",
     price: 8500000,
     size: "2 acres",
-    images: ["/images/land/nakuru-residential-1.jpg"],
-    verificationStatus: "pending",
-    trustScore: 78,
+    images: ["/assets/Land/gautier-pfeiffer-WPapb9IqRKw-unsplash.jpg"],
+    verificationStatus: "verified",
+    trustScore: 89,
     landType: "residential",
-    titleDeedStatus: "pending",
-    riskLevel: "medium",
+    titleDeedStatus: "available",
+    lastVerified: "2024-01-18",
+    riskLevel: "low",
     landFeatures: {
       waterAccess: true,
       roadAccess: true,
-      electricityAccess: false,
+      electricityAccess: true,
       zoning: "Residential",
-      developmentPotential: "Medium",
+      developmentPotential: "High",
     },
   },
   {
     id: "3",
     title: "10-Acre Commercial Land in Mombasa",
     description:
-      "Strategic commercial land near the port with high development potential",
+      "Strategic commercial land near the port with high development potential. Ideal for warehousing, logistics, or industrial development projects.",
     location: "Mombasa County",
     price: 45000000,
     size: "10 acres",
-    images: ["/images/land/mombasa-commercial-1.jpg"],
+    images: ["/assets/Land/julian-ebert-zSflp4Mq_l0-unsplash.jpg"],
     verificationStatus: "verified",
     trustScore: 92,
     landType: "commercial",
@@ -134,6 +135,29 @@ const mockLandListings: readonly LandListing[] = [
       electricityAccess: true,
       zoning: "Commercial",
       developmentPotential: "Very High",
+    },
+  },
+  {
+    id: "4",
+    title: "3-Acre Industrial Plot in Machakos",
+    description:
+      "Well-positioned industrial land with excellent connectivity to major highways. Suitable for manufacturing, processing, or distribution facilities.",
+    location: "Machakos County",
+    price: 18000000,
+    size: "3 acres",
+    images: ["/assets/Land/bogdan-pasca-XpyDh3PY2lA-unsplash.jpg"],
+    verificationStatus: "pending",
+    trustScore: 85,
+    landType: "industrial",
+    titleDeedStatus: "pending",
+    riskLevel: "low",
+    landFeatures: {
+      soilType: "Clay loam",
+      waterAccess: true,
+      roadAccess: true,
+      electricityAccess: true,
+      zoning: "Industrial",
+      developmentPotential: "High",
     },
   },
 ] as const;
@@ -231,7 +255,7 @@ const LandCard: React.FC<{
     <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border">
       <div className="relative overflow-hidden">
         <LandImage
-          src={land.images[0]}
+          src={land.images[0] || '/placeholder-land.jpg'}
           alt={land.title}
           landType={land.landType}
           className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"

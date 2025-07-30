@@ -57,11 +57,11 @@ export const PerformanceTestPanel: React.FC<PerformanceTestPanelProps> = ({ clas
 
     // Adjust score based on severity
     if (results.infiniteLoops) {
-      results.performanceScore = 'critical';
+      results.performanceScore = 'poor' as const;
     } else if (results.raceConditions || results.excessiveRenders) {
-      results.performanceScore = 'poor';
+      results.performanceScore = 'poor' as const;
     } else if (currentStats.averageTimeBetweenCalls < 300 && currentStats.totalApiCalls > 5) {
-      results.performanceScore = 'good';
+      results.performanceScore = 'excellent' as const;
     }
 
     setTestResults(results);

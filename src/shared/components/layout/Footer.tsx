@@ -75,8 +75,8 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/services/fraud-detection" className="hover:text-white transition-colors flex items-center">
-                  Fraud Detection
+                <a href="/community-resources" className="hover:text-white transition-colors flex items-center">
+                  Community & Resources
                   <ArrowRight className="ml-1 h-3 w-3" />
                 </a>
               </li>

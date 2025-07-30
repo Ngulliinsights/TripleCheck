@@ -45,7 +45,7 @@ export function BreadcrumbNavigation({
       aria-label="Breadcrumb navigation"
     >
       <ol className="flex items-center space-x-2">
-        {displayItems.map((item, index) => (
+        {displayItems.map((item, index) => item && (
           <li key={`${item.label}-${index}`} className="flex items-center">
             {index > 0 && (
               <span className="mx-2" aria-hidden="true">
@@ -119,7 +119,7 @@ export function useBreadcrumbs(customItems?: BreadcrumbItem[]) {
 
       return {
         label,
-        href: isLast ? undefined : href,
+        ...(isLast ? {} : { href }),
         isActive: isLast
       };
     });

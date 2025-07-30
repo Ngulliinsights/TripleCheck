@@ -1,4 +1,3 @@
-import { useState, FC, ReactNode } from "react";
 import {
   AlertTriangle,
   Phone,
@@ -9,7 +8,10 @@ import {
   Shield,
   CheckCircle,
   XCircle,
+  ArrowLeft,
 } from "lucide-react";
+import { useState, FC, ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 type SectionKey =
   | "emergency"
@@ -49,7 +51,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
           type="button"
           onClick={onToggle}
           className={`w-full flex justify-between items-center p-4 text-left font-semibold text-slate-800 transition-colors ${priorityColors[priority]}`}
-          aria-expanded={isOpen}
+          aria-expanded={isOpen ? "true" : "false"}
         >
           <span className="flex items-center gap-2">
             {icon}
@@ -297,7 +299,7 @@ const ReportingChannelsSection: FC = () => {
             {tier.agencies.map((agency, agencyIndex) => (
               <div
                 key={agencyIndex}
-                className="border border-slate-200 rounded p-4 space-y-3"
+                className={`${CARD_BORDER_STYLES} space-y-3`}
               >
                 <div className="flex justify-between items-start">
                   <h5 className="font-semibold text-lg">{agency.name}</h5>
@@ -436,7 +438,7 @@ const PreventionSection: FC = () => {
           Common Fraud Types to Recognize
         </h4>
         {commonFrauds.map((fraud, index) => (
-          <div key={index} className="border border-slate-200 rounded p-4">
+          <div key={index} className={CARD_BORDER_STYLES}>
             <h5 className="font-medium">{fraud.type}</h5>
             <p className="text-sm text-slate-600 mt-1">{fraud.description}</p>
             <div className="mt-2">
@@ -896,7 +898,7 @@ const DigitalToolsSection: FC = () => {
             {category.tools.map((tool, toolIndex) => (
               <div
                 key={toolIndex}
-                className="border border-slate-200 rounded p-3 flex justify-between items-start"
+                className={`${CARD_BORDER_STYLES.replace("p-4", "p-3")} flex justify-between items-start`}
               >
                 <div className="flex-1">
                   <h5 className="font-medium">{tool.name}</h5>
@@ -954,6 +956,9 @@ const DigitalToolsSection: FC = () => {
   );
 };
 
+// Constants
+const CARD_BORDER_STYLES = "border border-slate-200 rounded p-4";
+
 // Main Component
 const KenyaRealEstateFraudGuide: FC = () => {
   const [openSection, setOpenSection] = useState<SectionKey | null>(
@@ -965,16 +970,42 @@ const KenyaRealEstateFraudGuide: FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-4">
+      {/* Strategic Breadcrumb */}
+      <div className="mb-6">
+        <Link
+          to="/community-resources"
+          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Community & Resources Hub
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          Kenya Real Estate Fraud: Complete Resource Guide
+          Complete Emergency Fraud Response Guide
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto">
-          Comprehensive guidance for victims of real estate fraud, including
-          immediate action steps, reporting channels, prevention strategies, and
-          legal redress options. Updated July 2025.
+          Comprehensive 48-hour emergency response guide for real estate fraud
+          victims. This detailed resource includes immediate action steps,
+          complete agency contacts, legal procedures, and recovery strategies.
+          Updated July 2025.
         </p>
+
+        {/* Emergency Alert */}
+        <div className="bg-red-100 border border-red-300 p-4 rounded-lg mt-4 max-w-lg mx-auto">
+          <div className="flex items-center gap-2 justify-center">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <span className="font-semibold text-red-800">
+              Emergency Resource
+            </span>
+          </div>
+          <p className="text-red-700 text-sm mt-1">
+            If you&apos;re currently experiencing fraud, act immediately using
+            this guide
+          </p>
+        </div>
       </div>
 
       {/* Emergency Banner */}

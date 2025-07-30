@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, memo } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MessageSquare,
@@ -14,6 +15,7 @@ import {
   MapPin,
   Calendar,
   User,
+  ArrowLeft,
 } from "lucide-react";
 import { useDebounce } from "../hooks/useDebounce";
 // Removed useInfiniteScroll import since we're using regular useQuery
@@ -571,15 +573,25 @@ const RealEstateFraudCommunity = memo(() => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
+      {/* Strategic Breadcrumb */}
+      <div className="mb-6">
+        <Link
+          to="/community-resources"
+          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Community & Resources Hub
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Real Estate Fraud Community
+          Full Community Platform
         </h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Share your experiences, learn from others, and help build a safer real
-          estate market in Kenya and Africa. Together, we can identify patterns
-          and protect future victims.
+          Share detailed experiences, connect with other victims and professionals, and access advanced community features. 
+          This is your dedicated space for in-depth community engagement and support.
         </p>
       </div>
 

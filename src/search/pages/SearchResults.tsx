@@ -170,7 +170,7 @@ export default function SearchResults() {
         case 'price-desc':
           return b.price - a.price;
         case 'newest':
-          return (b.features.yearBuilt || 0) - (a.features.yearBuilt || 0);
+          return (b.features?.yearBuilt || 0) - (a.features?.yearBuilt || 0);
         case 'relevance':
         default:
           // In a real app, this would use a relevance score from the search API

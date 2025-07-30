@@ -101,16 +101,18 @@ const createLazyRoute = (
   importFunction: () => Promise<ModuleWithDefault>,
   configuration: LazyRouteConfiguration = {}
 ): LazyComponent => {
-  const { routePath, fallbackTitle, fallbackDescription, preloadPriority } = configuration;
+  const { routePath, fallbackTitle, fallbackDescription, preloadPriority } =
+    configuration;
 
   return lazy(async (): Promise<ModuleWithDefault> => {
     const startTime = performanceTracker.now();
 
     try {
       // Add chunk name for better webpack optimization
-      const chunkName = routePath ? 
-        `route-${routePath.replace(/[^a-zA-Z0-9]/g, '-').replace(/^-+|-+$/g, '')}` : 
-        'unknown-route';
+      const chunkName =
+        routePath ?
+          `route-${routePath.replace(/[^a-zA-Z0-9]/g, "-").replace(/^-+|-+$/g, "")}`
+        : "unknown-route";
 
       // Enhanced module loading with retry mechanism for network failures
       let module: ModuleWithDefault;
@@ -123,21 +125,25 @@ const createLazyRoute = (
           break;
         } catch (loadError) {
           retryCount++;
-          
+
           // Only retry on network-related errors
-          const isNetworkError = loadError instanceof Error && (
-            loadError.message.includes('Loading chunk') ||
-            loadError.message.includes('ChunkLoadError') ||
-            loadError.message.includes('fetch')
-          );
+          const isNetworkError =
+            loadError instanceof Error &&
+            (loadError.message.includes("Loading chunk") ||
+              loadError.message.includes("ChunkLoadError") ||
+              loadError.message.includes("fetch"));
 
           if (retryCount <= maxRetries && isNetworkError) {
-            logger.warn(`Route load attempt ${retryCount} failed for ${routePath}, retrying...`);
+            logger.warn(
+              `Route load attempt ${retryCount} failed for ${routePath}, retrying...`
+            );
             // Exponential backoff delay
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 100));
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.pow(2, retryCount) * 100)
+            );
             continue;
           }
-          
+
           throw loadError;
         }
       }
@@ -152,13 +158,15 @@ const createLazyRoute = (
       // Enhanced performance tracking with conditional execution
       if (performanceTracker.canTrack() && routePath) {
         const loadTime = Math.round(performanceTracker.now() - startTime);
-        const priority = preloadPriority || 'normal';
-        logger.info(`Route loaded: ${routePath} (${loadTime}ms, priority: ${priority}, chunk: ${chunkName})`);
-        
+        const priority = preloadPriority || "normal";
+        logger.info(
+          `Route loaded: ${routePath} (${loadTime}ms, priority: ${priority}, chunk: ${chunkName})`
+        );
+
         // Track performance metrics for optimization
-        if (typeof window !== 'undefined' && window.gtag) {
-          window.gtag('event', 'route_chunk_load', {
-            event_category: 'Performance',
+        if (window?.gtag) {
+          window.gtag("event", "route_chunk_load", {
+            event_category: "Performance",
             event_label: routePath,
             value: loadTime,
             custom_map: {
@@ -307,41 +315,57 @@ const createRouteWithFallback = (
 // Comprehensive route definitions with improved organization and webpack chunk optimization
 export const WorkingRoutes = {
   // Core application pages with high-priority loading and optimized chunks
-  Home: createLazyRoute(() => import(
-    /* webpackChunkName: "page-home" */
-    /* webpackPreload: true */
-    "../shared/pages/Home"
-  ), {
-    routePath: "/",
-    preloadPriority: "high",
-  }),
+  Home: createLazyRoute(
+    () =>
+      import(
+        /* webpackChunkName: "page-home" */
+        /* webpackPreload: true */
+        "../shared/pages/Home"
+      ),
+    {
+      routePath: "/",
+      preloadPriority: "high",
+    }
+  ),
 
-  Features: createLazyRoute(() => import(
-    /* webpackChunkName: "page-features" */
-    /* webpackPreload: true */
-    "../shared/pages/Features"
-  ), {
-    routePath: "/features",
-    preloadPriority: "high",
-  }),
+  Features: createLazyRoute(
+    () =>
+      import(
+        /* webpackChunkName: "page-features" */
+        /* webpackPreload: true */
+        "../shared/pages/Features"
+      ),
+    {
+      routePath: "/features",
+      preloadPriority: "high",
+    }
+  ),
 
-  Pricing: createLazyRoute(() => import(
-    /* webpackChunkName: "page-pricing" */
-    /* webpackPreload: true */
-    "../shared/pages/Pricing"
-  ), {
-    routePath: "/pricing",
-    preloadPriority: "high",
-  }),
+  Pricing: createLazyRoute(
+    () =>
+      import(
+        /* webpackChunkName: "page-pricing" */
+        /* webpackPreload: true */
+        "../shared/pages/Pricing"
+      ),
+    {
+      routePath: "/pricing",
+      preloadPriority: "high",
+    }
+  ),
 
-  Dashboard: createLazyRoute(() => import(
-    /* webpackChunkName: "user-dashboard" */
-    /* webpackPrefetch: true */
-    "../user/pages/Dashboard"
-  ), {
-    routePath: "/dashboard",
-    preloadPriority: "high",
-  }),
+  Dashboard: createLazyRoute(
+    () =>
+      import(
+        /* webpackChunkName: "user-dashboard" */
+        /* webpackPrefetch: true */
+        "../user/pages/Dashboard"
+      ),
+    {
+      routePath: "/dashboard",
+      preloadPriority: "high",
+    }
+  ),
 
   // Property management routes - essential business functionality
   PropertyDetails: createLazyRoute(
@@ -468,16 +492,36 @@ export const WorkingRoutes = {
     preloadPriority: "low",
   }),
 
+  // Integrated Community and Fraud Resources - Main hub page
+  CommunityAndResources: createLazyRoute(
+    () => import("../shared/pages/CommunityAndResources"),
+    {
+      routePath: "/community-resources",
+      preloadPriority: "normal",
+    }
+  ),
+
+  // Dedicated community page with full functionality
   Community: createLazyRoute(() => import("../shared/pages/Community"), {
     routePath: "/community",
-    preloadPriority: "low",
+    preloadPriority: "normal",
   }),
 
+  // Fraud resources overview (redirects to CommunityAndResources)
   FraudResources: createLazyRoute(
-    () => import("../shared/pages/Fraud-resources"),
+    () => import("../shared/pages/CommunityAndResources"),
     {
       routePath: "/fraud-resources",
       preloadPriority: "low",
+    }
+  ),
+
+  // Comprehensive standalone fraud guide
+  FraudResourcesStandalone: createLazyRoute(
+    () => import("../shared/pages/Fraud-resources"),
+    {
+      routePath: "/fraud-guide",
+      preloadPriority: "high", // Higher priority for emergency access
     }
   ),
 
@@ -497,6 +541,27 @@ export const WorkingRoutes = {
     preloadPriority: "low",
   }),
 
+  // Legal pages
+  Privacy: createLazyRoute(() => import("../shared/pages/Privacy"), {
+    routePath: "/privacy",
+    preloadPriority: "low",
+  }),
+
+  Terms: createLazyRoute(() => import("../shared/pages/Terms"), {
+    routePath: "/terms",
+    preloadPriority: "low",
+  }),
+
+  Cookies: createLazyRoute(() => import("../shared/pages/Cookies"), {
+    routePath: "/cookies",
+    preloadPriority: "low",
+  }),
+
+  Security: createLazyRoute(() => import("../shared/pages/Security"), {
+    routePath: "/security",
+    preloadPriority: "low",
+  }),
+
   // Search and discovery functionality
   SearchResults: createLazyRoute(
     () => import("../search/pages/SearchResults"),
@@ -506,6 +571,12 @@ export const WorkingRoutes = {
     }
   ),
 
+  // MVP Demo page
+  MVPDemo: createLazyRoute(() => import("../shared/pages/MVP-Demo"), {
+    routePath: "/mvp-demo",
+    preloadPriority: "high",
+  }),
+
   // Error handling and fallback pages
   NotFound: createLazyRoute(() => import("../shared/pages/NotFound"), {
     routePath: "/404",
@@ -513,13 +584,17 @@ export const WorkingRoutes = {
   }),
 
   // Developer tools - only available in development
-  DeveloperDashboard: createLazyRoute(() => import(
-    /* webpackChunkName: "dev-dashboard" */
-    "../shared/pages/DeveloperDashboard"
-  ), {
-    routePath: "/dev",
-    preloadPriority: "low",
-  }),
+  DeveloperDashboard: createLazyRoute(
+    () =>
+      import(
+        /* webpackChunkName: "dev-dashboard" */
+        "../shared/pages/DeveloperDashboard"
+      ),
+    {
+      routePath: "/dev",
+      preloadPriority: "low",
+    }
+  ),
 
   // Service pages with comprehensive fallback handling
   Services: createRouteWithFallback(
@@ -599,11 +674,42 @@ export const WorkingRoutes = {
     "Manage your property listings and verification status."
   ),
 
-  PropertiesLand: createLazyRoute(
-    () => import("../property/pages/Lands"),
+  PropertiesLand: createLazyRoute(() => import("../property/pages/Lands"), {
+    routePath: "/properties/land",
+    preloadPriority: "normal",
+  }),
+
+  // Additional property management pages from sitemap
+  PropertyEdit: createLazyRoute(
+    () => import("../property/pages/PropertyEdit"),
     {
-      routePath: "/properties/land",
+      routePath: "/property/edit",
       preloadPriority: "normal",
+    }
+  ),
+
+  // User profile and settings
+  UserProfile: createLazyRoute(() => import("../user/pages/UserProfile"), {
+    routePath: "/user/profile",
+    preloadPriority: "normal",
+  }),
+
+  UserSettings: createLazyRoute(() => import("../user/pages/UserSettings"), {
+    routePath: "/user/settings",
+    preloadPriority: "normal",
+  }),
+
+  // Analytics and reporting pages
+  Analytics: createLazyRoute(() => import("../analytics/pages/Analytics"), {
+    routePath: "/analytics",
+    preloadPriority: "low",
+  }),
+
+  AnalyticsDashboard: createLazyRoute(
+    () => import("../analytics/pages/AnalyticsDashboard"),
+    {
+      routePath: "/analytics/dashboard",
+      preloadPriority: "low",
     }
   ),
 
@@ -615,24 +721,44 @@ export const WorkingRoutes = {
     "/solutions"
   ),
 
-  SolutionsBuyers: createComingSoonRoute(
-    "Solutions for Buyers",
-    "Secure your property purchases with comprehensive verification services."
+  SolutionsBuyers: createLazyRoute(
+    () => import("../shared/pages/solutions/PropertyBuyers"),
+    {
+      routePath: "/solutions/buyers",
+      preloadPriority: "normal",
+    }
   ),
 
-  SolutionsSellers: createComingSoonRoute(
-    "Solutions for Sellers",
-    "Increase buyer confidence with verified property listings and documentation."
+  SolutionsSellers: createLazyRoute(
+    () => import("../shared/pages/solutions/PropertySellers"),
+    {
+      routePath: "/solutions/sellers",
+      preloadPriority: "normal",
+    }
   ),
 
-  SolutionsAgents: createComingSoonRoute(
-    "Solutions for Agents",
-    "Professional verification tools and services for real estate professionals."
+  SolutionsAgents: createLazyRoute(
+    () => import("../shared/pages/solutions/RealEstateAgents"),
+    {
+      routePath: "/solutions/agents",
+      preloadPriority: "normal",
+    }
   ),
 
-  SolutionsDevelopers: createComingSoonRoute(
-    "Solutions for Developers",
-    "Enterprise-grade verification services for property development projects."
+  SolutionsDevelopers: createLazyRoute(
+    () => import("../shared/pages/solutions/PropertyDevelopers"),
+    {
+      routePath: "/solutions/developers",
+      preloadPriority: "normal",
+    }
+  ),
+
+  SolutionsLegalExperts: createLazyRoute(
+    () => import("../shared/pages/solutions/LegalExperts"),
+    {
+      routePath: "/solutions/legal-experts",
+      preloadPriority: "normal",
+    }
   ),
 
   // Support and documentation with robust fallback handling
@@ -664,6 +790,77 @@ export const WorkingRoutes = {
     "Frequently Asked Questions",
     "Find quick answers to the most commonly asked questions."
   ),
+
+  // Additional pages from sitemap that were missing
+
+  // Advanced property features
+  PropertyWizard: createLazyRoute(
+    () => import("../property/pages/PropertyWizard"),
+    {
+      routePath: "/property/wizard",
+      preloadPriority: "normal",
+    }
+  ),
+
+  PropertyMap: createLazyRoute(() => import("../property/pages/PropertyMap"), {
+    routePath: "/property/map",
+    preloadPriority: "normal",
+  }),
+
+  // Trust system advanced features
+  TrustDashboard: createComingSoonRoute(
+    "Trust Dashboard",
+    "Comprehensive overview of your trust score, reputation metrics, and community standing."
+  ),
+
+  CommunityIntelligence: createComingSoonRoute(
+    "Community Intelligence",
+    "Leverage community insights and local knowledge for better property verification decisions."
+  ),
+
+  // Expert coordination system
+  ExpertCoordination: createComingSoonRoute(
+    "Expert Coordination",
+    "Connect with legal experts, surveyors, and local authorities for comprehensive land verification."
+  ),
+
+  PhysicalVerification: createComingSoonRoute(
+    "Physical Verification",
+    "Schedule and manage on-ground property inspections with certified verification experts."
+  ),
+
+  // Advanced search features
+  AdvancedSearch: createComingSoonRoute(
+    "Advanced Search",
+    "Powerful search tools with complex filters, saved searches, and AI-powered property recommendations."
+  ),
+
+  SearchFilters: createComingSoonRoute(
+    "Search Filters",
+    "Customize and save your search preferences with advanced filtering options."
+  ),
+
+  // Communication enhancements
+  Notifications: createComingSoonRoute(
+    "Notifications Center",
+    "Manage all your notifications, alerts, and updates in one centralized location."
+  ),
+
+  MessageCenter: createComingSoonRoute(
+    "Message Center",
+    "Secure messaging platform for communicating with property owners, agents, and experts."
+  ),
+
+  // Developer and admin tools
+  AdminDashboard: createComingSoonRoute(
+    "Admin Dashboard",
+    "Administrative tools for system management, user oversight, and platform analytics."
+  ),
+
+  SystemMonitoring: createComingSoonRoute(
+    "System Monitoring",
+    "Real-time system health monitoring, performance metrics, and operational insights."
+  ),
 } as const;
 
 // Enhanced preloading system with priority-based loading and better error recovery
@@ -678,6 +875,8 @@ interface PreloadRoutes {
   readonly communication: PreloadFunction;
   readonly search: PreloadFunction;
   readonly shared: PreloadFunction;
+  readonly landVerification: PreloadFunction;
+  readonly analytics: PreloadFunction;
   readonly preloadMultiple: (
     categories: PreloadCategory[]
   ) => Promise<SettledResult[]>;
@@ -732,6 +931,8 @@ export const preloadRoutes: PreloadRoutes = {
         import("../property/pages/PropertyCompare"),
         import("../property/pages/PropertyEdit"),
         import("../property/pages/ListProperty"),
+        import("../property/pages/PropertyMap"),
+        import("../property/pages/PropertyWizard"),
         import("../property/components/PropertyCard"),
       ];
 
@@ -751,6 +952,11 @@ export const preloadRoutes: PreloadRoutes = {
         import("../trust/pages/FraudDetection"),
         import("../trust/pages/DocumentAuth"),
         import("../trust/pages/Reports"),
+        import("../trust/pages/Alerts"),
+        import("../trust/pages/Karma"),
+        import("../trust/pages/Reputation"),
+        import("../trust/pages/TrustPoints"),
+        import("../trust/pages/Reviews"),
         import("../trust/components/TrustScore"),
       ];
 
@@ -769,12 +975,31 @@ export const preloadRoutes: PreloadRoutes = {
         import("../land-verification/pages/LandVerificationPage"),
         import("../land-verification/pages/LandVerificationDashboardPage"),
         import("../land-verification/pages/NewVerificationPage"),
+        // Note: ExpertCoordination and PhysicalVerification are ComingSoon routes
       ];
 
       const results = await Promise.allSettled(preloadPromises);
       return handleSettledResults(results, "land-verification");
     } catch (error) {
-      logger.warn("Unexpected error during land verification route preloading:", error);
+      logger.warn(
+        "Unexpected error during land verification route preloading:",
+        error
+      );
+      return [];
+    }
+  },
+
+  // Analytics and reporting preloading
+  analytics: async (): Promise<SettledResult[]> => {
+    try {
+      const preloadPromises = [
+        import("../analytics/pages/Analytics"),
+      ];
+
+      const results = await Promise.allSettled(preloadPromises);
+      return handleSettledResults(results, "analytics");
+    } catch (error) {
+      logger.warn("Unexpected error during analytics route preloading:", error);
       return [];
     }
   },
@@ -786,6 +1011,8 @@ export const preloadRoutes: PreloadRoutes = {
         import("../user/pages/Dashboard"),
         import("../user/pages/Tenants"),
         import("../user/pages/Team"),
+        import("../user/pages/UserProfile"),
+        import("../user/pages/UserSettings"),
       ];
 
       const results = await Promise.allSettled(preloadPromises);
@@ -884,14 +1111,14 @@ export const preloadRoutes: PreloadRoutes = {
     }
   },
 
-  // Optimized priority-based preloading
+  // Optimized priority-based preloading with updated categories
   preloadByPriority: async (
     priority: "high" | "normal" | "low"
   ): Promise<SettledResult[]> => {
     const priorityRoutes = {
-      high: ["property", "user"],
-      normal: ["trust", "search"],
-      low: ["shared", "communication"],
+      high: ["property", "user", "landVerification"],
+      normal: ["trust", "search", "communication"],
+      low: ["shared", "analytics"],
     };
 
     const categories = priorityRoutes[priority] as PreloadCategory[];

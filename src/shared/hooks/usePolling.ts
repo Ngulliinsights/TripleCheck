@@ -105,7 +105,6 @@ export function usePolling<TData = any, TError = Error>({
         setErrorCount(0);
         onSuccess?.(data.data);
         calculateNextInterval(false);
-        return data.data;
       }
     } catch (error) {
       const err = error as TError;
@@ -180,9 +179,14 @@ export function usePolling<TData = any, TError = Error>({
   }, [stop, start, interval]);
 
   // Force refetch
-  const forceRefetch = useCallback(async () => {
-    return executeQuery();
-  }, [executeQuery]);
+  const forceRefetch = useCallback(async (): Promise<TData | undefined> => {
+    try {
+      const data = await query.refetch();
+      return data.data;
+    } catch (error) {
+      return undefined;
+    }
+  }, [query]);
 
   // Window focus/blur handling
   useSafeEffect(() => {

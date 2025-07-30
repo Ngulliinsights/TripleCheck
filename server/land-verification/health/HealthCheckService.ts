@@ -180,11 +180,18 @@ export class HealthCheckService {
 
   private async checkAPI(name: string, url: string): Promise<{ name: string; status: 'pass' | 'fail'; responseTime: number }> {
     const startTime = Date.now();
+    const controller = new AbortController();
+    
+    // Set timeout with AbortController
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     
     try {
       const response = await fetch(`${url}/health`, {
         method: 'GET',
-        timeout: 5000
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       
       return {
@@ -198,6 +205,8 @@ export class HealthCheckService {
         status: 'fail',
         responseTime: Date.now() - startTime
       };
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

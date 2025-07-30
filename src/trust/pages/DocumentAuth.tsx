@@ -1,5 +1,3 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
-
 import { useMutation } from "@tanstack/react-query";
 import {
   Upload,
@@ -8,24 +6,19 @@ import {
   AlertTriangle,
   Shield,
   X,
-  Eye,
   Download,
   Clock,
   AlertCircle,
   Zap,
+  Send,
+  Plus,
 } from "lucide-react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 
-import { Button } from "@/shared/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/shared/components/ui/card";
-import { Input } from "@/shared/components/ui/input";
-import { Progress } from "@/shared/components/ui/progress";
-import { useToast } from "@/shared/hooks/use-toast";
-
+import { Button } from "../../shared/components/ui/button";
+import { Input } from "../../shared/components/ui/input";
+import { Progress } from "../../shared/components/ui/progress";
+import { useToast } from "../../shared/hooks/use-toast";
 
 // Constants moved to top level to prevent re-creation on each render
 const FILE_CONSTRAINTS = {
@@ -115,9 +108,12 @@ export default function DocumentAuth(): JSX.Element {
   // Ref for file input with proper typing
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Drag state for visual feedback
+  const [isDragOver, setIsDragOver] = useState(false);
+
   // Memoized utility functions to prevent unnecessary re-renders
   const generateId = useCallback((): string => {
-    return Math.random().toString(36).substring(2, 11); // More consistent length
+    return `doc-${Date.now()}-${performance.now().toString(36)}`;
   }, []);
 
   // Enhanced file validation with better error handling
@@ -164,7 +160,7 @@ export default function DocumentAuth(): JSX.Element {
 
           // Generate preview for images with proper error handling
           if (file.type.startsWith("image/")) {
-            const reader = new (window as any).FileReader();
+            const reader = new FileReader();
 
             reader.onload = (event: Event) => {
               const target = event.target as FileReader;
@@ -202,11 +198,12 @@ export default function DocumentAuth(): JSX.Element {
     setResults((prev) => prev.filter((result) => result.id !== id));
   }, []);
 
-  // Enhanced drag and drop handler with better error handling
+  // Enhanced drag and drop handlers with visual feedback
   const handleDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>): void => {
       event.preventDefault();
       event.stopPropagation();
+      setIsDragOver(false);
 
       const { files } = event.dataTransfer;
       if (files && files.length > 0) {
@@ -220,6 +217,27 @@ export default function DocumentAuth(): JSX.Element {
     (event: React.DragEvent<HTMLDivElement>): void => {
       event.preventDefault();
       event.stopPropagation();
+    },
+    []
+  );
+
+  const handleDragEnter = useCallback(
+    (event: React.DragEvent<HTMLDivElement>): void => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsDragOver(true);
+    },
+    []
+  );
+
+  const handleDragLeave = useCallback(
+    (event: React.DragEvent<HTMLDivElement>): void => {
+      event.preventDefault();
+      event.stopPropagation();
+      // Only set drag over to false if we're leaving the drop zone entirely
+      if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+        setIsDragOver(false);
+      }
     },
     []
   );
@@ -273,7 +291,7 @@ export default function DocumentAuth(): JSX.Element {
         // Log error in development mode only
         if (import.meta.env.MODE === "development") {
           // eslint-disable-next-line no-console
-          console.error('Document verification failed:', error);
+          console.error("Document verification failed:", error);
         }
         throw error;
       }
@@ -325,7 +343,8 @@ export default function DocumentAuth(): JSX.Element {
     // Simulate progress with proper cleanup
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
-        const increment = Math.random() * PROGRESS_CONFIG.incrementRange;
+        const increment =
+          ((performance.now() % 100) / 100) * PROGRESS_CONFIG.incrementRange;
         const newProgress = prev + increment;
 
         if (newProgress >= PROGRESS_CONFIG.maxProgress) {
@@ -339,7 +358,7 @@ export default function DocumentAuth(): JSX.Element {
 
     try {
       await verifyDocumentsMutation.mutateAsync(documents);
-    } catch (error) {
+    } catch {
       // Error handling is managed by the mutation
     } finally {
       clearInterval(progressInterval);
@@ -347,22 +366,23 @@ export default function DocumentAuth(): JSX.Element {
   }, [documents, toast, verifyDocumentsMutation]);
 
   // Memoized status utilities to prevent recalculation
-  const getStatusConfig = useMemo(() => {
-    return (status: VerificationResult["status"]) => {
-      // Safe object access to prevent injection
-      const validStatuses: Record<VerificationResult["status"], typeof STATUS_CONFIG[keyof typeof STATUS_CONFIG]> = STATUS_CONFIG;
-      return validStatuses[status] || STATUS_CONFIG.processing;
-    };
-  }, []);
-
-  // Memoized document statistics
-  const documentStats = useMemo(() => {
-    const authenticCount = results.filter((result) => result.verified).length;
-    const totalCount = results.length;
-    const hasResults = totalCount > 0;
-
-    return { authenticCount, totalCount, hasResults };
-  }, [results]);
+  const getStatusConfig = useCallback(
+    (status: VerificationResult["status"]) => {
+      switch (status) {
+        case "authentic":
+          return STATUS_CONFIG.authentic;
+        case "suspicious":
+          return STATUS_CONFIG.suspicious;
+        case "forged":
+          return STATUS_CONFIG.forged;
+        case "processing":
+          return STATUS_CONFIG.processing;
+        default:
+          return STATUS_CONFIG.processing;
+      }
+    },
+    []
+  );
 
   // Memoized file size formatter
   const formatFileSize = useMemo(() => {
@@ -371,67 +391,380 @@ export default function DocumentAuth(): JSX.Element {
     };
   }, []);
 
+  // Helper function to get upload area classes
+  const getUploadAreaClasses = useCallback(
+    (isLarge: boolean) => {
+      const baseClasses =
+        isLarge ?
+          "relative border-2 border-dashed rounded-2xl transition-all duration-200 cursor-pointer min-h-[200px] flex flex-col items-center justify-center p-8 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        : "border-2 border-dashed rounded-xl p-4 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
+
+      if (isDragOver) {
+        return `${baseClasses} border-primary bg-primary/5 ${isLarge ? "scale-[1.02] shadow-lg" : ""}`;
+      }
+      if (isVerifying) {
+        return `${baseClasses} border-gray-200 bg-gray-50 cursor-not-allowed`;
+      }
+      return `${baseClasses} border-gray-300 hover:border-primary/70 hover:bg-primary/5 ${isLarge ? "hover:shadow-md" : ""}`;
+    },
+    [isDragOver, isVerifying]
+  );
+
+  // Helper function to handle upload click
+  const handleUploadClick = useCallback(() => {
+    if (!isVerifying && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }, [isVerifying]);
+
+  // Helper function to handle keyboard events
+  const handleUploadKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.key === "Enter" || e.key === " ") && !isVerifying) {
+        e.preventDefault();
+        fileInputRef.current?.click();
+      }
+    },
+    [isVerifying]
+  );
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header with improved semantic structure */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg" aria-hidden="true">
-              <Shield className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Document Authentication
-              </h1>
-              <p className="text-muted-foreground">
-                Verify document authenticity using AI-powered analysis
-              </p>
-            </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Minimal Header */}
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            <h1 className="text-lg font-semibold">Document Authentication</h1>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Upload Section with improved accessibility */}
-          <section className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="w-5 h-5" aria-hidden="true" />
-                  Upload Documents
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+      {/* Chat-like Interface */}
+      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+        {/* Welcome Message */}
+        {documents.length === 0 && results.length === 0 && !isVerifying && (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center max-w-2xl">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Shield className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold mb-4">
+                Verify Your Documents with AI
+              </h2>
+              <p className="text-muted-foreground mb-8 text-lg">
+                Upload your documents and I&apos;ll analyze them for
+                authenticity using advanced AI detection.
+              </p>
+
+              {/* Quick Start Examples */}
+              <div className="grid md:grid-cols-3 gap-4 mb-8">
+                <div className="p-4 border rounded-lg text-left">
+                  <FileText className="w-6 h-6 text-primary mb-2" />
+                  <p className="font-medium text-sm">Title Deeds</p>
+                  <p className="text-xs text-muted-foreground">
+                    Verify land ownership documents
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg text-left">
+                  <FileText className="w-6 h-6 text-primary mb-2" />
+                  <p className="font-medium text-sm">Contracts</p>
+                  <p className="text-xs text-muted-foreground">
+                    Check legal agreements
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg text-left">
+                  <FileText className="w-6 h-6 text-primary mb-2" />
+                  <p className="font-medium text-sm">Certificates</p>
+                  <p className="text-xs text-muted-foreground">
+                    Validate official documents
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Conversation Area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Document Messages */}
+          {documents.map((doc) => (
+            <div key={doc.id} className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-medium text-blue-600">You</span>
+              </div>
+              <div className="flex-1">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-md">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium text-sm">{doc.file.name}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {formatFileSize(doc.file.size)} MB • {doc.file.type}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 h-6 px-2 text-xs"
+                    onClick={() => removeDocument(doc.id)}
+                    disabled={isVerifying}
+                  >
+                    <X className="w-3 h-3 mr-1" />
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Processing Message */}
+          {isVerifying && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Shield className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="bg-card border rounded-lg p-4 max-w-2xl">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Zap className="w-4 h-4 text-primary animate-pulse" />
+                    <span className="font-medium">
+                      Analyzing your documents...
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Running AI verification checks</span>
+                      <span>{Math.round(progress)}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Results Messages */}
+          {results.map((result) => {
+            const statusConfig = getStatusConfig(result.status);
+            const StatusIcon = statusConfig.icon;
+
+            return (
+              <div key={result.id} className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <div className="bg-card border rounded-lg p-4 max-w-2xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <StatusIcon
+                        className={`w-5 h-5 ${statusConfig.iconColor}`}
+                      />
+                      <span className="font-medium">{result.filename}</span>
+                      <span className="text-sm text-muted-foreground ml-auto">
+                        {result.confidence}% confidence
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <p className="text-sm">
+                        <span className="font-medium">Document Type:</span>{" "}
+                        {result.documentType}
+                      </p>
+
+                      {/* Verification Checks */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(result.checks).map(([check, data]) => (
+                          <div
+                            key={check}
+                            className="flex items-center gap-2 text-sm"
+                          >
+                            {data.passed ?
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                            : <AlertTriangle className="w-4 h-4 text-red-500" />
+                            }
+                            <span className="capitalize">
+                              {check}: {data.score}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Issues */}
+                      {result.issues.length > 0 && (
+                        <div>
+                          <p className="font-medium text-sm mb-2 text-red-600">
+                            Issues Found:
+                          </p>
+                          <ul className="text-sm space-y-1">
+                            {result.issues.map((issue, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-red-500 mt-1">•</span>
+                                <span>{issue}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Recommendations */}
+                      {result.recommendations.length > 0 && (
+                        <div>
+                          <p className="font-medium text-sm mb-2 text-blue-600">
+                            Recommendations:
+                          </p>
+                          <ul className="text-sm space-y-1">
+                            {result.recommendations.map((rec, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-blue-500 mt-1">•</span>
+                                <span>{rec}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <span className="text-xs text-muted-foreground">
+                          Processed in {result.processingTime}ms
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                        >
+                          <Download className="w-3 h-3 mr-1" />
+                          Download Report
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Large Upload Area */}
+        <div className="border-t bg-card/50 backdrop-blur-sm p-6">
+          <div className="max-w-4xl mx-auto">
+            {
+              documents.length === 0 ?
+                // Large prominent upload area when no documents
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                    isVerifying ?
-                      "border-gray-200 bg-gray-50"
-                    : "border-gray-300 hover:border-primary/50"
-                  }`}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
                   role="button"
                   tabIndex={0}
-                  aria-label="Drop files here to upload"
+                  aria-label="Upload documents by clicking or dragging files here"
+                  className={getUploadAreaClasses(true)}
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={handleUploadClick}
+                  onKeyDown={handleUploadKeyDown}
                 >
-                  <Upload
-                    className="w-12 h-12 mx-auto mb-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">
-                      Drag and drop your documents here, or
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isVerifying}
-                      aria-label="Browse files to upload"
+                  <div className="text-center space-y-4">
+                    <div
+                      className={`
+                      w-16 h-16 mx-auto rounded-full flex items-center justify-center transition-colors
+                      ${
+                        isDragOver ? "bg-primary/20" : (
+                          "bg-primary/10 group-hover:bg-primary/20"
+                        )
+                      }
+                    `}
                     >
-                      Browse Files
+                      <Upload
+                        className={`
+                        w-8 h-8 transition-colors
+                        ${isDragOver ? "text-primary" : "text-primary/70"}
+                      `}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold text-foreground">
+                        {isDragOver ?
+                          "Drop your documents here"
+                        : "Upload Documents to Verify"}
+                      </h3>
+                      <p className="text-muted-foreground text-lg">
+                        {isDragOver ?
+                          "Release to upload your files"
+                        : "Drag and drop files here, or click to browse"}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-2 text-sm text-muted-foreground">
+                      <span className="px-3 py-1 bg-background rounded-full border">
+                        PDF
+                      </span>
+                      <span className="px-3 py-1 bg-background rounded-full border">
+                        JPG
+                      </span>
+                      <span className="px-3 py-1 bg-background rounded-full border">
+                        PNG
+                      </span>
+                      <span className="px-3 py-1 bg-background rounded-full border">
+                        Max 10MB
+                      </span>
+                    </div>
+
+                    <Button
+                      size="lg"
+                      className="mt-4"
+                      disabled={isVerifying}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      <Plus className="w-5 h-5 mr-2" />
+                      Choose Files
                     </Button>
+                  </div>
+
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileUpload}
+                  />
+                </div>
+                // Compact upload area when documents exist
+              : <div className="space-y-4">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Add more documents by clicking or dragging files here"
+                    className={getUploadAreaClasses(false)}
+                    onDragOver={handleDragOver}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={handleUploadClick}
+                    onKeyDown={handleUploadKeyDown}
+                  >
+                    <div className="flex items-center justify-center gap-3 py-2">
+                      <Upload className="w-5 h-5 text-primary" />
+                      <span className="font-medium">
+                        {isDragOver ?
+                          "Drop more documents here"
+                        : "Add more documents"}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isVerifying}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                      >
+                        Browse
+                      </Button>
+                    </div>
                     <Input
                       ref={fileInputRef}
                       type="file"
@@ -439,339 +772,34 @@ export default function DocumentAuth(): JSX.Element {
                       multiple
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={handleFileUpload}
-                      aria-label="File input"
-                      aria-describedby="file-upload-help"
                     />
-                    <div id="file-upload-help" className="sr-only">
-                      Upload PDF, JPG, or PNG files. Maximum size 10MB each.
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      PDF, JPG, PNG • Max{" "}
-                      {FILE_CONSTRAINTS.maxSize / 1024 / 1024}MB each
-                    </p>
                   </div>
-                </div>
 
-                {/* Document List with improved accessibility */}
-                {documents.length > 0 && (
-                  <div className="mt-6 space-y-3">
-                    <h4 className="font-medium">
-                      Uploaded Documents ({documents.length})
-                    </h4>
-                    <div className="space-y-2" role="list">
-                      {documents.map((doc) => (
-                        <div
-                          key={doc.id}
-                          className="flex items-center gap-3 p-3 border rounded-lg"
-                          role="listitem"
-                        >
-                          <FileText
-                            className="w-4 h-4 text-muted-foreground flex-shrink-0"
-                            aria-hidden="true"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p
-                              className="text-sm font-medium truncate"
-                              title={doc.file.name}
-                            >
-                              {doc.file.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatFileSize(doc.file.size)} MB
-                            </p>
-                          </div>
-                          {doc.preview && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="p-1 h-auto"
-                              aria-label={`Preview ${doc.file.name}`}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-1 h-auto text-muted-foreground hover:text-destructive"
-                            onClick={() => removeDocument(doc.id)}
-                            disabled={isVerifying}
-                            aria-label={`Remove ${doc.file.name}`}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Verify Button with improved state management */}
-                {documents.length > 0 && (
-                  <div className="mt-6">
+                  <div className="flex justify-center">
                     <Button
                       onClick={startVerification}
                       disabled={isVerifying}
-                      className="w-full"
                       size="lg"
-                      aria-describedby={
-                        isVerifying ? "verification-progress" : undefined
-                      }
+                      className="px-8"
                     >
                       {isVerifying ?
                         <>
-                          <Zap
-                            className="w-4 h-4 mr-2 animate-pulse"
-                            aria-hidden="true"
-                          />
-                          Verifying Documents...
+                          <Zap className="w-5 h-5 mr-2 animate-pulse" />
+                          Analyzing {documents.length} document
+                          {documents.length > 1 ? "s" : ""}...
                         </>
                       : <>
-                          <Shield className="w-4 h-4 mr-2" aria-hidden="true" />
-                          Verify Documents
+                          <Send className="w-5 h-5 mr-2" />
+                          Verify {documents.length} Document
+                          {documents.length > 1 ? "s" : ""}
                         </>
                       }
                     </Button>
                   </div>
-                )}
-
-                {/* Progress with improved accessibility */}
-                {isVerifying && (
-                  <div className="mt-4 space-y-2" id="verification-progress">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Analyzing documents...</span>
-                      <span
-                        aria-label={`${Math.round(progress)} percent complete`}
-                      >
-                        {Math.round(progress)}%
-                      </span>
-                    </div>
-                    <Progress
-                      value={progress}
-                      className="h-2"
-                      aria-label="Verification progress"
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Results Section with improved structure */}
-          <section className="space-y-6">
-            {documentStats.hasResults && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" aria-hidden="true" />
-                    Verification Results
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {results.map((result) => {
-                    const statusConfig = getStatusConfig(result.status);
-                    const StatusIcon = statusConfig.icon;
-
-                    return (
-                      <article
-                        key={result.id}
-                        className={`border rounded-lg p-4 ${statusConfig.color}`}
-                        aria-labelledby={`result-${result.id}-title`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <StatusIcon
-                            className={`w-5 h-5 ${statusConfig.iconColor}`}
-                            aria-hidden="true"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4
-                                id={`result-${result.id}-title`}
-                                className="font-medium"
-                              >
-                                {result.filename}
-                              </h4>
-                              <span
-                                className="text-sm font-medium"
-                                aria-label={`${result.confidence} percent confidence`}
-                              >
-                                {result.confidence}% confidence
-                              </span>
-                            </div>
-
-                            <p className="text-sm mb-3">
-                              Document Type: {result.documentType}
-                            </p>
-
-                            {/* Verification Checks with improved accessibility */}
-                            <div
-                              className="grid grid-cols-2 gap-2 mb-3"
-                              role="list"
-                              aria-label="Verification checks"
-                            >
-                              {Object.entries(result.checks).map(
-                                ([check, data]) => (
-                                  <div
-                                    key={check}
-                                    className="flex items-center gap-2 text-xs"
-                                    role="listitem"
-                                  >
-                                    {data.passed ?
-                                      <CheckCircle
-                                        className="w-3 h-3 text-green-500"
-                                        aria-label="Passed"
-                                      />
-                                    : <AlertTriangle
-                                        className="w-3 h-3 text-red-500"
-                                        aria-label="Failed"
-                                      />
-                                    }
-                                    <span className="capitalize">
-                                      {check}: {data.score}%
-                                    </span>
-                                  </div>
-                                )
-                              )}
-                            </div>
-
-                            {/* Issues with improved structure */}
-                            {result.issues.length > 0 && (
-                              <div className="mb-3">
-                                <p className="text-xs font-medium mb-1">
-                                  Issues Found:
-                                </p>
-                                <ul className="text-xs space-y-1" role="list">
-                                  {result.issues.map((issue, idx) => (
-                                    <li
-                                      key={idx}
-                                      className="flex items-start gap-1"
-                                      role="listitem"
-                                    >
-                                      <span
-                                        className="text-red-500 flex-shrink-0"
-                                        aria-hidden="true"
-                                      >
-                                        •
-                                      </span>
-                                      <span>{issue}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-
-                            {/* Recommendations with improved structure */}
-                            {result.recommendations.length > 0 && (
-                              <div className="mb-3">
-                                <p className="text-xs font-medium mb-1">
-                                  Recommendations:
-                                </p>
-                                <ul className="text-xs space-y-1" role="list">
-                                  {result.recommendations.map((rec, idx) => (
-                                    <li
-                                      key={idx}
-                                      className="flex items-start gap-1"
-                                      role="listitem"
-                                    >
-                                      <span
-                                        className="text-blue-500 flex-shrink-0"
-                                        aria-hidden="true"
-                                      >
-                                        •
-                                      </span>
-                                      <span>{rec}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>
-                                Processed in {result.processingTime}ms
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 px-2"
-                                aria-label={`Download report for ${result.filename}`}
-                              >
-                                <Download
-                                  className="w-3 h-3 mr-1"
-                                  aria-hidden="true"
-                                />
-                                Report
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Info Card with improved semantic structure */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">How It Works</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span
-                      className="text-xs font-bold text-primary"
-                      aria-label="Step 1"
-                    >
-                      1
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium">Metadata Analysis</p>
-                    <p className="text-muted-foreground">
-                      Examines file creation data, software signatures, and
-                      modification history
-                    </p>
-                  </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span
-                      className="text-xs font-bold text-primary"
-                      aria-label="Step 2"
-                    >
-                      2
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium">Visual Inspection</p>
-                    <p className="text-muted-foreground">
-                      AI detects digital manipulation, inconsistencies, and
-                      forgery patterns
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span
-                      className="text-xs font-bold text-primary"
-                      aria-label="Step 3"
-                    >
-                      3
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium">Content Verification</p>
-                    <p className="text-muted-foreground">
-                      Validates document structure, fonts, and formatting
-                      consistency
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+
+            }
+          </div>
         </div>
       </main>
     </div>

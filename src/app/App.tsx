@@ -1,86 +1,88 @@
-import { QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, Suspense } from "react";
+import { useEffect, memo } from "react";
+import { Routes, Route } from "react-router-dom";
 
-import { RouterFallback } from "../shared/components/fallbacks/RouterFallback";
-
+import { AppLayout } from "../shared/components/layout/AppLayout";
 import { ErrorBoundary } from "./error-boundary";
-import { AppRouter } from "./router";
 
-import { queryClient } from "@/infrastructure/api/queryClient";
-import { PerformanceMonitoringProvider, PerformanceDebugger } from "@/infrastructure/monitoring";
-import { Toaster } from "@/shared/components/ui/toaster";
+// Import pages directly (no lazy loading to avoid context issues)
+import HomePage from "../shared/pages/Home";
+import FeaturesPage from "../shared/pages/Features";
+import PricingPage from "../shared/pages/Pricing";
+import PropertiesPage from "../shared/pages/Properties";
+import DashboardPage from "../user/pages/Dashboard";
+import LoginPage from "../auth/pages/Login";
+import RegisterPage from "../auth/pages/Register";
+import NotFoundPage from "../shared/pages/NotFound";
 
-/**
- * Root application component optimized for performance
- *
- * Performance optimizations:
- * - Lazy loads non-critical components
- * - Defers system health monitoring initialization
- * - Minimizes initial bundle size
- * - Uses efficient error boundaries
- */
-export function App() {
-  // Defer non-critical initialization to avoid blocking initial render
+// Land Verification Pages
+import LandVerificationDashboard from "../land-verification/pages/LandVerificationDashboardPage";
+import NewVerificationPage from "../land-verification/pages/NewVerificationPage";
+
+// Trust Pages
+import DocumentAuthPage from "../trust/pages/DocumentAuth";
+
+// Communication Pages
+import InboxPage from "../communication/pages/Inbox";
+
+function useNonCriticalInitialization(): void {
   useEffect(() => {
-    // Use requestIdleCallback for non-critical initialization
-    const initializeNonCritical = () => {
-      import("@/infrastructure/monitoring/system-health")
-        .then((module) => {
-          module.initializeHealthMonitoring();
-          return undefined; // Explicit return to satisfy ESLint
-        })
-        .catch((_error) => {
-          // Silently handle initialization errors in production
-          // In development, errors would be visible in the browser console anyway
-        });
-    };
-
-    if ("requestIdleCallback" in window) {
-      const windowWithCallback = window as Window & {
-        requestIdleCallback: (
-          callback: () => void,
-          options?: { timeout: number }
-        ) => void;
-      };
-      windowWithCallback.requestIdleCallback(initializeNonCritical, {
-        timeout: 2000,
-      });
-    } else {
-      setTimeout(initializeNonCritical, 100);
+    console.log('TripleCheck Full App initialized successfully');
+    
+    // Add production debugging
+    if (typeof window !== 'undefined') {
+      console.log('Environment:', import.meta.env.MODE);
+      console.log('Base URL:', import.meta.env.BASE_URL);
+      console.log('Window location:', window.location.href);
+      console.log('Document ready state:', document.readyState);
+      console.log('Root element exists:', !!document.getElementById('root'));
     }
   }, []);
+}
+
+export const App = memo(() => {
+  useNonCriticalInitialization();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ErrorBoundary level="page" fallback={<RouterFallback />}>
-        <PerformanceMonitoringProvider
-          config={{
-            enableAutoPreloading: false, // Disabled to prevent performance issues
-            preconnectOrigins: [
-              "https://fonts.googleapis.com",
-              "https://fonts.gstatic.com",
-            ],
-            criticalAssets: {
-              fonts: ["/fonts/inter-var.woff2"],
-              images: ["/images/logo.webp"],
-            },
-          }}
-        >
-          <ErrorBoundary level="route" fallback={<RouterFallback />}>
-            <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading router...</div>}>
-              <AppRouter />
-            </Suspense>
+    <ErrorBoundary level="page">
+      <AppLayout>
+        <main>
+          <ErrorBoundary level="route">
+            <Routes>
+              {/* Core Pages */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              
+              {/* Property Routes */}
+              <Route path="/properties" element={<PropertiesPage />} />
+              
+              {/* User Routes */}
+              <Route path="/dashboard" element={<DashboardPage />} />
+              
+              {/* Authentication Routes */}
+              <Route path="/auth/login" element={<LoginPage />} />
+              <Route path="/auth/register" element={<RegisterPage />} />
+              
+              {/* Land Verification Routes */}
+              <Route path="/land-verification/dashboard" element={<LandVerificationDashboard />} />
+              <Route path="/land-verification/new" element={<NewVerificationPage />} />
+              
+              {/* Trust & Document Routes */}
+              <Route path="/services/document-auth" element={<DocumentAuthPage />} />
+              
+              {/* Communication Routes */}
+              <Route path="/inbox" element={<InboxPage />} />
+              
+              {/* Catch all route */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
           </ErrorBoundary>
-          
-          <Toaster />
-          
-          {import.meta.env.MODE === "development" && (
-            <PerformanceDebugger />
-          )}
-        </PerformanceMonitoringProvider>
-      </ErrorBoundary>
-    </QueryClientProvider>
+        </main>
+      </AppLayout>
+    </ErrorBoundary>
   );
-}
+});
+
+App.displayName = "App";
 
 export default App;

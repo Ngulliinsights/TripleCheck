@@ -72,7 +72,7 @@ export function PreviewStep({ data, onUpdate, onValidation }: PreviewStepProps) 
         <div className="relative h-64 md:h-80 bg-gray-200">
           {data.images && data.images.length > 0 ? (
             <img
-              src={URL.createObjectURL(data.images[0])}
+              src={data.images[0] ? URL.createObjectURL(data.images[0]) : '/placeholder.jpg'}
               alt={data.title}
               className="w-full h-full object-cover"
             />

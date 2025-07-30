@@ -182,7 +182,16 @@ global.File = class MockFile {
 global.FileReader = class MockFileReader extends EventTarget {
   result: string | ArrayBuffer | null = null;
   error: DOMException | null = null;
-  readyState: number = 0;
+  readyState: 0 | 1 | 2 = 0;
+  
+  // FileReader constants
+  static readonly EMPTY = 0;
+  static readonly LOADING = 1;
+  static readonly DONE = 2;
+  
+  readonly EMPTY = 0;
+  readonly LOADING = 1;
+  readonly DONE = 2;
   
   onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
   onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
@@ -195,7 +204,7 @@ global.FileReader = class MockFileReader extends EventTarget {
     const self = this;
     setTimeout(() => {
       self.result = 'mock file content';
-      self.readyState = 2;
+      self.readyState = 2 as const;
       if (self.onload) {
         self.onload({} as ProgressEvent<FileReader>);
       }
@@ -206,7 +215,7 @@ global.FileReader = class MockFileReader extends EventTarget {
     const self = this;
     setTimeout(() => {
       self.result = 'data:text/plain;base64,bW9jayBmaWxlIGNvbnRlbnQ=';
-      self.readyState = 2;
+      self.readyState = 2 as const;
       if (self.onload) {
         self.onload({} as ProgressEvent<FileReader>);
       }
@@ -217,7 +226,18 @@ global.FileReader = class MockFileReader extends EventTarget {
     const self = this;
     setTimeout(() => {
       self.result = new ArrayBuffer(8);
-      self.readyState = 2;
+      self.readyState = 2 as const;
+      if (self.onload) {
+        self.onload({} as ProgressEvent<FileReader>);
+      }
+    }, 0);
+  }
+
+  readAsBinaryString(file: Blob): void {
+    const self = this;
+    setTimeout(() => {
+      self.result = 'mock binary content';
+      self.readyState = 2 as const;
       if (self.onload) {
         self.onload({} as ProgressEvent<FileReader>);
       }
@@ -226,7 +246,7 @@ global.FileReader = class MockFileReader extends EventTarget {
 
   abort(): void {
     const self = this;
-    self.readyState = 2;
+    self.readyState = 2 as const;
     if (self.onabort) {
       self.onabort({} as ProgressEvent<FileReader>);
     }
@@ -343,7 +363,7 @@ global.Image = class MockImage extends EventTarget {
       self.naturalWidth = self.width || 100;
       self.naturalHeight = self.height || 100;
       if (self.onload) {
-        self.onload({} as Event);
+        self.onload.call(self as any, {} as Event);
       }
     }, 0);
   }
@@ -452,8 +472,8 @@ Object.defineProperty(window, 'Notification', {
     constructor(title: string, options?: NotificationOptions) {
       super();
       this.title = title;
-      this.body = options?.body;
-      this.icon = options?.icon;
+      if (options?.body !== undefined) this.body = options.body;
+      if (options?.icon !== undefined) this.icon = options.icon;
     }
     
     close = vi.fn();

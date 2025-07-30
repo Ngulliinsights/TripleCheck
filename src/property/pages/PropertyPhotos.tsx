@@ -1,17 +1,17 @@
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
-import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
-import { Button } from "@shared/components/ui/button";
-import { Badge } from "@shared/components/ui/badge";
-import { Input } from "@shared/components/ui/input";
-import { Label } from "@shared/components/ui/label";
-import { Textarea } from "@shared/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@shared/components/ui/dialog";
-import { Progress } from "@shared/components/ui/progress";
-import { useToast } from "@/shared/hooks/use-toast";
-import { apiRequest } from "@/infrastructure/api/queryClient";
-import { Property } from "@shared/schema";
+import { useSafePropertiesQuery } from "../../shared/hooks/useSafeQuery";
+import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
+import { Button } from "../../shared/components/ui/button";
+import { Badge } from "../../shared/components/ui/badge";
+import { Input } from "../../shared/components/ui/input";
+import { Label } from "../../shared/components/ui/label";
+import { Textarea } from "../../shared/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../shared/components/ui/dialog";
+import { Progress } from "../../shared/components/ui/progress";
+import { useToast } from "../../shared/hooks/use-toast";
+import { apiRequest } from "../../infrastructure/api/queryClient";
+import { Property } from "../../shared/schema";
 import { 
   Upload, 
   Camera, 

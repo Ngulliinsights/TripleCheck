@@ -125,7 +125,7 @@ export async function uploadFiles(
     throw new Error(`File input with selector "${fileInputSelector}" not found`);
   }
   
-  await user.upload(fileInput, files);
+  await user.upload(fileInput as HTMLElement, files);
 }
 
 // Create mock files for testing
@@ -381,18 +381,18 @@ export async function typeRealistic(
     const afterMistake = text.slice(mistakeIndex);
     
     // Type up to mistake
-    await user.type(targetElement, beforeMistake, { delay });
+    await user.type(targetElement, beforeMistake);
     
     // Type wrong character
-    await user.type(targetElement, 'x', { delay });
+    await user.type(targetElement, 'x');
     
     // Backspace to correct
     await user.keyboard('{Backspace}');
     
     // Continue typing
-    await user.type(targetElement, afterMistake, { delay });
+    await user.type(targetElement, afterMistake);
   } else {
-    await user.type(targetElement, text, { delay });
+    await user.type(targetElement, text);
   }
 }
 

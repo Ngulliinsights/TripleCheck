@@ -18,7 +18,8 @@ router.get('/', async (req, res, next) => {
 // Get single property
 router.get('/:id', async (req, res, next) => {
   try {
-    const result = await propertyService.getProperty(req.params.id);
+    const includeMarketEstimate = req.query.includeMarketEstimate === 'true';
+    const result = await propertyService.getProperty(req.params.id, { includeMarketEstimate });
     res.json(result);
   } catch (error) {
     next(error);
@@ -59,6 +60,16 @@ router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res: Respon
     }
     await propertyService.deleteProperty(req.params.id, req.user.id);
     res.json({ success: true, message: 'Property deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get similar properties (before owner route to avoid conflicts)
+router.get('/similar', async (req, res, next) => {
+  try {
+    const result = await propertyService.getSimilarProperties(req.query);
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -199,5 +210,30 @@ router.get('/:id/verification', async (req, res, next) => {
     next(error);
   }
 });
+
+// Performance monitoring endpoint (development only)
+if (process.env.NODE_ENV === 'development') {
+  router.get('/debug/performance', async (req, res, next) => {
+    try {
+      const { queryMonitor } = await import('../infrastructure/monitoring/QueryPerformanceMonitor');
+      const timeWindow = parseInt(req.query.timeWindow as string) || 60;
+      
+      const stats = queryMonitor.getStats(timeWindow);
+      const similarPropertiesStats = queryMonitor.getQueryStats('findSimilar', timeWindow);
+      
+      res.json({
+        success: true,
+        data: {
+          overall: stats,
+          similarProperties: similarPropertiesStats,
+          timeWindowMinutes: timeWindow,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+}
 
 export { router as propertyRouter };

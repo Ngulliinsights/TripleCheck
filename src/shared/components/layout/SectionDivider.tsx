@@ -28,7 +28,7 @@ export function SectionDivider({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(entry.isIntersecting);
+        setIsVisible(entry?.isIntersecting || false);
       },
       { threshold: 0.1 }
     );

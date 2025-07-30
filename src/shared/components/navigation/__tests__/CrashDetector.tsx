@@ -22,7 +22,7 @@ class CrashDetector extends Component<{}, CrashDetectorState> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState(prevState => ({
       crashes: [
         ...prevState.crashes,
@@ -174,7 +174,7 @@ class CrashDetector extends Component<{}, CrashDetectorState> {
     }
   };
 
-  render() {
+  override render() {
     const { crashes, isRunning } = this.state;
 
     return (

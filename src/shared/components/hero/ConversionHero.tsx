@@ -310,7 +310,7 @@ export function ConversionHero({
 
   // Memoized current slide data to prevent unnecessary re-renders
   const currentSlideData = useMemo<HeroSlide>(
-    () => HERO_SLIDES[currentSlide],
+    () => HERO_SLIDES[currentSlide] || HERO_SLIDES[0] || { title: '', subtitle: '', image: '', cta: '' },
     [currentSlide]
   );
 

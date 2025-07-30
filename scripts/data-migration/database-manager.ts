@@ -13,8 +13,8 @@
 import 'dotenv/config';
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { users, properties, reviews } from "../src/shared/schema";
-import type { InsertUser, InsertProperty } from "../src/shared/schema";
+import { users, properties, reviews } from "../../src/shared/schema";
+import type { InsertUser, InsertProperty } from "../../src/shared/schema";
 import { eq, sql, count, isNull, desc } from "drizzle-orm";
 import bcrypt from "bcrypt";
 

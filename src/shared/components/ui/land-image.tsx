@@ -44,7 +44,7 @@ export function LandImage({
   if (imageError) {
     return (
       <LandImagePlaceholder 
-        className={className}
+        {...(className && { className })}
         landType={landType}
         showIcon={true}
       />

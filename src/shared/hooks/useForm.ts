@@ -58,10 +58,11 @@ export function useForm(options: UseFormOptions): UseFormReturn {
   if (!formManagerRef.current) {
     const initialFields: Record<string, Omit<FormField, 'touched' | 'error'>> = {};
     Object.entries(initialValues).forEach(([name, value]) => {
+      const rules = validationRules[name];
       initialFields[name] = {
         name,
         value,
-        rules: validationRules[name]
+        ...(rules && { rules })
       };
     });
     formManagerRef.current = new FormManager(initialFields);
@@ -102,24 +103,25 @@ export function useForm(options: UseFormOptions): UseFormReturn {
   }, [formManager]);
 
   const setError = useCallback((field: string, error: string) => {
-    const currentState = formManager.getState();
-    const currentField = currentState.fields[field];
-    if (currentField) {
-      currentState.fields[field] = { ...currentField, error };
-      currentState.errors[field] = error;
-      currentState.isValid = Object.keys(currentState.errors).length === 0;
-    }
-  }, [formManager]);
+    // Since FormManager doesn't have setError method, we'll handle this in state
+    setFormState(prev => ({
+      ...prev,
+      errors: { ...prev.errors, [field]: error },
+      isValid: Object.keys({ ...prev.errors, [field]: error }).length === 0
+    }));
+  }, []);
 
   const clearError = useCallback((field: string) => {
-    const currentState = formManager.getState();
-    const currentField = currentState.fields[field];
-    if (currentField) {
-      currentField.error = undefined;
-      delete currentState.errors[field];
-      currentState.isValid = Object.keys(currentState.errors).length === 0;
-    }
-  }, [formManager]);
+    setFormState(prev => {
+      const newErrors = { ...prev.errors };
+      delete newErrors[field];
+      return {
+        ...prev,
+        errors: newErrors,
+        isValid: Object.keys(newErrors).length === 0
+      };
+    });
+  }, []);
 
   // Form operations
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {

@@ -42,7 +42,6 @@ export function PropertyReviews({ propertyId }: PropertyReviewsProps) {
   const { data: user, hasValidData: isAuthenticated } = useSafeUserQuery({
     context: 'property-reviews',
     retry: false, // Don't retry auth failures
-    retry: false,
     staleTime: 5 * 60 * 1000,
   });
 

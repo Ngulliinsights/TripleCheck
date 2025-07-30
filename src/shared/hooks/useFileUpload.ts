@@ -90,7 +90,7 @@ export function useFileUpload({
       }
       if (type.includes('*')) {
         const [mainType] = type.split('/');
-        return file.type.startsWith(mainType);
+        return mainType ? file.type.startsWith(mainType) : false;
       }
       return file.type === type;
     });
@@ -142,7 +142,7 @@ export function useFileUpload({
       const preview = await createFilePreview(file);
       const fileWithPreview = Object.assign(file, {
         id: fileId,
-        preview,
+        ...(preview && { preview }),
       });
 
       validFiles.push(fileWithPreview);

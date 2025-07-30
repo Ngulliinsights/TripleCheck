@@ -89,7 +89,7 @@ export const ViewAllButton = memo<ViewAllButtonProps>(({
 
 interface ActionButtonProps {
   onClick: () => void;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<any>;
   label: string;
   variant?: "default" | "outline" | "coral" | "coral-outline";
   size?: "sm" | "default" | "lg";

@@ -175,8 +175,11 @@ export const propertyApi = {
     }
   },
 
-  // Get single property by ID with enhanced data and market estimate
-  getProperty: async (id: string): Promise<ApiResponse<EnhancedProperty>> => {
+  // Get single property by ID with enhanced data and optional market estimate
+  getProperty: async (
+    id: string, 
+    options: { includeMarketEstimate?: boolean } = {}
+  ): Promise<ApiResponse<EnhancedProperty>> => {
     try {
       const data = await apiRequest<ApiResponse<Property>>(
         'GET',
@@ -197,21 +200,23 @@ export const propertyApi = {
         // Enhance property with business logic calculations
         const enhancedProperty = enhanceProperty(data.data);
 
-        // Attempt to get market estimate with graceful fallback
-        try {
-          const similarProperties = await propertyApi.getSimilarProperties(
-            data.data
-          );
-          if (similarProperties.length > 0) {
-            enhancedProperty.marketEstimate =
-              PropertyBusinessLogic.estimateMarketValue(
-                data.data,
-                similarProperties
-              );
+        // Only get market estimate if explicitly requested to prevent infinite API calls
+        if (options.includeMarketEstimate) {
+          try {
+            const similarProperties = await propertyApi.getSimilarProperties(
+              data.data
+            );
+            if (similarProperties.length > 0) {
+              enhancedProperty.marketEstimate =
+                PropertyBusinessLogic.estimateMarketValue(
+                  data.data,
+                  similarProperties
+                );
+            }
+          } catch (error) {
+            // Log warning but don't fail the entire request
+            console.warn("Failed to get market estimate:", error);
           }
-        } catch (error) {
-          // Log warning but don't fail the entire request
-          console.warn("Failed to get market estimate:", error);
         }
 
         // Return enhanced response preserving original structure
@@ -410,37 +415,61 @@ export const propertyApi = {
     }
   },
 
-  // Get similar properties with optimized parameter building
+  // Batch similar properties requests to reduce API calls
+  _similarPropertiesBatch: new Map<string, Promise<Property[]>>(),
+  _batchTimeout: null as NodeJS.Timeout | null,
+
+  // Get similar properties with batching and caching
   getSimilarProperties: async (property: Property): Promise<Property[]> => {
     try {
+      const cacheKey = `${property.propertyType}-${property.location?.city || property.location}-${Math.floor(property.price * 0.7)}-${Math.floor(property.price * 1.3)}`;
+      
+      // Check if we already have a pending request for similar criteria
+      if (propertyApi._similarPropertiesBatch.has(cacheKey)) {
+        return await propertyApi._similarPropertiesBatch.get(cacheKey)!;
+      }
+
       const params = {
         propertyType: property.propertyType,
-        city: property.location.city,
-        minPrice: (property.price * 0.7).toString(),
-        maxPrice: (property.price * 1.3).toString(),
+        city: property.location?.city || property.location,
+        minPrice: Math.floor(property.price * 0.7).toString(),
+        maxPrice: Math.floor(property.price * 1.3).toString(),
         limit: "10",
       };
 
       const searchParams = buildSearchParams(params);
       
-      const data = await apiRequest<{ data: Property[] }>(
+      const requestPromise = apiRequest<{ data: Property[] }>(
         'GET',
         `${API_BASE}/similar?${searchParams}`,
         undefined,
         {
           headers: buildHeaders(),
           requestOptions: {
-            key: `similar-properties:${property.id}`,
-            cancelPrevious: true,
-            priority: 'low'
+            key: `similar-properties:${cacheKey}`,
+            cancelPrevious: false, // Don't cancel batched requests
+            priority: 'low',
+            timeout: 5000,
+            useCache: true,
+            cacheTtl: 5 * 60 * 1000 // Cache for 5 minutes
           }
         }
-      );
+      ).then(data => {
+        // Clean up batch cache after request completes
+        propertyApi._similarPropertiesBatch.delete(cacheKey);
+        return Array.isArray(data?.data) ? data.data : [];
+      }).catch(error => {
+        // Clean up batch cache on error
+        propertyApi._similarPropertiesBatch.delete(cacheKey);
+        console.warn("Error fetching similar properties:", error);
+        return [];
+      });
 
-      // Ensure we return an array even if the response structure is unexpected
-      return Array.isArray(data?.data) ? data.data : [];
+      // Store the promise in batch cache
+      propertyApi._similarPropertiesBatch.set(cacheKey, requestPromise);
+      
+      return await requestPromise;
     } catch (error) {
-      // Log error but return empty array to prevent breaking the main request
       console.warn("Error fetching similar properties:", error);
       return [];
     }

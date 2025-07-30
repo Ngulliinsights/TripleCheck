@@ -1,21 +1,21 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSafePropertyQuery } from "@shared/hooks/useSafeQuery";
-import { useOptimisticMutation } from "@shared/hooks/useOptimisticMutation";
-import { useComponentTracking, useInteractionTracking } from "@shared/hooks/useOperationTracking";
+import { useSafePropertyQuery } from "../../shared/hooks/useSafeQuery";
+import { useOptimisticMutation } from "../../shared/hooks/useOptimisticMutation";
+import { useComponentTracking, useInteractionTracking } from "../../shared/hooks/useOperationTracking";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
-import { Button } from "@shared/components/ui/button";
-import { Input } from "@shared/components/ui/input";
-import { Label } from "@shared/components/ui/label";
-import { Textarea } from "@shared/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/components/ui/select";
-import { Checkbox } from "@shared/components/ui/checkbox";
-import { Badge } from "@shared/components/ui/badge";
-import { Separator } from "@shared/components/ui/separator";
-import { useToast } from "@/shared/hooks/use-toast";
-import { apiRequest } from "@/infrastructure/api/queryClient";
-import { Property, PropertyFeatures } from "@shared/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
+import { Button } from "../../shared/components/ui/button";
+import { Input } from "../../shared/components/ui/input";
+import { Label } from "../../shared/components/ui/label";
+import { Textarea } from "../../shared/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../shared/components/ui/select";
+import { Checkbox } from "../../shared/components/ui/checkbox";
+import { Badge } from "../../shared/components/ui/badge";
+import { Separator } from "../../shared/components/ui/separator";
+import { useToast } from "../../shared/hooks/use-toast";
+import { apiRequest } from "../../infrastructure/api/queryClient";
+import { Property, PropertyFeatures } from "../../shared/schema";
 import { 
   Save, 
   ArrowLeft, 

@@ -1,22 +1,50 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useRef, useMemo, useState, useCallback } from "react";
-import { useSafeEffect } from "../../infrastructure/hooks/useSafeEffect";
+
 import { useEnhancedCleanupManager } from "../../infrastructure/hooks/useCleanupManager";
+import { useSafeEffect } from "../../infrastructure/hooks/useSafeEffect";
 
 // Enhanced request coordinator with better error handling and metrics
 class RequestCoordinator {
   private pendingRequests = new Map<string, AbortController>();
-  private requestMetrics = new Map<string, { count: number; lastUsed: number }>();
-  
+  private requestMetrics = new Map<
+    string,
+    { count: number; lastUsed: number }
+  >();
+  private globalRequestCount = 0;
+  private lastGlobalReset = Date.now();
+
   async executeRequest<T>(
     key: string,
     requestFn: (signal: AbortSignal) => Promise<T>,
     timeout?: number
   ): Promise<T> {
-    // Track request frequency for optimization insights
-    const metrics = this.requestMetrics.get(key) || { count: 0, lastUsed: Date.now() };
-    this.requestMetrics.set(key, { count: metrics.count + 1, lastUsed: Date.now() });
+    // Global rate limiting to prevent API overload
+    const now = Date.now();
+    if (now - this.lastGlobalReset > 1000) {
+      // Reset counter every second
+      this.globalRequestCount = 0;
+      this.lastGlobalReset = now;
+    }
+
+    this.globalRequestCount++;
     
+    // If too many global requests, throttle
+    if (this.globalRequestCount > 20) {
+      console.warn(`[RequestCoordinator] Global rate limit exceeded (${this.globalRequestCount} requests/sec)`);
+      throw new Error("Too many requests - please wait a moment");
+    }
+
+    // Track request frequency for optimization insights
+    const metrics = this.requestMetrics.get(key) || {
+      count: 0,
+      lastUsed: Date.now(),
+    };
+    this.requestMetrics.set(key, {
+      count: metrics.count + 1,
+      lastUsed: Date.now(),
+    });
+
     // Cancel previous request with same key to prevent race conditions
     const existingController = this.pendingRequests.get(key);
     if (existingController) {
@@ -35,13 +63,14 @@ class RequestCoordinator {
     }
 
     try {
-      const result = await requestFn(controller.signal);
-      return result;
+      return await requestFn(controller.signal);
     } catch (error) {
       // Enhance error with context about the request
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (error instanceof Error && error.name === "AbortError") {
         throw new Error(
-          timeoutId ? `Request timed out after ${timeout}ms` : 'Request was cancelled'
+          timeoutId ?
+            `Request timed out after ${timeout}ms`
+          : "Request was cancelled"
         );
       }
       throw error;
@@ -90,42 +119,44 @@ const globalCoordinator = new RequestCoordinator();
 class OperationTracker {
   private operations = new Map<string, OperationInfo>();
   private readonly maxOperations = 100; // Prevent memory leaks
-  
+
   startOperation(type: string, description: string, context?: string): string {
     // Clean up old operations if we're approaching the limit
     if (this.operations.size >= this.maxOperations) {
       this.cleanupOldOperations();
     }
-    
-    const id = `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+
+    const id = `${type}-${Date.now()}-${globalThis.crypto?.randomUUID?.()?.substring(0, 8) || Math.random().toString(36).substring(2, 10)}`;
     const operation: OperationInfo = {
       id,
       type,
       description,
-      context: context || '',
+      context: context || "",
       startTime: Date.now(),
-      status: 'pending'
+      status: "pending",
     };
-    
+
     this.operations.set(id, operation);
-    
-    if (process.env.NODE_ENV === 'development') {
+
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
       console.log(`🔍 [${type}] ${description}`, { id, context });
     }
-    
+
     return id;
   }
 
-  completeOperation(id: string, data?: any, error?: Error): void {
+  completeOperation(id: string, data?: unknown, error?: Error): void {
     const operation = this.operations.get(id);
     if (!operation) return;
-    
-    operation.status = error ? 'failed' : 'completed';
+
+    operation.status = error ? "failed" : "completed";
     operation.duration = Date.now() - operation.startTime;
-    operation.error = error?.message || '';
-    
-    if (process.env.NODE_ENV === 'development') {
-      const icon = operation.status === 'completed' ? '✅' : '❌';
+    operation.error = error?.message || "";
+
+    if (process.env.NODE_ENV === "development") {
+      const icon = operation.status === "completed" ? "✅" : "❌";
+      // eslint-disable-next-line no-console
       console.log(
         `${icon} ${operation.description} (${operation.duration}ms)`,
         { data, error: operation.error }
@@ -134,15 +165,19 @@ class OperationTracker {
   }
 
   getActiveOperations(context?: string): OperationInfo[] {
-    return Array.from(this.operations.values())
-      .filter(op => op.status === 'pending' && (!context || op.context === context));
+    return Array.from(this.operations.values()).filter(
+      (op) => op.status === "pending" && (!context || op.context === context)
+    );
   }
 
   private cleanupOldOperations(): void {
     const completedOperations = Array.from(this.operations.entries())
-      .filter(([, op]) => op.status !== 'pending')
-      .sort(([, a], [, b]) => (b.startTime + (b.duration || 0)) - (a.startTime + (a.duration || 0)));
-    
+      .filter(([, op]) => op.status !== "pending")
+      .sort(
+        ([, a], [, b]) =>
+          b.startTime + (b.duration || 0) - (a.startTime + (a.duration || 0))
+      );
+
     // Keep only the 20 most recent completed operations
     completedOperations.slice(20).forEach(([id]) => {
       this.operations.delete(id);
@@ -157,7 +192,7 @@ interface OperationInfo {
   description: string;
   context?: string;
   startTime: number;
-  status: 'pending' | 'completed' | 'failed';
+  status: "pending" | "completed" | "failed";
   duration?: number;
   error?: string;
 }
@@ -170,9 +205,15 @@ interface SafeQueryOptions<T> {
   /** The API endpoint to call */
   endpoint: string;
   /** HTTP method to use (defaults to GET) */
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   /** Request body for POST/PUT/PATCH requests */
-  body?: any;
+  body?:
+    | Record<string, unknown>
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | undefined;
   /** Additional headers to include in the request */
   headers?: Record<string, string>;
   /** Request timeout in milliseconds (defaults to 30000) */
@@ -193,7 +234,7 @@ interface SafeQueryOptions<T> {
   context?: string;
   /** Custom cache key override */
   cacheKey?: string;
-  
+
   // React Query options (manually included for better control)
   /** Enable/disable the query */
   enabled?: boolean;
@@ -213,7 +254,7 @@ interface SafeQueryOptions<T> {
 }
 
 // Enhanced result interface with additional utilities
-interface SafeQueryResult<T> extends Omit<UseQueryResult<T>, 'data'> {
+interface SafeQueryResult<T> extends Omit<UseQueryResult<T>, "data"> {
   /** The data with fallback applied - never undefined */
   data: T;
   /** Whether we have valid data from the server (not fallback) */
@@ -231,15 +272,18 @@ interface SafeQueryResult<T> extends Omit<UseQueryResult<T>, 'data'> {
 const operationTracker = new OperationTracker();
 
 // Set up periodic cleanup to prevent memory leaks
-if (typeof window !== 'undefined') {
-  setInterval(() => {
-    globalCoordinator.cleanup();
-  }, 5 * 60 * 1000); // Clean up every 5 minutes
+if (typeof window !== "undefined") {
+  setInterval(
+    () => {
+      globalCoordinator.cleanup();
+    },
+    5 * 60 * 1000
+  ); // Clean up every 5 minutes
 }
 
 export function useSafeQuery<T>({
   endpoint,
-  method = 'GET',
+  method = "GET",
   body,
   headers = {},
   timeout = 30000,
@@ -248,39 +292,76 @@ export function useSafeQuery<T>({
   retry = 3,
   debounceMs = 0,
   deduplicate = true,
-  trackOperations = process.env.NODE_ENV === 'development',
-  context = 'unknown',
+  trackOperations = process.env.NODE_ENV === "development",
+  context = "unknown",
   cacheKey,
   ...queryOptions
 }: SafeQueryOptions<T>): SafeQueryResult<T> {
   const [debouncedBody, setDebouncedBody] = useState(body);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const operationIdRef = useRef<string | null>(null);
+  const lastRequestRef = useRef<string>("");
+  const requestCountRef = useRef<number>(0);
+  const lastRequestTimeRef = useRef<number>(0);
 
   const cleanupManager = useEnhancedCleanupManager();
 
-  // Enhanced debouncing with proper cleanup
+  // Enhanced debouncing with proper cleanup and infinite loop prevention
   useSafeEffect(() => {
+    // Prevent infinite loops by checking if body actually changed
+    const currentBodyString = JSON.stringify(body);
+    const lastBodyString = JSON.stringify(debouncedBody);
+
+    if (currentBodyString === lastBodyString) {
+      return; // No change, skip update
+    }
+
+    // Track request frequency to detect potential infinite loops
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTimeRef.current;
+
+    // If requests are happening too frequently (more than 5 per second), throttle them
+    if (timeSinceLastRequest < 200) {
+      requestCountRef.current += 1;
+      if (requestCountRef.current > 5) {
+        console.warn(`[useSafeQuery] Throttling requests for ${endpoint} - too many rapid calls detected`);
+        return;
+      }
+    } else {
+      // Reset counter if enough time has passed
+      requestCountRef.current = 0;
+    }
+
+    lastRequestTimeRef.current = now;
+
     if (debounceMs > 0) {
-      cleanupManager.removeCleanup('debounce-timeout');
-      
-      cleanupManager.addTimeout(() => {
-        setDebouncedBody(body);
-      }, debounceMs, 'debounce-timeout');
+      cleanupManager.removeCleanup("debounce-timeout");
+
+      cleanupManager.addTimeout(
+        () => {
+          setDebouncedBody(body);
+        },
+        debounceMs,
+        "debounce-timeout"
+      );
     } else {
       setDebouncedBody(body);
     }
-  }, [body, debounceMs, cleanupManager]);
+  }, [body, debounceMs, cleanupManager, debouncedBody, endpoint]);
 
-  // Optimized cache key generation with better serialization
+  // Optimized cache key generation with better serialization and loop prevention
   const requestCacheKey = useMemo(() => {
     if (cacheKey) return cacheKey;
-    
-    // More efficient serialization for cache key
-    const bodyKey = debouncedBody ? JSON.stringify(debouncedBody) : 'null';
-    const headersKey = Object.keys(headers).length > 0 ? JSON.stringify(headers) : 'null';
-    
-    return `${method}:${endpoint}:${bodyKey}:${headersKey}`;
+
+    // Prevent cache key from changing too frequently
+    const currentKey = `${method}:${endpoint}:${JSON.stringify(debouncedBody)}:${JSON.stringify(headers)}`;
+
+    // Check if this is the same as the last request to prevent loops
+    if (lastRequestRef.current === currentKey) {
+      return lastRequestRef.current;
+    }
+
+    lastRequestRef.current = currentKey;
+    return currentKey;
   }, [method, endpoint, debouncedBody, headers, cacheKey]);
 
   // Enhanced query function with proper React Query options handling
@@ -290,32 +371,39 @@ export function useSafeQuery<T>({
       // Start operation tracking
       if (trackOperations) {
         operationIdRef.current = operationTracker.startOperation(
-          'safe_query',
+          "safe_query",
           `${method} ${endpoint}`,
           context
         );
       }
 
       try {
-        const requestPromise = async (requestSignal: AbortSignal): Promise<T> => {
+        const requestPromise = async (
+          requestSignal: AbortSignal
+        ): Promise<T> => {
           // Build URL with query params for GET requests
-          const url = method === 'GET' && debouncedBody 
-            ? `${endpoint}?${new URLSearchParams(debouncedBody).toString()}`
+          const url =
+            (
+              method === "GET" &&
+              debouncedBody &&
+              typeof debouncedBody === "object"
+            ) ?
+              `${endpoint}?${new URLSearchParams(debouncedBody as Record<string, string>).toString()}`
             : endpoint;
 
           const requestConfig: RequestInit = {
             method,
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
               ...headers,
             },
-            credentials: 'include',
+            credentials: "include",
             signal: requestSignal,
           };
 
           // Only add body for non-GET requests
-          if (method !== 'GET' && debouncedBody !== undefined) {
+          if (method !== "GET" && debouncedBody !== undefined) {
             requestConfig.body = JSON.stringify(debouncedBody);
           }
 
@@ -327,19 +415,19 @@ export function useSafeQuery<T>({
           }
 
           let data: unknown;
-          const contentType = response.headers.get('content-type');
-          
-          if (contentType?.includes('application/json')) {
+          const contentType = response.headers.get("content-type");
+
+          if (contentType?.includes("application/json")) {
             data = await response.json();
           } else {
             data = await response.text();
           }
-          
+
           // Apply validation if provided
           if (validator) {
             const validatedData = validator(data);
             if (validatedData === null) {
-              throw new Error('Response data failed validation');
+              throw new Error("Response data failed validation");
             }
             return validatedData;
           }
@@ -348,7 +436,7 @@ export function useSafeQuery<T>({
         };
 
         let result: T;
-        
+
         if (deduplicate) {
           result = await globalCoordinator.executeRequest(
             requestCacheKey,
@@ -368,7 +456,11 @@ export function useSafeQuery<T>({
       } catch (error) {
         // Complete operation tracking on error
         if (trackOperations && operationIdRef.current) {
-          operationTracker.completeOperation(operationIdRef.current, undefined, error as Error);
+          operationTracker.completeOperation(
+            operationIdRef.current,
+            undefined,
+            error as Error
+          );
         }
 
         // Return fallback data on error if provided
@@ -381,33 +473,36 @@ export function useSafeQuery<T>({
     },
     retry: (failureCount, error) => {
       if (error instanceof Error) {
-        const message = error.message;
-        
+        const { message } = error;
+
         // Don't retry on client errors (4xx) except for specific cases
-        if (message.includes('HTTP 4')) {
-          const is408 = message.includes('408'); // Request Timeout
-          const is429 = message.includes('429'); // Too Many Requests
+        if (message.includes("HTTP 4")) {
+          const is408 = message.includes("408"); // Request Timeout
+          const is429 = message.includes("429"); // Too Many Requests
           if (!is408 && !is429) {
             return false;
           }
         }
-        
+
         // Don't retry on validation errors
-        if (message.includes('validation') || message.includes('Failed validation')) {
+        if (
+          message.includes("validation") ||
+          message.includes("Failed validation")
+        ) {
           return false;
         }
-        
+
         // Don't retry on user cancellation
-        if (message.includes('cancelled') || message.includes('aborted')) {
+        if (message.includes("cancelled") || message.includes("aborted")) {
           return false;
         }
       }
-      
-      return typeof retry === 'number' ? failureCount < retry : retry;
+
+      return typeof retry === "number" ? failureCount < retry : Boolean(retry);
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    staleTime: context === "properties" ? 2 * 60 * 1000 : 5 * 60 * 1000, // 2 minutes for properties, 5 for others
+    gcTime: context === "properties" ? 5 * 60 * 1000 : 10 * 60 * 1000, // Shorter cache for properties
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
     refetchOnMount: false,
@@ -420,14 +515,15 @@ export function useSafeQuery<T>({
   }, [requestCacheKey]);
 
   // Get debugging information
-  const activeOperations = useMemo(() => 
-    trackOperations ? operationTracker.getActiveOperations(context) : [],
+  const activeOperations = useMemo(
+    () =>
+      trackOperations ? operationTracker.getActiveOperations(context) : [],
     [trackOperations, context]
   );
 
   // Fixed: Use the corrected method signature
-  const requestStats = useMemo(() => 
-    globalCoordinator.getRequestStats(requestCacheKey),
+  const requestStats = useMemo(
+    () => globalCoordinator.getRequestStats(requestCacheKey),
     [requestCacheKey]
   );
 
@@ -438,7 +534,7 @@ export function useSafeQuery<T>({
   return {
     ...query,
     data: safeData as T,
-    hasValidData: query.data !== undefined && query.data !== null,
+    hasValidData: query.data != null,
     originalData: query.data,
     cancelRequest,
     activeOperations,
@@ -446,125 +542,195 @@ export function useSafeQuery<T>({
   } as SafeQueryResult<T>;
 }
 
+// Property type definitions
+interface Property {
+  id: string;
+  title: string;
+  price: number;
+  images: string[];
+  location: {
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+  };
+  [key: string]: unknown;
+}
+
 // Pre-configured specialized hooks with enhanced validators for the new domain structure
 export const useSafePropertiesQuery = (
-  searchParams?: Record<string, any>, 
-  options?: Partial<SafeQueryOptions<any[]>>
-) => 
+  searchParams?: Record<string, unknown>,
+  options?: Partial<SafeQueryOptions<Property[]>>
+) =>
   useSafeQuery({
-    endpoint: '/api/properties',
-    method: 'GET',
+    endpoint: "/api/properties",
+    method: "GET",
     body: searchParams,
     fallbackData: [],
-    validator: (data): any[] => {
+    validator: (data): Property[] => {
       if (!Array.isArray(data)) return [];
-      
-      return data.filter(item => 
-        item && 
-        typeof item === 'object' && 
-        typeof item.id === 'string' &&
-        item.id.length > 0
-      );
+
+      return data.filter((item): item is Property => {
+        if (!item || typeof item !== "object") return false;
+        const obj = item as Record<string, unknown>;
+        return typeof obj.id === "string" && obj.id.length > 0;
+      });
     },
-    context: 'properties',
+    context: "properties",
+    debounceMs: 300, // Add debouncing to prevent rapid-fire requests
+    deduplicate: true, // Ensure duplicate requests are handled
     ...options,
   });
 
 export const useSafePropertyQuery = (
-  id: string, 
-  options?: Partial<SafeQueryOptions<any>>
-) => 
-  useSafeQuery({
-    endpoint: `/api/properties/${id}`,
+  id: string,
+  options?: Partial<SafeQueryOptions<Property | null>> & { includeMarketEstimate?: boolean }
+) => {
+  const { includeMarketEstimate = false, ...queryOptions } = options || {};
+  
+  return useSafeQuery({
+    endpoint: `/api/properties/${id}${includeMarketEstimate ? '?includeMarketEstimate=true' : ''}`,
     fallbackData: null,
-    validator: (data): any => {
-      if (!data || typeof data !== 'object') return null;
-      
-      const property = data as any;
+    validator: (data): Property | null => {
+      if (!data || typeof data !== "object") return null;
+
+      const property = data as Record<string, unknown>;
       return {
         ...property,
-        id: property.id || '',
-        title: property.title || 'Untitled Property',
-        price: typeof property.price === 'number' ? property.price : 0,
+        id: (property.id as string) || "",
+        title: (property.title as string) || "Untitled Property",
+        price: typeof property.price === "number" ? property.price : 0,
         images: Array.isArray(property.images) ? property.images : [],
-        location: property.location || { address: '', city: '', state: '', country: '' },
+        location: (property.location as {
+          address: string;
+          city: string;
+          state: string;
+          country: string;
+        }) || {
+          address: "",
+          city: "",
+          state: "",
+          country: "",
+        },
       };
     },
     enabled: Boolean(id) && id.length > 0,
-    context: 'property',
-    ...options,
+    context: "property",
+    ...queryOptions,
   });
+};
 
-export const useSafeUserQuery = (options?: Partial<SafeQueryOptions<any>>) => 
+// User type definition
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  trustScore: number;
+  isVerified: boolean;
+  role: string;
+  [key: string]: unknown;
+}
+
+export const useSafeUserQuery = (
+  options?: Partial<SafeQueryOptions<User | null>>
+) =>
   useSafeQuery({
-    endpoint: '/api/auth/profile',
+    endpoint: "/api/auth/profile",
     fallbackData: null,
-    validator: (data): any => {
-      if (!data || typeof data !== 'object') return null;
-      
-      const user = data as any;
+    validator: (data): User | null => {
+      if (!data || typeof data !== "object") return null;
+
+      const user = data as Record<string, unknown>;
       return {
         ...user,
-        id: user.id || '',
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        trustScore: typeof user.trustScore === 'number' ? user.trustScore : 0,
+        id: (user.id as string) || "",
+        firstName: (user.firstName as string) || "",
+        lastName: (user.lastName as string) || "",
+        email: (user.email as string) || "",
+        trustScore: typeof user.trustScore === "number" ? user.trustScore : 0,
         isVerified: Boolean(user.isVerified),
-        role: user.role || 'user',
+        role: (user.role as string) || "user",
       };
     },
     retry: false,
     refetchOnWindowFocus: false,
-    context: 'auth',
+    context: "auth",
     ...options,
   });
 
+// Trust score type definition
+interface TrustScore {
+  score: number;
+  level: string;
+  factors: Record<string, unknown>;
+  recommendations: string[];
+}
+
 export const useSafeTrustScoreQuery = (
-  userId: string, 
-  options?: Partial<SafeQueryOptions<any>>
-) => 
+  userId: string,
+  options?: Partial<SafeQueryOptions<TrustScore>>
+) =>
   useSafeQuery({
     endpoint: `/api/trust/score/${userId}`,
-    fallbackData: { score: 0, level: 'unverified', factors: {} },
-    validator: (data): any => {
-      if (!data || typeof data !== 'object') return null;
-      
-      const trustData = data as any;
+    fallbackData: {
+      score: 0,
+      level: "unverified",
+      factors: {},
+      recommendations: [],
+    },
+    validator: (data): TrustScore | null => {
+      if (!data || typeof data !== "object") return null;
+
+      const trustData = data as Record<string, unknown>;
       return {
-        score: typeof trustData.score === 'number' ? trustData.score : 0,
-        level: trustData.level || 'unverified',
-        factors: trustData.factors || {},
-        recommendations: Array.isArray(trustData.recommendations) ? trustData.recommendations : [],
+        score: typeof trustData.score === "number" ? trustData.score : 0,
+        level: (trustData.level as string) || "unverified",
+        factors: (trustData.factors as Record<string, unknown>) || {},
+        recommendations:
+          Array.isArray(trustData.recommendations) ?
+            trustData.recommendations
+          : [],
       };
     },
     enabled: Boolean(userId) && userId.length > 0,
-    context: 'trust',
+    context: "trust",
     ...options,
   });
 
+// Message type definition
+interface Message {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  subject: string;
+  content: string;
+  [key: string]: unknown;
+}
+
 export const useSafeMessagesQuery = (
   userId: string,
-  options?: Partial<SafeQueryOptions<any[]>>
-) => 
+  options?: Partial<SafeQueryOptions<Message[]>>
+) =>
   useSafeQuery({
     endpoint: `/api/communication/messages?userId=${userId}`,
     fallbackData: [],
-    validator: (data): any[] => {
+    validator: (data): Message[] => {
       if (!Array.isArray(data)) return [];
-      
-      return data.filter(item => 
-        item && 
-        typeof item === 'object' && 
-        typeof item.id === 'string' &&
-        typeof item.senderId === 'string' &&
-        typeof item.recipientId === 'string' &&
-        typeof item.subject === 'string' &&
-        typeof item.content === 'string'
+
+      return data.filter(
+        (item): item is Message =>
+          item &&
+          typeof item === "object" &&
+          typeof (item as Record<string, unknown>).id === "string" &&
+          typeof (item as Record<string, unknown>).senderId === "string" &&
+          typeof (item as Record<string, unknown>).recipientId === "string" &&
+          typeof (item as Record<string, unknown>).subject === "string" &&
+          typeof (item as Record<string, unknown>).content === "string"
       );
     },
     enabled: Boolean(userId) && userId.length > 0,
-    context: 'messages',
+    context: "messages",
     ...options,
   });
 

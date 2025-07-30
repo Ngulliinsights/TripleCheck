@@ -57,7 +57,7 @@ export function VirtualizedList<T>({
   items,
   itemHeight,
   height,
-  width = '100%',
+  width = 300,
   renderItem,
   onLoadMore,
   hasNextPage = false,
@@ -94,7 +94,7 @@ export function VirtualizedList<T>({
   }, [isLoading, onLoadMore]);
 
   // Handle scroll events
-  const handleScroll = useCallback(({ scrollTop }: { scrollTop: number }) => {
+  const handleScroll = useCallback((props: any) => {
     setIsScrolling(true);
     
     // Clear existing timeout
@@ -107,7 +107,7 @@ export function VirtualizedList<T>({
       setIsScrolling(false);
     }, 150);
 
-    onScroll?.(scrollTop);
+    onScroll?.(props.scrollTop);
   }, [onScroll]);
 
   // Scroll to specific index
@@ -169,7 +169,7 @@ export function VirtualizedList<T>({
           itemCount={itemCount}
           loadMoreItems={loadMoreItems}
         >
-          {({ onItemsRendered, ref }) => {
+          {({ onItemsRendered, ref }: any) => {
             if (isVariableSize) {
               return (
                 <VariableSizeList

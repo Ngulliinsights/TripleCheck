@@ -96,13 +96,23 @@ class LandVerificationDeployer {
 
     for (const api of apis) {
       if (api.url) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
         try {
-          const response = await fetch(`${api.url}/health`);
+          const response = await fetch(`${api.url}/health`, {
+            signal: controller.signal,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
           if (!response.ok) {
             console.warn(`⚠️ ${api.name} API health check returned ${response.status}`);
           }
         } catch (error) {
           console.warn(`⚠️ ${api.name} API is not accessible: ${error}`);
+        } finally {
+          clearTimeout(timeoutId);
         }
       }
     }
@@ -191,12 +201,23 @@ class LandVerificationDeployer {
   }
 
   private async checkServiceHealth(serviceName: string): Promise<boolean> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     try {
-      // In production, this would check actual service endpoints
-      const response = await fetch(`http://localhost:3000/api/health/${serviceName}`);
+      // Use environment variable for base URL in production
+      const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/health/${serviceName}`, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       return response.ok;
     } catch (error) {
       return false;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

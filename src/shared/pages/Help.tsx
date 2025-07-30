@@ -175,43 +175,73 @@ export default function Help() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-hero-primary text-white py-20">
-        <div className="container mx-auto px-4">
+      <section className="relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-white py-24 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
+        </div>
+        
+        <div className="container mx-auto px-4 relative">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6 text-coral-dark">
+            {/* Icon */}
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full mb-6">
+              <HelpCircle className="h-10 w-10 text-white" />
+            </div>
+            
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white">
               How Can We Help You?
             </h1>
-            <p className="text-xl mb-8 text-white/90">
-              Find answers, get support, and learn how to make the most of TripleCheck
+            <p className="text-xl md:text-2xl mb-12 text-white/90 max-w-3xl mx-auto leading-relaxed">
+              Find answers, get support, and learn how to make the most of TripleCheck's property verification platform
             </p>
             
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="Search for help articles, guides, or FAQs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-4 py-4 text-lg bg-white text-gray-900 rounded-lg"
-              />
-              <Button 
-                className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                onClick={() => {
-                  if (searchQuery) {
-                    trackNavigation('/help', `/help/search?q=${searchQuery}`, 'help_search');
-                  }
-                }}
-              >
-                Search
-              </Button>
+              <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl p-2 shadow-2xl">
+                <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  type="search"
+                  placeholder="Search for help articles, guides, or FAQs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-14 pr-32 py-4 text-lg bg-transparent border-0 text-gray-900 placeholder:text-gray-500 focus:ring-0 focus:outline-none"
+                />
+                <Button 
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg"
+                  onClick={() => {
+                    if (searchQuery) {
+                      trackNavigation('/help', `/help/search?q=${searchQuery}`, 'help_search');
+                    }
+                  }}
+                >
+                  Search
+                </Button>
+              </div>
+            </div>
+            
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-3xl mx-auto">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-2">500+</div>
+                <div className="text-white/80">Help Articles</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-2">24/7</div>
+                <div className="text-white/80">Support Available</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-2">{'< 4hrs'}</div>
+                <div className="text-white/80">Response Time</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Quick Actions */}
-      <section className="py-16 -mt-8">
+      <section className="py-20 -mt-12 relative z-10">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {quickActions.map((action, index) => {
@@ -219,16 +249,16 @@ export default function Help() {
               return (
                 <div 
                   key={index}
-                  className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+                  className="group bg-white rounded-2xl shadow-xl border border-gray-100 p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
                   onClick={action.action}
                 >
-                  <div className="flex items-center mb-4">
-                    <div className="p-3 bg-primary/10 rounded-lg mr-4">
-                      <IconComponent className="h-6 w-6 text-primary" />
+                  <div className="flex flex-col items-center text-center">
+                    <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl mb-6 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors duration-300">
+                      <IconComponent className="h-8 w-8 text-primary" />
                     </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{action.title}</h3>
+                    <p className="text-gray-600 leading-relaxed">{action.description}</p>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{action.title}</h3>
-                  <p className="text-gray-600 text-sm">{action.description}</p>
                 </div>
               );
             })}
@@ -237,44 +267,46 @@ export default function Help() {
       </section>
 
       {/* Help Categories */}
-      <section className="py-20">
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               Browse Help Topics
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Find detailed guides and tutorials for every aspect of property verification
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {helpCategories.map((category, index) => {
               const IconComponent = category.icon;
               return (
-                <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-                  <div className="flex items-center mb-6">
-                    <div className="p-3 bg-primary/10 rounded-lg mr-4">
+                <div key={index} className="group bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl hover:border-primary/20 transition-all duration-300">
+                  <div className="flex items-start mb-6">
+                    <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl mr-6 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors duration-300">
                       <IconComponent className="h-8 w-8 text-primary" />
                     </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-900">{category.title}</h3>
-                      <p className="text-gray-600">{category.description}</p>
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">{category.title}</h3>
+                      <p className="text-gray-600 leading-relaxed">{category.description}</p>
                     </div>
                   </div>
                   
-                  <ul className="space-y-3 mb-6">
+                  <ul className="space-y-4 mb-8">
                     {category.articles.map((article, articleIndex) => (
-                      <li key={articleIndex} className="flex items-center text-gray-700">
-                        <ChevronRight className="h-4 w-4 text-gray-400 mr-3 flex-shrink-0" />
-                        {article}
+                      <li key={articleIndex} className="flex items-start text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
+                        <div className="p-1 bg-gray-100 rounded-full mr-3 mt-1 group-hover:bg-primary/10 transition-colors duration-200">
+                          <ChevronRight className="h-3 w-3 text-gray-400 group-hover:text-primary transition-colors duration-200" />
+                        </div>
+                        <span className="leading-relaxed">{article}</span>
                       </li>
                     ))}
                   </ul>
                   
                   <Button 
                     variant="outline" 
-                    className="w-full"
+                    className="w-full group-hover:border-primary group-hover:text-primary transition-colors duration-300"
                     onClick={() => handleGuideClick(category.link.split('/').pop() || '')}
                   >
                     View All Articles
@@ -288,34 +320,40 @@ export default function Help() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl text-gray-600">
-              Quick answers to the most common questions
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Quick answers to the most common questions about property verification
             </p>
           </div>
 
           <div className="max-w-4xl mx-auto">
             {faqs.map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
+              <div key={index} className="bg-gradient-to-r from-gray-50 to-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden hover:shadow-md transition-shadow duration-300">
                 <button
-                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200"
+                  className="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/2 transition-all duration-200"
                   onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
                 >
-                  <span className="text-lg font-semibold text-gray-900">{faq.question}</span>
-                  <ChevronDown 
-                    className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
-                      expandedFAQ === index ? 'rotate-180' : ''
-                    }`} 
-                  />
+                  <span className="text-lg font-semibold text-gray-900 pr-4">{faq.question}</span>
+                  <div className={`p-2 rounded-full transition-all duration-200 ${
+                    expandedFAQ === index ? 'bg-primary/10' : 'bg-gray-100'
+                  }`}>
+                    <ChevronDown 
+                      className={`h-5 w-5 transition-all duration-200 ${
+                        expandedFAQ === index ? 'rotate-180 text-primary' : 'text-gray-500'
+                      }`} 
+                    />
+                  </div>
                 </button>
                 {expandedFAQ === index && (
-                  <div className="px-6 pb-4">
-                    <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+                  <div className="px-8 pb-6 bg-gradient-to-r from-primary/5 to-primary/2">
+                    <div className="border-t border-gray-200 pt-4">
+                      <p className="text-gray-700 leading-relaxed text-lg">{faq.answer}</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -325,36 +363,36 @@ export default function Help() {
       </section>
 
       {/* Contact Support */}
-      <section className="py-20">
+      <section className="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               Still Need Help?
             </h2>
-            <p className="text-xl text-gray-600">
-              Our support team is here to help you succeed
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Our dedicated support team is here to help you succeed with property verification
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {contactOptions.map((option, index) => {
               const IconComponent = option.icon;
               return (
                 <div 
                   key={index}
-                  className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 text-center hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+                  className="group bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer"
                   onClick={option.action}
                 >
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-6">
-                    <IconComponent className="h-8 w-8 text-primary" />
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl mb-6 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors duration-300">
+                    <IconComponent className="h-10 w-10 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{option.title}</h3>
-                  <p className="text-gray-600 mb-4">{option.description}</p>
-                  <div className="flex items-center justify-center text-sm text-gray-500 mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{option.title}</h3>
+                  <p className="text-gray-600 mb-6 leading-relaxed">{option.description}</p>
+                  <div className="flex items-center justify-center text-sm text-gray-500 mb-8 bg-gray-50 rounded-full px-4 py-2 group-hover:bg-primary/5 transition-colors duration-300">
                     <Clock className="h-4 w-4 mr-2" />
                     {option.availability}
                   </div>
-                  <Button className="w-full">
+                  <Button className="w-full group-hover:shadow-lg transition-shadow duration-300">
                     Get Help Now
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>

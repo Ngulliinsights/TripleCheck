@@ -220,7 +220,7 @@ export function LocationStep({ data, onUpdate, onValidation }: LocationStepProps
                     key={index}
                     onClick={() => {
                       const parts = suggestion.split(', ');
-                      handleLocationChange('address', parts[0]);
+                      if (parts[0]) handleLocationChange('address', parts[0]);
                       if (parts[1]) handleLocationChange('city', parts[1]);
                       if (parts[2]) handleLocationChange('state', parts[2]);
                       setAddressSuggestions([]);

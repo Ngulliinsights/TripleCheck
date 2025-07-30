@@ -47,13 +47,23 @@ validateDatabaseConfig();
 // Build connection string from configuration
 const DATABASE_URL = process.env.DATABASE_URL || buildConnectionString();
 
-// Simplified connection configuration for better performance
+// Optimized connection configuration for better performance
 const connectionConfig = {
-  max: 5, // Reduce connection pool size for development
+  max: process.env.NODE_ENV === 'production' ? 20 : 10, // Increase pool size for production
   idle_timeout: 20,
-  connect_timeout: 10,
+  connect_timeout: 30, // Increase timeout for Neon connections
   prepare: false,
   onnotice: () => {}, // Disable notice logging to reduce overhead
+  ssl: process.env.NODE_ENV === 'production' || process.env.DB_SSL === 'true' ? 'require' : false,
+  // Add connection pooling optimizations
+  max_lifetime: 60 * 30, // 30 minutes max connection lifetime
+  transform: {
+    undefined: null, // Transform undefined to null for better PostgreSQL compatibility
+  },
+  // Enable connection reuse
+  connection: {
+    application_name: 'triplecheck_api',
+  },
 };
 
 // Create connection with retry logic
@@ -81,7 +91,7 @@ export async function initializeDatabase() {
     await Promise.race([
       sql`SELECT 1 as connection_test`,
       new Promise((resolve, reject) =>
-        setTimeout(() => reject(new Error("Connection test timeout")), 5000)
+        setTimeout(() => reject(new Error("Connection test timeout")), 15000)
       ),
     ]);
 

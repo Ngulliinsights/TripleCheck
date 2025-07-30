@@ -1,12 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import { FileText, Video, Book, Download, ExternalLink } from "lucide-react";
+
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "../components/ui/accordion";
+import { Button } from "../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 
 export default function ResourcesPage() {
   const guides = [
@@ -14,35 +20,38 @@ export default function ResourcesPage() {
       title: "Property Verification Guide",
       description: "Learn how to verify property authenticity step by step",
       type: "PDF",
-      icon: FileText
+      icon: FileText,
     },
     {
       title: "Understanding Trust Scores",
       description: "Comprehensive guide to our trust scoring system",
       type: "PDF",
-      icon: FileText
+      icon: FileText,
     },
     {
       title: "Safe Property Investment",
       description: "Best practices for secure property investments",
       type: "Video",
-      icon: Video
-    }
+      icon: Video,
+    },
   ];
 
   const faqItems = [
     {
       question: "What documents are needed for property verification?",
-      answer: "The essential documents include title deed, land rate receipts, survey plans, and any transfer documents. Additional documents may be required based on the property type and location."
+      answer:
+        "The essential documents include title deed, land rate receipts, survey plans, and any transfer documents. Additional documents may be required based on the property type and location.",
     },
     {
       question: "How long does the verification process take?",
-      answer: "The standard verification process typically takes 2-3 business days. However, complex cases might require additional time for thorough verification."
+      answer:
+        "The standard verification process typically takes 2-3 business days. However, complex cases might require additional time for thorough verification.",
     },
     {
       question: "What is the Real Estate Karma Score?",
-      answer: "The Karma Score is our proprietary trust metric that evaluates property sellers and agents based on their transaction history, document accuracy, and community feedback."
-    }
+      answer:
+        "The Karma Score is our proprietary trust metric that evaluates property sellers and agents based on their transaction history, document accuracy, and community feedback.",
+    },
   ];
 
   return (
@@ -51,7 +60,8 @@ export default function ResourcesPage() {
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Educational Resources</h1>
           <p className="text-muted-foreground">
-            Enhance your understanding of property verification and real estate investments
+            Enhance your understanding of property verification and real estate
+            investments
           </p>
         </div>
 
@@ -68,11 +78,9 @@ export default function ResourcesPage() {
                       {guide.description}
                     </p>
                     <Button variant="outline" className="w-full">
-                      {guide.type === "PDF" ? (
+                      {guide.type === "PDF" ?
                         <Download className="h-4 w-4 mr-2" />
-                      ) : (
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                      )}
+                      : <ExternalLink className="h-4 w-4 mr-2" />}
                       Access {guide.type}
                     </Button>
                   </div>
@@ -98,9 +106,7 @@ export default function ResourcesPage() {
                 </Button>
               </div>
               <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                <Button variant="outline">
-                  Watch: Using Trust Scores
-                </Button>
+                <Button variant="outline">Watch: Using Trust Scores</Button>
               </div>
             </div>
           </CardContent>
@@ -119,9 +125,7 @@ export default function ResourcesPage() {
               {faqItems.map((item, index) => (
                 <AccordionItem key={index} value={`item-${index}`}>
                   <AccordionTrigger>{item.question}</AccordionTrigger>
-                  <AccordionContent>
-                    {item.answer}
-                  </AccordionContent>
+                  <AccordionContent>{item.answer}</AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>

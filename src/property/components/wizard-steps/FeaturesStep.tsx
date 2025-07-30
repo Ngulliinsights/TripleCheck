@@ -200,7 +200,7 @@ export function FeaturesStep({ data, onUpdate, onValidation }: FeaturesStepProps
                 >
                   <Checkbox
                     checked={isSelected}
-                    onChange={(checked) => handleAmenityToggle(amenity.id, checked)}
+                    onChange={(e) => handleAmenityToggle(amenity.id, (e.target as HTMLInputElement).checked)}
                   />
                   <Icon className={`h-5 w-5 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span className={`text-sm ${isSelected ? 'text-blue-900 font-medium' : 'text-gray-700'}`}>

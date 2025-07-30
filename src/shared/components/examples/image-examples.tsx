@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { OptimizedImage, Logo, PropertyImage, AvatarImage, HeroImage } from '../ui/optimized-image';
+import { OptimizedImage } from '../ui/optimized-image';
 import { images } from '@/shared/config/images';
 
 export function ImageExamples() {

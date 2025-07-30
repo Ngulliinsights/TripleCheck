@@ -1,98 +1,170 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { Shield, Target, Users, TrendingUp } from "lucide-react";
 
 export default function OurStoryPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-[#2C5282] mb-4">Our Story</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Built for Kenya, trusted by thousands - discover how TripleCheck is revolutionizing real estate verification
-          </p>
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="flex justify-center mb-6">
+              <div className="p-4 bg-primary/10 rounded-full">
+                <Shield className="w-12 h-12 text-primary" />
+              </div>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+              Our Story
+            </h1>
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              Built for Kenya, trusted by thousands - discover how TripleCheck is revolutionizing real estate verification
+            </p>
+          </div>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <Card>
+      <div className="container mx-auto px-4 py-16">
+
+        {/* Mission & Vision */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+          <Card className="border-border hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
-              <CardTitle className="text-2xl text-[#2C5282]">Our Mission</CardTitle>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Target className="w-6 h-6 text-primary" />
+                </div>
+                <CardTitle className="text-2xl text-foreground">Our Mission</CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 leading-relaxed mb-4">
+              <p className="text-muted-foreground leading-relaxed mb-4">
                 To eliminate property fraud in Kenya's real estate market by providing comprehensive verification services 
                 that protect buyers, sellers, and investors through cutting-edge technology and community trust networks.
               </p>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed">
                 We believe every Kenyan deserves access to verified, trustworthy property information that empowers 
                 confident real estate decisions.
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
-              <CardTitle className="text-2xl text-[#2C5282]">Our Vision</CardTitle>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-secondary/10 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-secondary" />
+                </div>
+                <CardTitle className="text-2xl text-foreground">Our Vision</CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 leading-relaxed mb-4">
+              <p className="text-muted-foreground leading-relaxed mb-4">
                 To become Kenya's most trusted real estate verification platform, setting the standard for property 
                 transparency and fraud prevention across East Africa.
               </p>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed">
                 A future where property fraud is eliminated through technology, community trust, and comprehensive verification.
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="mb-12">
+        {/* Problem We Solve */}
+        <Card className="mb-16 border-border">
           <CardHeader>
-            <CardTitle className="text-2xl text-[#2C5282]">The Problem We Solve</CardTitle>
+            <div className="text-center">
+              <CardTitle className="text-3xl text-foreground mb-4">The Problem We Solve</CardTitle>
+              <p className="text-muted-foreground">Understanding the challenges in Kenya's real estate market</p>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-red-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-red-800 mb-2">Property Fraud</h3>
-                <p className="text-red-700 text-sm">Fake listings, forged documents, and fraudulent sellers cost Kenyans millions annually</p>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-destructive/5 border border-destructive/20 p-6 rounded-lg hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-destructive/10 rounded-lg">
+                    <Shield className="w-5 h-5 text-destructive" />
+                  </div>
+                  <h3 className="font-semibold text-destructive">Property Fraud</h3>
+                </div>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Fake listings, forged documents, and fraudulent sellers cost Kenyans millions annually
+                </p>
               </div>
-              <div className="bg-orange-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-orange-800 mb-2">Information Gap</h3>
-                <p className="text-orange-700 text-sm">Lack of accessible property verification tools leaves buyers vulnerable</p>
+              <div className="bg-orange-50 border border-orange-200 p-6 rounded-lg hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Users className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <h3 className="font-semibold text-orange-800">Information Gap</h3>
+                </div>
+                <p className="text-orange-700 text-sm leading-relaxed">
+                  Lack of accessible property verification tools leaves buyers vulnerable
+                </p>
               </div>
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-yellow-800 mb-2">Trust Deficit</h3>
-                <p className="text-yellow-700 text-sm">No reliable way to verify seller credibility and property authenticity</p>
+              <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <Target className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <h3 className="font-semibold text-yellow-800">Trust Deficit</h3>
+                </div>
+                <p className="text-yellow-700 text-sm leading-relaxed">
+                  No reliable way to verify seller credibility and property authenticity
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Our Journey */}
+        <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-2xl text-[#2C5282]">Our Journey</CardTitle>
+            <div className="text-center">
+              <CardTitle className="text-3xl text-foreground mb-4">Our Journey</CardTitle>
+              <p className="text-muted-foreground">Milestones in building Kenya's most trusted property platform</p>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              <div className="flex items-start space-x-4">
-                <Badge className="bg-[#2C5282] text-white">2023</Badge>
-                <div>
-                  <h3 className="font-semibold mb-2">Foundation</h3>
-                  <p className="text-gray-700">TripleCheck was founded to address the growing property fraud crisis in Kenya</p>
+            <div className="space-y-8">
+              <div className="flex items-start space-x-6 group">
+                <div className="flex-shrink-0">
+                  <Badge className="bg-primary text-primary-foreground px-4 py-2 text-sm font-medium">2023</Badge>
+                </div>
+                <div className="flex-1 pb-8 border-l-2 border-border pl-6 group-last:border-l-0">
+                  <div className="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <h3 className="font-semibold text-foreground mb-2 text-lg">Foundation</h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      TripleCheck was founded to address the growing property fraud crisis in Kenya, bringing together experts in real estate, technology, and security.
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
-                <Badge className="bg-[#2C5282] text-white">2024</Badge>
-                <div>
-                  <h3 className="font-semibold mb-2">Platform Launch</h3>
-                  <p className="text-gray-700">Launched comprehensive property verification services with AI-powered fraud detection</p>
+              <div className="flex items-start space-x-6 group">
+                <div className="flex-shrink-0">
+                  <Badge className="bg-secondary text-secondary-foreground px-4 py-2 text-sm font-medium">2024</Badge>
+                </div>
+                <div className="flex-1 pb-8 border-l-2 border-border pl-6 group-last:border-l-0">
+                  <div className="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <h3 className="font-semibold text-foreground mb-2 text-lg">Platform Launch</h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Launched comprehensive property verification services with AI-powered fraud detection, document authentication, and community intelligence networks.
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
-                <Badge className="bg-[#2C5282] text-white">Today</Badge>
-                <div>
-                  <h3 className="font-semibold mb-2">Growing Trust Network</h3>
-                  <p className="text-gray-700">Building Kenya's largest community-driven property trust network</p>
+              <div className="flex items-start space-x-6 group">
+                <div className="flex-shrink-0">
+                  <Badge className="bg-accent text-accent-foreground px-4 py-2 text-sm font-medium">Today</Badge>
+                </div>
+                <div className="flex-1">
+                  <div className="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <h3 className="font-semibold text-foreground mb-2 text-lg">Growing Trust Network</h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Building Kenya's largest community-driven property trust network, with thousands of verified properties and growing partnerships across the real estate ecosystem.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

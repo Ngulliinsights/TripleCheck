@@ -174,6 +174,8 @@ export function PropertyListingWizard({
       const step = WIZARD_STEPS[stepIndex];
       let isValid = true;
 
+      if (!step) return false;
+
       switch (step.id) {
         case "basic":
           isValid = !!(
@@ -346,6 +348,8 @@ export function PropertyListingWizard({
   const renderStepContent = () => {
     const step = WIZARD_STEPS[currentStep];
 
+    if (!step) return <div>Invalid step</div>;
+
     switch (step.id) {
       case "basic":
         return (
@@ -487,13 +491,13 @@ export function PropertyListingWizard({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {React.createElement(WIZARD_STEPS[currentStep].icon, {
+            {WIZARD_STEPS[currentStep] && React.createElement(WIZARD_STEPS[currentStep].icon, {
               className: "h-5 w-5",
             })}
-            {WIZARD_STEPS[currentStep].title}
+            {WIZARD_STEPS[currentStep]?.title}
           </CardTitle>
           <p className="text-gray-600">
-            {WIZARD_STEPS[currentStep].description}
+            {WIZARD_STEPS[currentStep]?.description}
           </p>
         </CardHeader>
         <CardContent>{renderStepContent()}</CardContent>
