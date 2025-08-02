@@ -39,13 +39,14 @@ export default function FraudDetectionDashboard({ userId }: FraudDetectionDashbo
   // Auto-refresh active scans every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
+      // Use a ref to check current state without causing re-renders
       if (backgroundScans.some(scan => scan.status === "scanning")) {
         refreshActiveScans();
       }
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [backgroundScans]);
+  }, []); // Remove backgroundScans dependency to prevent infinite loop
 
   const loadDashboardData = async () => {
     try {

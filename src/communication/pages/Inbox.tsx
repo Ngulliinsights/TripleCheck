@@ -409,7 +409,7 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 navbar-offset pb-8">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">

@@ -1,19 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+
 import { cn } from '@/shared/lib/utils';
 
+// Define breakpoint values as constants for consistency and maintainability
+const BREAKPOINT_VALUES = {
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+  '2xl': 1536
+} as const;
+
+// Type definitions for better TypeScript safety
+type BreakpointKey = keyof typeof BREAKPOINT_VALUES;
+type MaxWidthVariant = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+type PaddingVariant = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+
+interface ResponsiveTypography {
+  sm?: string;
+  md?: string;
+  lg?: string;
+  xl?: string;
+  '2xl'?: string;
+}
+
 interface LayoutContainerProps {
-  children: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
-  padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
-  className?: string;
-  fluidTypography?: boolean;
-  responsiveBreakpoints?: {
-    sm?: string;
-    md?: string;
-    lg?: string;
-    xl?: string;
-  };
-  centerContent?: boolean;
+  readonly children: React.ReactNode;
+  readonly maxWidth?: MaxWidthVariant;
+  readonly padding?: PaddingVariant;
+  readonly className?: string;
+  readonly fluidTypography?: boolean;
+  readonly responsiveTypography?: ResponsiveTypography;
+  readonly centerContent?: boolean;
+  // New prop for better semantic meaning
+  readonly as?: keyof JSX.IntrinsicElements;
+  // Enhanced accessibility
+  readonly role?: string;
+  readonly 'aria-label'?: string;
 }
 
 export function LayoutContainer({
@@ -22,145 +45,270 @@ export function LayoutContainer({
   padding = 'md',
   className,
   fluidTypography = true,
-  responsiveBreakpoints,
-  centerContent = false
+  responsiveTypography,
+  centerContent = false,
+  as: Component = 'div',
+  role,
+  'aria-label': ariaLabel
 }: LayoutContainerProps) {
-  const [currentBreakpoint, setCurrentBreakpoint] = useState<string>('xl');
+  const [currentBreakpoint, setCurrentBreakpoint] = useState<BreakpointKey>('xl');
 
-  useEffect(() => {
-    const updateBreakpoint = () => {
-      const width = window.innerWidth;
-      
-      if (width < 640) {
-        setCurrentBreakpoint('sm');
-      } else if (width < 768) {
-        setCurrentBreakpoint('md');
-      } else if (width < 1024) {
-        setCurrentBreakpoint('lg');
-      } else {
-        setCurrentBreakpoint('xl');
+  // Memoized breakpoint detection function for performance
+  const detectBreakpoint = useCallback((): BreakpointKey => {
+    const width = window.innerWidth;
+    
+    // Use a more efficient approach by checking from largest to smallest
+    if (width >= BREAKPOINT_VALUES['2xl']) return '2xl';
+    if (width >= BREAKPOINT_VALUES.xl) return 'xl';
+    if (width >= BREAKPOINT_VALUES.lg) return 'lg';
+    if (width >= BREAKPOINT_VALUES.md) return 'md';
+    return 'sm';
+  }, []);
+
+  // Extract cleanup logic to reduce nesting
+  const createCleanupHandler = useCallback((rafId: React.MutableRefObject<number | undefined>, timeoutId: React.MutableRefObject<NodeJS.Timeout | undefined>) => {
+    return (): void => {
+      if (typeof rafId.current !== 'undefined') {
+        window.cancelAnimationFrame(rafId.current);
       }
-    };
-
-    // Initial check
-    updateBreakpoint();
-
-    // Throttled resize handler
-    let resizeTimer: NodeJS.Timeout;
-    const handleResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(updateBreakpoint, 100);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(resizeTimer);
+      if (timeoutId.current) {
+        clearTimeout(timeoutId.current);
+      }
     };
   }, []);
 
-  const getMaxWidthClass = () => {
-    switch (maxWidth) {
-      case 'sm':
-        return 'max-w-sm';
-      case 'md':
-        return 'max-w-md';
-      case 'lg':
-        return 'max-w-4xl';
-      case 'xl':
-        return 'max-w-6xl';
-      case '2xl':
-        return 'max-w-7xl';
-      case 'full':
-        return 'max-w-full';
-      default:
-        return 'max-w-6xl';
-    }
-  };
+  // Refs for resize handler
+  const resizeRafId = useRef<number | undefined>();
+  const resizeTimeoutId = useRef<NodeJS.Timeout | undefined>();
 
-  const getPaddingClass = () => {
-    switch (padding) {
-      case 'none':
-        return '';
-      case 'sm':
-        return 'px-4 py-2';
-      case 'md':
-        return 'px-6 py-4 sm:px-8 sm:py-6';
-      case 'lg':
-        return 'px-8 py-6 sm:px-12 sm:py-8';
-      case 'xl':
-        return 'px-12 py-8 sm:px-16 sm:py-12';
-      default:
-        return 'px-6 py-4 sm:px-8 sm:py-6';
-    }
-  };
+  // Extract resize logic to reduce nesting
+  const createResizeHandler = useCallback((onBreakpointChange: (bp: BreakpointKey) => void) => {
+    const handleResize = (): void => {
+      // Cancel any pending RAF or timeout
+      if (typeof resizeRafId.current !== 'undefined') {
+        window.cancelAnimationFrame(resizeRafId.current);
+        resizeRafId.current = undefined;
+      }
+      if (resizeTimeoutId.current) {
+        clearTimeout(resizeTimeoutId.current);
+        resizeTimeoutId.current = undefined;
+      }
 
-  const getFluidTypographyStyles = () => {
+      // Use RAF for smoother updates during active resizing
+      resizeRafId.current = window.requestAnimationFrame(() => {
+        // Add debouncing for final update after resize stops
+        resizeTimeoutId.current = setTimeout(() => {
+          onBreakpointChange(detectBreakpoint());
+        }, 150);
+      });
+    };
+
+    const cleanup = createCleanupHandler(resizeRafId, resizeTimeoutId);
+    return { handleResize, cleanup };
+  }, [detectBreakpoint, createCleanupHandler]);
+
+  useEffect(() => {
+    // Initial breakpoint detection
+    setCurrentBreakpoint(detectBreakpoint());
+
+    // Create resize handler with separated concerns
+    const { handleResize, cleanup } = createResizeHandler(setCurrentBreakpoint);
+
+    window.addEventListener('resize', handleResize, { passive: true });
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cleanup();
+    };
+  }, [detectBreakpoint, createResizeHandler]);
+
+  // Memoized class generation with secure property access
+  const maxWidthClass = useMemo((): string => {
+    // Using type-safe property access to avoid security warnings
+    const maxWidthMap = {
+      sm: 'max-w-sm',      // ~384px
+      md: 'max-w-md',      // ~448px  
+      lg: 'max-w-4xl',     // ~896px - Better for content readability
+      xl: 'max-w-6xl',     // ~1152px
+      '2xl': 'max-w-7xl',  // ~1280px
+      full: 'max-w-full'
+    } as const;
+    
+    // Type-safe property access
+    if (maxWidth in maxWidthMap) {
+      return maxWidthMap[maxWidth as keyof typeof maxWidthMap];
+    }
+    return maxWidthMap.xl; // Safe fallback
+  }, [maxWidth]);
+
+  const paddingClass = useMemo((): string => {
+    // Using type-safe property access to avoid security warnings
+    const paddingMap = {
+      none: '',
+      // Improved responsive padding with better mobile experience
+      sm: 'px-3 py-2 sm:px-4 sm:py-3',
+      md: 'px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-6',
+      lg: 'px-6 py-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8 xl:px-16 xl:py-10',
+      xl: 'px-8 py-6 sm:px-12 sm:py-8 lg:px-16 lg:py-12 xl:px-20 xl:py-16'
+    } as const;
+    
+    // Type-safe property access
+    if (padding in paddingMap) {
+      return paddingMap[padding as keyof typeof paddingMap];
+    }
+    return paddingMap.md; // Safe fallback
+  }, [padding]);
+
+  // Enhanced fluid typography with better defaults and 2xl support
+  const typographyStyles = useMemo(() => {
     if (!fluidTypography) return {};
 
-    const breakpointStyles = responsiveBreakpoints || {
-      sm: '0.875rem',
-      md: '1rem',
-      lg: '1.125rem',
-      xl: '1.25rem'
+    const defaultTypography: ResponsiveTypography = {
+      sm: '0.875rem',   // 14px
+      md: '1rem',       // 16px
+      lg: '1.125rem',   // 18px
+      xl: '1.25rem',    // 20px
+      '2xl': '1.375rem' // 22px
     };
+
+    const typography = { ...defaultTypography, ...responsiveTypography };
 
     return {
-      fontSize: `clamp(${breakpointStyles.sm || '0.875rem'}, 2.5vw, ${breakpointStyles.xl || '1.25rem'})`,
-      lineHeight: 'clamp(1.4, 1.5, 1.6)'
+      // More sophisticated fluid typography with better scaling
+      fontSize: `clamp(${typography.sm}, 1.5vw + 0.5rem, ${typography['2xl']})`,
+      lineHeight: 'clamp(1.4, 1.5, 1.7)'
     };
-  };
+  }, [fluidTypography, responsiveTypography]);
+
+  // Improved className composition with better organization
+  const containerClasses = useMemo(() => {
+    return cn(
+      // Base layout classes
+      'mx-auto w-full',
+      // Responsive max-width
+      maxWidthClass,
+      // Responsive padding
+      paddingClass,
+      // Centering logic with improved flex properties
+      centerContent && [
+        'flex flex-col items-center justify-center',
+        'min-h-[50vh]', // More reasonable minimum height
+        'text-center'   // Better text alignment for centered content
+      ],
+      // Custom classes last for proper override capability
+      className
+    );
+  }, [maxWidthClass, paddingClass, centerContent, className]);
 
   return (
-    <div
-      className={cn(
-        'mx-auto w-full',
-        getMaxWidthClass(),
-        getPaddingClass(),
-        centerContent && 'flex flex-col items-center justify-center min-h-full',
-        className
-      )}
-      style={getFluidTypographyStyles()}
+    <Component
+      className={containerClasses}
+      style={typographyStyles}
       data-breakpoint={currentBreakpoint}
+      data-max-width={maxWidth}
+      role={role}
+      aria-label={ariaLabel}
     >
       {children}
-    </div>
+    </Component>
   );
 }
 
-// Responsive breakpoint hook for child components
+// Enhanced breakpoint hook with additional utilities
 export function useBreakpoint() {
-  const [breakpoint, setBreakpoint] = useState<'sm' | 'md' | 'lg' | 'xl'>('xl');
+  const [breakpoint, setBreakpoint] = useState<BreakpointKey>('xl');
 
-  useEffect(() => {
-    const updateBreakpoint = () => {
-      const width = window.innerWidth;
-      
-      if (width < 640) {
-        setBreakpoint('sm');
-      } else if (width < 768) {
-        setBreakpoint('md');
-      } else if (width < 1024) {
-        setBreakpoint('lg');
-      } else {
-        setBreakpoint('xl');
+  // Memoized breakpoint detection
+  const detectBreakpoint = useCallback((): BreakpointKey => {
+    const width = window.innerWidth;
+    
+    if (width >= BREAKPOINT_VALUES['2xl']) return '2xl';
+    if (width >= BREAKPOINT_VALUES.xl) return 'xl';
+    if (width >= BREAKPOINT_VALUES.lg) return 'lg';
+    if (width >= BREAKPOINT_VALUES.md) return 'md';
+    return 'sm';
+  }, []);
+
+  // Extracted resize handler creation to avoid nesting issues
+  const createResizeHandler = useCallback((onBreakpointChange: (bp: BreakpointKey) => void) => {
+    let rafId: number | undefined;
+    let timeoutId: NodeJS.Timeout | undefined;
+
+    const handleResize = (): void => {
+      if (typeof rafId !== 'undefined') {
+        window.cancelAnimationFrame(rafId);
+        rafId = undefined;
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+
+      rafId = window.requestAnimationFrame(() => {
+        timeoutId = setTimeout(() => {
+          onBreakpointChange(detectBreakpoint());
+        }, 150);
+      });
+    };
+
+    const cleanup = (): void => {
+      if (typeof rafId !== 'undefined') {
+        window.cancelAnimationFrame(rafId);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
     };
 
-    updateBreakpoint();
+    return { handleResize, cleanup };
+  }, [detectBreakpoint]);
 
-    let resizeTimer: NodeJS.Timeout;
-    const handleResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(updateBreakpoint, 100);
-    };
+  useEffect(() => {
+    setBreakpoint(detectBreakpoint());
 
-    window.addEventListener('resize', handleResize);
+    const { handleResize, cleanup } = createResizeHandler(setBreakpoint);
+
+    window.addEventListener('resize', handleResize, { passive: true });
+    
     return () => {
       window.removeEventListener('resize', handleResize);
-      clearTimeout(resizeTimer);
+      cleanup();
     };
-  }, []);
+  }, [detectBreakpoint, createResizeHandler]);
 
-  return breakpoint;
+  // Additional utility functions for enhanced developer experience
+  const isBreakpoint = useCallback((target: BreakpointKey): boolean => {
+    return breakpoint === target;
+  }, [breakpoint]);
+
+  const isBreakpointUp = useCallback((target: BreakpointKey): boolean => {
+    const breakpointOrder: BreakpointKey[] = ['sm', 'md', 'lg', 'xl', '2xl'];
+    const currentIndex = breakpointOrder.indexOf(breakpoint);
+    const targetIndex = breakpointOrder.indexOf(target);
+    return currentIndex >= targetIndex;
+  }, [breakpoint]);
+
+  const isBreakpointDown = useCallback((target: BreakpointKey): boolean => {
+    const breakpointOrder: BreakpointKey[] = ['sm', 'md', 'lg', 'xl', '2xl'];
+    const currentIndex = breakpointOrder.indexOf(breakpoint);
+    const targetIndex = breakpointOrder.indexOf(target);
+    return currentIndex <= targetIndex;
+  }, [breakpoint]);
+
+  return {
+    breakpoint,
+    isBreakpoint,
+    isBreakpointUp,
+    isBreakpointDown,
+    // Convenience booleans for common checks
+    isMobile: breakpoint === 'sm',
+    isTablet: breakpoint === 'md',
+    isDesktop: isBreakpointUp('lg')
+  };
 }
+
+// Export breakpoint values for use in other components
+export { BREAKPOINT_VALUES };
+
+// Type exports for better TypeScript integration
+export type { BreakpointKey, MaxWidthVariant, PaddingVariant, ResponsiveTypography };

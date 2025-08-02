@@ -115,7 +115,7 @@ const resetPasswordSchema = z
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don&apos;t match",
+    message: "Passwords don't match",
     path: ["confirmPassword"],
   });
 
@@ -626,7 +626,7 @@ export const PasswordReset: React.FC = () => {
           Reset Your Password
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Enter your email address and we&apos;ll send you a link to reset your
+          Enter your email address and we'll send you a link to reset your
           password.
         </p>
       </CardHeader>
@@ -711,7 +711,7 @@ export const PasswordReset: React.FC = () => {
           Create New Password
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Enter a strong password that you haven&apos;t used before.
+          Enter a strong password that you haven't used before.
         </p>
       </CardHeader>
       <CardContent>
@@ -866,7 +866,7 @@ export const PasswordReset: React.FC = () => {
         <p className="text-sm text-muted-foreground">
           {step === "success" && urlParams.token ?
             "Your password has been reset successfully. You can now log in with your new password."
-          : "We&apos;ve sent a password reset link to your email address. Please check your inbox and follow the instructions."
+          : "We've sent a password reset link to your email address. Please check your inbox and follow the instructions."
           }
         </p>
       </CardHeader>
@@ -882,7 +882,7 @@ export const PasswordReset: React.FC = () => {
               onClick={() => setStep("request")}
               className="text-sm"
             >
-              Didn&apos;t receive the email? Try again
+              Didn't receive the email? Try again
             </Button>
           </div>
         )}

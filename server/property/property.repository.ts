@@ -332,7 +332,16 @@ export class PropertyRepository {
     return await queryMonitor.trackQuery(
       'findSimilar',
       async () => {
-        const { propertyType, city, minPrice, maxPrice, limit = 10, excludeId } = params;
+        const { 
+          propertyType, 
+          city, 
+          location, // Handle both city and location parameters
+          price, // Handle exact price parameter
+          minPrice, 
+          maxPrice, 
+          limit = 10, 
+          excludeId 
+        } = params;
         
         const conditions = [];
         
@@ -341,23 +350,36 @@ export class PropertyRepository {
           conditions.push(sql`${properties.id} != ${parseInt(excludeId)}`);
         }
         
-        // More flexible location matching - match city or broader location
-        if (city) {
-          conditions.push(like(properties.location, `%${city}%`));
+        // Handle location matching - prioritize city over location, and make it flexible
+        const locationToMatch = city || location;
+        if (locationToMatch) {
+          // Extract city name from full location string for better matching
+          const cityName = locationToMatch.split(',')[0].trim();
+          conditions.push(like(properties.location, `%${cityName}%`));
         }
         
-        // Price range matching instead of exact price (optimized for index usage)
-        if (minPrice && maxPrice) {
+        // Handle price matching - convert exact price to range for better results
+        if (price && !minPrice && !maxPrice) {
+          // Convert exact price to a reasonable range (±20%)
+          const priceNum = parseFloat(price);
+          const priceRange = priceNum * 0.2; // 20% range
           conditions.push(
             and(
-              gte(properties.price, minPrice),
-              lte(properties.price, maxPrice)
+              gte(properties.price, (priceNum - priceRange).toString()),
+              lte(properties.price, (priceNum + priceRange).toString())
+            )
+          );
+        } else if (minPrice && maxPrice) {
+          conditions.push(
+            and(
+              gte(properties.price, minPrice.toString()),
+              lte(properties.price, maxPrice.toString())
             )
           );
         } else if (minPrice) {
-          conditions.push(gte(properties.price, minPrice));
+          conditions.push(gte(properties.price, minPrice.toString()));
         } else if (maxPrice) {
-          conditions.push(lte(properties.price, maxPrice));
+          conditions.push(lte(properties.price, maxPrice.toString()));
         }
         
         // Property type matching if available (optimized JSON query)
@@ -402,14 +424,13 @@ export class PropertyRepository {
         
         const results = await queryBuilder;
         
-        // Log query performance in development
+        // Log query performance in development with better debugging info
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[PERF] Similar properties query returned ${results.length} results for city: ${city}, price range: ${minPrice}-${maxPrice}`);
+          console.log(`[PERF] Similar properties query returned ${results.length} results for location: ${locationToMatch}, price: ${price || `${minPrice}-${maxPrice}`}, excludeId: ${excludeId}`);
         }
         
         return results;
-      },
-      [params]
+      }
     );
   }
 

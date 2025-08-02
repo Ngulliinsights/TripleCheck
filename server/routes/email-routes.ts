@@ -1,302 +1,281 @@
-// Email API routes for TripleCheck
-import { Router } from "express";
-import {
-  EmailServiceFactory,
-  InquiryClassificationService,
-} from "../services/email-service.js";
-import { getEmailConfig, validateEmailConfig } from "../infrastructure/email/email-config.js";
-import { EmailService, PropertyInquiry } from "../shared/email-types";
+// Email routes for TripleCheck - testing and management endpoints
+import { Router } from 'express';
+import { getEmailService, sendTemplatedEmail, EmailServiceFactory } from '../services/email-service';
 
 const router = Router();
-let emailService: EmailService | null = null;
 
-// Initialize email service
-async function initializeEmailService() {
-  if (!emailService) {
-    const config = getEmailConfig();
-    const errors = validateEmailConfig(config);
+// Test email sending endpoint
+router.post('/test', async (req, res) => {
+  try {
+    const { to, subject, body, template } = req.body;
 
-    if (errors.length > 0) {
-      console.warn("Email configuration errors:", errors);
-      console.warn("Falling back to mock email service");
-      config.provider = "mock";
+    if (!to || !subject) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: to, subject'
+      });
     }
 
-    emailService = EmailServiceFactory.createService(config.provider);
-    await emailService.initialize(config);
-    console.log(`Email service initialized with provider: ${config.provider}`);
+    const emailService = await getEmailService();
+
+    if (template) {
+      // Send templated email
+      await sendTemplatedEmail(template, [to], req.body);
+    } else {
+      // Send simple email
+      await emailService.sendEmail([to], subject, body || 'Test email from TripleCheck Kenya');
+    }
+
+    res.json({
+      success: true,
+      message: 'Email sent successfully',
+      to,
+      subject
+    });
+  } catch (error) {
+    console.error('Email test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send email'
+    });
   }
-  return emailService;
-}
+});
 
-// Get all inquiries/messages
-router.get("/inquiries", async (req, res) => {
+// Send welcome email
+router.post('/welcome', async (req, res) => {
   try {
-    const service = await initializeEmailService();
-    const limit = parseInt(req.query.limit as string) || 50;
-    const pageToken = req.query.pageToken as string;
+    const { email, userName, loginUrl } = req.body;
 
-    const result = await service.getMessages(limit, pageToken);
+    if (!email || !userName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: email, userName'
+      });
+    }
 
-    // Convert messages to property inquiries with classification
-    const inquiries: PropertyInquiry[] = result.messages.map((message) => {
-      const classification =
-        InquiryClassificationService.classifyInquiry(message);
-
-      return {
-        ...message,
-        inquiryType: classification.inquiryType,
-        priority: classification.priority,
-        propertyId: classification.extractedData.propertyId,
-        propertyTitle:
-          classification.extractedData.propertyTitle ||
-          extractPropertyTitleFromSubject(message.subject),
-        propertyLocation: classification.extractedData.propertyLocation,
-        propertyPrice: classification.extractedData.propertyPrice,
-        senderPhone: classification.extractedData.senderPhone,
-      };
+    await sendTemplatedEmail('welcome', [email], {
+      userName,
+      loginUrl: loginUrl || `${process.env.FRONTEND_URL || 'https://triplecheck.co.ke'}/login`
     });
 
     res.json({
-      inquiries,
-      nextPageToken: result.nextPageToken,
+      success: true,
+      message: 'Welcome email sent successfully',
+      to: email
     });
   } catch (error) {
-    console.error("Error fetching inquiries:", error);
+    console.error('Welcome email failed:', error);
     res.status(500).json({
-      error: "Failed to fetch inquiries",
-      message: error instanceof Error ? error.message : "Unknown error",
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send welcome email'
     });
   }
 });
 
-// Get specific inquiry
-router.get("/inquiries/:id", async (req, res) => {
+// Send password reset email
+router.post('/password-reset', async (req, res) => {
   try {
-    const service = await initializeEmailService();
-    const message = await service.getMessage(req.params.id);
+    const { email, userName, resetToken } = req.body;
 
-    if (!message) {
-      return res.status(404).json({ error: "Inquiry not found" });
+    if (!email || !userName || !resetToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: email, userName, resetToken'
+      });
     }
 
-    const classification =
-      InquiryClassificationService.classifyInquiry(message);
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://triplecheck.co.ke'}/reset-password?token=${resetToken}`;
 
-    const inquiry: PropertyInquiry = {
-      ...message,
-      inquiryType: classification.inquiryType,
-      priority: classification.priority,
-      propertyId: classification.extractedData.propertyId,
-      propertyTitle:
-        classification.extractedData.propertyTitle ||
-        extractPropertyTitleFromSubject(message.subject),
-      propertyLocation: classification.extractedData.propertyLocation,
-      propertyPrice: classification.extractedData.propertyPrice,
-      senderPhone: classification.extractedData.senderPhone,
-    };
+    await sendTemplatedEmail('password-reset', [email], {
+      userName,
+      resetUrl
+    });
 
-    res.json(inquiry);
+    res.json({
+      success: true,
+      message: 'Password reset email sent successfully',
+      to: email
+    });
   } catch (error) {
-    console.error("Error fetching inquiry:", error);
+    console.error('Password reset email failed:', error);
     res.status(500).json({
-      error: "Failed to fetch inquiry",
-      message: error instanceof Error ? error.message : "Unknown error",
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send password reset email'
     });
   }
 });
 
-// Reply to inquiry
-router.post("/inquiries/:id/reply", async (req, res) => {
+// Send property inquiry notification
+router.post('/property-inquiry', async (req, res) => {
   try {
-    const service = await initializeEmailService();
-    const { message, isHtml = false } = req.body;
+    const { email, propertyTitle, inquirerName, message, contactInfo } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ error: "Message content is required" });
+    if (!email || !propertyTitle || !inquirerName || !message) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: email, propertyTitle, inquirerName, message'
+      });
     }
 
-    const messageId = await service.replyToEmail(
-      req.params.id,
+    await sendTemplatedEmail('property-inquiry', [email], {
+      propertyTitle,
+      inquirerName,
       message,
-      isHtml
-    );
+      contactInfo: contactInfo || 'Not provided'
+    });
 
     res.json({
       success: true,
-      messageId,
-      message: "Reply sent successfully",
+      message: 'Property inquiry notification sent successfully',
+      to: email
     });
   } catch (error) {
-    console.error("Error sending reply:", error);
+    console.error('Property inquiry email failed:', error);
     res.status(500).json({
-      error: "Failed to send reply",
-      message: error instanceof Error ? error.message : "Unknown error",
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send property inquiry email'
     });
   }
 });
 
-// Mark inquiry as read/unread
-router.patch("/inquiries/:id/read", async (req, res) => {
+// Send verification status update
+router.post('/verification-update', async (req, res) => {
   try {
-    const service = await initializeEmailService();
-    const { isRead = true } = req.body;
+    const { email, userName, propertyTitle, status, details } = req.body;
 
-    await service.markAsRead(req.params.id, isRead);
+    if (!email || !userName || !propertyTitle || !status) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: email, userName, propertyTitle, status'
+      });
+    }
+
+    await sendTemplatedEmail('verification-update', [email], {
+      userName,
+      propertyTitle,
+      status,
+      details: details || 'No additional details provided'
+    });
 
     res.json({
       success: true,
-      message: `Message marked as ${isRead ? "read" : "unread"}`,
+      message: 'Verification update email sent successfully',
+      to: email
     });
   } catch (error) {
-    console.error("Error updating read status:", error);
+    console.error('Verification update email failed:', error);
     res.status(500).json({
-      error: "Failed to update read status",
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
-
-// Archive/unarchive inquiry
-router.patch("/inquiries/:id/archive", async (req, res) => {
-  try {
-    const service = await initializeEmailService();
-    const { archive = true } = req.body;
-
-    await service.archiveMessage(req.params.id, archive);
-
-    res.json({
-      success: true,
-      message: `Message ${archive ? "archived" : "unarchived"} successfully`,
-    });
-  } catch (error) {
-    console.error("Error updating archive status:", error);
-    res.status(500).json({
-      error: "Failed to update archive status",
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
-
-// Delete inquiry
-router.delete("/inquiries/:id", async (req, res) => {
-  try {
-    const service = await initializeEmailService();
-    await service.deleteMessage(req.params.id);
-
-    res.json({
-      success: true,
-      message: "Message deleted successfully",
-    });
-  } catch (error) {
-    console.error("Error deleting message:", error);
-    res.status(500).json({
-      error: "Failed to delete message",
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
-
-// Search inquiries
-router.get("/inquiries/search/:query", async (req, res) => {
-  try {
-    const service = await initializeEmailService();
-    const query = req.params.query;
-    const limit = parseInt(req.query.limit as string) || 50;
-
-    const messages = await service.searchMessages(query, limit);
-
-    // Convert to property inquiries
-    const inquiries: PropertyInquiry[] = messages.map((message) => {
-      const classification =
-        InquiryClassificationService.classifyInquiry(message);
-
-      return {
-        ...message,
-        inquiryType: classification.inquiryType,
-        priority: classification.priority,
-        propertyId: classification.extractedData.propertyId,
-        propertyTitle:
-          classification.extractedData.propertyTitle ||
-          extractPropertyTitleFromSubject(message.subject),
-        propertyLocation: classification.extractedData.propertyLocation,
-        propertyPrice: classification.extractedData.propertyPrice,
-        senderPhone: classification.extractedData.senderPhone,
-      };
-    });
-
-    res.json({ inquiries });
-  } catch (error) {
-    console.error("Error searching inquiries:", error);
-    res.status(500).json({
-      error: "Failed to search inquiries",
-      message: error instanceof Error ? error.message : "Unknown error",
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send verification update email'
     });
   }
 });
 
 // Get email service status
-router.get("/status", async (req, res) => {
+router.get('/status', async (req, res) => {
   try {
-    const service = await initializeEmailService();
-    const status = await service.getStatus();
-
-    res.json({
-      ...status,
-      provider: getEmailConfig().provider,
-    });
-  } catch (error) {
-    console.error("Error getting email service status:", error);
-    res.status(500).json({
-      error: "Failed to get service status",
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-});
-
-// Send new email (for outbound communications)
-router.post("/send", async (req, res) => {
-  try {
-    const service = await initializeEmailService();
-    const { to, subject, body, isHtml = false, attachments } = req.body;
-
-    if (!to || !subject || !body) {
-      return res.status(400).json({
-        error: "Missing required fields: to, subject, body",
-      });
+    const emailService = await getEmailService();
+    
+    let status = { connected: true, provider: 'unknown' };
+    
+    // Check if service has status method
+    if ('getStatus' in emailService) {
+      status = await (emailService as any).getStatus();
     }
 
-    const messageId = await service.sendEmail({
-      to,
-      subject,
-      body,
-      isHtml,
-      attachments,
-    });
+    // Check if service has fallback info
+    let fallbackInfo = {};
+    if ('isInFallbackMode' in emailService) {
+      fallbackInfo = {
+        fallbackMode: (emailService as any).isInFallbackMode(),
+        queuedEmails: (emailService as any).getFallbackEmailCount?.() || 0
+      };
+    }
 
     res.json({
       success: true,
-      messageId,
-      message: "Email sent successfully",
+      status: {
+        ...status,
+        ...fallbackInfo,
+        timestamp: new Date().toISOString()
+      }
     });
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error('Email status check failed:', error);
     res.status(500).json({
-      error: "Failed to send email",
-      message: error instanceof Error ? error.message : "Unknown error",
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get email status'
     });
   }
 });
 
-// Helper function to extract property title from email subject
-function extractPropertyTitleFromSubject(subject: string): string {
-  // Remove common prefixes and extract property title
-  const cleanSubject = subject
-    .replace(/^(Re:|Fwd:|Inquiry|Viewing|Offer|Complaint):\s*/i, "")
-    .replace(/\s*-\s*.*$/, "") // Remove everything after first dash
-    .trim();
+// Get inbox messages (for services that support it)
+router.get('/inbox', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const emailService = await getEmailService();
+    
+    const messages = await emailService.getInboxMessages(limit);
+    
+    res.json({
+      success: true,
+      messages,
+      count: messages.length
+    });
+  } catch (error) {
+    console.error('Inbox fetch failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch inbox messages'
+    });
+  }
+});
 
-  return cleanSubject || "Property Inquiry";
-}
+// Extract property inquiries from messages
+router.get('/inquiries', async (req, res) => {
+  try {
+    const emailService = await getEmailService();
+    const messages = await emailService.getInboxMessages(100);
+    const inquiries = emailService.extractPropertyInquiries(messages);
+    
+    res.json({
+      success: true,
+      inquiries,
+      count: inquiries.length
+    });
+  } catch (error) {
+    console.error('Inquiry extraction failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to extract inquiries'
+    });
+  }
+});
+
+// Send queued emails (for SMTP service)
+router.post('/send-queued', async (req, res) => {
+  try {
+    const emailService = await getEmailService();
+    
+    if ('sendQueuedEmails' in emailService) {
+      await (emailService as any).sendQueuedEmails();
+      res.json({
+        success: true,
+        message: 'Queued emails sent successfully'
+      });
+    } else {
+      res.json({
+        success: true,
+        message: 'Service does not support queued emails'
+      });
+    }
+  } catch (error) {
+    console.error('Send queued emails failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send queued emails'
+    });
+  }
+});
 
 export default router;

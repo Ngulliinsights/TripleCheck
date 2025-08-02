@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSafePropertyQuery } from "../../shared/hooks/useSafeQuery";
 import { useOptimisticMutation } from "../../shared/hooks/useOptimisticMutation";
 import { useComponentTracking, useInteractionTracking } from "../../shared/hooks/useOperationTracking";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
 import { Button } from "../../shared/components/ui/button";
 import { Input } from "../../shared/components/ui/input";
@@ -37,11 +37,13 @@ interface PropertyEditPageProps {
 }
 
 export default function PropertyEditPage({ id }: PropertyEditPageProps) {
+  const params = useParams<{ id: string }>();
+  const propertyId = id || params.id || '';
   const navigate = useNavigate();
   const { toast } = useToast();
 
   // Add operation tracking for performance monitoring
-  const { renderCount } = useComponentTracking('PropertyEditPage', [id]);
+  const { renderCount } = useComponentTracking('PropertyEditPage', [propertyId]);
   const { trackInteraction } = useInteractionTracking('PropertyEditPage');
   const queryClient = useQueryClient();
   
@@ -64,10 +66,10 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
 
   // Fetch property data with enhanced safety
   const { data: property, isLoading, error, hasValidData } = useSafePropertyQuery(
-    id || '',
+    propertyId,
     {
       context: 'property-edit',
-      enabled: !!id,
+      enabled: !!propertyId,
       staleTime: 2 * 60 * 1000 // 2 minutes for edit data
   });
 
@@ -96,9 +98,9 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
 
   const updateMutation = useOptimisticMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      return apiRequest("PUT", `/api/properties/${id}`, data);
+      return apiRequest("PUT", `/api/properties/${propertyId}`, data);
     },
-    queryKey: [`/api/properties/${id}`],
+    queryKey: [`/api/properties/${propertyId}`],
     optimisticUpdate: (oldData, variables) => ({
       ...oldData,
       ...variables,
@@ -109,7 +111,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
         title: "Property updated successfully",
         description: "Your changes have been saved",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/properties/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/properties/${propertyId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
     },
     onError: (error: Error) => {
@@ -188,7 +190,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-2xl font-bold mb-4">Property not found</h1>
           <p className="text-muted-foreground mb-6">
-            The property you&apos;re trying to edit doesn&apos;t exist or you don&apos;t have permission to edit it.
+            The property you're trying to edit doesn't exist or you don't have permission to edit it.
           </p>
           <Button onClick={() => navigate('/dashboard')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -200,7 +202,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 navbar-offset pb-8">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -215,7 +217,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => navigate(`/property/${id}`)}>
+            <Button variant="outline" onClick={() => navigate(`/property/${propertyId}`)}>
               <Eye className="w-4 h-4 mr-2" />
               Preview
             </Button>

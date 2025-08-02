@@ -1,6 +1,3 @@
-import React, { useState } from 'react';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
 import { 
   Search, 
   BookOpen, 
@@ -16,6 +13,10 @@ import {
   Users,
   Clock
 } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { useNavigationTracking } from '../utils/navigation';
 
 export default function Help() {
@@ -65,7 +66,7 @@ export default function Help() {
       action: () => {
         trackNavigation('/help', '/community', 'community_join');
         // In a real app, this would go to a community page
-        alert('Community feature coming soon!');
+        window.alert('Community feature coming soon!');
       }
     }
   ];
@@ -124,7 +125,7 @@ export default function Help() {
   const faqs = [
     {
       question: 'How long does property verification take?',
-      answer: 'Most basic verifications are completed within 24-48 hours. Complex verifications involving multiple documents or legal checks may take 3-5 business days. You\'ll receive real-time updates throughout the process.'
+      answer: `Most basic verifications are completed within 24-48 hours. Complex verifications involving multiple documents or legal checks may take 3-5 business days. You'll receive real-time updates throughout the process.`
     },
     {
       question: 'What documents do I need for verification?',
@@ -132,15 +133,15 @@ export default function Help() {
     },
     {
       question: 'Is my personal information secure?',
-      answer: 'Yes, we use bank-level encryption and security measures to protect your data. We\'re SOC 2 compliant and ISO 27001 certified. Your information is never shared with third parties without your explicit consent.'
+      answer: `Yes, we use bank-level encryption and security measures to protect your data. We're SOC 2 compliant and ISO 27001 certified. Your information is never shared with third parties without your explicit consent.`
     },
     {
       question: 'What if the verification reveals issues with the property?',
-      answer: 'If we discover issues, you\'ll receive a detailed report explaining the problems and recommended next steps. We also provide guidance on how to address issues or whether to proceed with the transaction.'
+      answer: `If we discover issues, you'll receive a detailed report explaining the problems and recommended next steps. We also provide guidance on how to address issues or whether to proceed with the transaction.`
     },
     {
-      question: 'Can I get a refund if I\'m not satisfied?',
-      answer: 'Yes, we offer a 30-day money-back guarantee. If you\'re not satisfied with our verification service, contact our support team for a full refund within 30 days of your purchase.'
+      question: `Can I get a refund if I'm not satisfied?`,
+      answer: `Yes, we offer a 30-day money-back guarantee. If you're not satisfied with our verification service, contact our support team for a full refund within 30 days of your purchase.`
     },
     {
       question: 'Do you verify properties outside Kenya?',
@@ -178,9 +179,9 @@ export default function Help() {
       <section className="relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-white py-24 overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
+          <div 
+            className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.1\'%3E%3Ccircle cx=\'30\' cy=\'30\' r=\'2\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"
+          />
         </div>
         
         <div className="container mx-auto px-4 relative">
@@ -194,7 +195,7 @@ export default function Help() {
               How Can We Help You?
             </h1>
             <p className="text-xl md:text-2xl mb-12 text-white/90 max-w-3xl mx-auto leading-relaxed">
-              Find answers, get support, and learn how to make the most of TripleCheck's property verification platform
+              Find answers, get support, and learn how to make the most of TripleCheck\u2019s property verification platform
             </p>
             
             {/* Search Bar */}
@@ -247,9 +248,10 @@ export default function Help() {
             {quickActions.map((action, index) => {
               const IconComponent = action.icon;
               return (
-                <div 
+                <button 
                   key={index}
-                  className="group bg-white rounded-2xl shadow-xl border border-gray-100 p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                  type="button"
+                  className="group bg-white rounded-2xl shadow-xl border border-gray-100 p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer w-full text-left"
                   onClick={action.action}
                 >
                   <div className="flex flex-col items-center text-center">
@@ -259,7 +261,7 @@ export default function Help() {
                     <h3 className="text-xl font-bold text-gray-900 mb-3">{action.title}</h3>
                     <p className="text-gray-600 leading-relaxed">{action.description}</p>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -335,6 +337,7 @@ export default function Help() {
             {faqs.map((faq, index) => (
               <div key={index} className="bg-gradient-to-r from-gray-50 to-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden hover:shadow-md transition-shadow duration-300">
                 <button
+                  type="button"
                   className="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/2 transition-all duration-200"
                   onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
                 >
@@ -378,9 +381,10 @@ export default function Help() {
             {contactOptions.map((option, index) => {
               const IconComponent = option.icon;
               return (
-                <div 
+                <button 
                   key={index}
-                  className="group bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer"
+                  type="button"
+                  className="group bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer w-full"
                   onClick={option.action}
                 >
                   <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl mb-6 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors duration-300">
@@ -396,7 +400,7 @@ export default function Help() {
                     Get Help Now
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
-                </div>
+                </button>
               );
             })}
           </div>

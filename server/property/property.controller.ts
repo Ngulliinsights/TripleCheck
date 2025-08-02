@@ -15,6 +15,26 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// Get similar properties (MUST be before /:id route to avoid conflicts)
+router.get('/similar', async (req, res, next) => {
+  try {
+    const result = await propertyService.getSimilarProperties(req.query);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get properties by owner (MUST be before /:id route to avoid conflicts)
+router.get('/owner/:ownerId', async (req, res, next) => {
+  try {
+    const result = await propertyService.getPropertiesByOwner(req.params.ownerId);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get single property
 router.get('/:id', async (req, res, next) => {
   try {
@@ -60,26 +80,6 @@ router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res: Respon
     }
     await propertyService.deleteProperty(req.params.id, req.user.id);
     res.json({ success: true, message: 'Property deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Get similar properties (before owner route to avoid conflicts)
-router.get('/similar', async (req, res, next) => {
-  try {
-    const result = await propertyService.getSimilarProperties(req.query);
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Get properties by owner
-router.get('/owner/:ownerId', async (req, res, next) => {
-  try {
-    const result = await propertyService.getPropertiesByOwner(req.params.ownerId);
-    res.json(result);
   } catch (error) {
     next(error);
   }

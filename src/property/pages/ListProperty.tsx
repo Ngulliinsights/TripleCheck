@@ -393,12 +393,13 @@ export default function ListPropertyPage() {
      --------------------------------------------------------------------- */
 
   return (
-    <div className="container mx-auto py-10 px-4">
+    <div className="bg-background min-h-screen navbar-offset">
+      <div className="container mx-auto py-10 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4 text-[#2C5282]">
+        <h1 className="text-3xl font-bold mb-4 text-primary">
           List Your Property
         </h1>
-        <p className="text-lg text-gray-600 max-w-3xl">
+        <p className="text-lg text-muted-foreground max-w-3xl">
           Add your property to our trusted platform and reach verified buyers
           and tenants. All listings undergo our verification process to maintain
           trust in our ecosystem.
@@ -437,36 +438,43 @@ export default function ListPropertyPage() {
               </nav>
 
               <form onSubmit={handleSubmit} noValidate>
-                {/* ===== STEP 1: BASIC DETAILS ===== */}
+                {/* ===== ENHANCED STEP 1: BASIC DETAILS ===== */}
                 {currentStep === 1 && (
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="title" className="text-sm font-medium">
+                  <div className="space-y-8">
+                    {/* Section Header */}
+                    <div className="border-b border-gray-100 pb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Basic Property Information</h3>
+                      <p className="text-sm text-gray-600">Tell us about your property's key details</p>
+                    </div>
+
+                    <div className="space-y-6">
+                      <Label htmlFor="title" className="text-sm font-semibold text-gray-800 block mb-3">
                         Property Title{" "}
-                        <span className={TEXT_RED_500_CLASS}>*</span>
+                        <span className="text-red-500 font-normal">*</span>
                       </Label>
                       <Input
                         id="title"
                         name="title"
                         value={propertyData.title}
                         onChange={handleInputChange}
-                        placeholder="e.g., Modern Apartment in Kileleshwa"
-                        className={
-                          !propertyData.title.trim() ? BORDER_RED_200_CLASS : ""
-                        }
+                        placeholder="e.g., Modern 3BR Apartment in Kileleshwa with Garden View"
+                        className={`h-12 text-base border-2 transition-all duration-200 ${
+                          !propertyData.title.trim() 
+                            ? "border-red-200 focus:border-red-400 focus:ring-red-100" 
+                            : "border-gray-200 focus:border-primary focus:ring-primary/20"
+                        }`}
                         required
                         aria-describedby="title-help"
                       />
-                      <p id="title-help" className="text-xs text-gray-500">
-                        Choose a descriptive title that highlights your
-                        property&apos;s best features
+                      <p id="title-help" className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
+                        💡 <strong>Tip:</strong> Include key features like number of bedrooms, location, and unique selling points
                       </p>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="type" className="text-sm font-medium">
+                    <div className="space-y-6">
+                      <Label htmlFor="type" className="text-sm font-semibold text-gray-800 block mb-3">
                         Property Type{" "}
-                        <span className={TEXT_RED_500_CLASS}>*</span>
+                        <span className="text-red-500 font-normal">*</span>
                       </Label>
                       <Select
                         value={propertyData.type}
@@ -474,39 +482,77 @@ export default function ListPropertyPage() {
                           handleSelectChange("type", value)
                         }
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select property type" />
+                        <SelectTrigger className="h-12 text-base border-2 border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                          <SelectValue placeholder="Choose your property type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="apartment">Apartment</SelectItem>
-                          <SelectItem value="house">House</SelectItem>
-                          <SelectItem value="villa">Villa</SelectItem>
-                          <SelectItem value="townhouse">Townhouse</SelectItem>
-                          <SelectItem value="land">Land</SelectItem>
-                          <SelectItem value="commercial">Commercial</SelectItem>
+                          <SelectItem value="apartment" className="py-3">
+                            <div className="flex items-center space-x-2">
+                              <span>🏢</span>
+                              <span>Apartment</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="house" className="py-3">
+                            <div className="flex items-center space-x-2">
+                              <span>🏠</span>
+                              <span>House</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="villa" className="py-3">
+                            <div className="flex items-center space-x-2">
+                              <span>🏡</span>
+                              <span>Villa</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="townhouse" className="py-3">
+                            <div className="flex items-center space-x-2">
+                              <span>🏘️</span>
+                              <span>Townhouse</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="land" className="py-3">
+                            <div className="flex items-center space-x-2">
+                              <span>🌍</span>
+                              <span>Land</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="commercial" className="py-3">
+                            <div className="flex items-center space-x-2">
+                              <span>🏢</span>
+                              <span>Commercial</span>
+                            </div>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="price" className="text-sm font-medium">
+                    <div className="space-y-6">
+                      <Label htmlFor="price" className="text-sm font-semibold text-gray-800 block mb-3">
                         Price (KES){" "}
-                        <span className={TEXT_RED_500_CLASS}>*</span>
+                        <span className="text-red-500 font-normal">*</span>
                       </Label>
-                      <Input
-                        id="price"
-                        name="price"
-                        type="number"
-                        value={propertyData.price}
-                        onChange={handleInputChange}
-                        placeholder="e.g., 5000000"
-                        min="0"
-                        step="1000"
-                        className={
-                          !propertyData.price.trim() ? BORDER_RED_200_CLASS : ""
-                        }
-                        required
-                      />
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">KES</span>
+                        <Input
+                          id="price"
+                          name="price"
+                          type="number"
+                          value={propertyData.price}
+                          onChange={handleInputChange}
+                          placeholder="5,000,000"
+                          min="0"
+                          step="1000"
+                          className={`h-12 text-base pl-12 border-2 transition-all duration-200 ${
+                            !propertyData.price.trim() 
+                              ? "border-red-200 focus:border-red-400 focus:ring-red-100" 
+                              : "border-gray-200 focus:border-primary focus:ring-primary/20"
+                          }`}
+                          required
+                        />
+                      </div>
+                      <div className="text-sm text-gray-600 bg-green-50 p-3 rounded-lg border-l-4 border-green-400">
+                        💰 <strong>Market Value:</strong> {propertyData.price ? `~$${Math.round(parseInt(propertyData.price) / 130).toLocaleString()} USD` : 'Enter price to see USD equivalent'}
+                      </div>
                     </div>
 
                     <div className="space-y-2">

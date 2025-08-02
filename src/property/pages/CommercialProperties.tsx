@@ -355,8 +355,18 @@ export default function CommercialProperties() {
 
   const handlePropertyClick = useCallback(
     (property: CommercialProperty) => {
-      // Navigate to property details page using React Router
-      navigate(`/property/${property.id}`);
+      // Check if this is a land property and navigate to the appropriate route
+      const propertyType = property.type || property.propertyType;
+      const isLandProperty = propertyType === 'land' || 
+                            property.title?.toLowerCase().includes('land') ||
+                            property.description?.toLowerCase().includes('land');
+      
+      if (isLandProperty) {
+        navigate(`/land/${property.id}`);
+      } else {
+        // Navigate to property details page using React Router
+        navigate(`/property/${property.id}`);
+      }
     },
     [navigate]
   );
@@ -374,50 +384,45 @@ export default function CommercialProperties() {
   return (
     <CompareProvider>
       <div className="min-h-screen bg-background">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10 py-16">
-          <div className="container mx-auto px-4">
-            <div className="text-center max-w-4xl mx-auto">
-              <div className="flex justify-center mb-6">
-                <div className="p-4 bg-primary/10 rounded-full">
-                  <Building2 className="w-12 h-12 text-primary" />
-                </div>
+        {/* Enhanced Hero Section */}
+        <div className="relative isolate overflow-hidden bg-gradient-to-br from-sky-50 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 opacity-20"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239ca3af' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/svg%3E\")",
+            }}
+          />
+          <div className="container mx-auto px-4 py-20 md:py-28 text-center">
+            <div className="flex justify-center mb-6">
+              <div className="p-4 bg-secondary/20 rounded-full">
+                <Building2 className="w-12 h-12 text-secondary" />
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-                Commercial Properties
-              </h1>
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                Discover premium commercial real estate opportunities across
-                Kenya. From modern office complexes to strategic warehouse
-                locations.
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <div className="flex items-center gap-2 bg-trust-verified/10 px-4 py-2 rounded-full">
-                  <TrendingUp className="w-5 h-5 text-trust-verified" />
-                  <span className="text-trust-verified font-medium">
-                    High ROI Properties
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
-                  <Users className="w-5 h-5 text-primary" />
-                  <span className="text-primary font-medium">
-                    Verified Tenants
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 bg-secondary/10 px-4 py-2 rounded-full">
-                  <Calendar className="w-5 h-5 text-secondary" />
-                  <span className="text-secondary font-medium">
-                    Ready to Move
-                  </span>
-                </div>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground mb-6">
+              Commercial Properties
+            </h1>
+            <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground mb-8">
+              Discover premium commercial real estate opportunities across Kenya's prime business locations.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <div className="flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-4 py-2 rounded-full text-sm font-medium">
+                <TrendingUp className="w-4 h-4" /> High ROI Properties
+              </div>
+              <div className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-4 py-2 rounded-full text-sm font-medium">
+                <Users className="w-4 h-4" /> Verified Tenants
+              </div>
+              <div className="flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-4 py-2 rounded-full text-sm font-medium">
+                <Calendar className="w-4 h-4" /> Ready to Move
               </div>
             </div>
           </div>
         </div>
 
-        {/* Filters and Search */}
+        {/* Enhanced Filters and Search */}
         <div className="container mx-auto px-4 py-8">
-          <div className="bg-card border border-card-border rounded-lg p-6 mb-8">
+          <div className="shadow-sm backdrop-blur-sm bg-card/80 border border-muted/60 rounded-lg p-6 mb-8">
             <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
               {/* Search */}
               <div className="relative flex-1 max-w-md">
@@ -471,7 +476,7 @@ export default function CommercialProperties() {
                     onClick={() => handleViewModeChange("grid")}
                     className={`p-2 rounded ${viewMode === "grid" ? "bg-background shadow-sm" : ""}`}
                     aria-label="Grid view"
-                    aria-pressed={`${viewMode === "grid"}`}
+                    aria-pressed={viewMode === "grid" ? "true" : "false"}
                   >
                     <Grid className="w-4 h-4" />
                   </button>
@@ -480,7 +485,7 @@ export default function CommercialProperties() {
                     onClick={() => handleViewModeChange("list")}
                     className={`p-2 rounded ${viewMode === "list" ? "bg-background shadow-sm" : ""}`}
                     aria-label="List view"
-                    aria-pressed={`${viewMode === "list"}`}
+                    aria-pressed={viewMode === "list" ? "true" : "false"}
                   >
                     <List className="w-4 h-4" />
                   </button>
@@ -496,7 +501,7 @@ export default function CommercialProperties() {
             </p>
           </div>
 
-          {/* Properties Grid/List */}
+          {/* Enhanced Properties Grid/List with Animations */}
           <div
             className={
               viewMode === "grid" ?
@@ -504,15 +509,22 @@ export default function CommercialProperties() {
               : "space-y-4"
             }
           >
-            {filteredProperties.map((property) => (
-              <ListingCard
+            {filteredProperties.map((property, idx) => (
+              <div
                 key={property.id}
-                property={adaptCommercialPropertyToProperty(property)}
-                className={
-                  viewMode === "list" ? "flex flex-row max-w-none" : ""
-                }
-                onClick={() => handlePropertyClick(property)}
-              />
+                className="animate-fadeInUp"
+                style={{ animationDelay: `${idx * 75}ms` }}
+              >
+                <ListingCard
+                  property={adaptCommercialPropertyToProperty(property)}
+                  className={
+                    viewMode === "list"
+                      ? "flex flex-row max-w-none"
+                      : "group rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                  }
+                  onClick={() => handlePropertyClick(property)}
+                />
+              </div>
             ))}
           </div>
 

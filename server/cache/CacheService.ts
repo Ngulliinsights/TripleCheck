@@ -4,7 +4,7 @@ import { Logger } from '../infrastructure/monitoring/logger';
 export interface CacheConfig {
   host: string;
   port: number;
-  password?: string;
+  password: string | undefined;
   db?: number;
   keyPrefix?: string;
   ttl: number; // Default TTL in seconds

@@ -1,14 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
+
 import { cn } from '@/shared/lib/utils';
 
+// Constants to avoid duplicate strings
+const BORDER_CLASS = 'border-t';
+const BORDER_T2_CLASS = 'border-t-2';
+
 interface SectionDividerProps {
-  variant?: 'line' | 'wave' | 'zigzag' | 'dots' | 'gradient';
-  color?: 'primary' | 'secondary' | 'accent' | 'muted';
-  thickness?: 'thin' | 'medium' | 'thick';
-  spacing?: 'sm' | 'md' | 'lg' | 'xl';
-  animated?: boolean;
-  className?: string;
-  children?: React.ReactNode;
+  readonly variant?: 'line' | 'wave' | 'zigzag' | 'dots' | 'gradient';
+  readonly color?: 'primary' | 'secondary' | 'accent' | 'muted';
+  readonly thickness?: 'thin' | 'medium' | 'thick';
+  readonly spacing?: 'sm' | 'md' | 'lg' | 'xl';
+  readonly animated?: boolean;
+  readonly className?: string;
+  readonly children?: React.ReactNode;
 }
 
 export function SectionDivider({
@@ -37,47 +42,84 @@ export function SectionDivider({
     return () => observer.disconnect();
   }, [animated]);
 
-  const getSpacingClass = () => {
-    switch (spacing) {
-      case 'sm':
-        return 'my-8';
-      case 'md':
-        return 'my-12';
-      case 'lg':
-        return 'my-16';
-      case 'xl':
-        return 'my-24';
-      default:
-        return 'my-12';
+  // Helper functions to reduce complexity and eliminate nested ternaries
+  const getSpacingClass = (): string => {
+    const spacingMap = {
+      sm: 'my-8',
+      md: 'my-12',
+      lg: 'my-16',
+      xl: 'my-24'
+    } as const;
+    // Type-safe object access to prevent injection
+    if (spacing in spacingMap) {
+      return spacingMap[spacing as keyof typeof spacingMap];
     }
+    return 'my-12';
   };
 
-  const getColorClass = () => {
-    switch (color) {
-      case 'primary':
-        return 'text-primary border-primary';
-      case 'secondary':
-        return 'text-secondary border-secondary';
-      case 'accent':
-        return 'text-accent border-accent';
-      default:
-        return 'text-muted-foreground border-border';
+  const getColorClass = (): string => {
+    const colorMap = {
+      primary: 'text-primary border-primary',
+      secondary: 'text-secondary border-secondary',
+      accent: 'text-accent border-accent',
+      muted: 'text-muted-foreground border-border'
+    } as const;
+    // Type-safe object access to prevent injection
+    if (color in colorMap) {
+      return colorMap[color as keyof typeof colorMap];
     }
+    return 'text-muted-foreground border-border';
   };
 
-  const getThicknessValue = () => {
-    switch (thickness) {
-      case 'thin':
-        return '1px';
-      case 'thick':
-        return '4px';
-      default:
-        return '2px';
+  const getThicknessValue = (): string => {
+    const thicknessMap = {
+      thin: '1px',
+      medium: '2px',
+      thick: '4px'
+    } as const;
+    // Type-safe object access to prevent injection
+    if (thickness in thicknessMap) {
+      return thicknessMap[thickness as keyof typeof thicknessMap];
     }
+    return '2px';
   };
 
-  const renderDivider = () => {
-    const baseClasses = cn(
+  const getBorderThicknessClass = (): string => {
+    if (thickness === 'thick') return BORDER_T2_CLASS;
+    return BORDER_CLASS;
+  };
+
+  const getDotSize = (): string => {
+    const sizeMap = {
+      thin: 'w-1 h-1',
+      medium: 'w-2 h-2',
+      thick: 'w-3 h-3'
+    } as const;
+    // Type-safe object access to prevent injection
+    if (thickness in sizeMap) {
+      return sizeMap[thickness as keyof typeof sizeMap];
+    }
+    return 'w-2 h-2';
+  };
+
+  const getGradientHeight = (): string => {
+    const heightMap = {
+      thin: 'h-px',
+      medium: 'h-0.5',
+      thick: 'h-1'
+    } as const;
+    // Type-safe object access to prevent injection
+    if (thickness in heightMap) {
+      return heightMap[thickness as keyof typeof heightMap];
+    }
+    return 'h-0.5';
+  };
+
+  // Animation styles are now handled via CSS classes
+
+  // Base classes used across all variants
+  const getBaseClasses = (): string => {
+    return cn(
       'w-full flex items-center justify-center',
       getSpacingClass(),
       getColorClass(),
@@ -85,130 +127,129 @@ export function SectionDivider({
       animated && (isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'),
       className
     );
+  };
 
-    switch (variant) {
-      case 'wave':
-        return (
-          <div className={baseClasses}>
-            <svg
-              className="w-full h-4"
-              viewBox="0 0 400 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M0 10 Q100 0 200 10 T400 10"
-                stroke="currentColor"
-                strokeWidth={getThicknessValue()}
-                fill="none"
-                className={animated && isVisible ? 'animate-pulse' : ''}
-              />
-            </svg>
-          </div>
-        );
+  // Individual variant renderers - breaking down the large switch statement
+  const renderWaveVariant = (): JSX.Element => (
+    <div className={getBaseClasses()}>
+      <svg
+        className="w-full h-4"
+        viewBox="0 0 400 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M0 10 Q100 0 200 10 T400 10"
+          stroke="currentColor"
+          strokeWidth={getThicknessValue()}
+          fill="none"
+          className={animated && isVisible ? 'animate-pulse' : ''}
+        />
+      </svg>
+    </div>
+  );
 
-      case 'zigzag':
-        return (
-          <div className={baseClasses}>
-            <svg
-              className="w-full h-4"
-              viewBox="0 0 400 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M0 10 L50 0 L100 10 L150 0 L200 10 L250 0 L300 10 L350 0 L400 10"
-                stroke="currentColor"
-                strokeWidth={getThicknessValue()}
-                fill="none"
-                strokeLinejoin="round"
-                className={animated && isVisible ? 'animate-pulse' : ''}
-              />
-            </svg>
-          </div>
-        );
+  const renderZigzagVariant = (): JSX.Element => (
+    <div className={getBaseClasses()}>
+      <svg
+        className="w-full h-4"
+        viewBox="0 0 400 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M0 10 L50 0 L100 10 L150 0 L200 10 L250 0 L300 10 L350 0 L400 10"
+          stroke="currentColor"
+          strokeWidth={getThicknessValue()}
+          fill="none"
+          strokeLinejoin="round"
+          className={animated && isVisible ? 'animate-pulse' : ''}
+        />
+      </svg>
+    </div>
+  );
 
-      case 'dots':
-        return (
-          <div className={baseClasses}>
-            <div className="flex items-center space-x-2">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'rounded-full bg-current',
-                    thickness === 'thin' ? 'w-1 h-1' : thickness === 'thick' ? 'w-3 h-3' : 'w-2 h-2',
-                    animated && isVisible && 'animate-bounce'
-                  )}
-                  style={{
-                    animationDelay: animated ? `${i * 0.1}s` : undefined
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        );
+  const renderDotsVariant = (): JSX.Element => (
+    <div className={getBaseClasses()}>
+      <div className="flex items-center space-x-2">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'rounded-full bg-current',
+              getDotSize(),
+              animated && isVisible && 'animate-bounce',
+              animated ? `animate-delay-${i}` : ''
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
 
-      case 'gradient':
-        return (
-          <div className={baseClasses}>
+  const renderGradientVariant = (): JSX.Element => (
+    <div className={getBaseClasses()}>
+      <div
+        className={cn(
+          'w-full bg-gradient-to-r from-transparent via-current to-transparent',
+          getGradientHeight(),
+          animated && isVisible ? 'animate-pulse' : ''
+        )}
+      />
+    </div>
+  );
+
+  const renderLineVariant = (): JSX.Element => {
+    const baseClasses = getBaseClasses();
+    const borderClass = getBorderThicknessClass();
+
+    if (children) {
+      return (
+        <div className={baseClasses}>
+          <div className="flex items-center w-full">
             <div
-              className={cn(
-                'w-full bg-gradient-to-r from-transparent via-current to-transparent',
-                thickness === 'thin' ? 'h-px' : thickness === 'thick' ? 'h-1' : 'h-0.5'
-              )}
-              style={{
-                opacity: animated && isVisible ? 1 : animated ? 0 : 1,
-                transform: animated && isVisible ? 'scaleX(1)' : animated ? 'scaleX(0)' : 'scaleX(1)',
-                transition: animated ? 'all 1s ease-out' : undefined
-              }}
+              className={cn('flex-1 border-t', borderClass)}
+            />
+            <div className="px-4 text-sm font-medium bg-background">
+              {children}
+            </div>
+            <div
+              className={cn('flex-1 border-t', borderClass)}
             />
           </div>
-        );
-
-      default: // 'line'
-        return (
-          <div className={baseClasses}>
-            {children ? (
-              <div className="flex items-center w-full">
-                <div
-                  className={cn(
-                    'flex-1 border-t',
-                    thickness === 'thin' ? 'border-t' : thickness === 'thick' ? 'border-t-2' : 'border-t'
-                  )}
-                  style={{
-                    borderWidth: getThicknessValue()
-                  }}
-                />
-                <div className="px-4 text-sm font-medium bg-background">
-                  {children}
-                </div>
-                <div
-                  className={cn(
-                    'flex-1 border-t',
-                    thickness === 'thin' ? 'border-t' : thickness === 'thick' ? 'border-t-2' : 'border-t'
-                  )}
-                  style={{
-                    borderWidth: getThicknessValue()
-                  }}
-                />
-              </div>
-            ) : (
-              <div
-                className={cn(
-                  'w-full border-t',
-                  thickness === 'thin' ? 'border-t' : thickness === 'thick' ? 'border-t-2' : 'border-t'
-                )}
-                style={{
-                  borderWidth: getThicknessValue(),
-                  transform: animated && isVisible ? 'scaleX(1)' : animated ? 'scaleX(0)' : 'scaleX(1)',
-                  transition: animated ? 'transform 1s ease-out' : undefined
-                }}
-              />
-            )}
-          </div>
-        );
+        </div>
+      );
     }
+
+    return (
+      <div className={baseClasses}>
+        <div
+          className={cn(
+            'w-full border-t', 
+            borderClass, 
+            getBorderThicknessClass(),
+            animated && isVisible ? 'animate-pulse' : ''
+          )}
+        />
+      </div>
+    );
+  };
+
+  // Main render function - now much simpler
+  const renderDivider = (): JSX.Element => {
+    const variantRenderers = {
+      wave: renderWaveVariant,
+      zigzag: renderZigzagVariant,
+      dots: renderDotsVariant,
+      gradient: renderGradientVariant,
+      line: renderLineVariant
+    } as const;
+
+    // Type-safe object access to prevent injection
+    const renderer = (variant in variantRenderers) 
+      ? variantRenderers[variant as keyof typeof variantRenderers]
+      : renderLineVariant;
+    return renderer();
   };
 
   return (

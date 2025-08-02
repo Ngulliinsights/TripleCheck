@@ -33,7 +33,7 @@ vi.mock('../../ai-routes', () => ({
   detectFraud: vi.fn()
 }));
 
-vi.mock('../../ai-service', () => ({
+vi.mock('../../ai-ml-service', () => ({
   detectFraud: vi.fn(),
   verifyDocument: vi.fn(),
   generateVerificationReport: vi.fn(),
@@ -43,7 +43,7 @@ vi.mock('../../ai-service', () => ({
 
 import { VerificationService } from '../VerificationService';
 import { storage } from '../../storage';
-import * as aiService from '../../ai-service';
+import * as aiService from '../../ai-ml-service';
 import * as aiRoutes from '../../ai-routes';
 
 describe('VerificationService Integration', () => {

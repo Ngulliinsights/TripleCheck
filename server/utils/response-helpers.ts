@@ -5,9 +5,9 @@ import { HTTP_STATUS } from './constants';
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
-  message?: string;
+  message: string;
   errors?: unknown[];
-  metadata?: ApiMetadata;
+  metadata: ApiMetadata;
 }
 
 // API metadata interface
@@ -47,10 +47,10 @@ export class ResponseHelper {
     const response: ApiResponse<T> = {
       success: true,
       data,
-      message,
+      message: message || 'Success',
       metadata: {
-        ...metadata,
         timestamp: new Date().toISOString(),
+        ...metadata,
       },
     };
     
@@ -89,10 +89,10 @@ export class ResponseHelper {
     const response: ApiResponse = {
       success: false,
       message,
-      errors,
+      errors: errors || [],
       metadata: {
-        ...metadata,
         timestamp: new Date().toISOString(),
+        ...metadata,
       },
     };
     

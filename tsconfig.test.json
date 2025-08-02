@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*",
+    "server/**/*",
+    "scripts/**/*",
+    "**/*.test.ts",
+    "**/*.spec.ts", 
+    "**/*.test.tsx",
+    "**/*.spec.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "client",
+    "coverage"
+  ],
+  "compilerOptions": {
+    // Inherit all options from base config
+    // Add test-specific options
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
+    "allowJs": true,
+    "checkJs": false
+  }
+}

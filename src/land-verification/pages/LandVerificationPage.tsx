@@ -12,3 +12,5 @@ export function LandVerificationPage() {
     </Routes>
   );
 }
+
+export default LandVerificationPage;

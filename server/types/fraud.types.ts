@@ -13,12 +13,12 @@ export interface FraudAnalysis {
     marketDeviation?: number;
   };
   reasons: string[];
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: RiskLevel;
   verificationDate: string;
 }
 
-// Risk level type
-export type RiskLevel = 'low' | 'medium' | 'high';
+// Risk level type (imported from verification.types.ts to avoid duplication)
+import type { RiskLevel } from './verification.types';
 
 // Fraud pattern types
 export interface FraudPatterns {

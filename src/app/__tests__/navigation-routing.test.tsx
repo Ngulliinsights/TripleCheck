@@ -129,7 +129,7 @@ vi.mock('../lazy-routes', () => ({
 }));
 
 // Mock AppLayout
-vi.mock('../../shared/components/layout/AppLayout', () => ({
+vi.mock('../App', () => ({
   AppLayout: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="app-layout">{children}</div>
   ),

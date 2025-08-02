@@ -5,9 +5,13 @@
  * For production at scale, consider using Redis or another external cache.
  */
 
-interface CacheEntry<T = any> {
+interface CacheEntry<T = unknown> {
   value: T;
   expiresAt: number;
+}
+
+interface CacheOptions {
+  ttl?: number; // TTL in seconds
 }
 
 export class CacheService {
@@ -24,7 +28,8 @@ export class CacheService {
   /**
    * Set a value in the cache with TTL (time to live) in seconds
    */
-  async set<T>(key: string, value: T, ttlSeconds: number = 300): Promise<void> {
+  async set<T>(key: string, value: T, options: CacheOptions = {}): Promise<void> {
+    const ttlSeconds = options.ttl || 300; // Default 5 minutes
     const expiresAt = Date.now() + (ttlSeconds * 1000);
     this.cache.set(key, { value, expiresAt });
   }
@@ -58,9 +63,11 @@ export class CacheService {
   /**
    * Delete all keys matching a pattern (simple wildcard support)
    */
-  async deletePattern(pattern: string): Promise<number> {
+  async invalidateByPattern(pattern: string): Promise<number> {
     let deletedCount = 0;
-    const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+    // Escape special regex characters except * which we want to convert to .*
+    const escapedPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    const regex = new RegExp(`^${escapedPattern}$`);
 
     for (const key of this.cache.keys()) {
       if (regex.test(key)) {
@@ -109,7 +116,7 @@ export class CacheService {
     const now = Date.now();
     let expiredKeys = 0;
 
-    for (const [key, entry] of this.cache.entries()) {
+    for (const [, entry] of this.cache.entries()) {
       if (now > entry.expiresAt) {
         expiredKeys++;
       }
@@ -140,6 +147,7 @@ export class CacheService {
     }
 
     if (keysToDelete.length > 0 && process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.log(`[CacheService] Cleaned up ${keysToDelete.length} expired entries`);
     }
   }
@@ -150,9 +158,8 @@ export class CacheService {
   private getApproximateMemoryUsage(): number {
     let size = 0;
     
-    for (const [key, entry] of this.cache.entries()) {
-      // Rough estimate: key length + JSON string length
-      size += key.length * 2; // UTF-16 characters
+    for (const [, entry] of this.cache.entries()) {
+      // Rough estimate: JSON string length
       size += JSON.stringify(entry.value).length * 2;
       size += 16; // Overhead for expiresAt and object structure
     }

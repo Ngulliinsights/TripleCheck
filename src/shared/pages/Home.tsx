@@ -1,4 +1,5 @@
 import { useSafePropertiesQuery } from "../hooks/useSafeQuery";
+import { usePageSpacing } from "../hooks/useNavigationSpacing";
 import { Search, ArrowRight, CheckCircle, Globe, Star, Shield } from "lucide-react";
 import { useState, useEffect, useCallback, memo, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -465,20 +466,34 @@ PropertyGrid.displayName = "PropertyGrid";
 export default function HomePage() {
   const { search } = useLocation();
   const navigate = useNavigate();
+  const { pageClassName } = usePageSpacing();
+
+  // Memoize search query parsing to prevent infinite loops
+  const parseSearchQueryMemo = useCallback((searchString: string) => {
+    return parseSearchQuery(searchString);
+  }, []);
 
   // Initialize search query from URL parameters
   const [searchQuery, setSearchQuery] = useState(() =>
-    parseSearchQuery(search)
+    parseSearchQueryMemo(search)
   );
 
-  // Sync search query with URL changes (with debouncing to prevent infinite loops)
+  // Sync search query with URL changes (with proper dependencies)
   useEffect(() => {
-    const newQuery = parseSearchQuery(search);
+    const newQuery = parseSearchQueryMemo(search);
     // Only update if the query actually changed
-    if (newQuery !== searchQuery) {
-      setSearchQuery(newQuery);
-    }
-  }, [search]); // Removed searchQuery from dependencies to prevent infinite loop
+    setSearchQuery(prevQuery => {
+      if (newQuery !== prevQuery) {
+        return newQuery;
+      }
+      return prevQuery;
+    });
+  }, [search, parseSearchQueryMemo]);
+
+  // Memoize query parameters to prevent object recreation on every render
+  const queryParams = useMemo(() => {
+    return searchQuery ? { search: searchQuery } : {};
+  }, [searchQuery]);
 
   // Fetch properties data with optimized query configuration
   const {
@@ -486,10 +501,11 @@ export default function HomePage() {
     isLoading,
     error,
   } = useSafePropertiesQuery(
-    { search: searchQuery },
+    queryParams,
     {
       staleTime: QUERY_CONFIG.STALE_TIME,
       context: QUERY_CONFIG.CONTEXT,
+      enabled: true, // Always enabled but with proper caching
     }
   );
 
@@ -528,7 +544,7 @@ export default function HomePage() {
     switch (action) {
       case "primary_cta":
       case "start_verification":
-        smoothScrollToElement("featured-properties");
+        navigate("/property/verification");
         break;
       case "watch_demo":
         openExternalUrl(DEMO_VIDEO_URL);
@@ -538,7 +554,7 @@ export default function HomePage() {
         // Development logging removed to comply with no-console ESLint rule
         break;
     }
-  }, []);
+  }, [navigate]);
 
   /**
    * Handles service category selection
@@ -574,7 +590,7 @@ export default function HomePage() {
 
   return (
     <CompareProvider>
-      <div className="min-h-screen bg-background">
+      <div className={`min-h-screen bg-background ${pageClassName}`}>
       {/* Hero Section with Enhanced Search */}
       <EnhancedHero
         variant="A"
@@ -680,7 +696,7 @@ export default function HomePage() {
               Verified African Properties
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Discover verified investment opportunities across Africa&apos;s most promising markets
+              Discover verified investment opportunities across Africa's most promising markets
             </p>
           </div>
           <PropertyGrid {...propertyGridProps} />

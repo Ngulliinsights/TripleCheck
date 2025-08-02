@@ -3,6 +3,7 @@ import { Shield, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Logo } from '../ui/logo';
 import { Wordmark } from '../ui/wordmark';
+import { ThemeToggle } from '../ui/theme-toggle';
 
 export function Footer() {
   return (
@@ -161,7 +162,7 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/about" className="hover:text-white transition-colors flex items-center">
+                <a href="/our-story" className="hover:text-white transition-colors flex items-center">
                   About Us
                   <ArrowRight className="ml-1 h-3 w-3" />
                 </a>
@@ -205,6 +206,7 @@ export function Footer() {
                 🔒 SSL Secured • 🛡️ SOC 2 Compliant • 🏆 ISO 27001 Certified
               </div>
               <div className="flex items-center space-x-4">
+                <ThemeToggle />
                 <Button variant="outline" size="sm" className="text-gray-400 border-gray-600 hover:text-white hover:border-gray-400">
                   <Shield className="h-4 w-4 mr-2" />
                   Security Center

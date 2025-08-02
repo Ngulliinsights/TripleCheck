@@ -3,6 +3,7 @@ import { Heart, Share2, Star, MapPin, Maximize2, Bed, Bath, Square } from "lucid
 import { Button } from "@shared/components/ui/button";
 import { Badge } from "@shared/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@shared/components/ui/tooltip";
+import { B2BContextualPrompt } from "@shared/components/b2b";
 import { useState, useCallback, useMemo } from "react";
 import { cn } from "@shared/lib/utils";
 
@@ -159,30 +160,46 @@ export function PropertyCard({
       role="article"
       aria-label={`Property: ${property.title}`}
     >
-      {/* Property Images with Gallery */}
-      <div className="relative aspect-[4/3] overflow-hidden">
+      {/* Enhanced Property Images with Gallery */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+        {/* Image with enhanced hover effects */}
         <img
           src={displayImages[currentImageIndex]}
           alt={`${property.title} - Image ${currentImageIndex + 1} of ${displayImages.length}`}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          loading="lazy" // Performance optimization
+          className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"
+          loading="lazy"
+          onError={(e) => {
+            // Fallback to placeholder if image fails to load
+            e.currentTarget.src = '/placeholder-property.jpg';
+          }}
         />
         
-        {/* Fixed Image Navigation with proper ARIA attributes */}
-        {displayImages.length > 1 && hasImages && (
-          <div 
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1"
+        {/* Subtle overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {/* Property type indicator */}
+        <div className="absolute top-2 left-2 z-10">
+          <Badge 
+            variant="secondary" 
+            className="bg-black/20 text-white border-white/20 backdrop-blur-sm font-medium"
           >
+            {property.type === 'commercial' ? '🏢 Commercial' : '🏠 Residential'}
+          </Badge>
+        </div>
+        
+        {/* Enhanced Image Navigation with better styling */}
+        {displayImages.length > 1 && hasImages && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-2 bg-black/20 backdrop-blur-sm rounded-full px-3 py-1">
             {displayImages.map((_, index) => {
               const isSelected = currentImageIndex === index;
               return (
                 <button
                   key={index}
                   className={cn(
-                    "w-2 h-2 rounded-full transition-colors",
+                    "w-2 h-2 rounded-full transition-all duration-200",
                     isSelected 
-                      ? "bg-white" 
-                      : "bg-white/50 hover:bg-white/75"
+                      ? "bg-white scale-125" 
+                      : "bg-white/60 hover:bg-white/80 hover:scale-110"
                   )}
                   onClick={() => handleImageNavigation(index)}
                   aria-label={`View image ${index + 1}`}
@@ -191,37 +208,47 @@ export function PropertyCard({
             })}
           </div>
         )}
+        
+        {/* Image count indicator */}
+        {displayImages.length > 1 && hasImages && (
+          <div className="absolute bottom-3 right-3 bg-black/40 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
+            {currentImageIndex + 1}/{displayImages.length}
+          </div>
+        )}
 
-        {/* Enhanced Trust Badge with proper variant and custom styling */}
-        <div className="absolute top-2 left-2">
+        {/* Enhanced Trust Badge with better positioning */}
+        <div className="absolute top-12 left-2 z-10">
           <Badge
             variant={badgeVariant}
-            className={badgeClassName}
+            className={cn(
+              badgeClassName,
+              "bg-white/90 backdrop-blur-sm shadow-sm border-0 font-medium"
+            )}
             role="img"
             aria-label={`Trust score: ${property.trustScore}, Status: ${property.verificationStatus}`}
           >
-            <Star className="w-3 h-3" aria-hidden="true" />
-            <span>Trust Score: {property.trustScore}</span>
+            <Star className="w-3 h-3 fill-current" aria-hidden="true" />
+            <span>{property.trustScore}% Trusted</span>
           </Badge>
         </div>
 
-        {/* Fixed Quick Actions with proper Button variants and Tooltip usage */}
-        <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Enhanced Quick Actions with better styling */}
+        <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
                   size="icon" 
-                  variant="secondary" // Fixed: removed "/10" which isn't supported
+                  variant="secondary"
                   onClick={handleSave}
                   aria-label="Save property"
-                  className="bg-white/10 hover:bg-white/20 backdrop-blur-sm" // Custom styling for transparency
+                  className="bg-white/90 hover:bg-white text-gray-700 hover:text-red-500 backdrop-blur-sm shadow-sm border-0 transition-all duration-200"
                 >
                   <Heart className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Save property</p>
+                <p>Save to favorites</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -230,10 +257,10 @@ export function PropertyCard({
               <TooltipTrigger asChild>
                 <Button 
                   size="icon" 
-                  variant="secondary" // Fixed: removed "/10" which isn't supported
+                  variant="secondary"
                   onClick={handleShare}
                   aria-label="Share property"
-                  className="bg-white/10 hover:bg-white/20 backdrop-blur-sm" // Custom styling for transparency
+                  className="bg-white/90 hover:bg-white text-gray-700 hover:text-blue-500 backdrop-blur-sm shadow-sm border-0 transition-all duration-200"
                 >
                   <Share2 className="w-4 h-4" />
                 </Button>
@@ -246,13 +273,15 @@ export function PropertyCard({
         </div>
       </div>
 
-      {/* Property Details */}
-      <div className="p-4 space-y-4">
-        <div className="space-y-2">
-          <h3 className="font-semibold text-lg line-clamp-1">{property.title}</h3>
+      {/* Enhanced Property Details */}
+      <div className="p-5 space-y-4">
+        <div className="space-y-3">
+          <h3 className="font-bold text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+            {property.title}
+          </h3>
           <div className="flex items-center text-muted-foreground">
-            <MapPin className="w-4 h-4 mr-1" aria-hidden="true" />
-            <span className="text-sm line-clamp-1">{property.location}</span>
+            <MapPin className="w-4 h-4 mr-2 text-primary" aria-hidden="true" />
+            <span className="text-sm line-clamp-1 font-medium">{property.location}</span>
           </div>
         </div>
 
@@ -274,18 +303,23 @@ export function PropertyCard({
           </div>
         )}
 
-        {/* Price and CTA with enhanced formatting */}
-        <div className="flex items-center justify-between pt-2">
-          <div>
-            <span className="text-2xl font-bold">
-              ${property.price.toLocaleString()}
-            </span>
-            {property.type === "commercial" && (
-              <span className="text-sm text-muted-foreground">/month</span>
-            )}
+        {/* Enhanced Price and CTA */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="space-y-1">
+            <div className="flex items-baseline space-x-1">
+              <span className="text-2xl font-bold text-primary">
+                KES {property.price.toLocaleString()}
+              </span>
+              {property.type === "commercial" && (
+                <span className="text-sm text-muted-foreground font-medium">/month</span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              ~${Math.round(property.price / 130).toLocaleString()} USD
+            </div>
           </div>
           <Button 
-            className="group-hover:bg-primary/90"
+            className="bg-primary hover:bg-primary/90 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
             onClick={handleViewDetails}
             aria-label={`View details for ${property.title}`}
           >
@@ -293,6 +327,17 @@ export function PropertyCard({
             <Maximize2 className="w-4 h-4 ml-2" />
           </Button>
         </div>
+
+        {/* B2B Contextual Prompt for High-Value Properties */}
+        {property.price > 5000000 && (
+          <div className="mt-4">
+            <B2BContextualPrompt
+              context="high_value_property"
+              propertyValue={property.price}
+              className="text-xs"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

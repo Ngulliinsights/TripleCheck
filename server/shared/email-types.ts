@@ -1,13 +1,29 @@
 // Email service types and interfaces
 
 export interface EmailServiceConfig {
-  provider: 'gmail' | 'outlook' | 'custom';
-  credentials: {
+  provider: 'gmail' | 'outlook' | 'sendgrid' | 'smtp' | 'mock';
+  
+  // OAuth credentials (for Gmail/Outlook)
+  credentials?: {
     clientId: string;
     clientSecret: string;
     refreshToken: string;
     accessToken?: string;
   };
+  
+  // SMTP configuration
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPassword?: string;
+  
+  // SendGrid configuration
+  sendGridApiKey?: string;
+  
+  // Common settings
+  fromEmail?: string;
+  fromName?: string;
+  
   settings: {
     maxRetries: number;
     retryDelay: number;

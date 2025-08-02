@@ -144,7 +144,7 @@ export class TrustScoringService extends EventEmitter {
 
   constructor() {
     super();
-    this.logger = new Logger('TrustScoringService');
+    this.logger = new Logger();
     
     // Configure scoring weights for different factors
     this.scoringWeights = {

@@ -153,7 +153,7 @@ export class RequestManager {
    * Cancel all active requests
    */
   cancelAllRequests(): void {
-    for (const [key, request] of this.activeRequests) {
+    for (const [key, request] of Array.from(this.activeRequests)) {
       request.controller.abort(new Error('All requests cancelled'));
     }
     this.activeRequests.clear();
@@ -164,7 +164,7 @@ export class RequestManager {
    */
   cancelRequestsByPattern(pattern: RegExp): number {
     let cancelled = 0;
-    for (const [key, request] of this.activeRequests) {
+    for (const [key, request] of Array.from(this.activeRequests)) {
       if (pattern.test(key)) {
         request.controller.abort(new Error(`Request cancelled by pattern: ${key}`));
         this.activeRequests.delete(key);

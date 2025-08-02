@@ -1,22 +1,4 @@
-import React, {
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-  useEffect,
-  startTransition,
-} from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
-import { Input } from "../../shared/components/ui/input";
 import {
   Search,
   MapPin,
@@ -32,14 +14,38 @@ import {
   Wifi,
   Zap,
 } from "lucide-react";
+import React, { useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../shared/components/ui/card";
+import { Input } from "../../shared/components/ui/input";
 import { Skeleton } from "../../shared/components/ui/skeleton";
-import ListingCard from "../components/ListingCard";
 import { useComponentPerformance } from "../../shared/hooks/useComponentPerformance";
 import { useDebounce } from "../../shared/hooks/useDebounce";
-import { CompareProvider } from "../contexts/CompareContext";
-import { CompareBar } from "../components/CompareBar";
-
 import { Property } from "../../shared/types/property";
+import { CompareBar } from "../components/CompareBar";
+import ListingCard from "../components/ListingCard";
+import { CompareProvider } from "../contexts/CompareContext";
+
+// Constants to avoid duplicate strings
+const ERROR_CANCELLED = "Request was cancelled";
+const ERROR_GENERIC = "Failed to fetch properties. Please try again.";
+const QUERY_KEY_PREFIX = "residential-properties";
+const STATUS_FOR_SALE = "for-sale";
+const STATUS_FOR_RENT = "for-rent";
+
+// UI Constants to avoid duplication
+const SECURITY_24_7 = "24/7 Security";
+const SECURITY = "Security";
+const SWIMMING_POOL = "Swimming Pool";
+const BACKUP_GENERATOR = "Backup Generator";
 
 // Enhanced property interface for residential properties
 interface ResidentialProperty {
@@ -173,7 +179,7 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     images: [
       "/assets/Residential/alejandra-cifre-gonzalez-ylyn5r4vxcA-unsplash.jpg",
       "/assets/Residential/alexander-andrews-A3DPhhAL6Zg-unsplash.jpg",
-      "/assets/Residential/caroline-badran-aaONSK4BKxc-unsplash.jpg"
+      "/assets/Residential/caroline-badran-aaONSK4BKxc-unsplash.jpg",
     ],
     features: [
       "City View",
@@ -183,13 +189,13 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
       "Modern Kitchen",
     ],
     amenities: [
-      "Swimming Pool",
+      SWIMMING_POOL,
       "Gym",
-      "24/7 Security",
-      "Backup Generator",
+      SECURITY_24_7,
+      BACKUP_GENERATOR,
       "Elevator",
     ],
-    status: "for-sale",
+    status: STATUS_FOR_SALE,
     verified: true,
     rating: 4.9,
     views: 2341,
@@ -212,7 +218,7 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     images: [
       "/assets/Residential/billy-jo-catbagan-ysUyvjCocWo-unsplash.jpg",
       "/assets/Residential/caroline-badran-nf7iKpydFR4-unsplash.jpg",
-      "/assets/Residential/dillon-kydd-XGvwt544g8k-unsplash.jpg"
+      "/assets/Residential/dillon-kydd-XGvwt544g8k-unsplash.jpg",
     ],
     features: [
       "Master Suite",
@@ -223,12 +229,12 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     ],
     amenities: [
       "Private Garden",
-      "Security",
+      SECURITY,
       "Backup Power",
       "Water Treatment",
       "Parking",
     ],
-    status: "for-sale",
+    status: STATUS_FOR_SALE,
     verified: true,
     rating: 4.7,
     views: 1876,
@@ -251,7 +257,7 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     images: [
       "/assets/Residential/etienne-beauregard-riverin-B0aCvAVSX8E-unsplash.jpg",
       "/assets/Residential/frames-for-your-heart-2d4lAQAlbDA-unsplash.jpg",
-      "/assets/Residential/jason-briscoe-AQl-J19ocWE-unsplash.jpg"
+      "/assets/Residential/jason-briscoe-AQl-J19ocWE-unsplash.jpg",
     ],
     features: [
       "City View",
@@ -260,8 +266,8 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
       "Air Conditioning",
       "Fitted Wardrobes",
     ],
-    amenities: ["Gym", "Security", "Elevator", "Backup Generator", "Parking"],
-    status: "for-rent",
+    amenities: ["Gym", SECURITY, "Elevator", BACKUP_GENERATOR, "Parking"],
+    status: STATUS_FOR_RENT,
     verified: true,
     rating: 4.5,
     views: 1234,
@@ -284,7 +290,7 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     images: [
       "/assets/Residential/joel-filipe-RFDP7_80v5A-unsplash.jpg",
       "/assets/Residential/krzysztof-hepner-V7Q0Oh3Az-c-unsplash.jpg",
-      "/assets/Residential/luke-van-zyl-koH7IVuwRLw-unsplash.jpg"
+      "/assets/Residential/luke-van-zyl-koH7IVuwRLw-unsplash.jpg",
     ],
     features: [
       "Master Suite",
@@ -296,11 +302,11 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     amenities: [
       "Private Pool",
       "Garden",
-      "Security",
+      SECURITY,
       "Generator",
       "Staff Quarters",
     ],
-    status: "for-sale",
+    status: STATUS_FOR_SALE,
     verified: true,
     rating: 5.0,
     views: 3456,
@@ -323,7 +329,7 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     images: [
       "/assets/Residential/michael-oxendine-GHCVUtBECuY-unsplash (1).jpg",
       "/assets/Residential/rebecca-chandler-z6Yn9hhlrJw-unsplash.jpg",
-      "/assets/Residential/sebastien-lavalaye-gNY6RsMIsPo-unsplash.jpg"
+      "/assets/Residential/sebastien-lavalaye-gNY6RsMIsPo-unsplash.jpg",
     ],
     features: [
       "Open Plan",
@@ -333,13 +339,13 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
       "Storage Space",
     ],
     amenities: [
-      "Security",
+      SECURITY,
       "Backup Power",
       "Water Supply",
       "Parking",
       "Laundry",
     ],
-    status: "for-rent",
+    status: STATUS_FOR_RENT,
     verified: true,
     rating: 4.3,
     views: 892,
@@ -362,7 +368,7 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     images: [
       "/assets/Residential/terrah-holly-pmhdkgRCbtE-unsplash.jpg",
       "/assets/Residential/webaliser-_TPTXZd9mOo-unsplash.jpg",
-      "/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg"
+      "/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg",
     ],
     features: [
       "Panoramic Views",
@@ -372,7 +378,7 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
       "Premium Finishes",
     ],
     amenities: ["Concierge", "Spa", "Gym", "Pool", "Valet Parking"],
-    status: "for-sale",
+    status: STATUS_FOR_SALE,
     verified: true,
     rating: 4.8,
     views: 2789,
@@ -394,7 +400,7 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     yearBuilt: 2019,
     images: [
       "/assets/Residential/caroline-badran-OZIdKtn8pKs-unsplash.jpg",
-      "/assets/Residential/alejandra-cifre-gonzalez-ylyn5r4vxcA-unsplash.jpg"
+      "/assets/Residential/alejandra-cifre-gonzalez-ylyn5r4vxcA-unsplash.jpg",
     ],
     features: [
       "Private Garden",
@@ -406,11 +412,11 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     amenities: [
       "Community Pool",
       "Playground",
-      "Security",
+      SECURITY,
       "Backup Power",
       "Water Supply",
     ],
-    status: "for-sale",
+    status: STATUS_FOR_SALE,
     verified: true,
     rating: 4.6,
     views: 1567,
@@ -432,10 +438,10 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     yearBuilt: 2021,
     images: [
       "/assets/Residential/alexander-andrews-A3DPhhAL6Zg-unsplash.jpg",
-      "/assets/Residential/billy-jo-catbagan-ysUyvjCocWo-unsplash.jpg"
+      "/assets/Residential/billy-jo-catbagan-ysUyvjCocWo-unsplash.jpg",
     ],
     features: [
-      "Swimming Pool",
+      SWIMMING_POOL,
       "Home Theater",
       "Wine Cellar",
       "Staff Quarters",
@@ -444,11 +450,11 @@ const MOCK_PROPERTIES: ResidentialProperty[] = [
     amenities: [
       "Private Pool",
       "Landscaped Garden",
-      "24/7 Security",
+      SECURITY_24_7,
       "Generator",
       "Borehole",
     ],
-    status: "for-sale",
+    status: STATUS_FOR_SALE,
     verified: true,
     rating: 4.9,
     views: 2890,
@@ -464,24 +470,24 @@ const fetchResidentialProperties = async (
 ): Promise<ResidentialProperty[]> => {
   // Check for cancellation before starting
   if (signal?.aborted) {
-    throw new Error("Request was cancelled");
+    throw new Error(ERROR_CANCELLED);
   }
 
   // Simulate network delay with cancellation support
   await new Promise((resolve, reject) => {
-    const timeout = setTimeout(resolve, 1000);
+    const timeout = setTimeout(resolve, 800);
 
     if (signal) {
       signal.addEventListener("abort", () => {
         clearTimeout(timeout);
-        reject(new Error("Request was cancelled"));
+        reject(new Error(ERROR_CANCELLED));
       });
     }
   });
 
   // Check for cancellation after delay
   if (signal?.aborted) {
-    throw new Error("Request was cancelled");
+    throw new Error(ERROR_CANCELLED);
   }
 
   try {
@@ -514,25 +520,25 @@ const fetchResidentialProperties = async (
 
     if (filters.bedrooms !== null) {
       filteredProperties = filteredProperties.filter(
-        (property) => property.bedrooms >= filters.bedrooms!
+        (property) => property.bedrooms >= (filters.bedrooms ?? 0)
       );
     }
 
     if (filters.bathrooms !== null) {
       filteredProperties = filteredProperties.filter(
-        (property) => property.bathrooms >= filters.bathrooms!
+        (property) => property.bathrooms >= (filters.bathrooms ?? 0)
       );
     }
 
     if (filters.priceMin !== null) {
       filteredProperties = filteredProperties.filter(
-        (property) => property.price >= filters.priceMin!
+        (property) => property.price >= (filters.priceMin ?? 0)
       );
     }
 
     if (filters.priceMax !== null) {
       filteredProperties = filteredProperties.filter(
-        (property) => property.price <= filters.priceMax!
+        (property) => property.price <= (filters.priceMax ?? 0)
       );
     }
 
@@ -556,7 +562,12 @@ const fetchResidentialProperties = async (
 
     return filteredProperties;
   } catch (error) {
-    throw new Error("Failed to fetch properties. Please try again.");
+    // Log the original error for debugging while throwing a user-friendly message
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.error("Error filtering properties:", error);
+    }
+    throw new Error(ERROR_GENERIC);
   }
 };
 
@@ -580,16 +591,14 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
 
   // Use the enhanced debounce hook to prevent race conditions
   const debouncedFilters = useDebounce(filters, 300);
-  
+
   // Additional debounce for query key to prevent excessive queries
-  const stableQueryKey = useMemo(() => {
-    const key = ["residential-properties", debouncedFilters];
-    return key;
-  }, [debouncedFilters]);
+  const stableQueryKey = useMemo(
+    () => [QUERY_KEY_PREFIX, debouncedFilters],
+    [debouncedFilters]
+  );
 
   // Performance monitoring automatically tracks renders
-
-
 
   // React Query for data fetching with proper error handling and race condition protection
   const {
@@ -597,7 +606,6 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
     isLoading,
     error,
     refetch,
-    isFetching,
   } = useQuery({
     queryKey: stableQueryKey,
     queryFn: ({ signal }) => {
@@ -614,7 +622,7 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
     enabled: !!debouncedFilters, // Only run query when filters are available
     retry: (failureCount, error) => {
       // Don't retry if request was cancelled
-      if (error?.message === "Request was cancelled") {
+      if (error?.message === ERROR_CANCELLED) {
         return false;
       }
       // Retry up to 2 times for other errors
@@ -671,10 +679,23 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
   }, []);
 
   // Property click handler - navigate to property details
-  const handlePropertyClick = useCallback((property: ResidentialProperty) => {
-    // Navigate to property details page using React Router
-    navigate(`/property/${property.id}`);
-  }, [navigate]);
+  const handlePropertyClick = useCallback(
+    (property: ResidentialProperty) => {
+      // Check if this is a land property and navigate to the appropriate route
+      const propertyType = property.type || property.propertyType;
+      const isLandProperty = propertyType === 'land' || 
+                            property.title?.toLowerCase().includes('land') ||
+                            property.description?.toLowerCase().includes('land');
+      
+      if (isLandProperty) {
+        navigate(`/land/${property.id}`);
+      } else {
+        // Navigate to property details page using React Router
+        navigate(`/property/${property.id}`);
+      }
+    },
+    [navigate]
+  );
 
   // Memoized property type options for better performance
   const propertyTypeOptions = useMemo(
@@ -683,7 +704,7 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
         <Badge
           key={type.value}
           variant={filters.propertyType === type.value ? "default" : "outline"}
-          className="cursor-pointer hover:bg-primary/10 transition-colors"
+          className="cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-colors hover:bg-primary/10"
           onClick={() =>
             updateFilter(
               "propertyType",
@@ -704,7 +725,7 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
         <Badge
           key={area}
           variant={filters.location === area ? "default" : "outline"}
-          className="cursor-pointer hover:bg-primary/10 transition-colors"
+          className="cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-colors hover:bg-primary/10"
           onClick={() =>
             updateFilter("location", filters.location === area ? "" : area)
           }
@@ -751,323 +772,345 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
   return (
     <CompareProvider>
       <div className={`min-h-screen bg-background ${className || ""}`}>
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-secondary/10 via-primary/5 to-accent/10 py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-4xl mx-auto">
+        {/* Enhanced Hero Section */}
+        <div className="relative isolate overflow-hidden bg-gradient-to-br from-sky-50 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 opacity-20 bg-dot-pattern"
+          />
+          <div className="container mx-auto px-4 py-20 md:py-28 text-center">
             <div className="flex justify-center mb-6">
-              <div className="p-4 bg-secondary/10 rounded-full">
+              <div className="p-4 bg-secondary/20 rounded-full">
                 <Home className="w-12 h-12 text-secondary" />
               </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground mb-6">
               Residential Properties
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              Find your perfect home from our curated collection of residential
-              properties. From cozy apartments to luxury penthouses across
+            <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground mb-8">
+              Find your perfect home from our curated collection across
               Kenya&apos;s prime locations.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <div className="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full">
-                <Shield className="w-5 h-5 text-green-600" />
-                <span className="text-green-600 font-medium">
-                  Verified Properties
-                </span>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <div className="flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-4 py-2 rounded-full text-sm font-medium">
+                <Shield className="w-4 h-4" /> Verified Properties
               </div>
-              <div className="flex items-center gap-2 bg-blue-100 px-4 py-2 rounded-full">
-                <Wifi className="w-5 h-5 text-blue-600" />
-                <span className="text-blue-600 font-medium">
-                  Modern Amenities
-                </span>
+              <div className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-4 py-2 rounded-full text-sm font-medium">
+                <Wifi className="w-4 h-4" /> Modern Amenities
               </div>
-              <div className="flex items-center gap-2 bg-purple-100 px-4 py-2 rounded-full">
-                <Zap className="w-5 h-5 text-purple-600" />
-                <span className="text-purple-600 font-medium">
-                  Move-in Ready
-                </span>
+              <div className="flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-4 py-2 rounded-full text-sm font-medium">
+                <Zap className="w-4 h-4" /> Move-in Ready
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
-
-
-        {/* Search and Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            {/* Main Search Bar */}
-            <div className="flex gap-4 mb-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search properties, locations, or keywords..."
-                  value={filters.query}
-                  onChange={(e) => updateFilter("query", e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button
-                variant="outline"
-                onClick={toggleFilters}
-                className="flex items-center gap-2"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                Filters
-              </Button>
-            </div>
-
-            {/* Property Type Quick Filters */}
-            <div className="mb-4">
-              <h4 className="text-sm font-medium mb-2">Property Types</h4>
-              <div className="flex flex-wrap gap-2">{propertyTypeOptions}</div>
-            </div>
-
-            {/* Popular Areas Quick Filters */}
-            <div className="mb-4">
-              <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                Popular Areas
-              </h4>
-              <div className="flex flex-wrap gap-2">{popularAreaOptions}</div>
-            </div>
-
-            {/* Advanced Filters (Collapsible) */}
-            {showFilters && (
-              <div className="border-t pt-4 mt-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {/* Price Range */}
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">
-                      Min Price (KSH)
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={filters.priceMin ?? ""}
-                      onChange={(e) =>
-                        handleNumberInput("priceMin", e.target.value)
-                      }
-                      min="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">
-                      Max Price (KSH)
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="No limit"
-                      value={filters.priceMax ?? ""}
-                      onChange={(e) =>
-                        handleNumberInput("priceMax", e.target.value)
-                      }
-                      min="0"
-                    />
-                  </div>
-
-                  {/* Bedrooms & Bathrooms */}
-                  <div>
-                    <label className="text-sm font-medium mb-1 flex items-center gap-1">
-                      <Bed className="h-3 w-3" />
-                      Min Bedrooms
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="Any"
-                      value={filters.bedrooms ?? ""}
-                      onChange={(e) =>
-                        handleNumberInput("bedrooms", e.target.value)
-                      }
-                      min="0"
-                      max="10"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 flex items-center gap-1">
-                      <Bath className="h-3 w-3" />
-                      Min Bathrooms
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="Any"
-                      value={filters.bathrooms ?? ""}
-                      onChange={(e) =>
-                        handleNumberInput("bathrooms", e.target.value)
-                      }
-                      min="0"
-                      max="10"
-                    />
-                  </div>
+        <div className="container mx-auto px-4 py-8">
+          {/* Enhanced Search and Filters */}
+          <Card className="mb-6 border-muted/60 shadow-sm backdrop-blur-sm bg-card/80">
+            <CardContent className="p-6">
+              {/* Enhanced Search Bar */}
+              <div className="flex gap-4 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search properties, locations, or keywords…"
+                    value={filters.query}
+                    onChange={(e) => updateFilter("query", e.target.value)}
+                    className="pl-10 rounded-full"
+                  />
                 </div>
-
-                {/* Additional Filters */}
-                <div className="flex flex-wrap gap-4 mt-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.furnished === true}
-                      onChange={(e) =>
-                        updateFilter(
-                          "furnished",
-                          e.target.checked ? true : null
-                        )
-                      }
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm">Furnished Only</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.parking}
-                      onChange={(e) =>
-                        updateFilter("parking", e.target.checked)
-                      }
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm">Parking Required</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.verified}
-                      onChange={(e) =>
-                        updateFilter("verified", e.target.checked)
-                      }
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm flex items-center gap-1">
-                      <Shield className="h-3 w-3" />
-                      Verified Only
-                    </span>
-                  </label>
-                </div>
-
-                {/* Filter Actions */}
-                <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                  <Button variant="ghost" onClick={resetFilters} size="sm">
-                    Clear All Filters
-                  </Button>
-                  <div className="text-sm text-muted-foreground">
-                    {properties.length} properties found
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Results Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>
-                Available Properties ({isLoading ? "..." : properties.length})
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                {/* Sort Dropdown */}
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                  className="px-3 py-1 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  aria-label="Sort properties by"
-                  title="Sort properties by"
+                <Button
+                  variant="outline"
+                  onClick={toggleFilters}
+                  className="flex items-center gap-2 rounded-full"
                 >
-                  <option value="newest">Newest First</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="views">Most Viewed</option>
-                </select>
-
-                {/* View Mode Toggle */}
-                <div className="flex bg-muted rounded-md p-1 mr-2">
-                  <Button
-                    variant={viewMode === "grid" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => handleViewModeChange("grid")}
-                    className="px-3"
-                  >
-                    <Grid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => handleViewModeChange("list")}
-                    className="px-3"
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
-                <Button variant="ghost" size="sm">
-                  <Heart className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Share2 className="h-4 w-4" />
+                  <SlidersHorizontal className="w-4 h-4" /> Filters
                 </Button>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ?
-              // Loading skeleton
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="space-y-3">
-                    <Skeleton className="h-48 w-full rounded-lg" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <div className="flex gap-2">
-                      <Skeleton className="h-6 w-16" />
-                      <Skeleton className="h-6 w-16" />
+
+              {/* Enhanced Quick Filter Chips */}
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold mb-2">Property Types</h3>
+                <div className="flex flex-wrap gap-2">
+                  {propertyTypeOptions}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold mb-2 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" /> Popular Areas
+                </h3>
+                <div className="flex flex-wrap gap-2">{popularAreaOptions}</div>
+              </div>
+
+              {/* Enhanced Expandable Advanced Filters */}
+              <div
+                className={`
+                grid transition-all duration-300 ease-in-out
+                ${showFilters ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}
+              `}
+              >
+                <div className="overflow-hidden">
+                  <div className="border-t mt-4 pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label
+                          htmlFor="priceMin"
+                          className="text-sm font-medium mb-1 block"
+                        >
+                          Min Price (KSH)
+                        </label>
+                        <Input
+                          id="priceMin"
+                          type="number"
+                          placeholder="0"
+                          value={filters.priceMin ?? ""}
+                          onChange={(e) =>
+                            handleNumberInput("priceMin", e.target.value)
+                          }
+                          min="0"
+                          className="rounded-md"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="priceMax"
+                          className="text-sm font-medium mb-1 block"
+                        >
+                          Max Price (KSH)
+                        </label>
+                        <Input
+                          id="priceMax"
+                          type="number"
+                          placeholder="No limit"
+                          value={filters.priceMax ?? ""}
+                          onChange={(e) =>
+                            handleNumberInput("priceMax", e.target.value)
+                          }
+                          min="0"
+                          className="rounded-md"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="bedrooms"
+                          className="text-sm font-medium mb-1 flex items-center gap-1"
+                        >
+                          <Bed className="w-3 h-3" /> Min Bedrooms
+                        </label>
+                        <Input
+                          id="bedrooms"
+                          type="number"
+                          placeholder="Any"
+                          value={filters.bedrooms ?? ""}
+                          onChange={(e) =>
+                            handleNumberInput("bedrooms", e.target.value)
+                          }
+                          min="0"
+                          max="10"
+                          className="rounded-md"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="bathrooms"
+                          className="text-sm font-medium mb-1 flex items-center gap-1"
+                        >
+                          <Bath className="w-3 h-3" /> Min Bathrooms
+                        </label>
+                        <Input
+                          id="bathrooms"
+                          type="number"
+                          placeholder="Any"
+                          value={filters.bathrooms ?? ""}
+                          onChange={(e) =>
+                            handleNumberInput("bathrooms", e.target.value)
+                          }
+                          min="0"
+                          max="10"
+                          className="rounded-md"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-4 mt-4">
+                      <label className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={filters.furnished === true}
+                          onChange={(e) =>
+                            updateFilter(
+                              "furnished",
+                              e.target.checked ? true : null
+                            )
+                          }
+                          className="rounded"
+                        />
+                        Furnished Only
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={filters.parking}
+                          onChange={(e) =>
+                            updateFilter("parking", e.target.checked)
+                          }
+                          className="rounded"
+                        />
+                        Parking Required
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={filters.verified}
+                          onChange={(e) =>
+                            updateFilter("verified", e.target.checked)
+                          }
+                          className="rounded"
+                        />
+                        <Shield className="w-3 h-3" /> Verified Only
+                      </label>
+                    </div>
+
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                      <Button variant="ghost" onClick={resetFilters} size="sm">
+                        Clear All Filters
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        {properties.length} properties found
+                      </span>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
-            : properties.length === 0 ?
-              // No results state
-              <div className="text-center py-12">
-                <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
-                  No properties found
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Try adjusting your filters or search terms
-                </p>
-                <Button onClick={resetFilters} variant="outline">
-                  Clear Filters
-                </Button>
+            </CardContent>
+          </Card>
+
+          {/* Results Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">
+                  Available Properties{" "}
+                  {isLoading ? "…" : `(${properties.length})`}
+                </CardTitle>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    className="px-3 py-1 border border-input rounded-full bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    aria-label="Sort properties by"
+                  >
+                    <option value="newest">Newest</option>
+                    <option value="price-asc">Price ↑</option>
+                    <option value="price-desc">Price ↓</option>
+                    <option value="rating">Highest Rated</option>
+                    <option value="views">Most Viewed</option>
+                  </select>
+
+                  <div className="flex bg-muted rounded-full p-1">
+                    <Button
+                      variant={viewMode === "grid" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => handleViewModeChange("grid")}
+                      className="px-3"
+                    >
+                      <Grid className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === "list" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => handleViewModeChange("list")}
+                      className="px-3"
+                    >
+                      <List className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <Button variant="ghost" size="sm">
+                    <Heart className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
-              // Property grid/list
-            : <div
-                className={
-                  viewMode === "grid" ?
-                    "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                  : "space-y-4"
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                if (isLoading) {
+                  // Loading skeleton
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {Array.from({ length: 6 }).map((_, index) => (
+                        <div key={index} className="space-y-3">
+                          <Skeleton className="h-48 w-full rounded-lg" />
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                          <div className="flex gap-2">
+                            <Skeleton className="h-6 w-16" />
+                            <Skeleton className="h-6 w-16" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
                 }
-              >
-                {properties.map((property) => (
-                  <ListingCard
-                    key={property.id}
-                    property={adaptResidentialPropertyToProperty(property)}
+
+                if (properties.length === 0) {
+                  return (
+                    <div className="text-center py-12">
+                      <Home className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        No properties found
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Try adjusting your filters.
+                      </p>
+                      <Button onClick={resetFilters} variant="outline">
+                        Clear Filters
+                      </Button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
                     className={
-                      viewMode === "list" ? "flex flex-row max-w-none" : ""
+                      viewMode === "grid" ?
+                        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                      : "space-y-4"
                     }
-                    onClick={() => handlePropertyClick(property)}
-                  />
-                ))}
-              </div>
-            }
-          </CardContent>
-        </Card>
+                  >
+                    {properties.map((property, idx) => (
+                      <div
+                        key={property.id}
+                        className="animate-fadeInUp"
+                        style={{ animationDelay: `${idx * 75}ms` }}
+                      >
+                        <ListingCard
+                          property={adaptResidentialPropertyToProperty(
+                            property
+                          )}
+                          className={
+                            viewMode === "list" ?
+                              "flex flex-row max-w-none"
+                            : "group rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                          }
+                          onClick={() => handlePropertyClick(property)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Compare Bar */}
+        <CompareBar />
       </div>
-      
-      {/* Compare Bar */}
-      <CompareBar />
-    </div>
     </CompareProvider>
   );
 };

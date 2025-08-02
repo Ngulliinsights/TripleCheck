@@ -21,130 +21,86 @@ const distPath = path.resolve(__dirname, "dist/public");
  * This function implements a hierarchical chunking approach that prioritizes
  * framework stability and domain-specific code organization
  */
-function createOptimizedChunkStrategy() {
-  // Cache for chunk decisions to avoid repeated string operations
-  const chunkCache = new Map<string, string>();
 
-  return (id: string): string | undefined => {
-    // Check cache first to avoid repeated processing of the same modules
+
+function createOptimizedChunkStrategy() {
+  const chunkCache = new Map();
+
+  return (id) => {
     if (chunkCache.has(id)) {
       return chunkCache.get(id);
     }
 
-    let chunkName: string | undefined;
+    let chunkName;
 
-    // High-priority vendor chunking for stable, frequently-used libraries
     if (id.includes("node_modules")) {
-      // React ecosystem - these change rarely and are used everywhere
-      if (
-        id.includes("react") &&
-        !id.includes("react-router") &&
-        !id.includes("@tanstack")
-      ) {
+      // AGGRESSIVE vendor splitting
+      if (id.includes("react-dom")) {
+        chunkName = "react-dom";
+      } else if (id.includes("react") && !id.includes("react-router")) {
         chunkName = "react-core";
-      }
-      // Routing libraries - bundle with React to avoid context issues
-      else if (id.includes("react-router") || id.includes("@remix-run")) {
-        chunkName = "react-core";
-      }
-      // State management and data fetching - business logic dependencies
-      else if (
-        id.includes("@tanstack/react-query") ||
-        id.includes("zustand") ||
-        id.includes("jotai")
-      ) {
-        chunkName = "state-management";
-      }
-      // UI and animation libraries - presentation layer dependencies
-      else if (
-        id.includes("framer-motion") ||
-        id.includes("lucide-react") ||
-        id.includes("@radix-ui")
-      ) {
-        chunkName = "ui-framework";
-      }
-      // Data visualization - specialized, heavy libraries
-      else if (
-        id.includes("recharts") ||
-        id.includes("d3") ||
-        id.includes("chart.js")
-      ) {
-        chunkName = "data-visualization";
-      }
-      // Utilities and smaller libraries
-      else if (
-        id.includes("date-fns") ||
-        id.includes("lodash") ||
-        id.includes("clsx") ||
-        id.includes("nanoid")
-      ) {
-        chunkName = "utilities";
-      }
-      // Default vendor chunk for miscellaneous node_modules
-      else {
+      } else if (id.includes("react-router")) {
+        chunkName = "react-router";
+      } else if (id.includes("@tanstack/react-query")) {
+        chunkName = "react-query";
+      } else if (id.includes("framer-motion")) {
+        chunkName = "framer-motion";
+      } else if (id.includes("lucide-react")) {
+        chunkName = "lucide-icons";
+      } else if (id.includes("@radix-ui")) {
+        chunkName = "radix-ui";
+      } else if (id.includes("recharts")) {
+        chunkName = "recharts";
+      } else if (id.includes("d3")) {
+        chunkName = "d3-charts";
+      } else if (id.includes("date-fns")) {
+        chunkName = "date-utils";
+      } else if (id.includes("lodash")) {
+        chunkName = "lodash-utils";
+      } else if (id.includes("zod")) {
+        chunkName = "validation";
+      } else if (id.includes("axios")) {
+        chunkName = "http-client";
+      } else {
         chunkName = "vendor-misc";
       }
-    }
-    // Domain-based chunking for application code organization
-    // This approach aligns with your domain-driven architecture and route preloading
-    else if (id.includes("/src/")) {
-      // Core business domains - separate chunks for independent loading and preloading
-      if (id.includes("/src/property/")) {
-        // Further split property domain by component type for optimal preloading
-        if (id.includes("/pages/")) {
-          chunkName = "domain-property-pages";
-        } else if (id.includes("/components/")) {
-          chunkName = "domain-property-components";
-        } else {
-          chunkName = "domain-property";
-        }
+    } else if (id.includes("/src/")) {
+      // AGGRESSIVE app code splitting
+      if (id.includes("/src/shared/pages/Home")) {
+        chunkName = "page-home";
+      } else if (id.includes("/src/shared/pages/FindProfessionals")) {
+        chunkName = "page-professionals";
+      } else if (id.includes("/src/shared/pages/")) {
+        // Split other shared pages individually
+        const pageName = id.match(/\/([^\/]+)\.tsx?$/)?.[1];
+        chunkName = pageName ? `page-${pageName.toLowerCase()}` : "shared-pages-misc";
+      } else if (id.includes("/src/property/pages/PropertyWizard")) {
+        chunkName = "property-wizard";
+      } else if (id.includes("/src/property/pages/PropertyDetails")) {
+        chunkName = "property-details";
+      } else if (id.includes("/src/property/pages/")) {
+        const pageName = id.match(/\/([^\/]+)\.tsx?$/)?.[1];
+        chunkName = pageName ? `property-${pageName.toLowerCase()}` : "property-pages-misc";
+      } else if (id.includes("/src/trust/pages/")) {
+        const pageName = id.match(/\/([^\/]+)\.tsx?$/)?.[1];
+        chunkName = pageName ? `trust-${pageName.toLowerCase()}` : "trust-pages";
+      } else if (id.includes("/src/shared/components/ui/")) {
+        chunkName = "ui-components";
+      } else if (id.includes("/src/shared/components/")) {
+        chunkName = "shared-components";
+      } else if (id.includes("/src/property/components/")) {
+        chunkName = "property-components";
       } else if (id.includes("/src/trust/")) {
-        if (id.includes("/pages/")) {
-          chunkName = "domain-trust-pages";
-        } else {
-          chunkName = "domain-trust";
-        }
-      } else if (id.includes("/src/user/")) {
-        if (id.includes("/pages/")) {
-          chunkName = "domain-user-pages";
-        } else {
-          chunkName = "domain-user";
-        }
+        chunkName = "trust-domain";
       } else if (id.includes("/src/auth/")) {
-        // Auth is critical - keep together for immediate loading
-        chunkName = "domain-auth";
-      } else if (id.includes("/src/search/")) {
-        if (id.includes("/pages/")) {
-          chunkName = "domain-search-pages";
-        } else {
-          chunkName = "domain-search";
-        }
-      } else if (id.includes("/src/communication/")) {
-        chunkName = "domain-communication";
-      } else if (id.includes("/src/analytics/")) {
-        chunkName = "domain-analytics";
-      }
-      // Infrastructure and shared code - loaded with main application
-      else if (id.includes("/src/infrastructure/")) {
-        // Separate routing infrastructure for preloading optimization
-        if (id.includes("/routing/")) {
-          chunkName = "infrastructure-routing";
-        } else {
-          chunkName = "infrastructure-core";
-        }
-      } else if (id.includes("/src/shared/")) {
-        // Split shared code by usage pattern
-        if (id.includes("/pages/")) {
-          chunkName = "shared-pages";
-        } else if (id.includes("/components/")) {
-          chunkName = "shared-components";
-        } else {
-          chunkName = "shared-core";
-        }
+        chunkName = "auth-domain";
+      } else if (id.includes("/src/infrastructure/")) {
+        chunkName = "infrastructure";
+      } else {
+        chunkName = "app-core";
       }
     }
 
-    // Cache the decision to improve performance on subsequent calls
     if (chunkName) {
       chunkCache.set(id, chunkName);
     }
@@ -173,15 +129,33 @@ export default defineConfig({
 
   // Enhanced server configuration for optimal development experience
   server: {
-    port: 3003,
+    port: 5173,
     // Configure HMR with fallback port strategy
     hmr: {
-      port: 3004,
+      port: 5174,
       // Add overlay configuration for better error visibility
       overlay: true,
     },
     // Enable CORS for cross-origin requests during development
     cors: true,
+    // Proxy API requests to backend server
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3003',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/health': {
+        target: 'http://localhost:3003',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/test': {
+        target: 'http://localhost:3003',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 
   // Move dependency optimization to root level where it belongs in Vite config
@@ -238,7 +212,7 @@ export default defineConfig({
     },
 
     // Increase chunk size warning limit for domain chunks which may be naturally larger
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 300,
 
     // Enable build analysis in development for debugging bundle size
     reportCompressedSize: process.env.NODE_ENV === "development",
@@ -261,6 +235,7 @@ export default defineConfig({
       "@communication": path.resolve(srcPath, "communication"),
       "@analytics": path.resolve(srcPath, "analytics"),
       "@infrastructure": path.resolve(srcPath, "infrastructure"),
+      "@land-verification": path.resolve(srcPath, "land-verification"),
 
       // Additional common aliases for better developer experience
       "@components": path.resolve(srcPath, "shared/components"),

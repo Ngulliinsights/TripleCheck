@@ -1,9 +1,16 @@
 import "dotenv/config";
 
 import { Server } from "http";
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Define __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import app from "./app";
-import { initializeDatabase } from "./infrastructure/database/connection";
+import { initializeDatabase, runMigrations } from "./infrastructure/database/connection";
 import { logger } from "./infrastructure/monitoring/logging.service";
 import { cleanupManager } from "./utils/cleanup-manager";
 import { setupServer } from "./vite";
@@ -15,9 +22,12 @@ declare global {
   var server: Server | undefined;
 }
 
+import { getPortConfig, validatePort, displayPortConfig } from "./config/ports";
+
 // Environment configuration with validation
-const PORT = parseInt(process.env.PORT || "3000", 10);
-const NODE_ENV = process.env.NODE_ENV || "development";
+const portConfig = getPortConfig();
+const PORT = portConfig.server;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Server configuration constants - using numeric separators for clarity
 const SERVER_CONFIG = {
@@ -30,22 +40,18 @@ const SERVER_CONFIG = {
   MAX_PORT: 65_535,
 } as const;
 
-// Comprehensive port validation with early exit pattern
-function validatePort(port: number): void {
-  if (
-    isNaN(port) ||
-    port < SERVER_CONFIG.MIN_PORT ||
-    port > SERVER_CONFIG.MAX_PORT
-  ) {
-    logger.error(
-      `Invalid port configuration: "${process.env.PORT}". Port must be a number between ${SERVER_CONFIG.MIN_PORT} and ${SERVER_CONFIG.MAX_PORT}.`
-    );
-    process.exit(1);
-  }
-}
+// Port validation is now handled by the ports config module
 
 // Validate port immediately after parsing
-validatePort(PORT);
+if (!validatePort(PORT)) {
+  logger.error(
+    `Invalid port configuration: "${PORT}". Port must be a number between 1 and 65535.`
+  );
+  process.exit(1);
+}
+
+// Display port configuration
+displayPortConfig(portConfig);
 
 /**
  * Type guard for Error objects with comprehensive checking
@@ -248,6 +254,18 @@ async function initializeDatabaseConnection(): Promise<void> {
   }
 
   logger.info("Database connection established successfully");
+
+  // Run database migrations
+  logger.info("Running database migrations...");
+  const migrationResult = await runMigrations();
+
+  if (!migrationResult.success) {
+    throw new Error(
+      `Database migration failed: ${migrationResult.error || "Unknown migration error"}`
+    );
+  }
+
+  logger.info("Database migrations completed successfully");
 }
 
 /**
@@ -257,7 +275,7 @@ async function createHttpServer(): Promise<Server> {
   // eslint-disable-next-line no-console -- Console output is intentional for server startup
   console.log(`🚀 Starting server on port ${PORT}...`);
 
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     // Properly structure the logger call with message and metadata
     logger.info("HTTP server started successfully", "SERVER", {
       port: PORT,
@@ -279,6 +297,17 @@ async function createHttpServer(): Promise<Server> {
       // eslint-disable-next-line no-console -- Development environment feedback
       console.log(`🐛 Debug mode enabled`);
     }
+  });
+
+  // Add error handling for the server
+  server.on('error', (error: Error) => {
+    logger.error("Server error occurred", "SERVER", { error: error.message, stack: error.stack });
+    console.error('❌ Server error:', error);
+  });
+
+  server.on('close', () => {
+    logger.info("Server closed", "SERVER");
+    console.log('🔴 Server closed');
   });
 
   // Store server reference globally for shutdown handling
@@ -322,10 +351,44 @@ async function startServer(): Promise<void> {
     const server = await createHttpServer();
     configureServer(server);
 
-    // Setup Vite integration
-    logger.info("Configuring Vite integration...");
-    await setupServer(app, server);
-    logger.info("Vite integration configured successfully");
+    // Add health check and test routes before Vite setup
+    app.get('/health', (req, res) => {
+      res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        port: PORT,
+        environment: NODE_ENV
+      });
+    });
+    
+    app.get('/test', (req, res) => {
+      res.json({ message: 'Server is working!', timestamp: new Date().toISOString() });
+    });
+
+    // Setup server configuration based on environment
+    logger.info("Setting up server configuration...");
+    
+    if (NODE_ENV === 'production') {
+      // In production, serve static files
+      const { serveStatic } = await import("./vite");
+      serveStatic(app);
+      logger.info("Production static file serving configured");
+    } else {
+      // In development, just serve API routes (frontend runs separately on Vite)
+      logger.info("Development mode: API server only (frontend runs on Vite)");
+      
+      // Add a simple route to confirm API is working
+      app.get('/api/status', (req, res) => {
+        res.json({ 
+          status: 'API server running',
+          environment: NODE_ENV,
+          port: PORT,
+          timestamp: new Date().toISOString()
+        });
+      });
+    }
+    
+    logger.info("Server configuration completed successfully");
 
     // Setup process event handlers
     setupProcessHandlers();

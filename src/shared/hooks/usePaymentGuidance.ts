@@ -50,14 +50,14 @@ export function usePaymentGuidance(): UsePaymentGuidanceReturn {
       try {
         const response = await apiClient.get('/payments/guidance', {
           signal: controller.signal,
-          cache: true,
+
           cacheKey: 'payment-guidance',
           timeout: 5000,
           retries: 2
         });
         
-        if (response.success) {
-          setGuidance(response.data);
+        if (response.success && response.data) {
+          setGuidance(response.data as PaymentGuidanceData);
         } else {
           throw new Error(response.error || 'Failed to fetch payment guidance');
         }

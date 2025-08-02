@@ -64,7 +64,7 @@ export function errorHandler(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): void {
   // Log error details
   console.error('Error occurred:', {
     name: error.name,
@@ -116,7 +116,7 @@ export function errorHandler(
   }
 
   // Handle unexpected errors
-  res.status(500).json({
+  return res.status(500).json({
     error: 'Internal server error',
     message: 'An unexpected error occurred. Please try again later.',
     timestamp: new Date().toISOString(),
@@ -185,7 +185,7 @@ export function timeoutHandler(timeoutMs: number = 30000) {
 }
 
 // CORS error handler
-export function corsErrorHandler(req: Request, res: Response, next: NextFunction) {
+export function corsErrorHandler(req: Request, res: Response, next: NextFunction): void {
   res.header('Access-Control-Allow-Origin', process.env.CLIENT_URL || 'http://localhost:5173');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -195,5 +195,5 @@ export function corsErrorHandler(req: Request, res: Response, next: NextFunction
     return res.sendStatus(200);
   }
 
-  next();
+  return next();
 }

@@ -5,7 +5,7 @@ import { Shield, Target, Users, TrendingUp } from "lucide-react";
 
 export default function OurStoryPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 py-16">
         <div className="container mx-auto px-4">
@@ -76,7 +76,7 @@ export default function OurStoryPage() {
           <CardHeader>
             <div className="text-center">
               <CardTitle className="text-3xl text-foreground mb-4">The Problem We Solve</CardTitle>
-              <p className="text-muted-foreground">Understanding the challenges in Kenya's real estate market</p>
+              <p className="text-muted-foreground">Understanding the challenges in Kenya&apos;s real estate market</p>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -123,7 +123,7 @@ export default function OurStoryPage() {
           <CardHeader>
             <div className="text-center">
               <CardTitle className="text-3xl text-foreground mb-4">Our Journey</CardTitle>
-              <p className="text-muted-foreground">Milestones in building Kenya's most trusted property platform</p>
+              <p className="text-muted-foreground">Milestones in building Kenya&apos;s most trusted property platform</p>
             </div>
           </CardHeader>
           <CardContent>

@@ -1,14 +1,21 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import App from "./app/App";
+import { AppProviders } from "./app/providers";
 import "./shared/styles/globals.css";
 
-console.log("Starting TripleCheck application...");
-console.log("Environment:", import.meta.env.MODE);
-console.log("Base URL:", import.meta.env.BASE_URL);
+// Development logging
+if (import.meta.env.DEV) {
+  // eslint-disable-next-line no-console
+  console.log("Starting TripleCheck application...");
+  // eslint-disable-next-line no-console
+  console.log("Environment:", import.meta.env.MODE);
+  // eslint-disable-next-line no-console
+  console.log("Base URL:", import.meta.env.BASE_URL);
+}
 
 // Create query client for the full app
 const queryClient = new QueryClient({
@@ -24,6 +31,7 @@ const queryClient = new QueryClient({
 // Add error boundary for production debugging
 const rootElement = document.getElementById("root");
 if (!rootElement) {
+  // eslint-disable-next-line no-console
   console.error("Root element not found!");
   document.body.innerHTML = `
     <div style="padding: 20px; color: red; font-family: monospace;">
@@ -35,20 +43,46 @@ if (!rootElement) {
 }
 
 // Using full TripleCheck app with proper React Router bundling
-console.log("Loading full TripleCheck application for competition...");
+if (import.meta.env.DEV) {
+  // eslint-disable-next-line no-console
+  console.log("Loading full TripleCheck application for competition...");
+}
+
+// Set dark mode by default as requested
+if (typeof window !== 'undefined') {
+  // Always set dark mode as default
+  if (!localStorage.getItem('theme')) {
+    localStorage.setItem('theme', 'dark');
+  }
+  document.documentElement.classList.add('dark');
+  document.documentElement.style.colorScheme = 'dark';
+  
+  // Update theme-color meta tag for mobile browsers
+  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+  if (metaThemeColor) {
+    metaThemeColor.setAttribute('content', '#000000');
+  }
+}
 
 try {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <App />
+          <AppProviders>
+            <App />
+          </AppProviders>
         </BrowserRouter>
       </QueryClientProvider>
     </React.StrictMode>
   );
-  console.log("Full TripleCheck app rendered successfully");
+  
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log("Full TripleCheck app rendered successfully");
+  }
 } catch (error) {
+  // eslint-disable-next-line no-console
   console.error("Failed to render TripleCheck app:", error);
   // Fallback error display
   rootElement.innerHTML = `

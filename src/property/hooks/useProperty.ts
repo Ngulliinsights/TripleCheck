@@ -1,183 +1,630 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { propertyApi } from '../services/property-api';
-import { Property, PropertySearchParams } from '../types/property.types';
-import { cachePresets, queryKeys } from '../../infrastructure/api/queryClient';
-import { useSafeQuery } from '../../shared/hooks/useSafeQuery';
-import { useOptimisticMutation } from '../../shared/hooks/useOptimisticMutation';
-import { useDebounce } from '../../shared/hooks/useDebounce';
+import { useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
-// Use standardized query keys from infrastructure
+import { queryKeys } from "../../infrastructure/api/queryClient";
+import { useDebounce } from "../../shared/hooks/useDebounce";
+import { useOptimisticMutation } from "../../shared/hooks/useOptimisticMutation";
+import { useSafeQuery } from "../../shared/hooks/useSafeQuery";
+import { propertyApi } from "../services/property-api";
+import { Property, PropertySearchParams } from "../types/property.types";
+
+// Enhanced type definitions that properly handle optional properties with exactOptionalPropertyTypes
+interface LocationData {
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  coordinates?:
+    | {
+        lat: number;
+        lng: number;
+      }
+    | undefined; // Explicitly handle undefined for exactOptionalPropertyTypes
+}
+
+interface PropertiesResponse {
+  data: Property[];
+  total: number;
+  page: number;
+  limit: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+interface OwnerPropertiesResponse {
+  data: Property[];
+  total?: number | undefined; // Explicitly handle undefined for exactOptionalPropertyTypes
+}
+
+// Fixed PropertyDetailResponse to avoid inheritance conflicts
+// Instead of extending Property with conflicts, we create a clean interface
+interface PropertyDetailResponse {
+  id: string;
+  title: string;
+  price: number;
+  images: string[];
+  location: LocationData;
+  features: Record<string, unknown>;
+  // These fields may or may not be present in the base Property interface
+  // By defining them explicitly, we avoid inheritance conflicts
+  description?: string | undefined;
+  amenities?: string[] | undefined;
+  lastUpdated?: string | undefined;
+  viewCount?: number | undefined;
+  // Include any other fields that might be in the base Property interface
+  bedrooms?: number | undefined;
+  bathrooms?: number | undefined;
+  size?: number | undefined;
+  type?: string | undefined;
+  status?: string | undefined;
+  ownerId?: string | undefined;
+  createdAt?: string | undefined;
+  updatedAt?: string | undefined;
+}
+
+// Constants to avoid string duplication - addressing sonarjs/no-duplicate-string
+const CACHE_KEYS = {
+  OWNER_PROPERTIES: "owner-properties",
+  PROPERTIES: "properties",
+  PROPERTY_DETAIL: "property",
+} as const;
+
+const ENDPOINTS = {
+  PROPERTIES: "/api/properties",
+  PROPERTY_DETAIL: (id: string) => `/api/properties/${id}`,
+  OWNER_PROPERTIES: (ownerId: string) => `/api/properties/owner/${ownerId}`,
+} as const;
+
+// Enhanced cache configuration with properly typed retry functions
+const CACHE_CONFIG = {
+  PROPERTIES_LIST: {
+    staleTime: 5 * 60 * 1000, // 5 minutes - frequent updates expected
+    gcTime: 10 * 60 * 1000, // 10 minutes - reasonable cleanup time
+    retry: 3, // Enhanced error recovery
+    retryDelay: (attemptIndex: number): number =>
+      Math.min(1000 * 2 ** attemptIndex, 30000),
+  },
+  PROPERTY_DETAIL: {
+    staleTime: 10 * 60 * 1000, // 10 minutes - more stable data
+    gcTime: 30 * 60 * 1000, // 30 minutes - longer retention for detail views
+    retry: 2,
+    retryDelay: (attemptIndex: number): number =>
+      Math.min(1000 * 2 ** attemptIndex, 10000),
+  },
+  OWNER_PROPERTIES: {
+    staleTime: 5 * 60 * 1000, // 5 minutes - owner data changes frequently
+    gcTime: 15 * 60 * 1000, // 15 minutes - moderate retention
+    retry: 3,
+    retryDelay: (attemptIndex: number): number =>
+      Math.min(1000 * 2 ** attemptIndex, 20000),
+  },
+} as const;
+
+// Standardized query keys using infrastructure configuration
 export const propertyKeys = queryKeys.properties;
 
-// Get properties with search and filters - FIXED: Using safe query to prevent infinite loops
+// Enhanced utility functions for better data validation and transformation
+function validateLocationData(location: unknown): LocationData {
+  if (typeof location === "string") {
+    // Transform string location to object structure for backward compatibility
+    return {
+      address: location,
+      city: "",
+      state: "",
+      country: "",
+      // Explicitly set coordinates as undefined to satisfy exactOptionalPropertyTypes
+      coordinates: undefined,
+    };
+  }
+
+  if (!location || typeof location !== "object") {
+    return {
+      address: "",
+      city: "",
+      state: "",
+      country: "",
+      coordinates: undefined,
+    };
+  }
+
+  const loc = location as Record<string, unknown>;
+  const hasValidCoordinates =
+    loc.coordinates &&
+    typeof loc.coordinates === "object" &&
+    loc.coordinates != null;
+
+  return {
+    address: String(loc.address || ""),
+    city: String(loc.city || ""),
+    state: String(loc.state || ""),
+    country: String(loc.country || ""),
+    // Properly handle coordinates to satisfy exactOptionalPropertyTypes
+    coordinates:
+      hasValidCoordinates ?
+        {
+          lat: Number((loc.coordinates as Record<string, unknown>).lat) || 0,
+          lng: Number((loc.coordinates as Record<string, unknown>).lng) || 0,
+        }
+      : undefined,
+  };
+}
+
+function createDebugLogger(context: string) {
+  return (message: string, data?: unknown) => {
+    // Using a more sophisticated logging approach that can be easily toggled
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.debug(`[${context}] ${message}`, data);
+    }
+  };
+}
+
+// Helper function to extract and validate property data from API response
+function extractPropertyFromResponse(
+  data: unknown,
+  _id: string
+): Record<string, unknown> | null {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  const response = data as Record<string, unknown>;
+  const property = response.data || response;
+
+  if (!property || typeof property !== "object") {
+    return null;
+  }
+
+  return property as Record<string, unknown>;
+}
+
+// Helper function to extract core property fields
+function extractCorePropertyFields(
+  propertyObj: Record<string, unknown>,
+  id: string,
+  locationData: LocationData
+) {
+  return {
+    id: String(propertyObj.id || id),
+    title: String(propertyObj.title || "Untitled Property"),
+    price: typeof propertyObj.price === "number" ? propertyObj.price : 0,
+    images: Array.isArray(propertyObj.images) ? propertyObj.images : [],
+    location: locationData,
+    features:
+      propertyObj.features && typeof propertyObj.features === "object" ?
+        (propertyObj.features as Record<string, unknown>)
+      : {},
+  };
+}
+
+// Helper function to extract optional property fields
+function extractOptionalPropertyFields(propertyObj: Record<string, unknown>) {
+  return {
+    description:
+      propertyObj.description ? String(propertyObj.description) : undefined,
+    amenities:
+      Array.isArray(propertyObj.amenities) ? propertyObj.amenities : undefined,
+    lastUpdated:
+      propertyObj.lastUpdated ? String(propertyObj.lastUpdated) : undefined,
+    viewCount:
+      typeof propertyObj.viewCount === "number" ?
+        propertyObj.viewCount
+      : undefined,
+    bedrooms:
+      typeof propertyObj.bedrooms === "number" ?
+        propertyObj.bedrooms
+      : undefined,
+    bathrooms:
+      typeof propertyObj.bathrooms === "number" ?
+        propertyObj.bathrooms
+      : undefined,
+    size: typeof propertyObj.size === "number" ? propertyObj.size : undefined,
+    type: propertyObj.type ? String(propertyObj.type) : undefined,
+    status: propertyObj.status ? String(propertyObj.status) : undefined,
+    ownerId: propertyObj.ownerId ? String(propertyObj.ownerId) : undefined,
+    createdAt:
+      propertyObj.createdAt ? String(propertyObj.createdAt) : undefined,
+    updatedAt:
+      propertyObj.updatedAt ? String(propertyObj.updatedAt) : undefined,
+  };
+}
+
+// Helper function to create validated property response
+function createValidatedPropertyResponse(
+  propertyObj: Record<string, unknown>,
+  id: string,
+  locationData: LocationData
+): PropertyDetailResponse {
+  const coreFields = extractCorePropertyFields(propertyObj, id, locationData);
+  const optionalFields = extractOptionalPropertyFields(propertyObj);
+
+  return {
+    ...coreFields,
+    ...optionalFields,
+  };
+}
+
+/**
+ * Enhanced hook for fetching properties with advanced search and pagination capabilities
+ * Features: debouncing, intelligent caching, error recovery, and optimistic loading states
+ */
 export function useProperties(params: PropertySearchParams = {}) {
-  // Debounce search parameters to prevent excessive API calls
-  const debouncedParams = useDebounce(params, 300);
-  
-  return useSafeQuery({
-    endpoint: '/api/properties',
-    method: 'GET',
-    body: debouncedParams,
-    fallbackData: { data: [], total: 0, page: 1, limit: 10, hasNext: false, hasPrev: false },
-    validator: (data: any) => {
-      if (!data || typeof data !== 'object') return null;
-      return {
-        data: Array.isArray(data.data) ? data.data : [],
-        total: typeof data.total === 'number' ? data.total : 0,
-        page: typeof data.page === 'number' ? data.page : 1,
-        limit: typeof data.limit === 'number' ? data.limit : 10,
-        hasNext: Boolean(data.hasNext),
-        hasPrev: Boolean(data.hasPrev)
-      };
+  const logger = createDebugLogger("useProperties");
+
+  // Enhanced debouncing with variable delay based on search complexity
+  const searchComplexity = Object.keys(params).length;
+  const debounceDelay = Math.min(300 + searchComplexity * 50, 800);
+  const debouncedParams = useDebounce(params, debounceDelay);
+
+  logger("Fetching properties with params", debouncedParams);
+
+  return useSafeQuery<PropertiesResponse>({
+    endpoint: ENDPOINTS.PROPERTIES,
+    method: "GET",
+    body: debouncedParams as Record<string, unknown>,
+    fallbackData: {
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+      hasNext: false,
+      hasPrev: false,
     },
-    debounceMs: 300,
+    validator: (data: unknown): PropertiesResponse | null => {
+      if (!data || typeof data !== "object") {
+        logger("Invalid response data structure");
+        return null;
+      }
+
+      const response = data as Record<string, unknown>;
+      const validatedResponse = {
+        data: Array.isArray(response.data) ? response.data : [],
+        total: typeof response.total === "number" ? response.total : 0,
+        page: typeof response.page === "number" ? response.page : 1,
+        limit: typeof response.limit === "number" ? response.limit : 10,
+        hasNext: Boolean(response.hasNext),
+        hasPrev: Boolean(response.hasPrev),
+      };
+
+      logger("Properties data validated successfully", {
+        count: validatedResponse.data.length,
+        total: validatedResponse.total,
+      });
+
+      return validatedResponse;
+    },
+    debounceMs: debounceDelay,
     deduplicate: true,
-    context: 'properties-list',
-    cacheKey: `properties-${JSON.stringify(debouncedParams)}`,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    context: "properties-list",
+    cacheKey: useMemo(() => `${CACHE_KEYS.PROPERTIES}-${JSON.stringify(debouncedParams)}`, [debouncedParams]),
+    ...CACHE_CONFIG.PROPERTIES_LIST,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    enabled: true
+    enabled: true,
+    // Removed refetchInterval as it's not supported by SafeQueryOptions
   });
 }
 
-// Get single property - FIXED: Using safe query to prevent infinite loops
+/**
+ * Enhanced hook for fetching detailed property information
+ * Features: comprehensive validation, location data transformation, and enhanced caching
+ */
 export function useProperty(id: string) {
-  return useSafeQuery({
-    endpoint: `/api/properties/${id}`,
-    method: 'GET',
+  const logger = createDebugLogger("useProperty");
+
+  return useSafeQuery<PropertyDetailResponse | null>({
+    endpoint: ENDPOINTS.PROPERTY_DETAIL(id),
+    method: "GET",
     fallbackData: null,
-    validator: (data: any) => {
-      if (!data || typeof data !== 'object') return null;
-      const property = data.data || data;
-      if (!property || typeof property !== 'object') return null;
-      
-      return {
-        ...property,
-        id: property.id || '',
-        title: property.title || 'Untitled Property',
-        price: typeof property.price === 'number' ? property.price : 0,
-        images: Array.isArray(property.images) ? property.images : [],
-        location: property.location || '',
-        features: property.features || {}
-      };
+    validator: (data: unknown): PropertyDetailResponse | null => {
+      const propertyObj = extractPropertyFromResponse(data, id);
+
+      if (!propertyObj) {
+        logger("Invalid property data received", { id });
+        return null;
+      }
+
+      const locationData = validateLocationData(propertyObj.location);
+      const validatedProperty = createValidatedPropertyResponse(
+        propertyObj,
+        id,
+        locationData
+      );
+
+      logger("Property data validated successfully", {
+        id,
+        title: validatedProperty.title,
+      });
+
+      return validatedProperty;
     },
     enabled: Boolean(id) && id.length > 0,
-    context: 'property-detail',
-    cacheKey: `property-${id}`,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    context: "property-detail",
+    cacheKey: `${CACHE_KEYS.PROPERTY_DETAIL}-${id}`,
+    ...CACHE_CONFIG.PROPERTY_DETAIL,
     refetchOnWindowFocus: false,
-    refetchOnMount: false
+    refetchOnMount: false,
+    // Removed notifyOnChangeProps as it's not supported by SafeQueryOptions
   });
 }
 
-// Get properties by owner - FIXED: Using safe query to prevent infinite loops
-export function useOwnerProperties(ownerId: string) {
-  return useSafeQuery({
-    endpoint: `/api/properties/owner/${ownerId}`,
-    method: 'GET',
+/**
+ * Enhanced hook for fetching owner properties with improved pagination and filtering
+ * Features: owner-specific caching strategies and enhanced error handling
+ */
+export function useOwnerProperties(ownerId: string, includeTotal = false) {
+  const logger = createDebugLogger("useOwnerProperties");
+
+  return useSafeQuery<OwnerPropertiesResponse>({
+    endpoint: ENDPOINTS.OWNER_PROPERTIES(ownerId),
+    method: "GET",
+    body: includeTotal ? { includeTotal: true } : undefined,
     fallbackData: { data: [] },
-    validator: (data: any) => {
-      if (!data || typeof data !== 'object') return null;
-      return {
-        data: Array.isArray(data.data) ? data.data : []
+    validator: (data: unknown): OwnerPropertiesResponse | null => {
+      if (!data || typeof data !== "object") {
+        logger("Invalid owner properties data", { ownerId });
+        return null;
+      }
+
+      const response = data as Record<string, unknown>;
+
+      // Properly handle the total field to satisfy exactOptionalPropertyTypes
+      const total =
+        typeof response.total === "number" ? response.total : undefined;
+
+      const validatedResponse: OwnerPropertiesResponse = {
+        data: Array.isArray(response.data) ? response.data : [],
+        ...(total !== undefined && { total }), // Only include total if it exists
       };
+
+      logger("Owner properties validated", {
+        ownerId,
+        count: validatedResponse.data.length,
+        total: validatedResponse.total,
+      });
+
+      return validatedResponse;
     },
     enabled: Boolean(ownerId) && ownerId.length > 0,
-    context: 'owner-properties',
-    cacheKey: `owner-properties-${ownerId}`,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
+    context: CACHE_KEYS.OWNER_PROPERTIES,
+    cacheKey: `${CACHE_KEYS.OWNER_PROPERTIES}-${ownerId}-${includeTotal}`,
+    ...CACHE_CONFIG.OWNER_PROPERTIES,
     refetchOnWindowFocus: false,
-    refetchOnMount: false
+    refetchOnMount: false,
   });
 }
 
-// Create property mutation - FIXED: Using optimistic mutation to prevent race conditions
+/**
+ * Enhanced mutation hook for creating properties with comprehensive optimistic updates
+ * Features: enhanced error handling, rollback capabilities, and intelligent cache updates
+ */
 export function useCreateProperty() {
   const queryClient = useQueryClient();
+  const logger = createDebugLogger("useCreateProperty");
 
   return useOptimisticMutation({
     mutationFn: propertyApi.createProperty,
-    queryKey: ['properties', 'list'],
-    optimisticUpdate: (oldData: any, newProperty: any) => {
-      if (!oldData?.data) return oldData;
+    queryKey: [CACHE_KEYS.PROPERTIES, "list"],
+    optimisticUpdate: (oldData: unknown, newProperty: Property) => {
+      const currentData = oldData as PropertiesResponse | undefined;
+      if (!currentData?.data) {
+        logger("No existing data for optimistic update");
+        return currentData;
+      }
+
+      // Following sonarjs/prefer-immediate-return by returning directly
       return {
-        ...oldData,
-        data: [newProperty, ...oldData.data],
-        total: oldData.total + 1
+        ...currentData,
+        data: [newProperty, ...currentData.data],
+        total: currentData.total + 1,
+        hasNext:
+          currentData.hasNext ||
+          currentData.data.length >= currentData.limit - 1,
       };
     },
     onError: (error, variables, context) => {
-      console.error('Failed to create property:', error);
-      // Rollback is handled automatically by useOptimisticMutation
+      logger("Property creation failed", {
+        error: error.message,
+        propertyTitle: variables?.title,
+      });
+      // Enhanced error reporting without exposing sensitive information
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Create property mutation failed:", {
+          error: error.message,
+          variables,
+          context,
+        });
+      }
+    },
+    onSuccess: (data, variables) => {
+      // Handle the data properly - extract property from API response
+      const property =
+        (data as unknown as { data?: Property })?.data ||
+        (data as unknown as Property);
+      const propertyId = property?.id || "unknown";
+      logger("Property created successfully", {
+        propertyId,
+        title: variables?.title,
+      });
     },
     onSettled: () => {
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
-    }
+      // Strategic cache invalidation with improved granularity
+      queryClient.invalidateQueries({
+        queryKey: [CACHE_KEYS.PROPERTIES],
+        exact: false,
+      });
+
+      // Invalidate owner properties if we know the owner
+      const ownerQueries = queryClient.getQueryCache().findAll({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === CACHE_KEYS.OWNER_PROPERTIES,
+      });
+
+      ownerQueries.forEach((query) => {
+        queryClient.invalidateQueries({ queryKey: query.queryKey });
+      });
+
+      logger("Cache invalidation completed after property creation");
+    },
   });
 }
 
-// Update property mutation - FIXED: Using optimistic mutation to prevent race conditions
+/**
+ * Enhanced mutation hook for updating properties with granular optimistic updates
+ * Features: field-level updates, enhanced rollback, and smart cache synchronization
+ */
 export function useUpdateProperty() {
   const queryClient = useQueryClient();
+  const logger = createDebugLogger("useUpdateProperty");
 
   return useOptimisticMutation({
-    mutationFn: ({ id, updates, userId }: { id: string; updates: Partial<Property>; userId: string }) =>
-      propertyApi.updateProperty(id, updates, userId),
-    queryKey: ['properties', 'list'],
-    optimisticUpdate: (oldData: any, variables: { id: string; updates: Partial<Property> }) => {
-      if (!oldData?.data) return oldData;
+    mutationFn: ({
+      id,
+      updates,
+      userId,
+    }: {
+      id: string;
+      updates: Partial<Property>;
+      userId: string;
+    }) => propertyApi.updateProperty(id, updates, userId),
+    queryKey: [CACHE_KEYS.PROPERTIES, "list"],
+    optimisticUpdate: (
+      oldData: unknown,
+      variables: { id: string; updates: Partial<Property> }
+    ) => {
+      const currentData = oldData as PropertiesResponse | undefined;
+      if (!currentData?.data) return currentData;
+
+      // Following sonarjs/prefer-immediate-return by returning directly
       return {
-        ...oldData,
-        data: oldData.data.map((property: any) =>
-          property.id === variables.id ? { ...property, ...variables.updates } : property
-        )
+        ...currentData,
+        data: currentData.data.map((property: Property) => {
+          if (property.id === variables.id) {
+            const updatedProperty = { ...property, ...variables.updates };
+            logger("Applied optimistic update", {
+              propertyId: variables.id,
+              updatedFields: Object.keys(variables.updates),
+            });
+            return updatedProperty;
+          }
+          return property;
+        }),
       };
     },
     onError: (error, variables, context) => {
-      console.error('Failed to update property:', error);
-      // Rollback is handled automatically by useOptimisticMutation
-    },
-    onSettled: (data, error, variables) => {
-      // Update specific property cache
-      if (data && !error) {
-        queryClient.setQueryData(['property', variables.id], data);
+      logger("Property update failed", {
+        error: error.message,
+        propertyId: variables?.id,
+        updatedFields: variables?.updates ? Object.keys(variables.updates) : [],
+      });
+
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Update property mutation failed:", {
+          error: error.message,
+          propertyId: variables?.id,
+          updates: variables?.updates,
+          context,
+        });
       }
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
-    }
+    },
+    onSuccess: (_data, variables) => {
+      logger("Property updated successfully", {
+        propertyId: variables.id,
+        updatedFields: Object.keys(variables.updates),
+      });
+    },
+    onSettled: (data, _error, variables) => {
+      // Enhanced cache synchronization
+      if (data) {
+        // Update the specific property detail cache
+        queryClient.setQueryData(
+          [CACHE_KEYS.PROPERTY_DETAIL, variables.id],
+          data
+        );
+        logger("Updated property detail cache", { propertyId: variables.id });
+      }
+
+      // Strategic invalidation of related queries
+      queryClient.invalidateQueries({
+        queryKey: [CACHE_KEYS.PROPERTIES],
+        exact: false,
+      });
+
+      // Invalidate owner properties cache for the property owner
+      queryClient.invalidateQueries({
+        queryKey: [CACHE_KEYS.OWNER_PROPERTIES],
+        exact: false,
+      });
+    },
   });
 }
 
-// Delete property mutation - FIXED: Using optimistic mutation to prevent race conditions
+/**
+ * Enhanced mutation hook for deleting properties with comprehensive cleanup
+ * Features: optimistic removal, cascade cleanup, and enhanced error recovery
+ */
 export function useDeleteProperty() {
   const queryClient = useQueryClient();
+  const logger = createDebugLogger("useDeleteProperty");
 
   return useOptimisticMutation({
     mutationFn: ({ id, userId }: { id: string; userId: string }) =>
       propertyApi.deleteProperty(id, userId),
-    queryKey: ['properties', 'list'],
-    optimisticUpdate: (oldData: any, variables: { id: string }) => {
-      if (!oldData?.data) return oldData;
+    queryKey: [CACHE_KEYS.PROPERTIES, "list"],
+    optimisticUpdate: (oldData: unknown, variables: { id: string }) => {
+      const currentData = oldData as PropertiesResponse | undefined;
+      if (!currentData?.data) return currentData;
+
+      // Following sonarjs/prefer-immediate-return by returning directly
       return {
-        ...oldData,
-        data: oldData.data.filter((property: any) => property.id !== variables.id),
-        total: Math.max(0, oldData.total - 1)
+        ...currentData,
+        data: currentData.data.filter(
+          (property: Property) => property.id !== variables.id
+        ),
+        total: Math.max(0, currentData.total - 1),
       };
     },
     onError: (error, variables, context) => {
-      console.error('Failed to delete property:', error);
-      // Rollback is handled automatically by useOptimisticMutation
+      logger("Property deletion failed", {
+        error: error.message,
+        propertyId: variables?.id,
+      });
+
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Delete property mutation failed:", {
+          error: error.message,
+          propertyId: variables?.id,
+          context,
+        });
+      }
     },
-    onSettled: (data, error, variables) => {
-      // Remove from specific property cache
-      queryClient.removeQueries({ queryKey: ['property', variables.id] });
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
-    }
+    onSuccess: (_data, variables) => {
+      logger("Property deleted successfully", { propertyId: variables.id });
+    },
+    onSettled: (_data, _error, variables) => {
+      // Comprehensive cache cleanup
+      queryClient.removeQueries({
+        queryKey: [CACHE_KEYS.PROPERTY_DETAIL, variables.id],
+      });
+
+      // Remove from all related query caches
+      queryClient.invalidateQueries({
+        queryKey: [CACHE_KEYS.PROPERTIES],
+        exact: false,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [CACHE_KEYS.OWNER_PROPERTIES],
+        exact: false,
+      });
+
+      logger("Completed cache cleanup after property deletion", {
+        propertyId: variables.id,
+      });
+    },
   });
 }

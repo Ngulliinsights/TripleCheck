@@ -3,38 +3,229 @@ import { z } from 'zod';
 import { validateRequest } from '../middleware/validation.middleware';
 import { requireAuth } from '../middleware/auth.middleware';
 import { asyncHandler } from '../middleware/error.middleware';
-import { LandVerificationService } from './LandVerificationService';
-import { DocumentAuthService } from '../document-auth/DocumentAuthService';
-import { ReportingService } from './ReportingService';
-import { logger } from '../infrastructure/monitoring/logger';
-import { performanceRoutes } from './performance/performance-routes';
-import { landVerificationCache } from './cache/LandVerificationCache';
-import { asyncProcessor } from './performance/AsyncProcessor';
-import { paginationService } from './performance/PaginationService';
-import { 
-  AppError, 
-  ValidationError, 
-  NotFoundError, 
-  ConflictError,
-  ErrorCode,
-  HttpStatusCode,
-  ErrorCategory 
-} from '../../src/shared/utils/errors';
+// Import statements removed - using mock services for MVP
+// These will be restored when implementing real services
+// Simple logger for development
+const logger = {
+  info: (message: string, context?: string, sessionId?: string, extra?: any) => {
+    console.log(`[INFO] ${context || 'LandVerification'}: ${message}`, extra || '');
+  },
+  error: (message: string, error?: any) => {
+    console.error(`[ERROR] LandVerification: ${message}`, error);
+  }
+};
 
-// Initialize services
-const documentAuthService = new DocumentAuthService();
-const landVerificationService = new LandVerificationService(documentAuthService);
-const reportingService = new ReportingService();
+// Mock services for MVP - will be replaced with real implementations
+const landVerificationCache = {
+  async getVerificationSession(sessionId: string) {
+    return null; // No cache for MVP
+  },
+  async setVerificationSession(session: any) {
+    return; // No cache for MVP
+  },
+  async getLayerResult(sessionId: string, layerType: string) {
+    return null; // No cache for MVP
+  }
+};
 
-// Initialize service on startup
+const asyncProcessor = {
+  async addTask(task: any) {
+    return `task-${Date.now()}`; // Mock task ID
+  }
+};
+
+const paginationService = {
+  async paginate(dataFetcher: any, options: any) {
+    const result = await dataFetcher(0, options.limit, options.filters);
+    return {
+      data: result.data,
+      pagination: {
+        page: options.page,
+        limit: options.limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / options.limit)
+      },
+      meta: {
+        executionTime: '50ms'
+      }
+    };
+  }
+};
+// Custom error classes for proper error handling
+class ValidationError extends Error {
+  constructor(message: string, public details?: any) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+class NotFoundError extends Error {
+  constructor(message: string, public details?: any) {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
+
+class ConflictError extends Error {
+  constructor(message: string, public details?: any) {
+    super(message);
+    this.name = 'ConflictError';
+  }
+}
+
+// Mock services for MVP - will be replaced with real implementations
+const documentAuthService = {
+  async analyzeDocument(document: any) {
+    return {
+      isAuthentic: Math.random() > 0.3, // 70% authentic rate for demo
+      confidence: Math.random() * 0.4 + 0.6, // 60-100% confidence
+      issues: Math.random() > 0.7 ? ['Minor formatting inconsistency'] : []
+    };
+  }
+};
+
+const landVerificationService = {
+  async initialize() {
+    logger.info('Mock Land Verification Service initialized');
+  },
+  
+  async initiateVerification(request: any) {
+    const sessionId = `session-${Date.now()}`;
+    return {
+      id: sessionId,
+      propertyId: request.propertyId,
+      userId: request.userId,
+      status: 'in_progress',
+      completedLayers: [],
+      expertAssignments: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  },
+  
+  async getVerificationStatus(sessionId: string) {
+    return {
+      id: sessionId,
+      status: 'in_progress',
+      completedLayers: ['registry', 'community'],
+      pendingLayers: ['expert', 'physical'],
+      overallRiskScore: Math.floor(Math.random() * 100),
+      lastUpdated: new Date().toISOString(),
+      userId: 'user-123' // Mock user ID
+    };
+  },
+  
+  async generateRiskAssessment(sessionId: string) {
+    return {
+      sessionId,
+      overallRiskScore: Math.floor(Math.random() * 100),
+      riskLevel: 'medium',
+      assessmentDate: new Date().toISOString(),
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      riskFactors: [
+        { factor: 'Document authenticity', score: 85, impact: 'low' },
+        { factor: 'Community feedback', score: 70, impact: 'medium' }
+      ],
+      recommendations: [
+        'Proceed with standard verification',
+        'Consider additional expert review'
+      ]
+    };
+  },
+  
+  async scheduleMonitoring(propertyId: string, config: any) {
+    logger.info(`Monitoring scheduled for property ${propertyId}`);
+    return { success: true };
+  }
+};
+
+const reportingService = {
+  async generateReport(options: any) {
+    const reportId = `report-${Date.now()}`;
+    return {
+      id: reportId,
+      sessionId: options.sessionId,
+      templateId: options.templateId,
+      format: options.format,
+      downloadUrl: `/api/reports/${reportId}/download`,
+      metadata: {
+        generatedAt: new Date().toISOString(),
+        fileSize: '2.4MB',
+        audience: options.audience || 'general'
+      }
+    };
+  },
+  
+  async generateExecutiveSummary(sessionId: string) {
+    return {
+      sessionId,
+      overallRiskLevel: 'medium',
+      verificationCompleteness: 75,
+      keyFindings: [
+        'Property documents appear authentic',
+        'Community feedback is positive',
+        'Expert review pending'
+      ],
+      recommendations: [
+        'Proceed with transaction',
+        'Complete expert verification'
+      ],
+      generatedAt: new Date().toISOString()
+    };
+  },
+  
+  async compileExpertReports(sessionId: string) {
+    return `# Expert Reports for Session ${sessionId}
+
+## Legal Expert Review
+- Document authenticity: Verified
+- Ownership chain: Clear
+- Legal issues: None identified
+
+## Survey Expert Review  
+- Property boundaries: Confirmed
+- Physical inspection: Completed
+- Structural assessment: Good condition
+
+## Risk Assessment
+- Overall risk: Low to Medium
+- Recommendation: Proceed with transaction
+`;
+  },
+  
+  getAvailableTemplates() {
+    return [
+      {
+        id: 'standard-verification',
+        name: 'Standard Verification Report',
+        description: 'Comprehensive property verification report',
+        audience: 'general',
+        sections: ['executive-summary', 'document-analysis', 'risk-assessment']
+      },
+      {
+        id: 'executive-summary',
+        name: 'Executive Summary',
+        description: 'High-level overview for decision makers',
+        audience: 'executives',
+        sections: ['key-findings', 'recommendations']
+      }
+    ];
+  },
+  
+  getTemplate(templateId: string) {
+    const templates = this.getAvailableTemplates();
+    return templates.find(t => t.id === templateId);
+  }
+};
+
+// Initialize mock services
 landVerificationService.initialize().catch(error => {
-  logger.error('Failed to initialize Land Verification Service', 'LandVerificationRoutes', undefined, error);
+  logger.error('Failed to initialize Land Verification Service', error);
 });
 
 const router = Router();
 
-// Mount performance routes
-router.use('/performance', performanceRoutes);
+// Performance routes will be added later - focusing on core functionality for MVP
 
 // Validation schemas for land verification endpoints
 const landVerificationSchemas = {

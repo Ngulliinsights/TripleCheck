@@ -252,11 +252,11 @@ export class PropertyBusinessLogic {
   static isFeaturedProperty(property: Property): boolean {
     const score = this.calculatePropertyScore(property);
     const hasBasicRequirements = property.verificationStatus === 'verified' && 
-                                property.status === 'active' &&
-                                property.images.length >= 5;
+                                property.isActive === true &&
+                                (property.images || property.imageUrls || []).length >= 5;
     
     // Enhanced requirements for land properties
-    if (property.propertyType === 'land') {
+    if (property.features?.propertyType === 'land') {
       return score >= 850 && 
              hasBasicRequirements &&
              property.landVerification?.status === 'completed' &&
@@ -275,7 +275,7 @@ export class PropertyBusinessLogic {
   } {
     if (similarProperties.length === 0) {
       return {
-        estimatedValue: property.price,
+        estimatedValue: typeof property.price === 'string' ? parseInt(property.price, 10) : property.price,
         confidence: 0,
         factors: ['No similar properties found for comparison'],
       };
@@ -283,19 +283,24 @@ export class PropertyBusinessLogic {
 
     // Calculate price per square foot for similar properties
     const pricePerSqFt = similarProperties
-      .filter(p => p.area > 0)
-      .map(p => p.price / p.area);
+      .filter(p => (p.area || p.features?.squareFeet || 0) > 0)
+      .map(p => {
+        const price = typeof p.price === 'string' ? parseInt(p.price, 10) : p.price;
+        const area = p.area || p.features?.squareFeet || 1;
+        return price / area;
+      });
 
     if (pricePerSqFt.length === 0) {
       return {
-        estimatedValue: property.price,
+        estimatedValue: typeof property.price === 'string' ? parseInt(property.price, 10) : property.price,
         confidence: 0,
         factors: ['Insufficient area data for comparison'],
       };
     }
 
     const avgPricePerSqFt = pricePerSqFt.reduce((sum, price) => sum + price, 0) / pricePerSqFt.length;
-    const estimatedValue = Math.round(avgPricePerSqFt * property.area);
+    const propertyArea = property.area || property.features?.squareFeet || 1;
+    const estimatedValue = Math.round(avgPricePerSqFt * propertyArea);
 
     // Calculate confidence based on number of similar properties and variance
     const variance = pricePerSqFt.reduce((sum, price) => sum + Math.pow(price - avgPricePerSqFt, 2), 0) / pricePerSqFt.length;
@@ -308,7 +313,7 @@ export class PropertyBusinessLogic {
     const factors = [
       `Based on ${similarProperties.length} similar properties`,
       `Average price per sq ft: $${avgPricePerSqFt.toFixed(2)}`,
-      `Property area: ${property.area} sq ft`,
+      `Property area: ${propertyArea} sq ft`,
     ];
 
     if (coefficientOfVariation > 0.3) {
@@ -326,7 +331,7 @@ export class PropertyBusinessLogic {
   static generateRecommendations(
     userPreferences: {
       priceRange: { min: number; max: number };
-      preferredTypes: Property['propertyType'][];
+      preferredTypes: string[];
       minBedrooms: number;
       preferredAmenities: string[];
       location?: string;
@@ -336,24 +341,25 @@ export class PropertyBusinessLogic {
     return availableProperties
       .filter(property => {
         // Price filter
-        if (property.price < userPreferences.priceRange.min || 
-            property.price > userPreferences.priceRange.max) {
+        const price = typeof property.price === 'string' ? parseInt(property.price, 10) : property.price;
+        if (price < userPreferences.priceRange.min || 
+            price > userPreferences.priceRange.max) {
           return false;
         }
 
         // Type filter
         if (userPreferences.preferredTypes.length > 0 && 
-            !userPreferences.preferredTypes.includes(property.propertyType)) {
+            !userPreferences.preferredTypes.includes(property.features?.propertyType || '')) {
           return false;
         }
 
         // Bedroom filter
-        if (property.bedrooms < userPreferences.minBedrooms) {
+        if ((property.features?.bedrooms || 0) < userPreferences.minBedrooms) {
           return false;
         }
 
         // Status filter
-        if (property.status !== 'active') {
+        if (property.isActive !== true) {
           return false;
         }
 
@@ -374,14 +380,14 @@ export class PropertyBusinessLogic {
     let score = 0;
 
     // Amenity matching
-    const matchingAmenities = property.amenities.filter(amenity =>
+    const matchingAmenities = (property.features?.amenities || []).filter((amenity: string) =>
       preferences.preferredAmenities.includes(amenity)
     );
     score += matchingAmenities.length * 10;
 
     // Location matching (simple string matching for now)
     if (preferences.location && 
-        property.location.city.toLowerCase().includes(preferences.location.toLowerCase())) {
+        (typeof property.location === 'string' ? property.location : property.location.city || '').toLowerCase().includes(preferences.location.toLowerCase())) {
       score += 20;
     }
 
@@ -416,13 +422,13 @@ export class PropertyBusinessLogic {
     }
 
     // Status check
-    if (property.status === 'sold') {
+    if (property.verificationStatus === 'unverified') {
       canEdit = false;
-      reasons.push('Sold properties cannot be edited');
+      reasons.push('Unverified properties have limited editing capabilities');
     }
 
     // Verification check
-    if (property.verificationStatus === 'verified' && property.status === 'active') {
+    if (property.verificationStatus === 'verified' && property.isActive === true) {
       reasons.push('Verified active properties have limited editing options');
     }
 

@@ -26,7 +26,7 @@ export default function TeamPage(): JSX.Element {
     {
       name: "John Kariuki",
       role: "CEO & Co-Founder",
-      bio: "Real estate veteran with 15+ years experience in Kenya's property market, leading our mission to eliminate property fraud.",
+      bio: `Real estate veteran with 15+ years experience in Kenya's property market, leading our mission to eliminate property fraud.`,
       image: "/api/placeholder/150/150",
       linkedin: "#",
       email: "john@triplecheck.co.ke"
@@ -83,7 +83,7 @@ export default function TeamPage(): JSX.Element {
               Meet Our Team
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
-              The passionate professionals behind Kenya's most trusted property verification platform
+              The passionate professionals behind Kenya{`'`}s most trusted property verification platform
             </p>
           </div>
         </div>
@@ -96,7 +96,7 @@ export default function TeamPage(): JSX.Element {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">Leadership Team</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Meet the experienced professionals driving innovation in Kenya's real estate verification
+              Meet the experienced professionals driving innovation in Kenya&apos;s real estate verification
             </p>
           </div>
           
@@ -137,7 +137,7 @@ export default function TeamPage(): JSX.Element {
                     >
                       <a 
                         href={member.linkedin} 
-                        aria-label={`${member.name}'s LinkedIn profile`}
+                        aria-label={`${member.name}&apos;s LinkedIn profile`}
                       >
                         <Linkedin className="h-4 w-4" />
                       </a>
@@ -176,7 +176,7 @@ export default function TeamPage(): JSX.Element {
                   Join Our Mission
                 </CardTitle>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  We're always looking for passionate individuals to join our team and help transform Kenya's real estate landscape.
+                  We&apos;re always looking for passionate individuals to join our team and help transform Kenya&apos;s real estate landscape.
                 </p>
               </div>
             </CardHeader>
@@ -204,7 +204,7 @@ export default function TeamPage(): JSX.Element {
                 
                 <div className="text-center p-6 bg-primary/5 rounded-lg border border-primary/20">
                   <p className="text-muted-foreground mb-4">
-                    Ready to make a difference in Kenya's real estate industry?
+                    Ready to make a difference in Kenya&apos;s real estate industry?
                   </p>
                   <Button asChild>
                     <a href={`mailto:${CAREER_EMAIL}`}>

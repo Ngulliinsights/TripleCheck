@@ -99,7 +99,7 @@ const LegalExperts: React.FC = () => {
       challenge:
         "Client was purchasing 10-acre plot for commercial development. Initial documents appeared legitimate.",
       solution:
-        "TripleCheck&apos;s verification revealed the title deed was a sophisticated forgery, and the &lsquo;seller&rsquo; was using stolen identity documents.",
+        "TripleCheck's verification revealed the title deed was a sophisticated forgery, and the &lsquo;seller&rsquo; was using stolen identity documents.",
       outcome:
         "Transaction halted, client saved Kshs 45M, fraudster arrested by DCI Land Fraud Unit.",
       impact:
@@ -123,7 +123,7 @@ const LegalExperts: React.FC = () => {
       challenge:
         "International investor required comprehensive due diligence on 50-property portfolio within 30 days.",
       solution:
-        "Parallel verification of all properties using TripleCheck&apos;s expert network and AI-powered analysis.",
+        "Parallel verification of all properties using TripleCheck's expert network and AI-powered analysis.",
       outcome:
         "Complete due diligence delivered in 25 days, investment proceeded successfully.",
       impact:
@@ -186,7 +186,7 @@ const LegalExperts: React.FC = () => {
       title: "Senior Partner, Wanjiku & Associates",
       location: "Nairobi",
       quote:
-        "TripleCheck has transformed our conveyancing practice. We&apos;ve prevented three major fraud cases this year alone, saving our clients over Kshs 80 million. Our professional indemnity premiums have actually decreased due to our enhanced due diligence.",
+        "TripleCheck has transformed our conveyancing practice. We've prevented three major fraud cases this year alone, saving our clients over Kshs 80 million. Our professional indemnity premiums have actually decreased due to our enhanced due diligence.",
       rating: 5,
     },
     {
@@ -253,7 +253,7 @@ const LegalExperts: React.FC = () => {
               Empower your legal practice with comprehensive property
               verification, expert networks, and forensic analysis. Reduce
               liability, enhance client service, and build your reputation as
-              Kenya&apos;s most thorough property lawyers.
+              Kenya's most thorough property lawyers.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -479,7 +479,7 @@ const LegalExperts: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Trusted by Kenya&apos;s Leading Legal Professionals
+              Trusted by Kenya's Leading Legal Professionals
             </h2>
           </div>
           <div className="grid lg:grid-cols-3 gap-8">

@@ -122,6 +122,69 @@ export default defineWorkspace([
     },
   },
   
+  // Server infrastructure tests
+  {
+    test: {
+      name: 'infrastructure',
+      include: ['server/infrastructure/**/*.{test,spec}.ts', 'server/**/*.{test,spec}.ts'],
+      exclude: ['server/land-verification/**/*.{test,spec}.ts'],
+      environment: 'node',
+      globals: true,
+      testTimeout: 30000,
+      hookTimeout: 10000,
+      teardownTimeout: 10000,
+      pool: 'threads',
+      poolOptions: {
+        threads: {
+          maxThreads: 2,
+          minThreads: 1,
+          isolate: true,
+        },
+      },
+      maxConcurrency: 2,
+      sequence: {
+        concurrent: true,
+        shuffle: false,
+      },
+      watch: false,
+      cache: {
+        dir: 'node_modules/.vitest/infrastructure',
+      },
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json', 'html'],
+        reportsDirectory: './coverage/infrastructure',
+        include: ['server/infrastructure/**/*.ts', 'server/**/*.ts'],
+        exclude: [
+          'server/**/*.{test,spec}.ts',
+          'server/**/*.d.ts',
+          'server/**/types.ts',
+          'server/**/__tests__/**',
+          'server/land-verification/**/*',
+        ],
+        thresholds: {
+          global: {
+            branches: 75,
+            functions: 75,
+            lines: 75,
+            statements: 75,
+          },
+        },
+      },
+    },
+    resolve: {
+      alias: {
+        '@': './src',
+        '@server': './server',
+      },
+    },
+    define: {
+      'process.env.NODE_ENV': '"test"',
+      'process.env.DATABASE_URL': '"test-database-url"',
+      'process.env.REDIS_URL': '"test-redis-url"',
+    },
+  },
+
   // Integration tests
   {
     extends: './vite.config.ts',

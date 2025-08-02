@@ -113,7 +113,7 @@ export default function Services() {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="bg-gradient-hero-primary text-white py-20">
         <div className="container mx-auto px-4">
@@ -152,10 +152,10 @@ export default function Services() {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               Choose Your Verification Service
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Each service is designed to address specific needs in the property verification process. 
               Combine multiple services for comprehensive protection.
             </p>
@@ -167,8 +167,8 @@ export default function Services() {
               return (
                 <div 
                   key={service.id}
-                  className={`relative bg-white rounded-xl shadow-lg border-2 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
-                    service.popular ? 'border-primary' : 'border-gray-200'
+                  className={`relative bg-card rounded-xl shadow-lg border-2 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+                    service.popular ? 'border-primary' : 'border-border'
                   }`}
                 >
                   {service.popular && (
@@ -185,16 +185,16 @@ export default function Services() {
                         <IconComponent className="h-6 w-6" />
                       </div>
                       <div className="ml-4">
-                        <h3 className="text-xl font-bold text-gray-900">{service.title}</h3>
+                        <h3 className="text-xl font-bold text-foreground">{service.title}</h3>
                         <p className="text-primary font-semibold">{service.price}</p>
                       </div>
                     </div>
                     
-                    <p className="text-gray-600 mb-6">{service.description}</p>
+                    <p className="text-muted-foreground mb-6">{service.description}</p>
                     
                     <ul className="space-y-3 mb-8">
                       {service.features.map((feature, index) => (
-                        <li key={index} className="flex items-center text-gray-700">
+                        <li key={index} className="flex items-center text-muted-foreground">
                           <CheckCircle className="h-4 w-4 text-green-500 mr-3 flex-shrink-0" />
                           {feature}
                         </li>
@@ -218,13 +218,13 @@ export default function Services() {
       </section>
 
       {/* Process Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               How Our Verification Process Works
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-foreground">
               Simple, fast, and thorough verification in just a few steps
             </p>
           </div>
@@ -256,8 +256,8 @@ export default function Services() {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-primary text-white rounded-full text-xl font-bold mb-4">
                   {step.step}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{step.title}</h3>
-                <p className="text-gray-600">{step.description}</p>
+                <h3 className="text-xl font-bold text-foreground mb-2">{step.title}</h3>
+                <p className="text-muted-foreground">{step.description}</p>
               </div>
             ))}
           </div>
@@ -268,23 +268,23 @@ export default function Services() {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               Trusted by Thousands of Property Professionals
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-lg p-8">
+              <div key={index} className="bg-card rounded-xl shadow-lg p-8">
                 <div className="flex items-center mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-700 mb-6 italic">"{testimonial.content}"</p>
+                <p className="text-muted-foreground mb-6 italic">"{testimonial.content}"</p>
                 <div>
-                  <p className="font-semibold text-gray-900">{testimonial.name}</p>
-                  <p className="text-gray-600">{testimonial.role}</p>
+                  <p className="font-semibold text-foreground">{testimonial.name}</p>
+                  <p className="text-muted-foreground">{testimonial.role}</p>
                 </div>
               </div>
             ))}

@@ -248,7 +248,7 @@ export function getRandomImages(propertyType: string, count: number = 3): Proper
 export function getRandomImage(propertyType: string): PropertyImage {
   const images = getImagesByPropertyType(propertyType);
   const randomImage = images[Math.floor(Math.random() * images.length)];
-  return randomImage || images[0] || { id: 'default', url: '/images/default-property.jpg', alt: 'Default property image' };
+  return randomImage || images[0] || { id: 'default', url: '/images/default-property.jpg', alt: 'Default property image', category: 'residential' as const };
 }
 
 /**

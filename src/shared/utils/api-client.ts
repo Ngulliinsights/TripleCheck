@@ -57,9 +57,10 @@ export interface CacheEntry<T = unknown> {
   ttl: number;
 }
 
+import { enhancedCache } from "./enhanced-cache-manager";
+
 // Request cache for preventing duplicate requests
 const requestCache = new Map<string, Promise<ApiResponse<unknown>>>();
-const responseCache = new Map<string, CacheEntry<ApiResponse<unknown>>>();
 
 // Default cache TTL (5 minutes)
 const DEFAULT_CACHE_TTL = 5 * 60 * 1000;
@@ -125,12 +126,7 @@ export class ApiClient {
   }
 
   private getCachedResponse<T>(cacheKey: string): ApiResponse<T> | null {
-    const cached = responseCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < cached.ttl) {
-      return cached.data as ApiResponse<T>;
-    }
-    responseCache.delete(cacheKey);
-    return null;
+    return enhancedCache.get<ApiResponse<T>>(cacheKey);
   }
 
   private setCachedResponse<T>(
@@ -138,11 +134,7 @@ export class ApiClient {
     data: ApiResponse<T>,
     ttl = DEFAULT_CACHE_TTL
   ): void {
-    responseCache.set(cacheKey, {
-      data: data as ApiResponse<unknown>,
-      timestamp: Date.now(),
-      ttl,
-    });
+    enhancedCache.set(cacheKey, data, ttl);
   }
 
   private async sleep(ms: number): Promise<void> {
@@ -410,12 +402,24 @@ export class ApiClient {
   // Cache management methods
   clearCache(): void {
     requestCache.clear();
-    responseCache.clear();
+    enhancedCache.clear();
   }
 
   clearCacheEntry(cacheKey: string): void {
     requestCache.delete(cacheKey);
-    responseCache.delete(cacheKey);
+    enhancedCache.delete(cacheKey);
+  }
+
+  // Get cache statistics
+  getCacheStats() {
+    return enhancedCache.getStats();
+  }
+
+  // Warm cache with data
+  warmCache<T>(
+    entries: Array<{ key: string; data: ApiResponse<T>; ttl?: number }>
+  ) {
+    return enhancedCache.warm(entries);
   }
 }
 

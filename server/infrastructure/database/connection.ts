@@ -601,60 +601,19 @@ process.on("SIGTERM", async () => {
 // Migration utilities (will be moved to DatabaseMigrator)
 export async function runMigrations() {
   try {
-    logger.info("Running database migrations...", "DATABASE");
+    logger.info("Running comprehensive database migrations...", "DATABASE");
 
     const { sql: sqlInstance } = await ensureConnection();
 
-    // Create tables if they don't exist
-    await sqlInstance`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        trust_score INTEGER NOT NULL DEFAULT 0,
-        is_verified_agent BOOLEAN NOT NULL DEFAULT false,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )
-    `;
+    // Import and run reset migration
+    const { resetAndCreateTables } = await import('./migrations/reset-and-create');
+    const migrationResult = await resetAndCreateTables(sqlInstance);
 
-    await sqlInstance`
-      CREATE TABLE IF NOT EXISTS properties (
-        id SERIAL PRIMARY KEY,
-        owner_id INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        location TEXT NOT NULL,
-        price INTEGER NOT NULL,
-        image_urls TEXT[] NOT NULL,
-        features JSONB NOT NULL,
-        verification_status TEXT NOT NULL DEFAULT 'pending',
-        ai_verification_results JSONB,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )
-    `;
+    if (!migrationResult.success) {
+      throw new Error(`Migration failed: ${migrationResult.error}`);
+    }
 
-    await sqlInstance`
-      CREATE TABLE IF NOT EXISTS reviews (
-        id SERIAL PRIMARY KEY,
-        property_id INTEGER NOT NULL,
-        user_id INTEGER NOT NULL,
-        rating INTEGER NOT NULL,
-        comment TEXT NOT NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )
-    `;
-
-    // Create indexes for better performance
-    await sqlInstance`CREATE INDEX IF NOT EXISTS idx_properties_location ON properties(location)`;
-    await sqlInstance`CREATE INDEX IF NOT EXISTS idx_properties_price ON properties(price)`;
-    await sqlInstance`CREATE INDEX IF NOT EXISTS idx_properties_verification ON properties(verification_status)`;
-    await sqlInstance`CREATE INDEX IF NOT EXISTS idx_reviews_property ON reviews(property_id)`;
-    await sqlInstance`CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id)`;
-
-    logger.info("Database migrations completed successfully", "DATABASE");
+    logger.info("Comprehensive database migrations completed successfully", "DATABASE");
     return { success: true };
   } catch (error) {
     logger.error("Migration failed", "DATABASE", { error });
@@ -802,6 +761,14 @@ export async function seedDatabase() {
 }
 
 // Legacy compatibility - getDatabase function is already exported above
+
+// Safe database getter function
+export function getDb() {
+  if (!db) {
+    throw new Error('Database not initialized. Call initializeDatabase() first.');
+  }
+  return db;
+}
 
 // Export the database instance for backward compatibility
 export { db, sql };

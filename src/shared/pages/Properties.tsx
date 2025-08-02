@@ -12,6 +12,7 @@ import React, { useState, useCallback, useMemo, Suspense, lazy } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { CompareProvider } from "../../property/contexts/CompareContext";
+import { CompareBar } from "../../property/components/CompareBar";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -120,12 +121,12 @@ const fetchProperties = async (filters: SearchFilters): Promise<Property[]> => {
     // Mock data with real images from public/assets/Residential only - 4 properties
     const mockProperties: Property[] = [
       {
-        id: "1",
+        id: 1,
         title: "Modern 3-Bedroom Apartment in Westlands",
         description:
           "Beautiful modern apartment with stunning city views and premium amenities. Features spacious rooms, modern kitchen, and excellent security.",
         location: "Westlands, Nairobi",
-        price: 15000000,
+        price: "15000000",
         images: [
           "/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg",
           "/assets/Residential/frames-for-your-heart-2d4lAQAlbDA-unsplash.jpg",
@@ -145,12 +146,12 @@ const fetchProperties = async (filters: SearchFilters): Promise<Property[]> => {
         status: "verified",
       },
       {
-        id: "2",
+        id: 2,
         title: "Luxury Villa in Karen",
         description:
           "Spacious family home with beautiful gardens and modern fixtures. Perfect for families seeking comfort and elegance.",
         location: "Karen, Nairobi",
-        price: 45000000,
+        price: "45000000",
         images: [
           "/assets/Residential/dillon-kydd-XGvwt544g8k-unsplash.jpg",
           "/assets/Residential/etienne-beauregard-riverin-B0aCvAVSX8E-unsplash.jpg",
@@ -170,12 +171,12 @@ const fetchProperties = async (filters: SearchFilters): Promise<Property[]> => {
         status: "verified",
       },
       {
-        id: "3",
+        id: 3,
         title: "Elegant Penthouse in Kilimani",
         description:
           "Stunning penthouse with panoramic city views and luxury finishes. Features premium amenities and modern design.",
         location: "Kilimani, Nairobi",
-        price: 32000000,
+        price: "32000000",
         images: [
           "/assets/Residential/joel-filipe-RFDP7_80v5A-unsplash.jpg",
           "/assets/Residential/krzysztof-hepner-V7Q0Oh3Az-c-unsplash.jpg",
@@ -195,12 +196,12 @@ const fetchProperties = async (filters: SearchFilters): Promise<Property[]> => {
         status: "verified",
       },
       {
-        id: "4",
+        id: 4,
         title: "Cozy Family Home in Kileleshwa",
         description:
           "Perfect family home with modern amenities and great location. Ideal for young families starting their journey.",
         location: "Kileleshwa, Nairobi",
-        price: 18500000,
+        price: "18500000",
         images: [
           "/assets/Residential/jason-briscoe-AQl-J19ocWE-unsplash.jpg",
           "/assets/Residential/rebecca-chandler-z6Yn9hhlrJw-unsplash.jpg",
@@ -235,13 +236,13 @@ const fetchProperties = async (filters: SearchFilters): Promise<Property[]> => {
         (property) =>
           property.title.toLowerCase().includes(query) ||
           property.description.toLowerCase().includes(query) ||
-          property.location.toLowerCase().includes(query)
+          (typeof property.location === 'string' ? property.location : property.location.address || '').toLowerCase().includes(query)
       );
     }
 
     if (filters.location) {
       filteredProperties = filteredProperties.filter((property) =>
-        property.location.toLowerCase().includes(filters.location.toLowerCase())
+        (typeof property.location === 'string' ? property.location : property.location.address || '').toLowerCase().includes(filters.location.toLowerCase())
       );
     }
 
@@ -271,7 +272,7 @@ const fetchProperties = async (filters: SearchFilters): Promise<Property[]> => {
 
     if (filters.verified) {
       filteredProperties = filteredProperties.filter(
-        (property) => property.status === "verified"
+        (property) => property.verificationStatus === "verified"
       );
     }
 
@@ -366,7 +367,17 @@ export default function Properties(): JSX.Element {
   // Handle property card click to navigate to details
   const handlePropertyClick = useCallback(
     (property: Property) => {
-      navigate(`/property/${property.id}`);
+      // Check if this is a land property and navigate to the appropriate route
+      const propertyType = property.type || property.propertyType || property.features?.propertyType;
+      const isLandProperty = propertyType === 'land' || 
+                            property.title?.toLowerCase().includes('land') ||
+                            property.description?.toLowerCase().includes('land');
+      
+      if (isLandProperty) {
+        navigate(`/land/${property.id}`);
+      } else {
+        navigate(`/property/${property.id}`);
+      }
     },
     [navigate]
   );
@@ -386,25 +397,31 @@ export default function Properties(): JSX.Element {
 
   return (
     <CompareProvider>
-      <div className="min-h-screen bg-gray-50">
-        {/* Hero Section */}
-        <section className="bg-white py-16">
+      <div className="min-h-screen bg-background">
+        {/* Enhanced Hero Section */}
+        <section className="relative isolate overflow-hidden bg-gradient-to-br from-sky-50 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950 py-20 md:py-28">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 opacity-20"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239ca3af' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/svg%3E\")",
+            }}
+          />
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground mb-6">
                 Find Your Perfect
-                <span className="text-blue-600"> Verified Property</span>
+                <span className="text-primary"> Verified Property</span>
               </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Browse thousands of verified properties across Kenya. Every
-                listing is authenticated and fraud-checked for your peace of
-                mind.
+              <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
+                Browse thousands of verified properties across Kenya. Every listing is authenticated and fraud-checked.
               </p>
             </div>
 
             {/* Enhanced Search Bar with better accessibility */}
             <div className="max-w-4xl mx-auto">
-              <Card className="p-6">
+              <Card className="p-6 border-muted/60 shadow-sm backdrop-blur-sm bg-card/80">
                 <form
                   onSubmit={handleSearch}
                   className="space-y-4"
@@ -697,23 +714,29 @@ export default function Properties(): JSX.Element {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                           {Array.from({ length: 3 }, (_, i) => (
                             <div key={i} className="space-y-4 animate-pulse">
-                              <Skeleton className="h-48 w-full rounded-lg" />
+                              <Skeleton className="aspect-[16/10] rounded-2xl" />
                               <div className="space-y-2">
-                                <Skeleton className="h-4 w-3/4" />
-                                <Skeleton className="h-4 w-1/2" />
-                                <Skeleton className="h-6 w-1/3" />
+                                <Skeleton className="h-4 w-3/4 rounded-md" />
+                                <Skeleton className="h-4 w-1/2 rounded-md" />
+                                <Skeleton className="h-6 w-1/3 rounded-md" />
                               </div>
                             </div>
                           ))}
                         </div>
                       }
                     >
-                      {properties.map((property) => (
-                        <ListingCard
+                      {properties.map((property, idx) => (
+                        <div
                           key={property.id}
-                          property={property}
-                          onClick={handlePropertyClick}
-                        />
+                          className="animate-fadeInUp"
+                          style={{ animationDelay: `${idx * 75}ms` }}
+                        >
+                          <ListingCard
+                            property={property}
+                            className="group rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                            onClick={handlePropertyClick}
+                          />
+                        </div>
                       ))}
                     </Suspense>
                   </div>
@@ -744,7 +767,7 @@ export default function Properties(): JSX.Element {
           <div className="container mx-auto px-4 text-center">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Can&apos;t Find What You&apos;re Looking For?
+                Can't Find What You're Looking For?
               </h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8 leading-relaxed">
                 Let us help you find the perfect property or list your own with
@@ -805,6 +828,9 @@ export default function Properties(): JSX.Element {
           </div>
         </section>
       </div>
+      
+      {/* Floating Compare Bar */}
+      <CompareBar />
     </CompareProvider>
   );
 }

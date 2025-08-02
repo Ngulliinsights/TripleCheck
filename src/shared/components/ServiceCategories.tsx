@@ -119,7 +119,7 @@ const SERVICE_CATEGORIES: readonly ServiceCategory[] = [
     ],
     cta: {
       text: 'Start Verification',
-      action: 'verify-property'
+      action: 'property/verification'
     }
   },
   {
@@ -176,7 +176,7 @@ const SERVICE_CATEGORIES: readonly ServiceCategory[] = [
     ],
     cta: {
       text: 'Authenticate Documents',
-      action: 'authenticate-docs'
+      action: 'services/document-auth'
     }
   },
   {
@@ -233,7 +233,7 @@ const SERVICE_CATEGORIES: readonly ServiceCategory[] = [
     ],
     cta: {
       text: 'Search Properties',
-      action: 'search-properties'
+      action: 'properties'
     }
   },
   {
@@ -324,7 +324,7 @@ export function ServiceCategories({
             Our Kenya Property Services
           </h2>
           <p className="text-gray-300 text-xl max-w-3xl mx-auto leading-relaxed">
-            Comprehensive verification and search solutions designed specifically for Kenya&apos;s property market.
+            Comprehensive verification and search solutions designed specifically for Kenya's property market.
           </p>
         </div>
 
@@ -441,11 +441,20 @@ export function ServiceCategories({
                 for comprehensive verification and fraud protection.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-cyan-500 hover:bg-cyan-600 hover:scale-105 transition-all duration-200">
+                <Button 
+                  size="lg" 
+                  className="bg-cyan-500 hover:bg-cyan-600 hover:scale-105 transition-all duration-200"
+                  onClick={() => handleCtaClick('free-verification', 'property/verification')}
+                >
                   Start Free Verification
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:scale-105 transition-all duration-200">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:scale-105 transition-all duration-200"
+                  onClick={() => handleCtaClick('schedule-demo', 'contact')}
+                >
                   Schedule Demo
                 </Button>
               </div>

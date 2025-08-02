@@ -124,7 +124,7 @@ export default function MVPDemo() {
           <div className="flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
-              <h4 className="font-medium text-blue-900">What's Real Here</h4>
+              <h4 className="font-medium text-blue-900">What&apos;s Real Here</h4>
               <ul className="text-sm text-blue-800 mt-2 space-y-1">
                 <li>• Analyzes actual property data from our database</li>
                 <li>• Compares prices against location averages</li>
@@ -220,7 +220,7 @@ export default function MVPDemo() {
           <div className="flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
             <div>
-              <h4 className="font-medium text-green-900">What's Real Here</h4>
+              <h4 className="font-medium text-green-900">What&apos;s Real Here</h4>
               <ul className="text-sm text-green-800 mt-2 space-y-1">
                 <li>• Uses actual review data from our database</li>
                 <li>• Calculates real owner trust scores</li>

@@ -120,14 +120,5 @@ export function useAccountLockout(email: string) {
   });
 }
 
-// Custom hook for auth state
-export function useAuth() {
-  const { data: profileData, isLoading, error } = useProfile();
-
-  return {
-    user: profileData?.data || null,
-    isAuthenticated: !!profileData?.data,
-    isLoading,
-    error,
-  };
-}
+// Re-export the context hook as the main auth hook
+export { useAuthContext as useAuth } from '../contexts/AuthContext';

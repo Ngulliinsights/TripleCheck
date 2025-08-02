@@ -13,6 +13,7 @@ export default [
   js.configs.recommended,
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
+    ignores: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -261,6 +262,132 @@ export default [
       'no-new-wrappers': 'error',
       'no-array-constructor': 'error',
       'no-extend-native': 'error',
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
+  },
+  // Separate configuration for test files
+  {
+    files: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
+        project: './tsconfig.test.json',
+        tsconfigRootDir: '.',
+      },
+      globals: {
+        // Test-specific globals
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        vi: 'readonly',
+        vitest: 'readonly',
+        
+        // Node.js globals
+        console: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        global: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        
+        // Browser globals
+        window: 'readonly',
+        document: 'readonly',
+        navigator: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        fetch: 'readonly',
+        URLSearchParams: 'readonly',
+        FormData: 'readonly',
+        File: 'readonly',
+        FileList: 'readonly',
+        Blob: 'readonly',
+        AbortController: 'readonly',
+        AbortSignal: 'readonly',
+        RequestInit: 'readonly',
+        IntersectionObserver: 'readonly',
+        WebSocket: 'readonly',
+        BinaryType: 'readonly',
+        Event: 'readonly',
+        CloseEvent: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        Element: 'readonly',
+        NodeJS: 'readonly',
+        
+        // React/JSX globals
+        React: 'readonly',
+        JSX: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': typescript,
+      'react': react,
+      'react-hooks': reactHooks,
+      'security': security,
+      'jsx-a11y': jsxA11y,
+      'import': importPlugin,
+      'promise': promise,
+      'sonarjs': sonarjs,
+    },
+    rules: {
+      // Inherit most rules from main config but relax some for tests
+      ...typescript.configs.recommended.rules,
+      ...react.configs.recommended.rules,
+      ...reactHooks.configs.recommended.rules,
+      ...security.configs.recommended.rules,
+      ...jsxA11y.configs.recommended.rules,
+      ...importPlugin.configs.recommended.rules,
+      ...promise.configs.recommended.rules,
+      ...sonarjs.configs.recommended.rules,
+
+      // Test-specific rule overrides
+      '@typescript-eslint/no-explicit-any': 'off', // Allow any in tests
+      '@typescript-eslint/no-non-null-assertion': 'off', // Allow ! in tests
+      'no-console': 'off', // Allow console in tests
+      'sonarjs/no-duplicate-string': 'off', // Allow duplicate strings in tests
+      'sonarjs/cognitive-complexity': 'off', // Allow complex test scenarios
+      'security/detect-object-injection': 'off', // Allow dynamic access in tests
+      'security/detect-non-literal-regexp': 'off', // Allow dynamic regexes in tests
+      
+      // React specific rules
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
+      'react/jsx-no-target-blank': ['error', { allowReferrer: false }],
+      'react/jsx-no-script-url': 'error',
+      'react/no-danger': 'warn',
+      'react/no-danger-with-children': 'error',
+
+      // Import/Export rules
+      'import/no-unresolved': 'off', // TypeScript handles this
+      'import/named': 'off', // TypeScript handles this
+      'import/default': 'off', // TypeScript handles this
+      'import/namespace': 'off', // TypeScript handles this
+      'import/no-named-as-default': 'warn',
+      'import/no-named-as-default-member': 'warn',
+      'import/no-duplicates': 'error',
     },
     settings: {
       react: {

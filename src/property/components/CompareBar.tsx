@@ -1,102 +1,138 @@
-import React, { useState } from 'react';
-import { X, ArrowLeftRight, Eye } from 'lucide-react';
-import { Button } from '../../shared/components/ui/button';
-import { Badge } from '../../shared/components/ui/badge';
-import { useCompare } from '../contexts/CompareContext';
-import { CompareModal } from './CompareModal';
+/**
+ * CompareBar Component
+ * 
+ * A floating bottom bar that shows selected properties for comparison
+ * and provides quick access to the compare page.
+ */
+
+import { ArrowLeftRight, X, Eye } from "lucide-react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+
+import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
+import { Card } from "../../shared/components/ui/card";
+import { useCompare } from "../contexts/CompareContext";
 
 export function CompareBar() {
-  const { selectedProperties, removeFromCompare, clearCompare, maxProperties } = useCompare();
-  const [showCompareModal, setShowCompareModal] = useState(false);
+  const { selectedProperties, removeFromCompare, clearCompare } = useCompare();
+  const navigate = useNavigate();
 
+  // Don't render if no properties selected
   if (selectedProperties.length === 0) {
     return null;
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
+  const handleCompare = () => {
+    // Navigate to compare page - the PropertyCompare page will handle the selected properties
+    navigate("/compare");
+  };
+
+  const formatPrice = (price?: number) => {
+    if (!price) return "Price on request";
+    return new Intl.NumberFormat("en-KE", {
+      style: "currency",
+      currency: "KES",
       minimumFractionDigits: 0,
     }).format(price);
   };
 
   return (
-    <>
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <ArrowLeftRight className="w-5 h-5 text-primary" />
-              <span className="font-medium text-gray-900">
-                Compare Properties ({selectedProperties.length}/{maxProperties})
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearCompare}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-4 mb-4">
-            {selectedProperties.map((property) => (
-              <div key={property.id} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 min-w-0">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {property.title}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {property.location}
-                  </p>
-                  <p className="text-xs font-medium text-primary">
-                    {formatPrice(property.price)}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeFromCompare(property.id)}
-                  className="text-gray-400 hover:text-gray-600 flex-shrink-0"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            ))}
-            
-            {selectedProperties.length < maxProperties && (
-              <div className="flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-4 min-w-[120px]">
-                <span className="text-sm text-gray-500">
-                  Add {maxProperties - selectedProperties.length} more
+    <div className="fixed bottom-0 left-0 right-0 z-40 p-4">
+      <Card className="max-w-6xl mx-auto bg-white/95 backdrop-blur-sm border shadow-lg">
+        <div className="p-4">
+          <div className="flex items-center justify-between">
+            {/* Left side - Selected properties */}
+            <div className="flex items-center gap-4 flex-1">
+              <div className="flex items-center gap-2">
+                <ArrowLeftRight className="w-5 h-5 text-primary" />
+                <span className="font-medium text-sm">
+                  Compare Properties ({selectedProperties.length})
                 </span>
               </div>
-            )}
+
+              {/* Property thumbnails */}
+              <div className="flex gap-2 overflow-x-auto max-w-md">
+                {selectedProperties.map((property) => (
+                  <div
+                    key={property.id}
+                    className="flex-shrink-0 relative group"
+                  >
+                    <div className="w-16 h-12 bg-muted rounded overflow-hidden border">
+                      {property.images?.[0] ? (
+                        <img
+                          src={property.images[0]}
+                          alt={property.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                          <Eye className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Remove button */}
+                    <button
+                      onClick={() => removeFromCompare(property.id)}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label={`Remove ${property.title} from comparison`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Property details preview */}
+              <div className="hidden md:flex gap-4 text-xs text-muted-foreground">
+                {selectedProperties.slice(0, 2).map((property, index) => (
+                  <div key={property.id} className="flex flex-col">
+                    <span className="font-medium text-foreground truncate max-w-32">
+                      {property.title}
+                    </span>
+                    <span>{formatPrice(property.price)}</span>
+                  </div>
+                ))}
+                {selectedProperties.length > 2 && (
+                  <div className="flex items-center">
+                    <Badge variant="secondary">
+                      +{selectedProperties.length - 2} more
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right side - Actions */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearCompare}
+                className="text-xs"
+              >
+                Clear All
+              </Button>
+              <Button
+                onClick={handleCompare}
+                size="sm"
+                disabled={selectedProperties.length < 2}
+                className="text-xs"
+              >
+                Compare {selectedProperties.length >= 2 ? `(${selectedProperties.length})` : ""}
+              </Button>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <Badge variant="outline" className="text-xs">
-              Select up to {maxProperties} properties to compare
-            </Badge>
-            <Button
-              onClick={() => setShowCompareModal(true)}
-              disabled={selectedProperties.length < 2}
-              className="flex items-center gap-2"
-            >
-              <Eye className="w-4 h-4" />
-              Compare {selectedProperties.length > 1 ? `${selectedProperties.length} Properties` : ''}
-            </Button>
-          </div>
+          {/* Helper text */}
+          {selectedProperties.length === 1 && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              Select one more property to start comparing
+            </div>
+          )}
         </div>
-      </div>
-
-      <CompareModal
-        isOpen={showCompareModal}
-        onClose={() => setShowCompareModal(false)}
-        properties={selectedProperties}
-      />
-    </>
+      </Card>
+    </div>
   );
 }

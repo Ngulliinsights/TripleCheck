@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import request from 'supertest';
-import app from '../app-optimized';
+import app from '../app';
 import { storage } from '../infrastructure/storage/storage';
 
 interface LoadTestConfig {

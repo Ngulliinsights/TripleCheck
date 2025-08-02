@@ -153,7 +153,7 @@ export default function FraudProtectionInfo(): JSX.Element {
               How Background Protection Works
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Our system works silently in the background, so you don&apos;t
+              Our system works silently in the background, so you don't
               have to worry about fraud or legal issues.
             </p>
           </div>

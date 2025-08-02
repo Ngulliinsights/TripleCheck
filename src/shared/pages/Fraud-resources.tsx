@@ -13,6 +13,17 @@ import {
 import { useState, FC, ReactNode } from "react";
 import { Link } from "react-router-dom";
 
+// Constants
+const RESPONSE_TIME_WEEKS = "weeks";
+const CARD_BORDER_STYLES = "border border-slate-200 rounded p-4";
+const TITLE_DEED_FRAUD_BEST_FOR =
+  "Title deed fraud, illegal subdivisions, boundary disputes";
+const STEP_NUMBER_BLUE_CLASSES =
+  "bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold";
+const STEP_NUMBER_RED_CLASSES =
+  "bg-red-100 text-red-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold";
+const ARDHISASA_WEBSITE = "ardhisasa.lands.go.ke";
+
 type SectionKey =
   | "emergency"
   | "channels"
@@ -38,20 +49,29 @@ const AccordionSection: FC<AccordionSectionProps> = ({
   icon,
   priority = "medium",
 }) => {
-  const priorityColors = {
-    high: "bg-red-50 border-red-200 hover:bg-red-100",
-    medium: "bg-blue-50 border-blue-200 hover:bg-blue-100",
-    low: "bg-slate-50 border-slate-200 hover:bg-slate-100",
+  const getPriorityClass = (
+    priorityLevel: "high" | "medium" | "low"
+  ): string => {
+    switch (priorityLevel) {
+      case "high":
+        return "bg-red-50 border-red-200 hover:bg-red-100";
+      case "low":
+        return "bg-slate-50 border-slate-200 hover:bg-slate-100";
+      default:
+        return "bg-blue-50 border-blue-200 hover:bg-blue-100";
+    }
   };
 
+  const priorityClass = getPriorityClass(priority);
+
   return (
-    <div className={`border rounded-lg ${priorityColors[priority]}`}>
+    <div className={`border rounded-lg ${priorityClass}`}>
       <h2 className="m-0">
         <button
           type="button"
           onClick={onToggle}
-          className={`w-full flex justify-between items-center p-4 text-left font-semibold text-slate-800 transition-colors ${priorityColors[priority]}`}
-          aria-expanded={isOpen ? "true" : "false"}
+          className={`w-full flex justify-between items-center p-4 text-left font-semibold text-slate-800 transition-colors ${priorityClass}`}
+          aria-expanded={isOpen}
         >
           <span className="flex items-center gap-2">
             {icon}
@@ -91,9 +111,7 @@ const EmergencySection: FC = () => (
         </h4>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
-            <div className="bg-red-100 text-red-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-              1
-            </div>
+            <div className={STEP_NUMBER_RED_CLASSES}>1</div>
             <div>
               <strong>Stop all payments immediately.</strong> Do not transfer
               any more money, regardless of pressure or threats from the
@@ -101,9 +119,7 @@ const EmergencySection: FC = () => (
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="bg-red-100 text-red-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-              2
-            </div>
+            <div className={STEP_NUMBER_RED_CLASSES}>2</div>
             <div>
               <strong>Document everything comprehensively.</strong> Photograph
               all documents, save all messages, emails, and call logs. Create a
@@ -111,9 +127,7 @@ const EmergencySection: FC = () => (
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="bg-red-100 text-red-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-              3
-            </div>
+            <div className={STEP_NUMBER_RED_CLASSES}>3</div>
             <div>
               <strong>Report to DCI Land Fraud Unit.</strong> This should be
               your first official report. Get an OB number and case reference.
@@ -128,9 +142,7 @@ const EmergencySection: FC = () => (
         </h4>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
-            <div className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-              4
-            </div>
+            <div className={STEP_NUMBER_BLUE_CLASSES}>4</div>
             <div>
               <strong>Secure the property legally.</strong> Visit the Land
               Registry to place a caution or restriction on the title. Engage a
@@ -138,18 +150,14 @@ const EmergencySection: FC = () => (
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-              5
-            </div>
+            <div className={STEP_NUMBER_BLUE_CLASSES}>5</div>
             <div>
               <strong>Protect your finances.</strong> Contact your bank to flag
               potentially fraudulent transactions and monitor all accounts.
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-              6
-            </div>
+            <div className={STEP_NUMBER_BLUE_CLASSES}>6</div>
             <div>
               <strong>Begin parallel reporting.</strong> File reports with EACC,
               Ministry of Lands, and other relevant agencies simultaneously.
@@ -202,7 +210,7 @@ const ReportingChannelsSection: FC = () => {
           website: "dci.go.ke",
           process:
             "Report to Public Complaints Office first, get referral form to Land Fraud Unit",
-          responseTime: "2-4 weeks",
+          responseTime: `2-4 ${RESPONSE_TIME_WEEKS}`,
           bestFor:
             "All types of land and real estate fraud, especially complex schemes",
         },
@@ -212,7 +220,7 @@ const ReportingChannelsSection: FC = () => {
           why: "Handles corruption involving public officials and fraudulent title processing",
           contact: "Multiple reporting channels available",
           website: "eacc.go.ke/default/report-corruption",
-          responseTime: "3-6 weeks",
+          responseTime: `3-6 ${RESPONSE_TIME_WEEKS}`,
           bestFor:
             "Cases involving corrupt government officials, land registry fraud",
         },
@@ -227,16 +235,16 @@ const ReportingChannelsSection: FC = () => {
           rating: 4,
           why: "Can investigate title irregularities and cancel fraudulent documents",
           contact: "County land offices or ministry headquarters",
-          website: "ardhisasa.lands.go.ke",
-          responseTime: "4-8 weeks",
-          bestFor: "Title deed fraud, illegal subdivisions, boundary disputes",
+          website: ARDHISASA_WEBSITE,
+          responseTime: `4-8 ${RESPONSE_TIME_WEEKS}`,
+          bestFor: TITLE_DEED_FRAUD_BEST_FOR,
         },
         {
           name: "Office of Director of Public Prosecutions (ODPP)",
           rating: 4,
           why: "Can fast-track prosecution of complex fraud cases with strong evidence",
           process: "Through DCI referral or direct application",
-          responseTime: "6-12 weeks",
+          responseTime: `6-12 ${RESPONSE_TIME_WEEKS}`,
           bestFor: "Cases with strong evidence ready for prosecution",
         },
       ] as Agency[],
@@ -513,7 +521,7 @@ const DirectorySection: FC = () => {
     {
       name: "Ministry of Lands & Physical Planning",
       role: "Registers & flags fraudulent transactions",
-      website: "ardhisasa.lands.go.ke",
+      website: ARDHISASA_WEBSITE,
       note: "Visit county land offices for local issues",
     },
     {
@@ -725,7 +733,7 @@ const LegalRedressSection: FC = () => {
             <div className="flex items-start justify-between mb-3">
               <div>
                 <h4 className="font-semibold text-lg flex items-center gap-2">
-                  <span className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                  <span className={STEP_NUMBER_BLUE_CLASSES}>
                     {option.rank}
                   </span>
                   {option.title}
@@ -860,7 +868,7 @@ const DigitalToolsSection: FC = () => {
       tools: [
         {
           name: "Ardhisasa Portal",
-          url: "ardhisasa.lands.go.ke",
+          url: ARDHISASA_WEBSITE,
           description: "Official land records and title verification",
         },
         {
@@ -898,7 +906,7 @@ const DigitalToolsSection: FC = () => {
             {category.tools.map((tool, toolIndex) => (
               <div
                 key={toolIndex}
-                className={`${CARD_BORDER_STYLES.replace("p-4", "p-3")} flex justify-between items-start`}
+                className="border border-slate-200 rounded p-3 flex justify-between items-start"
               >
                 <div className="flex-1">
                   <h5 className="font-medium">{tool.name}</h5>
@@ -956,9 +964,6 @@ const DigitalToolsSection: FC = () => {
   );
 };
 
-// Constants
-const CARD_BORDER_STYLES = "border border-slate-200 rounded p-4";
-
 // Main Component
 const KenyaRealEstateFraudGuide: FC = () => {
   const [openSection, setOpenSection] = useState<SectionKey | null>(
@@ -1002,7 +1007,7 @@ const KenyaRealEstateFraudGuide: FC = () => {
             </span>
           </div>
           <p className="text-red-700 text-sm mt-1">
-            If you&apos;re currently experiencing fraud, act immediately using
+            If you\u2019re currently experiencing fraud, act immediately using
             this guide
           </p>
         </div>

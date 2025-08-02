@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { renderWithProviders } from '../../../test-utils';
-import { AppLayout } from '../AppLayout';
+import { AppLayout } from '../../../../app/App';
 
 // Mock the child components
 vi.mock('../Navigation', () => ({

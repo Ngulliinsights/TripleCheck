@@ -126,7 +126,7 @@ const BlogPage = memo(() => {
             <SectionHeader 
               id="featured-heading"
               title="Featured Articles" 
-              className="scroll-mt-4" 
+              className="scroll-margin-nav" 
             />
             {renderPostGrid(featuredPosts, 'featured')}
           </section>
@@ -136,7 +136,7 @@ const BlogPage = memo(() => {
             <SectionHeader 
               id="all-posts-heading"
               title="All Articles" 
-              className="scroll-mt-4" 
+              className="scroll-margin-nav" 
             />
             {renderPostGrid(transformedPosts)}
           </section>

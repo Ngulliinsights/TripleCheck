@@ -255,7 +255,7 @@ class FraudDetectionTester {
     try {
       // Replace the actual imports with our mocks for testing
       const originalStorage = require('./storage');
-      const originalAiService = require('./ai-service');
+      const originalAiService = require('./ai-ml-service');
       
       // Temporarily replace with mocks (in a real test, you'd use dependency injection)
       Object.assign(originalStorage, mockStorage);

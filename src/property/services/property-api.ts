@@ -450,7 +450,7 @@ export const propertyApi = {
             cancelPrevious: false, // Don't cancel batched requests
             priority: 'low',
             timeout: 5000,
-            useCache: true,
+
             cacheTtl: 5 * 60 * 1000 // Cache for 5 minutes
           }
         }

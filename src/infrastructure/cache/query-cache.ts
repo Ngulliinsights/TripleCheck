@@ -1,12 +1,12 @@
 import { QueryClient } from '@tanstack/react-query';
 
-// Enhanced query client with advanced caching strategies
+// Enhanced query client with advanced caching strategies and infinite query prevention
 export const createEnhancedQueryClient = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        // Stale time based on data type
-        staleTime: 1000 * 60 * 5, // 5 minutes default
+        // Stale time based on data type - increased to reduce refetching
+        staleTime: 1000 * 60 * 10, // 10 minutes default (increased from 5)
         gcTime: 1000 * 60 * 30, // 30 minutes garbage collection
         
         // Retry strategy
@@ -15,8 +15,8 @@ export const createEnhancedQueryClient = () => {
           if (error?.status >= 400 && error?.status < 500) {
             return false;
           }
-          // Retry up to 3 times for other errors
-          return failureCount < 3;
+          // Retry up to 2 times for other errors (reduced from 3)
+          return failureCount < 2;
         },
         
         // Progressive retry delay
@@ -25,10 +25,12 @@ export const createEnhancedQueryClient = () => {
         // Network mode for offline support
         networkMode: 'offlineFirst',
         
-        // Refetch strategies
+        // Refetch strategies - more conservative to prevent infinite queries
         refetchOnWindowFocus: false,
-        refetchOnReconnect: 'always',
-        refetchOnMount: true,
+        refetchOnReconnect: false, // Changed from 'always' to false
+        refetchOnMount: false, // Changed from true to false
+        refetchInterval: false, // Ensure no automatic refetching
+        refetchIntervalInBackground: false,
       },
       mutations: {
         // Mutation retry strategy
@@ -37,7 +39,7 @@ export const createEnhancedQueryClient = () => {
           if (error?.status >= 400 && error?.status < 500) {
             return false;
           }
-          return failureCount < 2;
+          return failureCount < 1; // Reduced from 2 to 1
         },
         
         // Network mode for mutations
@@ -45,6 +47,21 @@ export const createEnhancedQueryClient = () => {
       },
     },
   });
+
+  // Add query cache event listeners for debugging infinite queries
+  if (process.env.NODE_ENV === 'development') {
+    const queryCache = queryClient.getQueryCache();
+    
+    queryCache.subscribe((event) => {
+      if (event.type === 'added') {
+        const activeQueries = queryCache.getAll().filter(q => q.state.fetchStatus === 'fetching');
+        if (activeQueries.length > 10) {
+          console.warn(`[QueryClient] High number of active queries detected: ${activeQueries.length}`);
+          console.log('Active queries:', activeQueries.map(q => q.queryKey));
+        }
+      }
+    });
+  }
 
   return queryClient;
 };

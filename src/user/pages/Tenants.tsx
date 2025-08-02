@@ -1,35 +1,50 @@
-import { useState } from "react";
-import { Button } from "@shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@shared/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
 import { Badge } from "@shared/components/ui/badge";
+import { Button } from "@shared/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@shared/components/ui/card";
 import { Input } from "@shared/components/ui/input";
 import { Label } from "@shared/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@shared/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@shared/components/ui/select";
 import { Slider } from "@shared/components/ui/slider";
 import { Switch } from "@shared/components/ui/switch";
-import { 
-  Search, 
-  Star, 
-  Shield, 
-  Users, 
-  CheckCircle, 
-  User, 
-  Home, 
-  Calendar, 
+import { Tabs, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
+import {
+  Search,
+  Star,
+  Shield,
+  Users,
+  CheckCircle,
+  User,
+  Home,
   Info,
-  Filter
+  Filter,
 } from "lucide-react";
+import { useState } from "react";
+
 import { useToast } from "@/shared/hooks/use-toast";
 
-type TenantLevel = 'gold' | 'silver' | 'bronze' | 'all';
+type TenantLevel = "gold" | "silver" | "bronze" | "all";
+
+const VERIFICATION_BADGE_FULLY_VERIFIED = "Fully Verified";
 
 interface Tenant {
   id: number;
   name: string;
   photo: string;
   rating: number;
-  verificationLevel: 'Gold' | 'Silver' | 'Bronze';
+  verificationLevel: "Gold" | "Silver" | "Bronze";
   verificationBadge: string;
   occupation: string;
   income: string;
@@ -42,23 +57,31 @@ interface Tenant {
   bio: string;
 }
 
+const getVerificationBadgeClasses = (
+  level: "Gold" | "Silver" | "Bronze"
+): string => {
+  if (level === "Gold") return "bg-[#FFD700] text-amber-800";
+  if (level === "Silver") return "bg-[#C0C0C0] text-gray-800";
+  return "bg-[#CD7F32] text-amber-900";
+};
+
 export default function TenantsPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterLevel, setFilterLevel] = useState<TenantLevel>('all');
+  const [filterLevel, setFilterLevel] = useState<TenantLevel>("all");
   const [incomeRange, setIncomeRange] = useState([50000, 200000]);
   const [showContactInfo, setShowContactInfo] = useState<number[]>([]);
-  const [activeTab, setActiveTab] = useState('available');
-  
+  const [activeTab, setActiveTab] = useState("available");
+
   // Simulated tenants data
-  const [tenants, setTenants] = useState<Tenant[]>([
+  const [tenants] = useState<Tenant[]>([
     {
       id: 1,
       name: "David Makau",
       photo: "/tenant1.webp",
       rating: 4.8,
       verificationLevel: "Gold",
-      verificationBadge: "Fully Verified",
+      verificationBadge: VERIFICATION_BADGE_FULLY_VERIFIED,
       occupation: "Software Engineer",
       income: "200,000+ KES monthly",
       seeking: "2-3 bedroom apartment in Kilimani",
@@ -67,7 +90,7 @@ export default function TenantsPage() {
       previousRentals: 2,
       joinedDate: "January 2023",
       lastActive: "Today",
-      bio: "Responsible professional looking for a quiet apartment in a good neighborhood. Non-smoker, no pets."
+      bio: "Responsible professional looking for a quiet apartment in a good neighborhood. Non-smoker, no pets.",
     },
     {
       id: 2,
@@ -84,7 +107,7 @@ export default function TenantsPage() {
       previousRentals: 1,
       joinedDate: "March 2023",
       lastActive: "Yesterday",
-      bio: "Corporate professional seeking modern apartment close to Westlands. Clean, quiet, and responsible tenant."
+      bio: "Corporate professional seeking modern apartment close to Westlands. Clean, quiet, and responsible tenant.",
     },
     {
       id: 3,
@@ -101,7 +124,7 @@ export default function TenantsPage() {
       previousRentals: 1,
       joinedDate: "July 2023",
       lastActive: "2 days ago",
-      bio: "Young professional seeking affordable housing in Lavington area. No pets, non-smoker, clean habits."
+      bio: "Young professional seeking affordable housing in Lavington area. No pets, non-smoker, clean habits.",
     },
     {
       id: 4,
@@ -109,7 +132,7 @@ export default function TenantsPage() {
       photo: "/tenant4.webp",
       rating: 4.9,
       verificationLevel: "Gold",
-      verificationBadge: "Fully Verified",
+      verificationBadge: VERIFICATION_BADGE_FULLY_VERIFIED,
       occupation: "Doctor",
       income: "250,000+ KES monthly",
       seeking: "3 bedroom house in Karen",
@@ -118,7 +141,7 @@ export default function TenantsPage() {
       previousRentals: 3,
       joinedDate: "December 2022",
       lastActive: "Today",
-      bio: "Medical professional with family (2 children) looking for spacious home in Karen. Excellent rental history and references available."
+      bio: "Medical professional with family (2 children) looking for spacious home in Karen. Excellent rental history and references available.",
     },
     {
       id: 5,
@@ -135,7 +158,7 @@ export default function TenantsPage() {
       previousRentals: 2,
       joinedDate: "February 2023",
       lastActive: "3 days ago",
-      bio: "Design professional looking for modern apartment with good natural light for home office. Clean and organized."
+      bio: "Design professional looking for modern apartment with good natural light for home office. Clean and organized.",
     },
     {
       id: 6,
@@ -143,7 +166,7 @@ export default function TenantsPage() {
       photo: "/tenant6.webp",
       rating: 4.7,
       verificationLevel: "Gold",
-      verificationBadge: "Fully Verified",
+      verificationBadge: VERIFICATION_BADGE_FULLY_VERIFIED,
       occupation: "University Lecturer",
       income: "180,000-230,000 KES monthly",
       seeking: "2-3 bedroom house in Runda",
@@ -152,60 +175,75 @@ export default function TenantsPage() {
       previousRentals: 2,
       joinedDate: "April 2023",
       lastActive: "Today",
-      bio: "Academic professional seeking quiet neighborhood for family of three. Long-term rental preferred."
-    }
+      bio: "Academic professional seeking quiet neighborhood for family of three. Long-term rental preferred.",
+    },
   ]);
 
   const handleContactReveal = (tenantId: number) => {
     // If not already revealed, add to revealed array
     if (!showContactInfo.includes(tenantId)) {
       setShowContactInfo([...showContactInfo, tenantId]);
-      
+
       toast({
         title: "Contact information revealed",
-        description: "You can now contact this tenant directly. Your credit has been deducted.",
+        description:
+          "You can now contact this tenant directly. Your credit has been deducted.",
       });
     }
   };
 
+  const matchesSearchQuery = (tenant: Tenant, query: string): boolean => {
+    const name = tenant.name?.toLowerCase() || "";
+    const occupation = tenant.occupation?.toLowerCase() || "";
+    const seeking = tenant.seeking?.toLowerCase() || "";
+    const searchTerm = query.toLowerCase();
+
+    return (
+      name.includes(searchTerm) ||
+      occupation.includes(searchTerm) ||
+      seeking.includes(searchTerm)
+    );
+  };
+
+  const matchesVerificationLevel = (
+    tenant: Tenant,
+    level: TenantLevel
+  ): boolean => {
+    if (level === "all") return true;
+    if (level === "gold") return tenant.verificationLevel === "Gold";
+    if (level === "silver") return tenant.verificationLevel === "Silver";
+    if (level === "bronze") return tenant.verificationLevel === "Bronze";
+    return false;
+  };
+
+  const matchesIncomeRange = (tenant: Tenant, range: number[]): boolean => {
+    if (!tenant.income || !range || range.length < 2) return true;
+
+    const incomeNum = parseInt(tenant.income.replace(/\D/g, ""));
+    if (isNaN(incomeNum)) return true;
+
+    const [minIncome, maxIncome] = range;
+    return (
+      incomeNum >= (minIncome ?? 0) && incomeNum <= (maxIncome ?? Infinity)
+    );
+  };
+
   const filterTenants = () => {
     if (!tenants || !Array.isArray(tenants)) return [];
-    
-    return tenants.filter(tenant => {
-      if (!tenant) return false;
-      
-      // Filter by search query
-      if (searchQuery) {
-        const name = tenant.name?.toLowerCase() || '';
-        const occupation = tenant.occupation?.toLowerCase() || '';
-        const seeking = tenant.seeking?.toLowerCase() || '';
-        const query = searchQuery.toLowerCase();
-        
-        if (!name.includes(query) && !occupation.includes(query) && !seeking.includes(query)) {
-          return false;
-        }
-      }
-      
-      // Filter by verification level
-      if (filterLevel !== 'all') {
-        if (filterLevel === 'gold' && tenant.verificationLevel !== 'Gold') return false;
-        if (filterLevel === 'silver' && tenant.verificationLevel !== 'Silver') return false;
-        if (filterLevel === 'bronze' && tenant.verificationLevel !== 'Bronze') return false;
-      }
-      
-      // Filter by income (simplified)
-      if (tenant.income && incomeRange && Array.isArray(incomeRange) && incomeRange.length >= 2) {
-        const incomeNum = parseInt(tenant.income.replace(/[^0-9]/g, ''));
-        if (!isNaN(incomeNum) && (incomeNum < incomeRange[0]! || incomeNum > incomeRange[1]!)) return false;
-      }
-      
-      return true;
+
+    return tenants.filter((tenant) => {
+      return (
+        tenant &&
+        (!searchQuery || matchesSearchQuery(tenant, searchQuery)) &&
+        matchesVerificationLevel(tenant, filterLevel) &&
+        matchesIncomeRange(tenant, incomeRange)
+      );
     });
   };
 
   const filteredTenants = filterTenants();
 
-  const sendMessage = (tenantId: number) => {
+  const sendMessage = (_tenantId: number) => {
     toast({
       title: "Message sent",
       description: "Your property details have been sent to the tenant.",
@@ -214,10 +252,13 @@ export default function TenantsPage() {
 
   return (
     <div className="container mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold mb-6 text-[#2C5282]">Access Verified Tenants</h1>
+      <h1 className="text-3xl font-bold mb-6 text-[#2C5282]">
+        Access Verified Tenants
+      </h1>
       <p className="text-lg mb-8">
-        Connect with pre-screened, verified tenants actively looking for properties in Kenya.
-        All tenants undergo our rigorous background and financial verification process.
+        Connect with pre-screened, verified tenants actively looking for
+        properties in Kenya. All tenants undergo our rigorous background and
+        financial verification process.
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -246,8 +287,8 @@ export default function TenantsPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="verification">Verification Level</Label>
-                <Select 
-                  value={filterLevel} 
+                <Select
+                  value={filterLevel}
                   onValueChange={(value: TenantLevel) => setFilterLevel(value)}
                 >
                   <SelectTrigger>
@@ -275,8 +316,8 @@ export default function TenantsPage() {
                   />
                 </div>
                 <div className="flex justify-between text-sm text-gray-500">
-                  <span>{incomeRange?.[0]?.toLocaleString() || '0'} KES</span>
-                  <span>{incomeRange?.[1]?.toLocaleString() || '0'} KES</span>
+                  <span>{incomeRange?.[0]?.toLocaleString() || "0"} KES</span>
+                  <span>{incomeRange?.[1]?.toLocaleString() || "0"} KES</span>
                 </div>
               </div>
 
@@ -321,7 +362,9 @@ export default function TenantsPage() {
 
               <div className="flex items-center space-x-2">
                 <Switch id="previous-rentals" />
-                <Label htmlFor="previous-rentals">Previous Rental History</Label>
+                <Label htmlFor="previous-rentals">
+                  Previous Rental History
+                </Label>
               </div>
 
               <Button className="w-full mt-2">Apply Filters</Button>
@@ -341,7 +384,10 @@ export default function TenantsPage() {
                 <p className="text-sm text-gray-500 mt-1">Credits Remaining</p>
               </div>
               <div className="mt-4 p-3 bg-blue-50 rounded-md text-sm text-[#2C5282]">
-                <p>Each credit allows you to reveal contact details for one verified tenant.</p>
+                <p>
+                  Each credit allows you to reveal contact details for one
+                  verified tenant.
+                </p>
               </div>
             </CardContent>
             <CardFooter>
@@ -351,7 +397,11 @@ export default function TenantsPage() {
         </div>
 
         <div className="lg:col-span-3">
-          <Tabs defaultValue="available" className="mb-6" onValueChange={setActiveTab}>
+          <Tabs
+            defaultValue="available"
+            className="mb-6"
+            onValueChange={setActiveTab}
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="available" className="text-center">
                 <Users className="h-4 w-4 mr-2" />
@@ -364,119 +414,130 @@ export default function TenantsPage() {
             </TabsList>
           </Tabs>
 
-          {activeTab === 'available' && filteredTenants.length === 0 && (
+          {activeTab === "available" && filteredTenants.length === 0 && (
             <div className="bg-white rounded-lg p-8 text-center border">
               <Users className="h-12 w-12 mx-auto text-gray-400 mb-3" />
               <h3 className="text-lg font-medium">No matching tenants found</h3>
-              <p className="text-gray-500 mt-1">Try adjusting your filters to see more results.</p>
+              <p className="text-gray-500 mt-1">
+                Try adjusting your filters to see more results.
+              </p>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {activeTab === 'available' && filteredTenants.map((tenant) => (
-              <Card key={tenant.id} className="overflow-hidden">
-                <div className="bg-[#2C5282] text-white p-3 flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Shield className="h-4 w-4 mr-2" />
-                    <span>{tenant.verificationBadge}</span>
-                  </div>
-                  <Badge 
-                    className={`
-                      ${tenant.verificationLevel === 'Gold' ? 'bg-[#FFD700] text-amber-800' : 
-                        tenant.verificationLevel === 'Silver' ? 'bg-[#C0C0C0] text-gray-800' : 
-                        'bg-[#CD7F32] text-amber-900'}
-                    `}
-                  >
-                    {tenant.verificationLevel}
-                  </Badge>
-                </div>
-                <CardContent className="pt-6">
-                  <div className="flex">
-                    <div className="w-20 h-20 bg-gray-200 rounded-full overflow-hidden mr-4 flex-shrink-0">
-                      <User className="h-full w-full text-gray-400 p-2" />
+            {activeTab === "available" &&
+              filteredTenants.map((tenant) => (
+                <Card key={tenant.id} className="overflow-hidden">
+                  <div className="bg-[#2C5282] text-white p-3 flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Shield className="h-4 w-4 mr-2" />
+                      <span>{tenant.verificationBadge}</span>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-lg">{tenant.name}</h3>
-                      <div className="flex items-center text-sm text-gray-500 mb-2">
-                        <Star className="h-4 w-4 text-yellow-400 mr-1" fill="currentColor" />
-                        <span>{tenant.rating}</span>
-                        <span className="mx-2">•</span>
-                        <span>{tenant.occupation}</span>
+                    <Badge
+                      className={getVerificationBadgeClasses(
+                        tenant.verificationLevel
+                      )}
+                    >
+                      {tenant.verificationLevel}
+                    </Badge>
+                  </div>
+                  <CardContent className="pt-6">
+                    <div className="flex">
+                      <div className="w-20 h-20 bg-gray-200 rounded-full overflow-hidden mr-4 flex-shrink-0">
+                        <User className="h-full w-full text-gray-400 p-2" />
                       </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Home className="h-4 w-4 mr-1" />
-                        <span>{tenant.seeking}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Income:</span>
-                      <span className="font-medium">{tenant.income}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">References:</span>
-                      <span className="font-medium">{tenant.referencesCount} verified</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Rental History:</span>
-                      <span className="font-medium">{tenant.previousRentals} previous</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Member Since:</span>
-                      <span className="font-medium">{tenant.joinedDate}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Last Active:</span>
-                      <span className="font-medium">{tenant.lastActive}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 text-sm">
-                    <p className="text-gray-600">{tenant.bio}</p>
-                  </div>
-                  
-                  <div className="mt-6 pt-4 border-t">
-                    {showContactInfo.includes(tenant.id) ? (
-                      <div className="space-y-4">
-                        <div className="p-3 bg-blue-50 rounded-md">
-                          <div className="font-medium text-[#2C5282] mb-1">Contact Information</div>
-                          <div className="text-sm">{tenant.contactInfo}</div>
+                      <div>
+                        <h3 className="font-bold text-lg">{tenant.name}</h3>
+                        <div className="flex items-center text-sm text-gray-500 mb-2">
+                          <Star
+                            className="h-4 w-4 text-yellow-400 mr-1"
+                            fill="currentColor"
+                          />
+                          <span>{tenant.rating}</span>
+                          <span className="mx-2">•</span>
+                          <span>{tenant.occupation}</span>
                         </div>
-                        <div className="flex gap-2">
-                          <Button className="flex-1" onClick={() => sendMessage(tenant.id)}>
-                            Send Property Details
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Home className="h-4 w-4 mr-1" />
+                          <span>{tenant.seeking}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Income:</span>
+                        <span className="font-medium">{tenant.income}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">References:</span>
+                        <span className="font-medium">
+                          {tenant.referencesCount} verified
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Rental History:</span>
+                        <span className="font-medium">
+                          {tenant.previousRentals} previous
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Member Since:</span>
+                        <span className="font-medium">{tenant.joinedDate}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Last Active:</span>
+                        <span className="font-medium">{tenant.lastActive}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 text-sm">
+                      <p className="text-gray-600">{tenant.bio}</p>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t">
+                      {showContactInfo.includes(tenant.id) ?
+                        <div className="space-y-4">
+                          <div className="p-3 bg-blue-50 rounded-md">
+                            <div className="font-medium text-[#2C5282] mb-1">
+                              Contact Information
+                            </div>
+                            <div className="text-sm">{tenant.contactInfo}</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              className="flex-1"
+                              onClick={() => sendMessage(tenant.id)}
+                            >
+                              Send Property Details
+                            </Button>
+                          </div>
+                        </div>
+                      : <div className="flex gap-2">
+                          <Button
+                            className="flex-1"
+                            variant="outline"
+                            onClick={() => handleContactReveal(tenant.id)}
+                          >
+                            Reveal Contact (1 Credit)
+                          </Button>
+                          <Button className="flex-1" variant="secondary">
+                            Save Tenant
                           </Button>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <Button 
-                          className="flex-1" 
-                          variant="outline"
-                          onClick={() => handleContactReveal(tenant.id)}
-                        >
-                          Reveal Contact (1 Credit)
-                        </Button>
-                        <Button 
-                          className="flex-1"
-                          variant="secondary"
-                        >
-                          Save Tenant
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            
-            {activeTab === 'saved' && (
+                      }
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+            {activeTab === "saved" && (
               <div className="col-span-full bg-white rounded-lg p-8 text-center border">
                 <CheckCircle className="h-12 w-12 mx-auto text-gray-400 mb-3" />
                 <h3 className="text-lg font-medium">No saved tenants yet</h3>
-                <p className="text-gray-500 mt-1">Save tenants you're interested in for quick access later.</p>
+                <p className="text-gray-500 mt-1">
+                  Save tenants you{`'`}re interested in for quick access later.
+                </p>
               </div>
             )}
           </div>
@@ -487,14 +548,19 @@ export default function TenantsPage() {
         <div className="flex items-start">
           <Info className="h-6 w-6 text-[#2C5282] mr-4 flex-shrink-0 mt-1" />
           <div>
-            <h3 className="text-lg font-medium text-[#2C5282] mb-2">Our Tenant Verification Process</h3>
+            <h3 className="text-lg font-medium text-[#2C5282] mb-2">
+              Our Tenant Verification Process
+            </h3>
             <p className="text-gray-700 mb-4">
-              All tenants on our platform undergo a rigorous verification process to ensure they are reliable and financially stable.
+              All tenants on our platform undergo a rigorous verification
+              process to ensure they are reliable and financially stable.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white p-4 rounded-md">
                 <h4 className="font-medium text-[#2C5282] mb-2 flex items-center">
-                  <Badge className="bg-[#CD7F32] text-amber-900 mr-2">Bronze</Badge>
+                  <Badge className="bg-[#CD7F32] text-amber-900 mr-2">
+                    Bronze
+                  </Badge>
                   Basic Verification
                 </h4>
                 <ul className="text-sm space-y-2">
@@ -512,10 +578,12 @@ export default function TenantsPage() {
                   </li>
                 </ul>
               </div>
-              
+
               <div className="bg-white p-4 rounded-md">
                 <h4 className="font-medium text-[#2C5282] mb-2 flex items-center">
-                  <Badge className="bg-[#C0C0C0] text-gray-800 mr-2">Silver</Badge>
+                  <Badge className="bg-[#C0C0C0] text-gray-800 mr-2">
+                    Silver
+                  </Badge>
                   ID Verified
                 </h4>
                 <ul className="text-sm space-y-2">
@@ -537,10 +605,12 @@ export default function TenantsPage() {
                   </li>
                 </ul>
               </div>
-              
+
               <div className="bg-white p-4 rounded-md">
                 <h4 className="font-medium text-[#2C5282] mb-2 flex items-center">
-                  <Badge className="bg-[#FFD700] text-amber-800 mr-2">Gold</Badge>
+                  <Badge className="bg-[#FFD700] text-amber-800 mr-2">
+                    Gold
+                  </Badge>
                   Fully Verified
                 </h4>
                 <ul className="text-sm space-y-2">

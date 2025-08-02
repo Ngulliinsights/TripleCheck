@@ -12,6 +12,12 @@
 ├── uploads/                # File upload storage (documents, images, processed)
 ├── temp-files/             # Analysis reports and temporary files
 ├── test-results/           # Test execution results and reports
+├── migrations/             # Database migration files
+├── reports/                # Generated analysis and performance reports
+├── playwright-report/      # Playwright test execution reports
+├── .kiro/                  # Kiro IDE configuration and steering files
+├── .cache/                 # Build and development cache
+├── .config/                # Tool configurations
 └── [Configuration files]   # package.json, tsconfig.json, vite.config.ts, etc.
 ```
 
@@ -23,17 +29,35 @@ Each business domain follows a consistent structure:
 ```
 src/
 ├── shared/                 # Cross-domain utilities and components
-│   ├── components/         # Reusable UI components (50+ design system components)
-│   │   ├── layout/         # Layout components (AppLayout, Navigation, Footer)
-│   │   └── ui/             # Design system (button, form, input, dialog, table, etc.)
-│   ├── hooks/              # Custom React hooks (useDebounce, useGeolocation, etc.)
+│   ├── components/         # Reusable UI components (60+ design system components)
+│   │   ├── layout/         # Layout components (AppLayout, Navigation, Footer, MobileNav)
+│   │   ├── ui/             # Complete design system (40+ components: button, form, input, dialog, table, etc.)
+│   │   ├── navigation/     # Navigation components (BreadcrumbNavigation, ContextualSidebar, etc.)
+│   │   ├── forms/          # Form components (FileUpload, FormField)
+│   │   ├── hero/           # Hero section components (ConversionHero, EnhancedHero)
+│   │   ├── blog/           # Blog components (BlogPostCard, BlogPostSkeleton)
+│   │   ├── fallbacks/      # Error fallback components
+│   │   └── examples/       # Component examples and demos
+│   ├── hooks/              # Custom React hooks (useDebounce, useGeolocation, useSafeQuery, etc.)
 │   ├── pages/              # Marketing pages (Home, Features, Community, etc.)
 │   ├── services/           # API client and shared services
-│   ├── utils/              # Utility functions and validation
+│   ├── utils/              # Utility functions and validation (api-client, performance utils)
 │   ├── types/              # Shared TypeScript types
 │   ├── styles/             # Global styles and CSS
+│   ├── config/             # Configuration files
+│   ├── constants/          # Application constants
+│   ├── lib/                # Third-party library configurations
+│   ├── test-utils/         # Testing utilities
 │   └── schema.ts           # Database schema (Drizzle ORM)
 ├── property/               # Property management domain
+│   ├── components/         # Property-specific components
+│   ├── contexts/           # Property contexts
+│   ├── hooks/              # Property hooks
+│   ├── pages/              # Property pages
+│   ├── services/           # Property services
+│   ├── types/              # Property types
+│   ├── utils/              # Property utilities
+│   └── tests/              # Property tests
 ├── trust/                  # Trust scoring and fraud detection
 ├── user/                   # User management and profiles
 ├── auth/                   # Authentication and authorization
@@ -45,19 +69,29 @@ src/
 │   ├── api/                # API client configuration and request management
 │   ├── routing/            # Route management and preloading
 │   ├── monitoring/         # Performance monitoring and web vitals
-│   └── hooks/              # Infrastructure hooks (useSafeEffect, useCoordinatedState)
+│   ├── hooks/              # Infrastructure hooks (useSafeEffect, useCoordinatedState)
+│   ├── cache/              # Client-side caching
+│   ├── realtime/           # Real-time communication
+│   ├── security/           # Security utilities
+│   ├── service-worker/     # PWA service worker
+│   ├── services/           # Infrastructure services
+│   ├── storage/            # Storage utilities
+│   └── utils/              # Infrastructure utilities
 ├── app/                    # Application root and routing
 │   ├── App.tsx             # Main application component
 │   ├── router.tsx          # Route configuration
 │   ├── providers.tsx       # Context providers setup
 │   ├── lazy-routes.tsx     # Code splitting implementation
-│   └── error-boundary.tsx  # Global error handling
+│   ├── error-boundary.tsx  # Global error handling
+│   └── __tests__/          # App-level tests
 ├── types/                  # Global type definitions
 │   ├── google-maps.d.ts    # Google Maps type definitions
-│   └── land-verification.ts # Land verification types
+│   ├── land-verification.ts # Land verification types
+│   └── react-window-infinite-loader.d.ts # Third-party type definitions
 ├── utils/                  # Performance utilities
 │   ├── bundle-optimizer.ts # Bundle optimization
 │   └── performance-optimizer.ts # Performance optimization
+├── lib/                    # Empty directory for future library integrations
 └── main.tsx                # React application entry point
 ```
 
@@ -87,6 +121,8 @@ server/
 ├── app.ts                  # Express application configuration
 ├── index.ts                # Server bootstrap
 ├── vite.ts                 # Vite integration for development
+├── test-db-connection.ts   # Database connection testing
+└── test-integration.ts     # Integration testing utilities
 │
 ├── CORE SERVICES/
 │   ├── land-verification/  # Core land verification engine
@@ -97,26 +133,49 @@ server/
 │   │   ├── ExpertCoordinationService.ts # Expert network coordination
 │   │   ├── MonitoringService.ts # System monitoring
 │   │   ├── ReportingService.ts # Report generation
+│   │   ├── DocumentIntegration.ts # Document integration layer
+│   │   ├── ServiceFactory.ts # Service factory pattern
+│   │   ├── routes.ts       # Land verification routes
+│   │   ├── __tests__/      # Comprehensive test suite
 │   │   ├── performance/    # Performance optimization layer
 │   │   ├── security/       # Security and access control
 │   │   ├── error-handling/ # Error management
-│   │   └── monitoring/     # Metrics and alerting
+│   │   ├── errors/         # Error definitions
+│   │   ├── monitoring/     # Metrics and alerting
+│   │   ├── middleware/     # Verification middleware
+│   │   ├── cache/          # Caching layer
+│   │   ├── audit/          # Audit logging
+│   │   ├── health/         # Health checks
+│   │   ├── resilience/     # Resilience patterns
+│   │   └── utils/          # Utility functions
 │   │
 │   ├── fraud-detection/    # Advanced fraud detection system
 │   │   ├── core/           # Fraud detection engine
 │   │   ├── analytics/      # ML analytics and network analysis
 │   │   ├── services/       # Case management and compliance
-│   │   └── api/            # Fraud detection API
+│   │   ├── api/            # Fraud detection API
+│   │   ├── routes/         # Fraud detection routes
+│   │   ├── tests/          # Fraud detection tests
+│   │   ├── utils/          # Fraud detection utilities
+│   │   ├── integrate-real-data.ts # Real data integration
+│   │   ├── test-system.js  # System testing
+│   │   └── validate-backend.js # Backend validation
 │   │
 │   ├── document-auth/      # Document authentication system
 │   │   ├── core/           # Document authentication engine
 │   │   ├── analyzers/      # Document analysis (visual, signature, ML)
-│   │   └── DocumentAuthService.ts # Main service
+│   │   ├── types/          # Document authentication types
+│   │   ├── DocumentAuthService.ts # Main service
+│   │   ├── routes.ts       # Document authentication routes
+│   │   └── test-document-auth.ts # Testing utilities
 │   │
 │   ├── ai/                 # AI and machine learning services
+│   │   ├── ai.controller.ts # AI API endpoints
 │   │   ├── ai.service.ts   # AI service coordination
 │   │   ├── community-trust-ai.ts # Community trust algorithms
+│   │   ├── community-trust-ai-root.ts # Root AI service
 │   │   ├── ml-training.ts  # Model training pipelines
+│   │   ├── ml-training-root.ts # Root ML training
 │   │   └── storage.ts      # AI model storage
 │   │
 │   └── blockchain/         # Blockchain integration
@@ -164,7 +223,8 @@ server/
 │   │   │   └── integration.ts # Service integration layer
 │   │   ├── email/          # Email service implementation
 │   │   ├── storage/        # File storage abstraction
-│   │   └── monitoring/     # Logging and monitoring
+│   │   ├── monitoring/     # Logging and monitoring
+│   │   └── cache/          # Infrastructure caching
 │   │
 │   ├── cache/              # Redis caching layer
 │   │   └── CacheService.ts # Caching implementation
@@ -172,22 +232,47 @@ server/
 │   ├── security/           # Security hardening
 │   │   └── SecurityHardening.ts # Security policies
 │   │
+│   ├── monitoring/         # System monitoring
+│   │   ├── HealthMonitor.ts # Health monitoring
+│   │   └── StructuredLogger.ts # Structured logging
+│   │
+│   ├── config/             # Configuration management
+│   │   └── development.ts  # Development configuration
+│   │
 │   └── middleware/         # Express middleware
 │       ├── auth.middleware.ts # Authentication middleware
+│       ├── auth.ts         # Auth utilities
 │       ├── error.middleware.ts # Error handling
+│       ├── error-handler.ts # Error handler utilities
 │       ├── logging.middleware.ts # Request logging
 │       ├── validation.middleware.ts # Input validation
-│       └── centralized-error-handler.ts # Global error handling
+│       ├── cache.middleware.ts # Cache middleware
+│       ├── data-validation.ts # Data validation
+│       ├── centralized-error-handler.ts # Global error handling
+│       └── __tests__/      # Middleware tests
 │
 ├── ROUTING & API/
 │   ├── routes/             # API route definitions
 │   │   ├── index.ts        # Route registry
 │   │   ├── PropertyRoutes.ts # Property routes
 │   │   ├── AuthRoutes.ts   # Authentication routes
+│   │   ├── auth.ts         # Auth route utilities
 │   │   ├── verification.routes.ts # Land verification routes
 │   │   ├── reviews.routes.ts # Review system routes
 │   │   ├── ai-routes.ts    # AI service routes
-│   │   └── community-trust-routes.ts # Community trust routes
+│   │   ├── ml-routes.ts    # Machine learning routes
+│   │   ├── community-trust-routes.ts # Community trust routes
+│   │   ├── community-intelligence.routes.ts # Community intelligence
+│   │   ├── community-resources.routes.ts # Community resources
+│   │   ├── document-verification.routes.ts # Document verification
+│   │   ├── fraud-intelligence.routes.ts # Fraud intelligence
+│   │   ├── secure-document-routes.ts # Secure document handling
+│   │   ├── email-routes.ts # Email service routes
+│   │   ├── payments.ts     # Payment processing routes
+│   │   ├── users.routes.ts # User management routes
+│   │   ├── seed.ts         # Database seeding routes
+│   │   ├── demo-auth-routes.ts # Demo authentication
+│   │   └── __tests__/      # Route tests
 │   │
 │   └── services/           # Business services
 │       ├── PropertyService.ts # Property management
@@ -197,7 +282,13 @@ server/
 │       ├── UserService.ts  # User management
 │       ├── email-service.ts # Email communication
 │       ├── mpesa-service.ts # Kenyan payment integration
-│       └── notification-service.ts # Multi-channel notifications
+│       ├── notification-service.ts # Multi-channel notifications
+│       ├── ai-service.ts   # AI service coordination
+│       ├── CommunityIntelligenceService.ts # Community intelligence
+│       ├── CommunityResourcesService.ts # Community resources
+│       ├── DocumentAuthenticationService.ts # Document authentication
+│       ├── FraudIntelligenceService.ts # Fraud intelligence
+│       └── __tests__/      # Service tests
 │
 ├── SHARED RESOURCES/
 │   ├── types/              # TypeScript type definitions
@@ -222,19 +313,60 @@ server/
     ├── performance/        # Performance tests
     ├── security/           # Security tests
     ├── e2e/                # End-to-end tests
-    └── [Various test files] # Specialized test suites
+    ├── auth/               # Authentication tests
+    ├── ai-integration-validation.test.ts # AI integration tests
+    ├── api-validation.test.ts # API validation tests
+    ├── application-validation.test.ts # Application tests
+    ├── backend-api-comprehensive.test.ts # Backend API tests
+    ├── backward-compatibility.test.ts # Compatibility tests
+    ├── compatibility-validation.test.ts # Validation tests
+    ├── comprehensive-validation.test.ts # Full system tests
+    ├── file-upload-validation.test.ts # File upload tests
+    ├── load-test-validation.ts # Load testing
+    ├── performance-validation.test.ts # Performance validation
+    ├── quick-validation.test.ts # Quick validation suite
+    ├── setup.ts            # Test setup utilities
+    ├── test-setup.ts       # Additional test setup
+    ├── validate-api-fixes.test.ts # API fix validation
+    ├── validate-system-integration.ts # System integration
+    └── [Various specialized test files] # Domain-specific test suites
 ```
 
 ## Configuration Files
 
-- `package.json` - Dependencies and scripts
+### Core Configuration
+- `package.json` - Dependencies and scripts (200+ npm scripts)
 - `tsconfig.json` - TypeScript configuration
+- `tsconfig.deploy.json` - Deployment-specific TypeScript config
 - `vite.config.ts` - Frontend build configuration
 - `drizzle.config.ts` - Database ORM configuration
 - `tailwind.config.ts` - CSS framework configuration
+- `postcss.config.js` - PostCSS configuration
 - `eslint.config.js` - Code linting rules
+
+### Testing Configuration
 - `playwright.config.ts` - E2E testing configuration
-- `vercel.json` - Deployment configuration
+- `vitest.config.ts` - Unit testing configuration
+- `vitest.workspace.ts` - Vitest workspace configuration
+- `vitest.chunk-[1-19].config.ts` - Chunked test configurations for parallel execution
+
+### Deployment Configuration
+- `vercel.json` - Vercel deployment configuration
+- `render.yaml` - Render deployment configuration
+- `railway.json` - Railway deployment configuration
+- `firebase.json` - Firebase deployment configuration
+
+### Environment Configuration
+- `.env` - Environment variables
+- `.env.example` - Environment variable template
+- `.gitignore` - Git ignore rules
+- `.vercelignore` - Vercel ignore rules
+- `.snyk` - Snyk security configuration
+
+### Development Configuration
+- `index.html` - HTML entry point
+- `theme.json` - Theme configuration
+- `desktop.ini` - Windows desktop configuration
 
 ## Key Conventions
 
@@ -317,17 +449,36 @@ scripts/
 │   ├── fraud-simulator.py  # Realistic fraud scenarios
 │   ├── property-generator.py # Kenyan property data
 │   ├── user-generator.py   # User profile generation
-│   └── [Generated datasets]
+│   ├── land-verification-generator.py # Land verification test data
+│   ├── community-insights-generator.py # Community intelligence data
+│   ├── fraud-reports-generator.py # Fraud analysis reports
+│   ├── checkpoint-manager.ts # Data generation checkpoints
+│   ├── integrate-data.ts   # Data integration utilities
+│   └── [Generated datasets] # JSON datasets and statistics
 ├── data-migration/         # Database migration utilities
 │   ├── migrate-existing-properties.ts # Legacy data migration
 │   ├── seed-kenya-properties.ts # Kenya-specific seeding
 │   ├── run-migration.ts    # Migration execution
-│   └── validate-migration.ts # Migration validation
+│   ├── validate-migration.ts # Migration validation
+│   ├── robust-batch-loader.ts # Robust data loading with error handling
+│   ├── database-manager.ts # Database management utilities
+│   ├── quality-gates.ts    # Data quality validation
+│   ├── rollback-migration.ts # Migration rollback utilities
+│   └── test-migration.ts   # Migration testing
 ├── deployment/             # Deployment automation
 │   ├── docker-compose.land-verification.yml # Container orchestration
 │   ├── kubernetes/         # Kubernetes deployment configs
 │   ├── grafana/           # Monitoring dashboard setup
-│   └── setup-monitoring.ts # Monitoring infrastructure
+│   ├── setup-monitoring.ts # Monitoring infrastructure
+│   ├── deployment-tests.ts # Deployment validation
+│   └── validate-deployment.ts # Deployment health checks
+├── debug/                  # Debugging utilities
+│   ├── stop-infinite-queries.ts # Query debugging
+│   └── test-server-start.ts # Server startup testing
+├── performance/            # Performance testing
+│   └── api-performance-test.ts # API performance validation
+├── security/               # Security utilities
+│   └── bug-categorization.ts # Security bug analysis
 └── [Various utility scripts] # Database setup, testing, maintenance
 ```
 
@@ -404,4 +555,48 @@ scripts/
 - **Quality Gates**: Code quality, security, and performance thresholds
 - **Monitoring**: Comprehensive application and infrastructure monitoring
 
-This structure supports a comprehensive land verification system with robust testing, monitoring, and deployment capabilities specifically designed for the Kenyan market while maintaining scalability and security standards.
+### Kiro IDE Integration
+
+#### Kiro Configuration (`.kiro/`)
+- **Steering Files**: Context and guidance documents in `.kiro/steering/`
+- **Settings**: IDE configuration in `.kiro/settings/`
+- **Specs**: Feature specifications and implementation plans
+- **Hooks**: Automated agent execution triggers
+
+#### Analysis & Reports (`temp-files/`)
+- **Code Analysis Reports**: Automated code quality analysis
+- **Data Generation Reports**: Data pipeline and generation reports
+- **Project Sitemaps**: Structural analysis and mapping
+- **Performance Reports**: System performance analysis
+- **Implementation Summaries**: Feature implementation documentation
+
+### Development Workflow Enhancements
+
+#### Chunked Testing Strategy
+- **Parallel Test Execution**: 19 chunked Vitest configurations for faster testing
+- **Domain-Specific Tests**: Tests organized by business domain
+- **Integration Test Suites**: Comprehensive integration testing across services
+- **Performance Validation**: Dedicated performance testing infrastructure
+
+#### Advanced Debugging & Diagnostics
+- **Debug Applications**: Multiple debug entry points (`debug-app.tsx`, `diagnostic-app.tsx`)
+- **Simple Test Apps**: Minimal test applications for isolated testing
+- **Hook Testing**: Dedicated hook testing utilities (`test-safe-hooks.tsx`)
+- **Router Testing**: Router migration and testing utilities
+
+#### Comprehensive Script Ecosystem
+- **200+ NPM Scripts**: Extensive automation covering all aspects of development
+- **Data Pipeline Scripts**: Robust data generation and migration utilities
+- **Security Scripts**: Automated security scanning and vulnerability analysis
+- **Performance Scripts**: Load testing and performance optimization
+- **Deployment Scripts**: Multi-platform deployment automation
+
+This evolved structure supports a comprehensive land verification system with:
+- **Advanced Testing Infrastructure**: Chunked parallel testing, comprehensive validation suites
+- **Robust Development Tools**: Debug applications, diagnostic utilities, performance monitoring
+- **Extensive Automation**: 200+ scripts covering all development lifecycle aspects
+- **Kiro IDE Integration**: Native support for AI-assisted development workflows
+- **Production-Ready Architecture**: Multi-platform deployment, monitoring, and security hardening
+- **Kenya-Specific Localization**: Tailored for Kenyan land verification requirements
+
+The structure maintains scalability and security standards while providing extensive tooling for efficient development and reliable deployment.

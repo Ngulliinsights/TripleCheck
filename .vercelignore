@@ -1,52 +1,69 @@
-# Vercel ignore file
-node_modules
+# Development files
 .env
 .env.local
-.env.*.local
-*.log
-.DS_Store
-.vscode
-.git
-.gitignore
-README.md
+.env.development
+.env.test
+
+# Source files (not needed for static deployment)
+src/
+server/
+scripts/
+tests/
 docs/
-scripts/data-generation/
-scripts/test-*
-scripts/load-*
-scripts/demo-*
-scripts/stream-*
-scripts/process-*
-scripts/monitor-*
-scripts/integrity-*
-scripts/robust-*
-scripts/comprehensive-*
-scripts/integrated-*
-scripts/self-*
-scripts/unified-*
-scripts/simple-*
-scripts/setup-*
-scripts/reset-*
-scripts/fix-*
-scripts/check-*
-scripts/complete-*
-scripts/migrate-*
-scripts/seed-*
-scripts/run-*
-scripts/quality-*
-scripts/quick-*
-scripts/api-*
-scripts/checkpoint-*
-scripts/database-*
-scripts/inspect-*
-scripts/logger.js
-scripts/load-test.js
-temp-files/
+reports/
 uploads/
+temp-files/
+test-results/
+playwright-report/
+migrations/
+
+# Development dependencies
+node_modules/
 .cache/
+.vscode/
+.git/
+.github/
 .husky/
-migrations/meta/
-*.test.ts
-*.test.js
-__tests__/
+
+# Build artifacts not needed
+*.log
+*.tsbuildinfo
 coverage/
-.turbo/
+.nyc_output/
+
+# Large unnecessary files
+*.md
+!README.md
+desktop.ini
+nul
+
+# Test configurations
+vitest.*.config.ts
+playwright.config.ts
+*.test.*
+*.spec.*
+
+# Development configs
+tsconfig.*.json
+!tsconfig.json
+eslint.config.js
+.snyk
+
+# Python virtual environment
+.venv/
+__pycache__/
+
+# Temporary files
+*.tmp
+*.temp
+*-temp.*
+
+# Large asset directories that aren't needed
+srclib/
+srcsharedtest-utils/
+config/
+
+# Keep only essential files for deployment
+!dist/
+!package.json
+!vercel.json

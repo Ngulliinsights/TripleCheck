@@ -453,7 +453,7 @@ export default function DocumentAuth(): JSX.Element {
                 Verify Your Documents with AI
               </h2>
               <p className="text-muted-foreground mb-8 text-lg">
-                Upload your documents and I&apos;ll analyze them for
+                Upload your documents and I'll analyze them for
                 authenticity using advanced AI detection.
               </p>
 

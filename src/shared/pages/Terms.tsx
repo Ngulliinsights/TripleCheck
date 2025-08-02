@@ -14,7 +14,7 @@ export default function Terms() {
             <h1 className="text-4xl font-bold text-gray-900">Terms of Service</h1>
           </div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            These terms govern your use of TripleCheck's property verification platform and services.
+            These terms govern your use of TripleCheck&apos;s property verification platform and services.
           </p>
           <p className="text-sm text-gray-500 mt-2">Last updated: December 2024</p>
         </div>

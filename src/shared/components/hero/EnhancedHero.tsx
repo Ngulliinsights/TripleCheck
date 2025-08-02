@@ -1,68 +1,43 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Search,
-  MapPin,
-  Play,
-  Star,
-  Shield,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Users,
-  TrendingUp,
-  Award,
-  Home,
-  Building,
   Globe,
+  MapPin,
+  Play,
+  Search,
+  Shield,
+  Users,
 } from "lucide-react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+
+import { HERO_VARIANTS } from "../../config/assets";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Card, CardContent } from "../ui/card";
-import { HERO_VARIANTS } from "../../config/assets";
 
-// Type declarations for Geolocation API
-declare global {
-  interface GeolocationCoordinates {
-    readonly accuracy: number;
-    readonly altitude: number | null;
-    readonly altitudeAccuracy: number | null;
-    readonly heading: number | null;
-    readonly latitude: number;
-    readonly longitude: number;
-    readonly speed: number | null;
-  }
-
-  interface GeolocationPosition {
-    readonly coords: GeolocationCoordinates;
-    readonly timestamp: number;
-  }
-}
-
-// Enhanced trust indicators with African focus
+// Simplified types
 interface TrustIndicator {
-  readonly label: string;
-  readonly value: string;
-  readonly icon: React.ReactNode;
-  readonly description?: string;
+  label: string;
+  value: string;
+  description?: string;
 }
 
 interface CTAButton {
-  readonly text: string;
-  readonly action: string;
-  readonly icon: React.ReactNode;
+  text: string;
+  action: string;
+  icon: React.ReactNode;
 }
 
 interface HeroSlide {
-  readonly id: string;
-  readonly title: string;
-  readonly subtitle: string;
-  readonly backgroundImage: string;
-  readonly fallbackImage?: string;
-  readonly primaryCta: CTAButton;
-  readonly secondaryCta: CTAButton;
-  readonly theme: "trust" | "premium" | "warm" | "professional";
-  readonly valueProposition: string;
-  readonly trustIndicators: readonly TrustIndicator[];
+  id: string;
+  title: string;
+  subtitle: string;
+  backgroundImage: string;
+  primaryCta: CTAButton;
+  secondaryCta: CTAButton;
+  theme: "trust" | "premium" | "warm" | "professional";
+  valueProposition: string;
+  trustIndicators: TrustIndicator[];
 }
 
 interface EnhancedHeroProps {
@@ -72,148 +47,131 @@ interface EnhancedHeroProps {
   readonly className?: string;
 }
 
-// Enhanced hero slides with African property focus
-const ENHANCED_HERO_SLIDES: readonly HeroSlide[] = [
-  {
-    id: "african-property-trust",
-    title: "Verified. Transparent. Trusted.",
-    subtitle:
-      "Africa's most comprehensive property verification platform protecting your real estate investments across 54 countries.",
-    backgroundImage: HERO_VARIANTS.A.backgroundImage,
-    fallbackImage: HERO_VARIANTS.A.fallbackImage,
+// Optimized hero slides - moved icons to functions to reduce memory
+const getSlideData = (index: number): HeroSlide => {
+  const slides = [
+    {
+      id: "african-property-trust",
+      title: "Verified. Transparent. Trusted.",
+      subtitle:
+        "Africa's most comprehensive property verification platform protecting your real estate investments across 54 countries.",
+      backgroundImage: HERO_VARIANTS.A.backgroundImage,
+      theme: "trust" as const,
+      valueProposition: "Advanced fraud detection across all African markets",
+      primaryCta: { text: "Verify Property Now", action: "start_verification" },
+      secondaryCta: { text: "See How It Works", action: "watch_demo" },
+      trustIndicators: [
+        {
+          label: "African Countries",
+          value: "54+",
+          description: "Complete coverage across Africa",
+        },
+        {
+          label: "Properties Verified",
+          value: "250K+",
+          description: "Verified properties across Africa",
+        },
+        {
+          label: "Fraud Cases Prevented",
+          value: "15K+",
+          description: "Protecting African investors",
+        },
+        {
+          label: "Success Rate",
+          value: "99.8%",
+          description: "Verification accuracy",
+        },
+      ],
+    },
+    {
+      id: "premium-african-intelligence",
+      title: "Premium African Property Intelligence",
+      subtitle:
+        "Access exclusive market insights and connect with verified real estate professionals across Africa's fastest-growing markets.",
+      backgroundImage: HERO_VARIANTS.B.backgroundImage,
+      theme: "premium" as const,
+      valueProposition:
+        "Exclusive insights from Africa's top property professionals",
+      primaryCta: { text: "Explore Premium", action: "premium_access" },
+      secondaryCta: { text: "View Market Data", action: "market_insights" },
+      trustIndicators: [
+        {
+          label: "Market Reports",
+          value: "5K+",
+          description: "African market analysis",
+        },
+        {
+          label: "Verified Agents",
+          value: "2.5K+",
+          description: "Trusted African professionals",
+        },
+        {
+          label: "Premium Listings",
+          value: "50K+",
+          description: "Exclusive African properties",
+        },
+        {
+          label: "Cities Covered",
+          value: "200+",
+          description: "Major African cities",
+        },
+      ],
+    },
+    {
+      id: "african-home-finder",
+      title: "Find Your Perfect African Home",
+      subtitle:
+        "Discover authentic properties with confidence through our verified listing network spanning from Cairo to Cape Town.",
+      backgroundImage: HERO_VARIANTS.C.backgroundImage,
+      theme: "warm" as const,
+      valueProposition: "Curated listings from trusted African sources",
+      primaryCta: { text: "Browse Properties", action: "search_properties" },
+      secondaryCta: {
+        text: "Get Personalized Matches",
+        action: "personalized_search",
+      },
+      trustIndicators: [
+        {
+          label: "Active Listings",
+          value: "125K+",
+          description: "Properties across Africa",
+        },
+        {
+          label: "Happy Tenants",
+          value: "75K+",
+          description: "Satisfied African residents",
+        },
+        {
+          label: "African Cities",
+          value: "200+",
+          description: "From Lagos to Nairobi",
+        },
+        {
+          label: "Success Rate",
+          value: "96%",
+          description: "Successful placements",
+        },
+      ],
+    },
+  ];
+
+  const slide = slides[index] || slides[0]!;
+  return {
+    ...slide,
     primaryCta: {
-      text: "Verify Property Now",
-      action: "start_verification",
+      ...slide.primaryCta,
       icon: <Shield className="w-5 h-5" />,
     },
     secondaryCta: {
-      text: "See How It Works",
-      action: "watch_demo",
+      ...slide.secondaryCta,
       icon: <Play className="w-5 h-5" />,
     },
-    theme: "trust",
-    valueProposition: "Advanced fraud detection across all African markets",
-    trustIndicators: [
-      {
-        label: "African Countries",
-        value: "54+",
-        icon: <Globe className="w-5 h-5" />,
-        description: "Complete coverage across Africa",
-      },
-      {
-        label: "Properties Verified",
-        value: "250K+",
-        icon: <Shield className="w-5 h-5" />,
-        description: "Verified properties across Africa",
-      },
-      {
-        label: "Fraud Cases Prevented",
-        value: "15K+",
-        icon: <CheckCircle className="w-5 h-5" />,
-        description: "Protecting African investors",
-      },
-      {
-        label: "Success Rate",
-        value: "99.8%",
-        icon: <Star className="w-5 h-5" />,
-        description: "Verification accuracy",
-      },
-    ] as const,
-  },
-  {
-    id: "premium-african-intelligence",
-    title: "Premium African Property Intelligence",
-    subtitle:
-      "Access exclusive market insights and connect with verified real estate professionals across Africa's fastest-growing markets.",
-    backgroundImage: HERO_VARIANTS.B.backgroundImage,
-    fallbackImage: HERO_VARIANTS.B.fallbackImage,
-    primaryCta: {
-      text: "Explore Premium",
-      action: "premium_access",
-      icon: <Award className="w-5 h-5" />,
-    },
-    secondaryCta: {
-      text: "View Market Data",
-      action: "market_insights",
-      icon: <TrendingUp className="w-5 h-5" />,
-    },
-    theme: "premium",
-    valueProposition:
-      "Exclusive insights from Africa's top property professionals",
-    trustIndicators: [
-      {
-        label: "Market Reports",
-        value: "5K+",
-        icon: <TrendingUp className="w-5 h-5" />,
-        description: "African market analysis",
-      },
-      {
-        label: "Verified Agents",
-        value: "2.5K+",
-        icon: <Users className="w-5 h-5" />,
-        description: "Trusted African professionals",
-      },
-      {
-        label: "Premium Listings",
-        value: "50K+",
-        icon: <Award className="w-5 h-5" />,
-        description: "Exclusive African properties",
-      },
-      {
-        label: "Cities Covered",
-        value: "200+",
-        icon: <Building className="w-5 h-5" />,
-        description: "Major African cities",
-      },
-    ] as const,
-  },
-  {
-    id: "african-home-finder",
-    title: "Find Your Perfect African Home",
-    subtitle:
-      "Discover authentic properties with confidence through our verified listing network spanning from Cairo to Cape Town.",
-    backgroundImage: HERO_VARIANTS.C.backgroundImage,
-    fallbackImage: HERO_VARIANTS.C.fallbackImage,
-    primaryCta: {
-      text: "Browse Properties",
-      action: "search_properties",
-      icon: <Home className="w-5 h-5" />,
-    },
-    secondaryCta: {
-      text: "Get Personalized Matches",
-      action: "personalized_search",
-      icon: <Star className="w-5 h-5" />,
-    },
-    theme: "warm",
-    valueProposition: "Curated listings from trusted African sources",
-    trustIndicators: [
-      {
-        label: "Active Listings",
-        value: "125K+",
-        icon: <Home className="w-5 h-5" />,
-        description: "Properties across Africa",
-      },
-      {
-        label: "Happy Tenants",
-        value: "75K+",
-        icon: <CheckCircle className="w-5 h-5" />,
-        description: "Satisfied African residents",
-      },
-      {
-        label: "African Cities",
-        value: "200+",
-        icon: <MapPin className="w-5 h-5" />,
-        description: "From Lagos to Nairobi",
-      },
-      {
-        label: "Success Rate",
-        value: "96%",
-        icon: <Star className="w-5 h-5" />,
-        description: "Successful placements",
-      },
-    ] as const,
-  },
-] as const;
+    trustIndicators: slide.trustIndicators.map((indicator) => ({
+      ...indicator,
+      icon: <Globe className="w-5 h-5" />,
+    })),
+  } as HeroSlide;
+};
 
 // Theme configurations with African-inspired colors
 const THEME_CONFIGS = {
@@ -262,9 +220,13 @@ export function EnhancedHero({
   const [searchLocation, setSearchLocation] = useState<string>("");
   const [, setShowSuggestions] = useState<boolean>(false);
   const [isLocationEnabled, setIsLocationEnabled] = useState<boolean>(false);
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [selectedPropertyType, setSelectedPropertyType] = useState<string>("");
+  const [selectedVerificationStatus, setSelectedVerificationStatus] =
+    useState<string>("");
 
   const currentSlideData = useMemo<HeroSlide>(
-    () => ENHANCED_HERO_SLIDES[currentSlide] || ENHANCED_HERO_SLIDES[0],
+    () => getSlideData(currentSlide),
     [currentSlide]
   );
 
@@ -273,41 +235,23 @@ export function EnhancedHero({
     [currentSlideData.theme]
   );
 
-  // Enhanced geolocation with African cities
+  // Simplified geolocation
   useEffect(() => {
-    if (!navigator.geolocation) return;
-
-    const handleLocationSuccess = (
-      _position: globalThis.GeolocationPosition
-    ): void => {
-      setIsLocationEnabled(true);
-      // You could implement reverse geocoding here to get African city names
-      setSearchLocation("Current Location");
-    };
-
-    const handleLocationError = (): void => {
-      setIsLocationEnabled(false);
-    };
-
-    navigator.geolocation.getCurrentPosition(
-      handleLocationSuccess,
-      handleLocationError,
-      {
-        timeout: 5000,
-        enableHighAccuracy: false,
-        maximumAge: 300000,
-      }
-    );
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => setIsLocationEnabled(true),
+        () => setIsLocationEnabled(false),
+        { timeout: 3000, maximumAge: 300000 }
+      );
+    }
   }, []);
 
-  // Auto-play carousel
+  // Auto-play carousel - optimized
   useEffect(() => {
     if (!isAutoPlaying) return;
 
     const intervalId = setInterval(() => {
-      setCurrentSlide(
-        (prevSlide) => (prevSlide + 1) % ENHANCED_HERO_SLIDES.length
-      );
+      setCurrentSlide((prevSlide) => (prevSlide + 1) % 3);
     }, SLIDE_DURATION);
 
     return () => clearInterval(intervalId);
@@ -320,14 +264,12 @@ export function EnhancedHero({
   }, []);
 
   const navigateNext = useCallback((): void => {
-    const nextIndex = (currentSlide + 1) % ENHANCED_HERO_SLIDES.length;
+    const nextIndex = (currentSlide + 1) % 3;
     navigateToSlide(nextIndex);
   }, [currentSlide, navigateToSlide]);
 
   const navigatePrevious = useCallback((): void => {
-    const prevIndex =
-      (currentSlide - 1 + ENHANCED_HERO_SLIDES.length) %
-      ENHANCED_HERO_SLIDES.length;
+    const prevIndex = (currentSlide - 1 + 3) % 3;
     navigateToSlide(prevIndex);
   }, [currentSlide, navigateToSlide]);
 
@@ -335,14 +277,29 @@ export function EnhancedHero({
     (event: React.FormEvent): void => {
       event.preventDefault();
       const trimmedQuery = searchQuery.trim();
-      if (!trimmedQuery) return;
 
-      onSearchSubmit?.(trimmedQuery, searchLocation);
+      // Build comprehensive search parameters
+      const searchParams = new URLSearchParams();
+      if (trimmedQuery) searchParams.set("q", trimmedQuery);
+      if (searchLocation) searchParams.set("location", searchLocation);
+      if (selectedCountry) searchParams.set("country", selectedCountry);
+      if (selectedPropertyType) searchParams.set("type", selectedPropertyType);
+      if (selectedVerificationStatus)
+        searchParams.set("status", selectedVerificationStatus);
+
+      // Pass the full search query with filters
+      const fullSearchQuery = trimmedQuery || "advanced_search";
+      const searchLocationWithFilters = searchParams.toString();
+
+      onSearchSubmit?.(fullSearchQuery, searchLocationWithFilters);
       onCtaClick?.(currentSlideData.id, "search_submit");
     },
     [
       searchQuery,
       searchLocation,
+      selectedCountry,
+      selectedPropertyType,
+      selectedVerificationStatus,
       onSearchSubmit,
       onCtaClick,
       currentSlideData.id,
@@ -389,36 +346,25 @@ export function EnhancedHero({
 
   return (
     <section
-      className={`relative min-h-screen flex items-center justify-center overflow-hidden pt-20 ${className}`}
+      className={`relative min-h-screen flex items-center justify-center overflow-hidden ${className}`}
       role="banner"
       aria-label="Hero section with African property search"
+      style={{
+        // Remove hardcoded padding since parent container now handles navigation spacing
+        paddingTop: 0
+      }}
     >
-      {/* Enhanced background with better performance */}
-      <div className="absolute inset-0 z-0" aria-hidden="true">
-        {ENHANCED_HERO_SLIDES.map((slide, index) => (
-          <div
-            key={slide.id}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentSlide ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <div
-              className="w-full h-full bg-cover bg-center bg-no-repeat brightness-50 contrast-125"
-              style={{
-                backgroundImage: `url(${slide.backgroundImage})`,
-              }}
-              role="img"
-              aria-label={`Background for ${slide.title}`}
-            />
-            <div
-              className={`absolute inset-0 bg-gradient-to-br transition-all duration-1000 ${
-                index === currentSlide ?
-                  themeStyles.gradient
-                : "from-black/70 to-black/70"
-              }`}
-            />
-          </div>
-        ))}
+      {/* Optimized background */}
+      <div className="absolute inset-0 z-0">
+        <div
+          className="w-full h-full bg-cover bg-center brightness-50"
+          style={{
+            backgroundImage: `url(${currentSlideData.backgroundImage})`,
+          }}
+        />
+        <div
+          className={`absolute inset-0 bg-gradient-to-br ${themeStyles.gradient}`}
+        />
       </div>
 
       {/* Navigation controls */}
@@ -443,27 +389,21 @@ export function EnhancedHero({
       </Button>
 
       {/* Slide indicators */}
-      <nav
-        className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20"
-        aria-label="Slide navigation"
-      >
-        <div className="flex space-x-2">
-          {ENHANCED_HERO_SLIDES.map((slide, index) => (
-            <button
-              key={slide.id}
-              type="button"
-              onClick={() => navigateToSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === currentSlide ? "bg-white scale-125" : (
-                  "bg-white/50 hover:bg-white/75"
-                )
-              }`}
-              aria-label={`Go to slide ${index + 1}: ${slide.title}`}
-              aria-current={index === currentSlide ? "true" : "false"}
-            />
-          ))}
-        </div>
-      </nav>
+      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
+        {[0, 1, 2].map((index) => (
+          <button
+            key={index}
+            onClick={() => navigateToSlide(index)}
+            className={`w-3 h-3 rounded-full transition-all ${
+              index === currentSlide ? "bg-white scale-125" : (
+                "bg-white/50 hover:bg-white/75"
+              )
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+            title={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
 
       {/* Main content */}
       <div className="relative z-10 container mx-auto px-4 text-center text-white">
@@ -485,66 +425,136 @@ export function EnhancedHero({
             {currentSlideData.valueProposition}
           </p>
 
-          {/* Enhanced search section */}
-          <div className="mb-12 animate-hero-scale-in">
-            <Card className="max-w-3xl mx-auto bg-white/15 backdrop-blur-md border-white/30 shadow-2xl">
-              <CardContent className="p-8">
-                <form onSubmit={handleSearchSubmit} className="space-y-4">
-                  <div className="relative">
-                    <div className="flex gap-2">
-                      <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
-                        <Input
-                          type="text"
-                          placeholder="Search properties across Africa..."
-                          value={searchQuery}
-                          onChange={handleSearchInputChange}
-                          className="pl-10 bg-white/25 border-white/40 text-white placeholder:text-white/70 focus:bg-white/35 focus:border-white/60 text-lg py-3"
-                          aria-label="Search for African properties"
-                        />
-                      </div>
-                      {isLocationEnabled && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                          onClick={handleLocationClick}
-                          aria-label="Use current location"
-                        >
-                          <MapPin className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
+          {/* Optimized search section */}
+          <div className="mb-12">
+            <div className="max-w-4xl mx-auto bg-white/15 backdrop-blur-md border border-white/30 rounded-xl p-6">
+              <form onSubmit={handleSearchSubmit} className="space-y-4">
+                {/* Main search input */}
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 w-5 h-5" />
+                    <Input
+                      type="text"
+                      placeholder="Search properties, locations, or verification status..."
+                      value={searchQuery}
+                      onChange={handleSearchInputChange}
+                      className="pl-10 bg-white/25 border-white/40 text-white placeholder:text-white/70 focus:bg-white/35 text-lg py-3"
+                    />
                   </div>
-                </form>
-              </CardContent>
-            </Card>
+                  {isLocationEnabled && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                      onClick={handleLocationClick}
+                    >
+                      <MapPin className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Quick filters */}
+                <div className="grid grid-cols-3 gap-3">
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                    className="px-3 py-2 bg-white/25 border-white/40 text-white rounded text-sm"
+                    aria-label="Select country"
+                    title="Select country"
+                  >
+                    <option value="">Country</option>
+                    <option value="kenya">Kenya</option>
+                    <option value="nigeria">Nigeria</option>
+                    <option value="south-africa">South Africa</option>
+                  </select>
+                  <select
+                    value={selectedPropertyType}
+                    onChange={(e) => setSelectedPropertyType(e.target.value)}
+                    className="px-3 py-2 bg-white/25 border-white/40 text-white rounded text-sm"
+                    aria-label="Select property type"
+                    title="Select property type"
+                  >
+                    <option value="">Type</option>
+                    <option value="residential">Residential</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="land">Land</option>
+                  </select>
+                  <select
+                    value={selectedVerificationStatus}
+                    onChange={(e) =>
+                      setSelectedVerificationStatus(e.target.value)
+                    }
+                    className="px-3 py-2 bg-white/25 border-white/40 text-white rounded text-sm"
+                    aria-label="Select verification status"
+                    title="Select verification status"
+                  >
+                    <option value="">Status</option>
+                    <option value="verified">Verified</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                    onClick={() => handleCtaClick("verify_property")}
+                  >
+                    <Shield className="w-4 h-4 mr-1" />
+                    Verify
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                    onClick={() => handleCtaClick("check_fraud")}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    Check Fraud
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                    onClick={() => handleCtaClick("find_expert")}
+                  >
+                    <Users className="w-4 h-4 mr-1" />
+                    Find Expert
+                  </Button>
+                </div>
+
+                {/* Search button */}
+                <div className="text-center">
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className={`px-8 py-3 text-lg font-semibold ${themeStyles.button}`}
+                  >
+                    <Search className="w-5 h-5 mr-2" />
+                    Search & Verify
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
 
-          {/* Enhanced trust indicators with 4-column grid */}
-          <div className="mb-16 animate-hero-fade-in">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          {/* Trust indicators */}
+          <div className="mb-16">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
               {currentSlideData.trustIndicators.map((indicator) => (
                 <div key={indicator.label} className="text-center">
                   <div
-                    className={`inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/25 mb-4 shadow-lg ${themeStyles.accent}`}
-                  >
-                    {indicator.icon}
-                  </div>
-                  <div
-                    className={`text-2xl md:text-3xl font-bold mb-2 text-shadow-sm ${themeStyles.accent}`}
+                    className={`text-2xl font-bold mb-1 ${themeStyles.accent}`}
                   >
                     {indicator.value}
                   </div>
-                  <div className="text-sm text-white/90 font-medium mb-1">
-                    {indicator.label}
-                  </div>
-                  {indicator.description && (
-                    <div className="text-xs text-white/70">
-                      {indicator.description}
-                    </div>
-                  )}
+                  <div className="text-sm text-white/90">{indicator.label}</div>
                 </div>
               ))}
             </div>

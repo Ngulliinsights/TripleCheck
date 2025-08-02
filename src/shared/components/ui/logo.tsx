@@ -106,10 +106,6 @@ export function Logo({
   // Memoize the computed className to prevent unnecessary recalculations
   // This is especially beneficial when the component re-renders frequently
   const computedClassName = React.useMemo(() => {
-    // Safe object access with explicit type checking to prevent injection
-    const validSizes = ["sm", "md", "lg", "xl"] as const;
-    const validVariants = ["default", "light", "dark"] as const;
-
     const sizeClass = (() => {
       switch (size) {
         case "sm": return SIZE_CLASSES.sm;

@@ -230,61 +230,68 @@ export function LoginForm({
 
   return (
     <div className={`w-full max-w-md mx-auto ${className}`}>
-      <div className="text-center mb-8">
-        <div className="flex justify-center mb-4">
-          <Logo size="xl" variant="default" />
+      {/* Enhanced Header with Better Visual Hierarchy */}
+      <div className="text-center mb-10">
+        <div className="flex justify-center mb-6">
+          <div className="p-3 bg-primary/10 rounded-2xl">
+            <Logo size="xl" variant="default" />
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-        <p className="text-sm text-gray-600 mt-2">
-          Sign in to your TripleCheck account
-        </p>
+        <div className="space-y-3">
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Welcome Back</h1>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Sign in to your TripleCheck account to continue
+          </p>
+        </div>
       </div>
 
-      {/* Social Login */}
+      {/* Enhanced Social Login Section */}
       {showSocialLogin && (
-        <div className="space-y-3 mb-6">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => handleSocialLogin('google')}
-            disabled={socialLoginLoading === 'google'}
-          >
-            <Chrome className="w-4 h-4 mr-2" />
-            {socialLoginLoading === 'google' ? 'Connecting...' : 'Continue with Google'}
-          </Button>
-          
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => handleSocialLogin('facebook')}
-            disabled={socialLoginLoading === 'facebook'}
-          >
-            <Facebook className="w-4 h-4 mr-2" />
-            {socialLoginLoading === 'facebook' ? 'Connecting...' : 'Continue with Facebook'}
-          </Button>
-
-          {/* Biometric Login */}
-          {enableBiometric && isWebAuthnSupported && (
+        <div className="space-y-4 mb-8">
+          <div className="grid gap-3">
             <Button
               type="button"
               variant="outline"
-              className="w-full"
-              onClick={handleBiometricLogin}
-              disabled={biometricLoading || !form.watch('email')}
+              className="w-full h-12 text-sm font-medium border-2 hover:border-primary/20 hover:bg-primary/5 transition-all duration-200"
+              onClick={() => handleSocialLogin('google')}
+              disabled={socialLoginLoading === 'google'}
             >
-              <Fingerprint className="w-4 h-4 mr-2" />
-              {biometricLoading ? 'Authenticating...' : 'Use Biometric Login'}
+              <Chrome className="w-5 h-5 mr-3 text-blue-600" />
+              {socialLoginLoading === 'google' ? 'Connecting...' : 'Continue with Google'}
             </Button>
-          )}
+            
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-12 text-sm font-medium border-2 hover:border-primary/20 hover:bg-primary/5 transition-all duration-200"
+              onClick={() => handleSocialLogin('facebook')}
+              disabled={socialLoginLoading === 'facebook'}
+            >
+              <Facebook className="w-5 h-5 mr-3 text-blue-700" />
+              {socialLoginLoading === 'facebook' ? 'Connecting...' : 'Continue with Facebook'}
+            </Button>
 
-          <div className="relative">
+            {/* Enhanced Biometric Login */}
+            {enableBiometric && isWebAuthnSupported && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12 text-sm font-medium border-2 border-green-200 hover:border-green-300 hover:bg-green-50 transition-all duration-200"
+                onClick={handleBiometricLogin}
+                disabled={biometricLoading || !form.watch('email')}
+              >
+                <Fingerprint className="w-5 h-5 mr-3 text-green-600" />
+                {biometricLoading ? 'Authenticating...' : 'Use Biometric Login'}
+              </Button>
+            )}
+          </div>
+
+          <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <Separator className="w-full" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-background px-4 text-muted-foreground font-medium">
                 Or continue with email
               </span>
             </div>
@@ -292,36 +299,40 @@ export function LoginForm({
         </div>
       )}
 
-      {/* Login Form */}
+      {/* Enhanced Login Form */}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {/* Email Field */}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Enhanced Email Field */}
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email Address</FormLabel>
+              <FormItem className="space-y-3">
+                <FormLabel className="text-sm font-semibold text-gray-700">
+                  Email Address
+                </FormLabel>
                 <FormControl>
                   <Input
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder="Enter your email address"
                     {...field}
-                    className="w-full"
+                    className="w-full h-12 text-base border-2 border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
               </FormItem>
             )}
           />
 
-          {/* Password Field */}
+          {/* Enhanced Password Field */}
           <FormField
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
+              <FormItem className="space-y-3">
+                <FormLabel className="text-sm font-semibold text-gray-700">
+                  Password
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
@@ -332,7 +343,7 @@ export function LoginForm({
                         field.onChange(e);
                         checkPasswordStrength(e.target.value);
                       }}
-                      className="w-full pr-10"
+                      className="w-full h-12 text-base border-2 border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 pr-12"
                     />
                     <Button
                       type="button"
@@ -342,14 +353,14 @@ export function LoginForm({
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
+                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                       ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
+                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                       )}
                     </Button>
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-sm" />
                 
                 {/* Password Strength Indicator */}
                 {passwordStrength && strengthInfo && (
@@ -389,20 +400,21 @@ export function LoginForm({
             )}
           />
 
-          {/* Remember Me */}
+          {/* Enhanced Remember Me */}
           <FormField
             control={form.control}
             name="rememberMe"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0 py-2">
                 <FormControl>
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
+                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel className="text-sm font-normal">
+                  <FormLabel className="text-sm font-medium text-gray-700 cursor-pointer">
                     Remember me on this device
                   </FormLabel>
                 </div>
@@ -422,20 +434,29 @@ export function LoginForm({
             </Alert>
           )}
 
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={loginMutation.isPending}
-          >
-            {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
-          </Button>
+          {/* Enhanced Submit Button */}
+          <div className="pt-4">
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 transition-all duration-200 shadow-lg hover:shadow-xl"
+              disabled={loginMutation.isPending}
+            >
+              {loginMutation.isPending ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
+          </div>
 
-          {/* Forgot Password Link */}
-          <div className="text-center">
+          {/* Enhanced Forgot Password Link */}
+          <div className="text-center pt-4">
             <a
               href="/auth/forgot-password"
-              className="text-sm text-primary hover:underline"
+              className="text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors duration-200"
             >
               Forgot your password?
             </a>
@@ -443,14 +464,19 @@ export function LoginForm({
         </form>
       </Form>
 
-      {/* Sign Up Link */}
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          Don't have an account?{' '}
-          <a href="/auth/register" className="text-primary hover:underline font-medium">
-            Sign up
-          </a>
-        </p>
+      {/* Enhanced Sign Up Link */}
+      <div className="mt-8 text-center">
+        <div className="p-4 bg-gray-50 rounded-lg border">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{' '}
+            <a 
+              href="/auth/register" 
+              className="text-primary hover:text-primary/80 font-semibold hover:underline transition-colors duration-200"
+            >
+              Create account
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -188,7 +188,7 @@ export default function Solutions() {
               Tailored Solutions for Every Real Estate Professional
             </h1>
             <p className="text-xl mb-8 text-white/90">
-              Whether you're buying, selling, or developing properties, we have the perfect verification solution for your needs.
+              Whether you&apos;re buying, selling, or developing properties, we have the perfect verification solution for your needs.
             </p>
           </div>
         </div>

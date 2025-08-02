@@ -246,14 +246,30 @@ const fetchLandListings = async (
 const LandCard: React.FC<{
   land: LandListing;
   onVerify: (id: string) => void;
-}> = ({ land, onVerify }) => {
+  onViewDetails: (id: string) => void;
+}> = ({ land, onVerify, onViewDetails }) => {
   const statusConfig = VERIFICATION_STATUS_CONFIG[land.verificationStatus];
   const riskConfig = RISK_LEVEL_CONFIG[land.riskLevel];
   const StatusIcon = statusConfig.icon;
 
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border">
-      <div className="relative overflow-hidden">
+      <div 
+        className="relative overflow-hidden cursor-pointer"
+        onClick={(e) => {
+          e.preventDefault();
+          onViewDetails(land.id);
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onViewDetails(land.id);
+          }
+        }}
+        aria-label={`View details for ${land.title}`}
+      >
         <LandImage
           src={land.images[0] || '/placeholder-land.jpg'}
           alt={land.title}
@@ -271,11 +287,31 @@ const LandCard: React.FC<{
             Trust: {land.trustScore}%
           </Badge>
         </div>
+        {/* Hover overlay for better UX */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <Eye className="w-8 h-8 text-white drop-shadow-lg" />
+          </div>
+        </div>
       </div>
 
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold text-foreground line-clamp-2 flex-1">
+          <h3 
+            className="text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-pointer hover:text-primary transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              onViewDetails(land.id);
+            }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onViewDetails(land.id);
+              }
+            }}
+          >
             {land.title}
           </h3>
           <span className={`text-xs font-medium ml-2 ${riskConfig.color}`}>
@@ -320,12 +356,22 @@ const LandCard: React.FC<{
             variant="outline"
             size="sm"
             className="flex-1"
-            onClick={() => onVerify(land.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onVerify(land.id);
+            }}
           >
             <Shield className="w-4 h-4 mr-1" />
             Verify
           </Button>
-          <Button size="sm" className="flex-1">
+          <Button 
+            size="sm" 
+            className="flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails(land.id);
+            }}
+          >
             Details
             <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
@@ -376,6 +422,13 @@ export default function Lands(): JSX.Element {
   const handleVerifyLand = useCallback(
     (landId: string) => {
       navigate(`/land-verification/new?landId=${landId}`);
+    },
+    [navigate]
+  );
+
+  const handleViewLandDetails = useCallback(
+    (landId: string) => {
+      navigate(`/land/${landId}`);
     },
     [navigate]
   );
@@ -448,12 +501,18 @@ export default function Lands(): JSX.Element {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {landListings?.map((land) => (
-          <LandCard
+        {landListings?.map((land, idx) => (
+          <div
             key={land.id}
-            land={land}
-            onVerify={handleVerifyLand}
-          />
+            className="animate-fadeInUp"
+            style={{ animationDelay: `${idx * 75}ms` }}
+          >
+            <LandCard
+              land={land}
+              onVerify={handleVerifyLand}
+              onViewDetails={handleViewLandDetails}
+            />
+          </div>
         ))}
       </div>
     );
@@ -461,42 +520,37 @@ export default function Lands(): JSX.Element {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-secondary/10 via-primary/5 to-accent/10 py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="flex justify-center mb-6">
-              <div className="p-4 bg-secondary/10 rounded-full">
-                <TreePine className="w-12 h-12 text-secondary" />
-              </div>
+      {/* Enhanced Hero Section */}
+      <div className="relative isolate overflow-hidden bg-gradient-to-br from-sky-50 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 opacity-20"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239ca3af' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/svg%3E\")",
+          }}
+        />
+        <div className="container mx-auto px-4 py-20 md:py-28 text-center">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-secondary/20 rounded-full">
+              <TreePine className="w-12 h-12 text-secondary" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Verified Land Listings
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              Browse authenticated land listings with comprehensive verification, 
-              fraud detection, and community intelligence. Every plot is thoroughly 
-              checked for your security and peace of mind.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <div className="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full">
-                <Shield className="w-5 h-5 text-green-600" />
-                <span className="text-green-600 font-medium">
-                  Verified Properties
-                </span>
-              </div>
-              <div className="flex items-center gap-2 bg-blue-100 px-4 py-2 rounded-full">
-                <FileCheck className="w-5 h-5 text-blue-600" />
-                <span className="text-blue-600 font-medium">
-                  Title Deed Verified
-                </span>
-              </div>
-              <div className="flex items-center gap-2 bg-purple-100 px-4 py-2 rounded-full">
-                <Users className="w-5 h-5 text-purple-600" />
-                <span className="text-purple-600 font-medium">
-                  Community Verified
-                </span>
-              </div>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground mb-6">
+            Verified Land Listings
+          </h1>
+          <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground mb-8">
+            Browse authenticated land listings with comprehensive verification and community intelligence.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <div className="flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-4 py-2 rounded-full text-sm font-medium">
+              <Shield className="w-4 h-4" /> Verified Properties
+            </div>
+            <div className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-4 py-2 rounded-full text-sm font-medium">
+              <FileCheck className="w-4 h-4" /> Title Deed Verified
+            </div>
+            <div className="flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-4 py-2 rounded-full text-sm font-medium">
+              <Users className="w-4 h-4" /> Community Verified
             </div>
           </div>
         </div>
@@ -544,8 +598,8 @@ export default function Lands(): JSX.Element {
           </CardContent>
         </Card>
 
-        {/* Search and Filters */}
-        <Card className="mb-6">
+        {/* Enhanced Search and Filters */}
+        <Card className="mb-6 border-muted/60 shadow-sm backdrop-blur-sm bg-card/80">
           <CardContent className="p-6">
             {/* Main Search Bar */}
             <div className="flex gap-4 mb-4">

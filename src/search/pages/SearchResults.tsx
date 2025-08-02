@@ -60,11 +60,11 @@ const INITIAL_FILTERS: SearchFilters = {
 // Mock data with enhanced TypeScript compliance
 const mockProperties: Property[] = [
   {
-    id: '1',
+    id: 1,
     title: 'Modern 3-Bedroom Apartment in Westlands',
     description: 'Beautiful modern apartment with city views and premium amenities',
     location: 'Westlands, Nairobi',
-    price: 150000,
+    price: '150000',
     images: ['/assets/apartment-luxury-1.jpg', '/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg'],
     features: {
       bedrooms: 3,
@@ -80,11 +80,11 @@ const mockProperties: Property[] = [
     status: 'verified'
   },
   {
-    id: '2',
+    id: 2,
     title: 'Spacious Family Home in Karen',
     description: 'Perfect family home with large garden and quiet neighborhood setting',
     location: 'Karen, Nairobi',
-    price: 280000,
+    price: '280000',
     images: ['/assets/house-executive-1.jpg', '/assets/Residential/luke-van-zyl-koH7IVuwRLw-unsplash.jpg'],
     features: {
       bedrooms: 4,
@@ -137,12 +137,12 @@ export default function SearchResults() {
     // Apply filters - in a real app, this would be handled by the backend
     if (filters.minPrice) {
       const minPrice = parseInt(filters.minPrice, 10);
-      filtered = filtered.filter(property => property.price >= minPrice);
+      filtered = filtered.filter(property => parseInt(property.price.toString(), 10) >= minPrice);
     }
 
     if (filters.maxPrice) {
       const maxPrice = parseInt(filters.maxPrice, 10);
-      filtered = filtered.filter(property => property.price <= maxPrice);
+      filtered = filtered.filter(property => parseInt(property.price.toString(), 10) <= maxPrice);
     }
 
     if (filters.bedrooms) {
@@ -158,7 +158,7 @@ export default function SearchResults() {
 
     if (filters.location) {
       filtered = filtered.filter(property =>
-        property.location.toLowerCase().includes(filters.location.toLowerCase())
+        (typeof property.location === 'string' ? property.location : property.location.address || '').toLowerCase().includes(filters.location.toLowerCase())
       );
     }
 
@@ -166,9 +166,9 @@ export default function SearchResults() {
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'price-asc':
-          return a.price - b.price;
+          return parseInt(a.price.toString(), 10) - parseInt(b.price.toString(), 10);
         case 'price-desc':
-          return b.price - a.price;
+          return parseInt(b.price.toString(), 10) - parseInt(a.price.toString(), 10);
         case 'newest':
           return (b.features?.yearBuilt || 0) - (a.features?.yearBuilt || 0);
         case 'relevance':
@@ -233,7 +233,7 @@ export default function SearchResults() {
   return (
     <CompareProvider>
       <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 navbar-offset pb-8">
         {/* Enhanced search header with better accessibility */}
         <header className="mb-8">
           <h1 className="text-3xl font-bold mb-4 text-gray-900">Search Properties</h1>

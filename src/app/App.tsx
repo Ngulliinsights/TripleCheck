@@ -1,83 +1,92 @@
-import { useEffect, memo } from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useEffect, memo } from "react";
 
-import { AppLayout } from "../shared/components/layout/AppLayout";
+import { Footer } from "../shared/components/layout/Footer";
+import { Navigation } from "../shared/components/layout/Navigation";
+import { NavigationErrorBoundary } from "../shared/components/navigation/NavigationErrorBoundary";
+
 import { ErrorBoundary } from "./error-boundary";
+import { AppRouter } from "./router";
 
-// Import pages directly (no lazy loading to avoid context issues)
-import HomePage from "../shared/pages/Home";
-import FeaturesPage from "../shared/pages/Features";
-import PricingPage from "../shared/pages/Pricing";
-import PropertiesPage from "../shared/pages/Properties";
-import DashboardPage from "../user/pages/Dashboard";
-import LoginPage from "../auth/pages/Login";
-import RegisterPage from "../auth/pages/Register";
-import NotFoundPage from "../shared/pages/NotFound";
+/**
+ * Core Application Shell & Layout
+ *
+ * Responsibilities:
+ * - Application initialization and global setup
+ * - Main application layout structure
+ * - Navigation and footer integration
+ * - Global and layout-level error boundaries
+ * - Performance monitoring and debugging
+ *
+ * Does NOT handle:
+ * - Routing logic (delegated to AppRouter)
+ * - Individual page layouts (handled by page components)
+ * - Reusable layout components (handled by shared/components/layout)
+ */
 
-// Land Verification Pages
-import LandVerificationDashboard from "../land-verification/pages/LandVerificationDashboardPage";
-import NewVerificationPage from "../land-verification/pages/NewVerificationPage";
+interface AppLayoutProps {
+  readonly children: React.ReactNode;
+}
 
-// Trust Pages
-import DocumentAuthPage from "../trust/pages/DocumentAuth";
+/**
+ * Main Application Layout
+ *
+ * Provides the core structure for the entire application including:
+ * - Header navigation with error boundaries
+ * - Main content area
+ * - Footer with error boundaries
+ * - Responsive layout structure
+ */
+export function AppLayout({ children }: AppLayoutProps) {
+  return (
+    <div className="min-h-screen flex flex-col">
+      {/* Navigation Header with dedicated error boundary */}
+      <ErrorBoundary>
+        <NavigationErrorBoundary>
+          <Navigation />
+        </NavigationErrorBoundary>
+      </ErrorBoundary>
 
-// Communication Pages
-import InboxPage from "../communication/pages/Inbox";
+      {/* Main Content Area */}
+      <ErrorBoundary>
+        <main className="flex-1">{children}</main>
+      </ErrorBoundary>
 
-function useNonCriticalInitialization(): void {
+      {/* Footer with error boundary */}
+      <ErrorBoundary>
+        <Footer />
+      </ErrorBoundary>
+    </div>
+  );
+}
+
+function useApplicationInitialization(): void {
   useEffect(() => {
-    console.log('TripleCheck Full App initialized successfully');
-    
-    // Add production debugging
-    if (typeof window !== 'undefined') {
-      console.log('Environment:', import.meta.env.MODE);
-      console.log('Base URL:', import.meta.env.BASE_URL);
-      console.log('Window location:', window.location.href);
-      console.log('Document ready state:', document.readyState);
-      console.log('Root element exists:', !!document.getElementById('root'));
+    // eslint-disable-next-line no-console
+    console.log("TripleCheck Application Shell initialized");
+
+    // Global application setup
+    if (typeof window !== "undefined") {
+      // eslint-disable-next-line no-console
+      console.log("Environment:", import.meta.env.MODE);
+      // eslint-disable-next-line no-console
+      console.log("Base URL:", import.meta.env.BASE_URL);
+      // eslint-disable-next-line no-console
+      console.log("Window location:", window.location.href);
+      // eslint-disable-next-line no-console
+      console.log("Document ready state:", document.readyState);
+      // eslint-disable-next-line no-console
+      console.log("Root element exists:", !!document.getElementById("root"));
     }
   }, []);
 }
 
 export const App = memo(() => {
-  useNonCriticalInitialization();
+  useApplicationInitialization();
 
   return (
-    <ErrorBoundary level="page">
+    <ErrorBoundary>
       <AppLayout>
-        <main>
-          <ErrorBoundary level="route">
-            <Routes>
-              {/* Core Pages */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/features" element={<FeaturesPage />} />
-              <Route path="/pricing" element={<PricingPage />} />
-              
-              {/* Property Routes */}
-              <Route path="/properties" element={<PropertiesPage />} />
-              
-              {/* User Routes */}
-              <Route path="/dashboard" element={<DashboardPage />} />
-              
-              {/* Authentication Routes */}
-              <Route path="/auth/login" element={<LoginPage />} />
-              <Route path="/auth/register" element={<RegisterPage />} />
-              
-              {/* Land Verification Routes */}
-              <Route path="/land-verification/dashboard" element={<LandVerificationDashboard />} />
-              <Route path="/land-verification/new" element={<NewVerificationPage />} />
-              
-              {/* Trust & Document Routes */}
-              <Route path="/services/document-auth" element={<DocumentAuthPage />} />
-              
-              {/* Communication Routes */}
-              <Route path="/inbox" element={<InboxPage />} />
-              
-              {/* Catch all route */}
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </ErrorBoundary>
-        </main>
+        <AppRouter />
       </AppLayout>
     </ErrorBoundary>
   );

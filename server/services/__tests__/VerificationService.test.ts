@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { VerificationService } from '../VerificationService';
 import { storage } from '../../storage';
 import * as aiRoutes from '../../ai-routes';
-import * as aiService from '../../ai-service';
+import * as aiService from '../../ai-ml-service';
 
 // Mock dependencies
 vi.mock('../../storage', () => ({
@@ -16,7 +16,7 @@ vi.mock('../../storage', () => ({
   }
 }));
 vi.mock('../../ai-routes');
-vi.mock('../../ai-service');
+vi.mock('../../ai-ml-service');
 
 // Mock the fraud detection engine and logger to avoid TensorFlow dependencies
 vi.mock('../../fraud-detection/utils/Logger', () => ({

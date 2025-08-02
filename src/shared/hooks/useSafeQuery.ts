@@ -3,49 +3,70 @@ import { useRef, useMemo, useState, useCallback } from "react";
 
 import { useEnhancedCleanupManager } from "../../infrastructure/hooks/useCleanupManager";
 import { useSafeEffect } from "../../infrastructure/hooks/useSafeEffect";
+// Removed unused import: requestMonitor
 
 // Enhanced request coordinator with better error handling and metrics
 class RequestCoordinator {
   private pendingRequests = new Map<string, AbortController>();
   private requestMetrics = new Map<
     string,
-    { count: number; lastUsed: number }
+    { count: number; lastUsed: number; errorCount: number; lastError?: string }
   >();
   private globalRequestCount = 0;
   private lastGlobalReset = Date.now();
+  private circuitBreakers = new Map<string, { failures: number; lastFailure: number; isOpen: boolean }>();
+  private readonly MAX_GLOBAL_REQUESTS = 15; // Reduced from 20 to be more conservative
+  private readonly CIRCUIT_BREAKER_THRESHOLD = 5;
+  private readonly CIRCUIT_BREAKER_TIMEOUT = 30000; // 30 seconds
+  private readonly REQUEST_WINDOW = 1000; // 1 second window
 
-  async executeRequest<T>(
-    key: string,
-    requestFn: (signal: AbortSignal) => Promise<T>,
-    timeout?: number
-  ): Promise<T> {
-    // Global rate limiting to prevent API overload
+  private checkCircuitBreaker(key: string): void {
+    const circuitBreaker = this.circuitBreakers.get(key);
+    if (circuitBreaker?.isOpen) {
+      const timeSinceLastFailure = Date.now() - circuitBreaker.lastFailure;
+      if (timeSinceLastFailure < this.CIRCUIT_BREAKER_TIMEOUT) {
+        throw new Error(`Circuit breaker is open for ${key}. Try again later.`);
+      } else {
+        // Reset circuit breaker after timeout
+        circuitBreaker.isOpen = false;
+        circuitBreaker.failures = 0;
+      }
+    }
+  }
+
+  private async handleRateLimit(): Promise<void> {
     const now = Date.now();
-    if (now - this.lastGlobalReset > 1000) {
-      // Reset counter every second
+    if (now - this.lastGlobalReset > this.REQUEST_WINDOW) {
       this.globalRequestCount = 0;
       this.lastGlobalReset = now;
     }
 
     this.globalRequestCount++;
     
-    // If too many global requests, throttle
-    if (this.globalRequestCount > 20) {
-      console.warn(`[RequestCoordinator] Global rate limit exceeded (${this.globalRequestCount} requests/sec)`);
-      throw new Error("Too many requests - please wait a moment");
+    if (this.globalRequestCount > this.MAX_GLOBAL_REQUESTS) {
+      const backoffTime = Math.min(1000 * Math.pow(2, this.globalRequestCount - this.MAX_GLOBAL_REQUESTS), 10000);
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.warn(`[RequestCoordinator] Rate limit exceeded (${this.globalRequestCount} requests/sec). Backing off for ${backoffTime}ms`);
+      }
+      await new Promise(resolve => setTimeout(resolve, backoffTime));
     }
+  }
 
-    // Track request frequency for optimization insights
+  private updateRequestMetrics(key: string): void {
     const metrics = this.requestMetrics.get(key) || {
       count: 0,
       lastUsed: Date.now(),
+      errorCount: 0,
     };
     this.requestMetrics.set(key, {
       count: metrics.count + 1,
       lastUsed: Date.now(),
+      errorCount: metrics.errorCount,
     });
+  }
 
-    // Cancel previous request with same key to prevent race conditions
+  private setupRequestController(key: string, timeout?: number): { controller: AbortController; timeoutId?: NodeJS.Timeout | undefined } {
     const existingController = this.pendingRequests.get(key);
     if (existingController) {
       existingController.abort();
@@ -54,7 +75,6 @@ class RequestCoordinator {
     const controller = new AbortController();
     this.pendingRequests.set(key, controller);
 
-    // Set up timeout with better error messaging
     let timeoutId: NodeJS.Timeout | undefined;
     if (timeout) {
       timeoutId = setTimeout(() => {
@@ -62,18 +82,76 @@ class RequestCoordinator {
       }, timeout);
     }
 
-    try {
-      return await requestFn(controller.signal);
-    } catch (error) {
-      // Enhance error with context about the request
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error(
-          timeoutId ?
-            `Request timed out after ${timeout}ms`
-          : "Request was cancelled"
-        );
+    return { controller, timeoutId };
+  }
+
+  private handleRequestSuccess<T>(key: string, result: T): T {
+    const circuitBreaker = this.circuitBreakers.get(key);
+    if (circuitBreaker) {
+      circuitBreaker.failures = 0;
+      circuitBreaker.isOpen = false;
+    }
+    
+    const metrics = this.requestMetrics.get(key) || { count: 0, lastUsed: Date.now(), errorCount: 0 };
+    this.requestMetrics.set(key, {
+      ...metrics,
+      count: metrics.count + 1,
+      lastUsed: Date.now(),
+    });
+    
+    return result;
+  }
+
+  private handleRequestError(key: string, error: unknown, timeoutId?: NodeJS.Timeout): never {
+    const circuitBreaker = this.circuitBreakers.get(key) || { failures: 0, lastFailure: 0, isOpen: false };
+    circuitBreaker.failures++;
+    circuitBreaker.lastFailure = Date.now();
+    
+    if (circuitBreaker.failures >= this.CIRCUIT_BREAKER_THRESHOLD) {
+      circuitBreaker.isOpen = true;
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.warn(`[RequestCoordinator] Circuit breaker opened for ${key} after ${circuitBreaker.failures} failures`);
       }
-      throw error;
+    }
+    
+    this.circuitBreakers.set(key, circuitBreaker);
+    
+    const metrics = this.requestMetrics.get(key) || { count: 0, lastUsed: Date.now(), errorCount: 0 };
+    this.requestMetrics.set(key, {
+      ...metrics,
+      errorCount: metrics.errorCount + 1,
+      lastError: error instanceof Error ? error.message : 'Unknown error',
+      lastUsed: Date.now(),
+    });
+    
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(
+        timeoutId ?
+          `Request timed out`
+        : "Request was cancelled"
+      );
+    }
+
+    throw error;
+  }
+
+  async executeRequest<T>(
+    key: string,
+    requestFn: (signal: AbortSignal) => Promise<T>,
+    timeout?: number
+  ): Promise<T> {
+    this.checkCircuitBreaker(key);
+    await this.handleRateLimit();
+    this.updateRequestMetrics(key);
+
+    const { controller, timeoutId } = this.setupRequestController(key, timeout);
+
+    try {
+      const result = await requestFn(controller.signal);
+      return this.handleRequestSuccess(key, result);
+    } catch (error) {
+      return this.handleRequestError(key, error, timeoutId);
     } finally {
       if (timeoutId) {
         clearTimeout(timeoutId);
@@ -94,12 +172,27 @@ class RequestCoordinator {
 
   // Fixed: Now always returns the same type structure
   getRequestStats(key: string): { count: number; lastUsed: number } | null {
-    return this.requestMetrics.get(key) || null;
+    const metrics = this.requestMetrics.get(key);
+    if (!metrics) return null;
+    
+    return {
+      count: metrics.count,
+      lastUsed: metrics.lastUsed
+    };
   }
 
   // Separate method for getting all stats if needed
   getAllRequestStats(): Record<string, { count: number; lastUsed: number }> {
-    return Object.fromEntries(this.requestMetrics);
+    const result: Record<string, { count: number; lastUsed: number }> = {};
+    for (const [key, metrics] of Array.from(this.requestMetrics.entries())) {
+      // Use safe property access to avoid object injection warnings
+      const safeMetrics = {
+        count: metrics.count,
+        lastUsed: metrics.lastUsed
+      };
+      result[key] = safeMetrics;
+    }
+    return result;
   }
 
   // Clean up old metrics to prevent memory leaks
@@ -110,6 +203,29 @@ class RequestCoordinator {
         this.requestMetrics.delete(key);
       }
     });
+    
+    // Also clean up old circuit breakers
+    this.circuitBreakers.forEach((breaker, key) => {
+      if (now - breaker.lastFailure > maxAge && !breaker.isOpen) {
+        this.circuitBreakers.delete(key);
+      }
+    });
+  }
+
+  // Get circuit breaker status for debugging
+  getCircuitBreakerStatus(key: string): { failures: number; isOpen: boolean; lastFailure: number } | null {
+    return this.circuitBreakers.get(key) || null;
+  }
+
+  // Reset circuit breaker manually if needed
+  resetCircuitBreaker(key: string): boolean {
+    const breaker = this.circuitBreakers.get(key);
+    if (breaker) {
+      breaker.failures = 0;
+      breaker.isOpen = false;
+      return true;
+    }
+    return false;
   }
 }
 
@@ -126,7 +242,7 @@ class OperationTracker {
       this.cleanupOldOperations();
     }
 
-    const id = `${type}-${Date.now()}-${globalThis.crypto?.randomUUID?.()?.substring(0, 8) || Math.random().toString(36).substring(2, 10)}`;
+    const id = `${type}-${Date.now()}-${globalThis.crypto?.randomUUID?.()?.substring(0, 8) || Date.now().toString(36)}`;
     const operation: OperationInfo = {
       id,
       type,
@@ -319,11 +435,14 @@ export function useSafeQuery<T>({
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTimeRef.current;
 
-    // If requests are happening too frequently (more than 5 per second), throttle them
-    if (timeSinceLastRequest < 200) {
+    // If requests are happening too frequently (more than 3 per second), throttle them
+    if (timeSinceLastRequest < 300) {
       requestCountRef.current += 1;
-      if (requestCountRef.current > 5) {
-        console.warn(`[useSafeQuery] Throttling requests for ${endpoint} - too many rapid calls detected`);
+      if (requestCountRef.current > 5) { // Increased threshold
+        if (process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
+          console.warn(`[useSafeQuery] Throttling requests for ${endpoint} - too many rapid calls detected (${requestCountRef.current} requests)`);
+        }
         return;
       }
     } else {
@@ -338,7 +457,10 @@ export function useSafeQuery<T>({
 
       cleanupManager.addTimeout(
         () => {
-          setDebouncedBody(body);
+          // Double-check that component is still mounted before updating
+          if (lastRequestTimeRef.current > 0) {
+            setDebouncedBody(body);
+          }
         },
         debounceMs,
         "debounce-timeout"
@@ -346,22 +468,30 @@ export function useSafeQuery<T>({
     } else {
       setDebouncedBody(body);
     }
-  }, [body, debounceMs, cleanupManager, debouncedBody, endpoint]);
+  }, [body, debounceMs, cleanupManager, endpoint]); // Removed debouncedBody from dependencies to prevent loops
 
   // Optimized cache key generation with better serialization and loop prevention
   const requestCacheKey = useMemo(() => {
     if (cacheKey) return cacheKey;
 
-    // Prevent cache key from changing too frequently
-    const currentKey = `${method}:${endpoint}:${JSON.stringify(debouncedBody)}:${JSON.stringify(headers)}`;
+    // Create a stable cache key by normalizing the data
+    const normalizedBody = debouncedBody ? 
+      (typeof debouncedBody === 'object' ? 
+        JSON.stringify(debouncedBody, Object.keys(debouncedBody).sort()) : 
+        String(debouncedBody)
+      ) : '';
+    
+    const normalizedHeaders = headers ? 
+      JSON.stringify(headers, Object.keys(headers).sort()) : '';
 
-    // Check if this is the same as the last request to prevent loops
-    if (lastRequestRef.current === currentKey) {
-      return lastRequestRef.current;
+    const currentKey = `${method}:${endpoint}:${normalizedBody}:${normalizedHeaders}`;
+
+    // Only update if the key actually changed
+    if (lastRequestRef.current !== currentKey) {
+      lastRequestRef.current = currentKey;
     }
 
-    lastRequestRef.current = currentKey;
-    return currentKey;
+    return lastRequestRef.current;
   }, [method, endpoint, debouncedBody, headers, cacheKey]);
 
   // Enhanced query function with proper React Query options handling
@@ -410,6 +540,13 @@ export function useSafeQuery<T>({
           const response = await fetch(url, requestConfig);
 
           if (!response.ok) {
+            // Handle rate limiting specifically
+            if (response.status === 429) {
+              const retryAfter = response.headers.get('Retry-After') || '15';
+              const errorMessage = `Rate limited. Please wait ${retryAfter} seconds before trying again.`;
+              throw new Error(errorMessage);
+            }
+            
             const errorMessage = `HTTP ${response.status}: ${response.statusText}`;
             throw new Error(errorMessage);
           }
@@ -561,11 +698,37 @@ interface Property {
 export const useSafePropertiesQuery = (
   searchParams?: Record<string, unknown>,
   options?: Partial<SafeQueryOptions<Property[]>>
-) =>
-  useSafeQuery({
+) => {
+  // Normalize search params to prevent cache misses and infinite loops
+  const normalizedParams = useMemo(() => {
+    if (!searchParams) return undefined;
+    
+    // Remove undefined/null values and normalize strings
+    const cleaned = Object.entries(searchParams).reduce((acc, [key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        // Normalize string values
+        if (typeof value === 'string') {
+          // Use safe property assignment to avoid object injection warnings
+          const safeKey = key;
+          const safeValue = value.trim();
+          acc[safeKey] = safeValue;
+        } else {
+          // Use safe property assignment to avoid object injection warnings
+          const safeKey = key;
+          acc[safeKey] = value;
+        }
+      }
+      return acc;
+    }, {} as Record<string, unknown>);
+    
+    // Return undefined if no meaningful params
+    return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+  }, [searchParams]);
+
+  return useSafeQuery({
     endpoint: "/api/properties",
     method: "GET",
-    body: searchParams,
+    body: normalizedParams,
     fallbackData: [],
     validator: (data): Property[] => {
       if (!Array.isArray(data)) return [];
@@ -577,10 +740,13 @@ export const useSafePropertiesQuery = (
       });
     },
     context: "properties",
-    debounceMs: 300, // Add debouncing to prevent rapid-fire requests
+    debounceMs: 500, // Increased debouncing to prevent rapid-fire requests
     deduplicate: true, // Ensure duplicate requests are handled
+    staleTime: 30000, // Cache for 30 seconds to reduce redundant calls
+    enabled: true, // Always enabled but with proper caching
     ...options,
   });
+};
 
 export const useSafePropertyQuery = (
   id: string,
@@ -735,5 +901,77 @@ export const useSafeMessagesQuery = (
   });
 
 // Export the coordinator and tracker for advanced usage
+// Specialized hook for similar properties to prevent infinite loops
+export const useSafeSimilarPropertiesQuery = (
+  params?: {
+    location?: string;
+    price?: number;
+    propertyType?: string;
+    excludeId?: string;
+    limit?: number;
+  },
+  options?: Partial<SafeQueryOptions<Property[]>>
+) => {
+  // Normalize and validate params to prevent infinite loops
+  const normalizedParams = useMemo(() => {
+    if (!params || (!params?.location && !params?.propertyType)) {
+      return null; // Don't make request without minimum required params
+    }
+
+    const normalized: Record<string, unknown> = {};
+    
+    if (params?.location && typeof params.location === 'string') {
+      // Extract city from full location for better matching
+      const city = params.location.split(',')[0]?.trim();
+      if (city) {
+        normalized.city = city;
+      }
+    }
+    
+    if (params?.price) {
+      // Convert exact price to range for better results
+      const priceNum = Number(params.price);
+      if (!isNaN(priceNum) && priceNum > 0) {
+        const range = priceNum * 0.2; // 20% range
+        normalized.minPrice = Math.max(0, priceNum - range);
+        normalized.maxPrice = priceNum + range;
+      }
+    }
+    
+    if (params?.propertyType) {
+      normalized.propertyType = params.propertyType;
+    }
+    
+    if (params?.excludeId) {
+      normalized.excludeId = params.excludeId;
+    }
+    
+    normalized.limit = Math.min(params?.limit || 10, 20); // Cap at 20 results
+    
+    return normalized;
+  }, [params]);
+
+  return useSafeQuery({
+    endpoint: "/api/properties/similar",
+    method: "GET",
+    body: normalizedParams || {},
+    fallbackData: [],
+    validator: (data): Property[] => {
+      if (!Array.isArray(data)) return [];
+      return data.filter((item): item is Property => {
+        if (!item || typeof item !== "object") return false;
+        const obj = item as Record<string, unknown>;
+        return typeof obj.id === "string" && obj.id.length > 0;
+      });
+    },
+    context: "similar-properties",
+    debounceMs: 1000, // Higher debounce for similar properties
+    deduplicate: true,
+    staleTime: 60000, // Cache for 1 minute
+    enabled: normalizedParams != null, // Only enabled with valid params
+    ...options,
+  });
+};
+
 export { globalCoordinator, operationTracker };
 export type { SafeQueryOptions, SafeQueryResult, OperationInfo };

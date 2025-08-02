@@ -204,7 +204,7 @@ describe('Comprehensive Accessibility Test Suite', () => {
                 type="email" 
                 aria-describedby="email-help"
               />
-              <div id="email-help">We'll never share your email</div>
+              <div id="email-help">We&apos;ll never share your email</div>
             </div>
             
             <div className="flex items-center space-x-2">

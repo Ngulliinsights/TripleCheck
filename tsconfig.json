@@ -1,7 +1,8 @@
 {
   "include": [
     "src/**/*",
-    "server/**/*"
+    "server/**/*",
+    "scripts/**/*"
   ],
   "exclude": [
     "node_modules",
@@ -55,9 +56,10 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": false,
+    "downlevelIteration": true,
     
     // JSX
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "jsxImportSource": "react",
     
     // Path Resolution
@@ -73,6 +75,7 @@
       "@communication/*": ["./src/communication/*"],
       "@analytics/*": ["./src/analytics/*"],
       "@infrastructure/*": ["./src/infrastructure/*"],
+      "@land-verification/*": ["./src/land-verification/*"],
       "@server/*": ["./server/*"]
     },
     

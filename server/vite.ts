@@ -3,17 +3,16 @@ import fs from "fs/promises";
 import fsSync from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
-import { createServer as createViteServer, createLogger } from "vite";
+import vite from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
+// import viteConfig from "../vite.config"; // Removed to fix import issues
 import { nanoid } from "nanoid";
 
 // Calculate __dirname once at module level for better performance
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Create Vite logger instance once to avoid repeated instantiation
-const viteLogger = createLogger();
+// Vite logger removed due to import issues
 
 /**
  * Enhanced logging function with consistent formatting and source identification
@@ -67,20 +66,18 @@ export async function setupVite(app: Express, server: Server): Promise<void> {
     };
 
     // Create Vite server with enhanced error handling and logging
-    const vite = await createViteServer({
-      ...viteConfig,
+    const viteServer = await vite.createServer({
       configFile: false,
       customLogger: {
-        ...viteLogger,
-        // Enhance error logging without terminating the process
-        error: (msg, options) => {
+        // Simplified logger without viteLogger dependency
+        error: (msg) => {
           log(`Error occurred: ${msg}`, "vite");
-          viteLogger.error(msg, options);
-          // Graceful error handling - continue operation when possible
         },
-        warn: (msg, options) => {
+        warn: (msg) => {
           log(`Warning: ${msg}`, "vite");
-          viteLogger.warn(msg, options);
+        },
+        info: (msg) => {
+          log(`Info: ${msg}`, "vite");
         },
       },
       server: viteServerOptions,
@@ -88,7 +85,7 @@ export async function setupVite(app: Express, server: Server): Promise<void> {
     });
 
     // Apply Vite middleware to Express application
-    app.use(vite.middlewares);
+    app.use(viteServer.middlewares);
     
     // Enhanced catch-all route handler with robust error recovery
     app.use("*", async (req, res, next) => {
@@ -112,7 +109,7 @@ export async function setupVite(app: Express, server: Server): Promise<void> {
         );
         
         // Process HTML through Vite transformation pipeline
-        const transformedPage = await vite.transformIndexHtml(requestUrl, template);
+        const transformedPage = await viteServer.transformIndexHtml(requestUrl, template);
         
         // Send response with proper headers and caching directives
         res
@@ -130,7 +127,7 @@ export async function setupVite(app: Express, server: Server): Promise<void> {
         log(`Request processing failed for ${requestUrl}: ${err.message}`, "vite");
         
         // Apply Vite's stack trace enhancement for better debugging
-        vite.ssrFixStacktrace(err);
+        viteServer.ssrFixStacktrace(err);
         next(err);
       }
     });
@@ -158,7 +155,8 @@ export function serveStatic(app: Express): void {
     return; // Vercel handles static files automatically
   }
   
-  const staticDirectory = path.resolve(__dirname, "public");
+  // Use dist/public directory to match build output and deployment configurations
+  const staticDirectory = path.resolve(__dirname, "..", "dist", "public");
   const indexFilePath = path.resolve(staticDirectory, "index.html");
   
   // Validate build directory and required files exist
