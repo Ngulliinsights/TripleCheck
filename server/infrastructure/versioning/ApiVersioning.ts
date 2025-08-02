@@ -8,12 +8,8 @@
 import { Request, Response, NextFunction } from "express";
 
 // Extend Request interface to include apiVersion
-declare global {
-  namespace Express {
-    interface Request {
-      apiVersion?: ApiVersionContext;
-    }
-  }
+interface ExtendedRequest extends Request {
+  apiVersion?: ApiVersionContext;
 }
 import { logger } from "../monitoring/logger";
 import { performanceMonitor } from "../monitoring/PerformanceMonitor";
@@ -198,7 +194,7 @@ export function extractVersionFromRequest(
   // Check URL path (e.g., /api/v2/properties)
   const pathRegex = /\/api\/(v\d+)\//;
   const pathMatch = pathRegex.exec(req.path);
-  if (pathMatch && pathMatch[1]) {
+  if (pathMatch?.[1]) {
     return pathMatch[1];
   }
 
@@ -263,7 +259,7 @@ export function apiVersioningMiddleware(
   config: VersioningConfig = DEFAULT_CONFIG
 ) {
   return async (
-    req: Request,
+    req: ExtendedRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
@@ -316,11 +312,7 @@ export function apiVersioningMiddleware(
       }
 
       // Performance monitoring
-      const duration = Date.now() - startTime;
-      performanceMonitor.recordMetric(
-        "api_versioning_middleware_duration",
-        duration
-      );
+      performanceMonitor.recordMetric("api_versioning_middleware_duration");
 
       next();
     } catch (error) {
@@ -342,9 +334,9 @@ export function apiVersioningMiddleware(
  */
 export function versionedRoute(
   versions: string[],
-  handler: (req: Request, res: Response, next: NextFunction) => void
+  handler: (req: ExtendedRequest, res: Response, next: NextFunction) => void
 ) {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: ExtendedRequest, res: Response, next: NextFunction): void => {
     const { apiVersion } = req;
 
     if (!apiVersion) {
@@ -393,7 +385,7 @@ function transformToV1Response(data: unknown): unknown {
   // Handle property verification status transformation
   if (
     typeof data === "object" &&
-    data !== null &&
+    data != null &&
     "verification_status" in data
   ) {
     const dataObj = data as Record<string, unknown>;
@@ -409,10 +401,14 @@ function transformToV1Response(data: unknown): unknown {
     return data.map(transformToV1Response);
   }
 
-  if (typeof data === "object" && data !== null) {
+  if (typeof data === "object" && data != null) {
     const transformed: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
-      transformed[key] = transformToV1Response(value);
+      // Keys from Object.entries are always strings, but adding check for security
+      if (typeof key === "string" && key.length > 0) {
+        const safeKey = key.replace(/[^a-zA-Z0-9_]/g, "_"); // Sanitize key
+        transformed[safeKey] = transformToV1Response(value);
+      }
     }
     return transformed;
   }
