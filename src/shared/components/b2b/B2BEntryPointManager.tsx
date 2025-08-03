@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { B2BFraudReportPrompt } from './B2BFraudReportPrompt';
+
 import { B2BCommunityInsightsPrompt } from './B2BCommunityInsightsPrompt';
 import { B2BContextualPrompt } from './B2BContextualPrompt';
+import { B2BFraudReportPrompt } from './B2BFraudReportPrompt';
 import { B2BLeadCapture } from './B2BLeadCapture';
 
 interface EntryPointData {
@@ -66,7 +67,7 @@ export function B2BEntryPointManager({ entryPoint, className }: B2BEntryPointMan
 
   // Track entry point analytics
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (window?.gtag) {
       window.gtag('event', 'b2b_entry_point', {
         event_category: 'B2B',
         event_label: entryPoint.source,

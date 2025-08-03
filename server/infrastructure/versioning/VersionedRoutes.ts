@@ -6,10 +6,12 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { ApiVersion, VersionedRequest } from './ApiVersionManager';
-import { versionSpecificHandler, requireFeature } from './ApiVersioningMiddleware';
+
 import { ResponseHelper } from '../../utils/response-helpers';
 import { logger } from '../monitoring/logger';
+
+import { versionSpecificHandler, requireFeature } from './ApiVersioningMiddleware';
+import { ApiVersion, VersionedRequest } from './ApiVersionManager';
 
 export interface VersionedRouteConfig {
   path: string;
@@ -385,7 +387,7 @@ export class VersionedRoutes {
       ...property,
       propertyType: req.body.propertyType,
       verificationStatus: 'pending',
-      verificationId: 'ver_' + Date.now(),
+      verificationId: `ver_${  Date.now()}`,
       trustScoreRequired: req.body.trustScoreRequired || false
     };
   }
@@ -406,7 +408,7 @@ export class VersionedRoutes {
 
   private async verifyPropertyV2(req: VersionedRequest): Promise<any> {
     return {
-      verificationId: 'ver_' + Date.now(),
+      verificationId: `ver_${  Date.now()}`,
       status: 'initiated',
       layers: ['registry', 'physical', 'community'],
       estimatedCompletion: '2-3 business days'
@@ -415,7 +417,7 @@ export class VersionedRoutes {
 
   private async verifyPropertyV3(req: VersionedRequest): Promise<any> {
     return {
-      verificationId: 'ver_' + Date.now(),
+      verificationId: `ver_${  Date.now()}`,
       status: 'initiated',
       layers: ['registry', 'physical', 'community', 'ai-analysis', 'expert-review'],
       estimatedCompletion: '1-2 business days',
@@ -446,7 +448,7 @@ export class VersionedRoutes {
         trustScore: 750,
         isVerifiedAgent: false
       },
-      sessionId: 'session_' + Date.now()
+      sessionId: `session_${  Date.now()}`
     };
   }
 
@@ -467,7 +469,7 @@ export class VersionedRoutes {
           locationConsistency: 'verified'
         }
       },
-      sessionId: 'session_' + Date.now(),
+      sessionId: `session_${  Date.now()}`,
       securityLevel: 'enhanced'
     };
   }
@@ -506,7 +508,7 @@ export class VersionedRoutes {
 
   private async verifyDocumentsV2(req: VersionedRequest): Promise<any> {
     return {
-      verificationId: 'doc_ver_' + Date.now(),
+      verificationId: `doc_ver_${  Date.now()}`,
       results: [
         {
           documentType: 'title_deed',
@@ -520,7 +522,7 @@ export class VersionedRoutes {
 
   private async verifyDocumentsV3(req: VersionedRequest): Promise<any> {
     return {
-      verificationId: 'doc_ver_' + Date.now(),
+      verificationId: `doc_ver_${  Date.now()}`,
       results: [
         {
           documentType: 'title_deed',
@@ -636,7 +638,7 @@ export class VersionedRoutes {
 
   private async getRiskAssessmentV3(req: VersionedRequest): Promise<any> {
     return {
-      assessmentId: 'risk_' + Date.now(),
+      assessmentId: `risk_${  Date.now()}`,
       overallRisk: 'low',
       riskScore: 25,
       factors: [

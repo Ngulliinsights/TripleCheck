@@ -1,14 +1,14 @@
+import { CheckCircle, ArrowRight } from "lucide-react";
 import React, { useState } from "react";
 
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { CheckCircle, ArrowRight } from "lucide-react";
 
 // Define types for better TypeScript safety and code documentation
 interface PricingPlan {

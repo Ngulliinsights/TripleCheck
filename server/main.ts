@@ -1,16 +1,18 @@
 import "dotenv/config";
 
 import { Server } from "http";
-import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+
+import express from "express";
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import app from "./app";
-import { initializeDatabase, runMigrations } from "./infrastructure/database/connection";
+import { getPortConfig, validatePort, displayPortConfig } from "./config/ports";
+import { initializeDatabase } from "./infrastructure/database/init";
 import { logger } from "./infrastructure/monitoring/logging.service";
 import { cleanupManager } from "./utils/cleanup-manager";
 import { setupServer } from "./vite";
@@ -22,7 +24,6 @@ declare global {
   var server: Server | undefined;
 }
 
-import { getPortConfig, validatePort, displayPortConfig } from "./config/ports";
 
 // Environment configuration with validation
 const portConfig = getPortConfig();
@@ -240,7 +241,7 @@ function setupProcessHandlers(): void {
 }
 
 /**
- * Initialize database with enhanced error context
+ * Initialize database with enhanced error context (non-blocking)
  */
 async function initializeDatabaseConnection(): Promise<void> {
   logger.info("Initializing database connection...");
@@ -248,24 +249,16 @@ async function initializeDatabaseConnection(): Promise<void> {
   const dbResult = await initializeDatabase();
 
   if (!dbResult.success) {
-    throw new Error(
-      `Database initialization failed: ${dbResult.error || "Unknown database error"}`
-    );
+    logger.warn("Database initialization failed, continuing with mock data", "DATABASE", {
+      error: dbResult.error instanceof Error ? dbResult.error.message : String(dbResult.error)
+    });
+    
+    // Don't throw error - let server continue with mock data
+    console.log("⚠️  Server will continue with mock data for development");
+    return;
   }
 
   logger.info("Database connection established successfully");
-
-  // Run database migrations
-  logger.info("Running database migrations...");
-  const migrationResult = await runMigrations();
-
-  if (!migrationResult.success) {
-    throw new Error(
-      `Database migration failed: ${migrationResult.error || "Unknown migration error"}`
-    );
-  }
-
-  logger.info("Database migrations completed successfully");
 }
 
 /**

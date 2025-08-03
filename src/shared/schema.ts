@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -12,7 +13,6 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -716,7 +716,250 @@ export const expertAssignments = pgTable(
   })
 );
 
-// Expert Profiles table
+// Professional specialization enum
+export const professionalSpecializationEnum = pgEnum("professional_specialization", [
+  "land_surveying",
+  "property_law",
+  "real_estate_appraisal",
+  "construction_inspection",
+  "environmental_assessment",
+  "title_verification",
+  "boundary_disputes",
+  "zoning_compliance",
+  "mortgage_processing",
+  "property_management",
+] as const);
+
+// Extract professional specialization values for reuse in validation schemas
+const PROFESSIONAL_SPECIALIZATIONS = [
+  "land_surveying",
+  "property_law",
+  "real_estate_appraisal",
+  "construction_inspection",
+  "environmental_assessment",
+  "title_verification",
+  "boundary_disputes",
+  "zoning_compliance",
+  "mortgage_processing",
+  "property_management",
+] as const;
+export type ProfessionalSpecializationValue = (typeof PROFESSIONAL_SPECIALIZATIONS)[number];
+
+// Professional verification status enum
+export const professionalVerificationStatusEnum = pgEnum("professional_verification_status", [
+  "pending",
+  "verified",
+  "suspended",
+  "rejected",
+] as const);
+
+// Professionals table - Main professional directory
+export const professionals = pgTable(
+  "professionals",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+    businessName: varchar("business_name", { length: 255 }).notNull(),
+    firstName: varchar("first_name", { length: 100 }).notNull(),
+    lastName: varchar("last_name", { length: 100 }).notNull(),
+    email: varchar("email", { length: 255 }).notNull().unique(),
+    phone: varchar("phone", { length: 20 }).notNull(),
+    alternatePhone: varchar("alternate_phone", { length: 20 }),
+    businessAddress: text("business_address").notNull(),
+    serviceAreas: json("service_areas").$type<string[]>().default([]).notNull(),
+    primarySpecialization: professionalSpecializationEnum("primary_specialization").notNull(),
+    secondarySpecializations: json("secondary_specializations").$type<string[]>().default([]),
+    yearsOfExperience: integer("years_of_experience").notNull(),
+    licenseNumber: varchar("license_number", { length: 100 }),
+    licenseExpiryDate: timestamp("license_expiry_date"),
+    certifications: json("certifications").$type<Array<{
+      name: string;
+      issuingBody: string;
+      issueDate: string;
+      expiryDate?: string;
+      certificateNumber?: string;
+    }>>().default([]),
+    education: json("education").$type<Array<{
+      institution: string;
+      degree: string;
+      fieldOfStudy: string;
+      graduationYear: number;
+    }>>().default([]),
+    profileImageUrl: varchar("profile_image_url", { length: 500 }),
+    bio: text("bio"),
+    website: varchar("website", { length: 255 }),
+    socialMedia: json("social_media").$type<{
+      linkedin?: string;
+      twitter?: string;
+      facebook?: string;
+    }>().default({}),
+    hourlyRate: decimal("hourly_rate", { precision: 8, scale: 2 }),
+    projectMinimum: decimal("project_minimum", { precision: 8, scale: 2 }),
+    currency: varchar("currency", { length: 3 }).default("KES").notNull(),
+    paymentTerms: text("payment_terms"),
+    isAvailable: boolean("is_available").default(true).notNull(),
+    nextAvailableDate: timestamp("next_available_date"),
+    workingHours: json("working_hours").$type<{
+      monday?: { start: string; end: string };
+      tuesday?: { start: string; end: string };
+      wednesday?: { start: string; end: string };
+      thursday?: { start: string; end: string };
+      friday?: { start: string; end: string };
+      saturday?: { start: string; end: string };
+      sunday?: { start: string; end: string };
+    }>().default({}),
+    emergencyAvailable: boolean("emergency_available").default(false).notNull(),
+    verificationStatus: professionalVerificationStatusEnum("verification_status").default("pending").notNull(),
+    verificationDocuments: json("verification_documents").$type<Array<{
+      type: string;
+      url: string;
+      uploadedAt: string;
+      verified: boolean;
+    }>>().default([]),
+    trustScore: integer("trust_score").default(50).notNull(),
+    completedProjects: integer("completed_projects").default(0).notNull(),
+    averageRating: decimal("average_rating", { precision: 3, scale: 2 }).default("0.00"),
+    totalReviews: integer("total_reviews").default(0).notNull(),
+    responseTime: integer("response_time").default(24), // hours
+    completionRate: decimal("completion_rate", { precision: 3, scale: 2 }).default("1.00"),
+    isActive: boolean("is_active").default(true).notNull(),
+    isFeatured: boolean("is_featured").default(false).notNull(),
+    lastActiveAt: timestamp("last_active_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("professionals_user_idx").on(table.userId),
+    emailIdx: uniqueIndex("professionals_email_idx").on(table.email),
+    primarySpecializationIdx: index("professionals_primary_specialization_idx").on(table.primarySpecialization),
+    verificationStatusIdx: index("professionals_verification_status_idx").on(table.verificationStatus),
+    isAvailableIdx: index("professionals_is_available_idx").on(table.isAvailable),
+    trustScoreIdx: index("professionals_trust_score_idx").on(table.trustScore),
+    averageRatingIdx: index("professionals_average_rating_idx").on(table.averageRating),
+    isActiveIdx: index("professionals_is_active_idx").on(table.isActive),
+    isFeaturedIdx: index("professionals_is_featured_idx").on(table.isFeatured),
+    lastActiveIdx: index("professionals_last_active_idx").on(table.lastActiveAt),
+    // Composite indexes for common queries
+    activeVerifiedIdx: index("professionals_active_verified_idx").on(table.isActive, table.verificationStatus),
+    specializationLocationIdx: index("professionals_specialization_location_idx").on(table.primarySpecialization),
+    availableRatingIdx: index("professionals_available_rating_idx").on(table.isAvailable, table.averageRating),
+  })
+);
+
+// Professional Reviews table
+export const professionalReviews = pgTable(
+  "professional_reviews",
+  {
+    id: serial("id").primaryKey(),
+    professionalId: integer("professional_id").references(() => professionals.id, { onDelete: "cascade" }).notNull(),
+    reviewerId: integer("reviewer_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    projectId: integer("project_id"), // Optional reference to specific project
+    rating: integer("rating").notNull(), // 1-5 stars
+    title: varchar("title", { length: 255 }),
+    comment: text("comment").notNull(),
+    serviceType: varchar("service_type", { length: 100 }),
+    projectValue: decimal("project_value", { precision: 10, scale: 2 }),
+    timelinessRating: integer("timeliness_rating"), // 1-5
+    communicationRating: integer("communication_rating"), // 1-5
+    qualityRating: integer("quality_rating"), // 1-5
+    valueRating: integer("value_rating"), // 1-5
+    wouldRecommend: boolean("would_recommend").default(true).notNull(),
+    isVerifiedClient: boolean("is_verified_client").default(false).notNull(),
+    helpfulCount: integer("helpful_count").default(0).notNull(),
+    reportCount: integer("report_count").default(0).notNull(),
+    professionalResponse: text("professional_response"),
+    professionalResponseAt: timestamp("professional_response_at"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    professionalIdx: index("professional_reviews_professional_idx").on(table.professionalId),
+    reviewerIdx: index("professional_reviews_reviewer_idx").on(table.reviewerId),
+    ratingIdx: index("professional_reviews_rating_idx").on(table.rating),
+    verifiedClientIdx: index("professional_reviews_verified_client_idx").on(table.isVerifiedClient),
+    isActiveIdx: index("professional_reviews_is_active_idx").on(table.isActive),
+    createdAtIdx: index("professional_reviews_created_at_idx").on(table.createdAt),
+    // Composite indexes
+    professionalActiveIdx: index("professional_reviews_professional_active_idx").on(table.professionalId, table.isActive),
+    professionalRatingIdx: index("professional_reviews_professional_rating_idx").on(table.professionalId, table.rating),
+    // Unique constraint to prevent duplicate reviews
+    uniqueReviewerProfessionalIdx: uniqueIndex("professional_reviews_reviewer_professional_unique").on(
+      table.reviewerId,
+      table.professionalId
+    ),
+  })
+);
+
+// Professional Specializations junction table
+export const professionalSpecializations = pgTable(
+  "professional_specializations",
+  {
+    id: serial("id").primaryKey(),
+    professionalId: integer("professional_id").references(() => professionals.id, { onDelete: "cascade" }).notNull(),
+    specialization: professionalSpecializationEnum("specialization").notNull(),
+    proficiencyLevel: integer("proficiency_level").default(3).notNull(), // 1-5 scale
+    yearsOfExperience: integer("years_of_experience").default(0).notNull(),
+    certificationRequired: boolean("certification_required").default(false).notNull(),
+    certificationUrl: varchar("certification_url", { length: 500 }),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    professionalIdx: index("professional_specializations_professional_idx").on(table.professionalId),
+    specializationIdx: index("professional_specializations_specialization_idx").on(table.specialization),
+    proficiencyIdx: index("professional_specializations_proficiency_idx").on(table.proficiencyLevel),
+    isActiveIdx: index("professional_specializations_is_active_idx").on(table.isActive),
+    // Composite indexes
+    professionalSpecializationIdx: index("professional_specializations_professional_specialization_idx").on(
+      table.professionalId,
+      table.specialization
+    ),
+    // Unique constraint
+    uniqueProfessionalSpecializationIdx: uniqueIndex("professional_specializations_unique").on(
+      table.professionalId,
+      table.specialization
+    ),
+  })
+);
+
+// Professional Certifications table
+export const professionalCertifications = pgTable(
+  "professional_certifications",
+  {
+    id: serial("id").primaryKey(),
+    professionalId: integer("professional_id").references(() => professionals.id, { onDelete: "cascade" }).notNull(),
+    certificationName: varchar("certification_name", { length: 255 }).notNull(),
+    issuingOrganization: varchar("issuing_organization", { length: 255 }).notNull(),
+    certificateNumber: varchar("certificate_number", { length: 100 }),
+    issueDate: timestamp("issue_date").notNull(),
+    expiryDate: timestamp("expiry_date"),
+    isLifetime: boolean("is_lifetime").default(false).notNull(),
+    verificationUrl: varchar("verification_url", { length: 500 }),
+    documentUrl: varchar("document_url", { length: 500 }),
+    isVerified: boolean("is_verified").default(false).notNull(),
+    verifiedBy: varchar("verified_by", { length: 255 }),
+    verifiedAt: timestamp("verified_at"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    professionalIdx: index("professional_certifications_professional_idx").on(table.professionalId),
+    issuingOrgIdx: index("professional_certifications_issuing_org_idx").on(table.issuingOrganization),
+    isVerifiedIdx: index("professional_certifications_is_verified_idx").on(table.isVerified),
+    expiryDateIdx: index("professional_certifications_expiry_date_idx").on(table.expiryDate),
+    isActiveIdx: index("professional_certifications_is_active_idx").on(table.isActive),
+    // Composite indexes
+    professionalVerifiedIdx: index("professional_certifications_professional_verified_idx").on(
+      table.professionalId,
+      table.isVerified
+    ),
+  })
+);
+
+// Expert Profiles table (keeping existing for backward compatibility)
 export const expertProfiles = pgTable(
   "expert_profiles",
   {
@@ -973,6 +1216,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   favorites: many(favorites),
   propertyViews: many(propertyViews),
   transactions: many(transactions),
+  professionalProfile: many(professionals),
+  professionalReviews: many(professionalReviews),
 }));
 
 export const propertiesRelations = relations(properties, ({ one, many }) => ({
@@ -1752,5 +1997,41 @@ export const contentReportsRelations = relations(contentReports, ({ one }) => ({
   reviewer: one(users, {
     fields: [contentReports.reviewedBy],
     references: [users.id],
+  }),
+}));
+
+// Professional Directory Relations
+export const professionalsRelations = relations(professionals, ({ one, many }) => ({
+  user: one(users, {
+    fields: [professionals.userId],
+    references: [users.id],
+  }),
+  reviews: many(professionalReviews),
+  specializations: many(professionalSpecializations),
+  certifications: many(professionalCertifications),
+}));
+
+export const professionalReviewsRelations = relations(professionalReviews, ({ one }) => ({
+  professional: one(professionals, {
+    fields: [professionalReviews.professionalId],
+    references: [professionals.id],
+  }),
+  reviewer: one(users, {
+    fields: [professionalReviews.reviewerId],
+    references: [users.id],
+  }),
+}));
+
+export const professionalSpecializationsRelations = relations(professionalSpecializations, ({ one }) => ({
+  professional: one(professionals, {
+    fields: [professionalSpecializations.professionalId],
+    references: [professionals.id],
+  }),
+}));
+
+export const professionalCertificationsRelations = relations(professionalCertifications, ({ one }) => ({
+  professional: one(professionals, {
+    fields: [professionalCertifications.professionalId],
+    references: [professionals.id],
   }),
 }));

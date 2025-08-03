@@ -6,8 +6,9 @@
  */
 
 import { EventEmitter } from 'events';
-import { logger } from '../monitoring/logger';
+
 import { standardErrorHandler, ErrorCategory } from '../error-handling/StandardErrorHandler';
+import { logger } from '../monitoring/logger';
 import { performanceMonitor } from '../monitoring/PerformanceMonitor';
 
 export interface TestCase {
@@ -384,7 +385,7 @@ export class TestFramework extends EventEmitter {
     },
 
     hasProperty: (object: any, property: string, description: string = ''): AssertionResult => {
-      const passed = object && object.hasOwnProperty(property);
+      const passed = object?.hasOwnProperty(property);
       return {
         description: description || `Expected object to have property ${property}`,
         passed,
@@ -487,7 +488,7 @@ export class TestFramework extends EventEmitter {
     },
 
     mockResponse: () => {
-      const response = {
+      return {
         statusCode: 200,
         headers: {},
         body: null,
@@ -508,7 +509,6 @@ export class TestFramework extends EventEmitter {
           return this;
         }
       };
-      return response;
     }
   };
 

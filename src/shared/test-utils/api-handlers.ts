@@ -523,7 +523,7 @@ export const handlers = [
 
   http.put('/api/users/me/preferences', async ({ request }) => {
     const body = await request.json() as any;
-    if (mockUsers[0] && mockUsers[0].preferences) {
+    if (mockUsers[0]?.preferences) {
       mockUsers[0].preferences = { ...mockUsers[0].preferences, ...body };
     }
     

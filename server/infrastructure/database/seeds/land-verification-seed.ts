@@ -2,6 +2,7 @@
 // This script creates realistic test data for the Kenya Land Verification System
 
 import { db } from '../index';
+
 import {
   landVerificationSessions,
   verificationLayers,

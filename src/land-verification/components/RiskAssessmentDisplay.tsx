@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
-import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Progress } from '@shared/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { cn } from '@shared/lib/utils';
 import { 
   AlertTriangle, 
   Shield, 
@@ -16,7 +16,8 @@ import {
   RefreshCw,
   Info
 } from 'lucide-react';
-import { cn } from '@shared/lib/utils';
+import React, { useState } from 'react';
+
 import type { 
   RiskAssessmentResponse,
   RiskFactorWithContext,

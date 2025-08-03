@@ -1,5 +1,7 @@
 import crypto from 'crypto';
+
 import { logger } from '../../infrastructure/monitoring/logger';
+
 import { encryptionService } from './EncryptionService';
 
 export interface PrivacyConfig {

@@ -1,8 +1,8 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
-import { Progress } from '@shared/components/ui/progress';
 import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Progress } from '@shared/components/ui/progress';
+import { cn } from '@shared/lib/utils';
 import { 
   CheckCircle2, 
   Clock, 
@@ -16,7 +16,8 @@ import {
   Scale,
   UserCheck
 } from 'lucide-react';
-import { cn } from '@shared/lib/utils';
+import React from 'react';
+
 import type { 
   VerificationLayerWithResults, 
   LayerType,

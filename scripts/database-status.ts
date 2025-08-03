@@ -84,7 +84,7 @@ async function showDatabaseStatus() {
     console.log("   3. Deploy to production");
     console.log("   4. Configure land verification services");
     
-    console.log("\n" + "=" .repeat(60));
+    console.log(`\n${  "=" .repeat(60)}`);
     console.log("🎊 CONGRATULATIONS! Your database is fully operational!");
     
   } catch (error) {

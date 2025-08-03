@@ -1,4 +1,3 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Search,
   MapPin,
@@ -14,11 +13,13 @@ import {
   Award,
   Home,
 } from "lucide-react";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Card, CardContent } from "../ui/card";
-import { Badge } from "../ui/badge";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+
 import { HERO_VARIANTS } from "../../config/assets";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { Card, CardContent } from "../ui/card";
+import { Input } from "../ui/input";
 
 // Enhanced type definitions with better specificity
 interface SearchSuggestion {

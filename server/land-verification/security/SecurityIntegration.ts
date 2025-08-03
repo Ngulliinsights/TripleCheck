@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
+
+import { logger } from '../../infrastructure/monitoring/logger';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
-import { encryptionService } from './EncryptionService';
+
 import { accessControlService } from './AccessControlService';
 import { auditLogger } from './AuditLogger';
+import { encryptionService } from './EncryptionService';
 import { privacyProtectionService } from './PrivacyProtectionService';
-import { logger } from '../../infrastructure/monitoring/logger';
 
 /**
  * Security integration service that provides unified security middleware

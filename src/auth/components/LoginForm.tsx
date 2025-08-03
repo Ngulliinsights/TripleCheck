@@ -1,18 +1,14 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { startAuthentication } from '@simplewebauthn/browser';
+import { Eye, EyeOff, Shield, Chrome, Facebook, Fingerprint, AlertCircle, CheckCircle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Shield, Chrome, Facebook, Fingerprint, AlertCircle, CheckCircle } from 'lucide-react';
-import { startAuthentication } from '@simplewebauthn/browser';
-import { Logo } from '../../shared/components/ui/logo';
 import zxcvbn from 'zxcvbn';
 
-import { Button } from '../../shared/components/ui/button';
-import { Input } from '../../shared/components/ui/input';
-import { Checkbox } from '../../shared/components/ui/checkbox';
 import { Alert, AlertDescription } from '../../shared/components/ui/alert';
-import { Progress } from '../../shared/components/ui/progress';
-import { Separator } from '../../shared/components/ui/separator';
+import { Button } from '../../shared/components/ui/button';
+import { Checkbox } from '../../shared/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -21,6 +17,10 @@ import {
   FormLabel,
   FormMessage,
 } from '../../shared/components/ui/form';
+import { Input } from '../../shared/components/ui/input';
+import { Logo } from '../../shared/components/ui/logo';
+import { Progress } from '../../shared/components/ui/progress';
+import { Separator } from '../../shared/components/ui/separator';
 import { useLogin } from '../hooks/useAuth';
 import { LoginCredentials, User } from '../types/auth.types';
 

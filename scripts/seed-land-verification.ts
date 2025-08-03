@@ -2,9 +2,9 @@
 // Land Verification System Seeding Script
 // This script populates the land verification tables with test data
 
+import { neon } from "@neondatabase/serverless";
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
 
 // Load environment variables from .env file
 config();

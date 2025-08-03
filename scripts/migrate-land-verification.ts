@@ -2,9 +2,9 @@
 // Custom migration script for Land Verification System
 // This script adds only the new land verification tables to an existing database
 
+import { neon } from "@neondatabase/serverless";
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
 
 // Load environment variables from .env file
 config();

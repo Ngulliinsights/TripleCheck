@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+
 import type { User, InsertUser } from '../../src/shared/schema';
 import type { IStorage } from '../infrastructure/storage/storage';
 import type { 
@@ -271,7 +272,7 @@ export class AuthService {
       return false;
     }
 
-    const lastActivity = req.session.lastActivity;
+    const {lastActivity} = req.session;
     if (lastActivity) {
       const sessionAge = Date.now() - new Date(lastActivity).getTime();
       return sessionAge <= maxAgeMs;

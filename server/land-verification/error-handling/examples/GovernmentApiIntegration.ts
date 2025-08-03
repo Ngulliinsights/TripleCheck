@@ -3,16 +3,16 @@
  * Demonstrates retry policies, fallback mechanisms, and graceful degradation
  */
 
-import { errorHandlingService } from '../ErrorHandlingService';
-import { fallbackManager } from '../FallbackManager';
-import { retryPolicyManager } from '../RetryPolicyManager';
-import { auditLogger, AuditSeverity } from '../AuditLogger';
-import { logger } from '../../../logger';
 import { 
   ExternalServiceError, 
   ErrorCode, 
   HttpStatusCode 
 } from '../../../../src/shared/utils/errors';
+import { logger } from '../../../logger';
+import { auditLogger, AuditSeverity } from '../AuditLogger';
+import { errorHandlingService } from '../ErrorHandlingService';
+import { fallbackManager } from '../FallbackManager';
+import { retryPolicyManager } from '../RetryPolicyManager';
 
 // Mock government API responses
 interface RegistrySearchResult {

@@ -1,10 +1,12 @@
+import { ArrowLeft, Calendar, Clock, User, Share2, Tag } from 'lucide-react';
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
+
 import { Badge } from '../components/ui/badge';
-import { ArrowLeft, Calendar, Clock, User, Share2, Tag } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
 import { BLOG_POSTS } from '../config/assets';
+import { usePageSpacing } from '../hooks/useNavigationSpacing';
 import { formatDate } from '../utils/date-utils';
 
 interface BlogPostProps {
@@ -12,11 +14,14 @@ interface BlogPostProps {
 }
 
 export default function BlogPost({ id }: BlogPostProps) {
-  const { id: paramId } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { pageClassName } = usePageSpacing();
   
-  // Use the id prop if provided, otherwise use the URL parameter
-  const postId = id || paramId;
+  // Use the id prop if provided, otherwise use the URL parameter (slug)
+  const postId = id || slug;
+  
+
   
   // Find the blog post by ID
   const post = BLOG_POSTS.find(p => p.id === postId);
@@ -24,17 +29,21 @@ export default function BlogPost({ id }: BlogPostProps) {
   // If post not found, show 404
   if (!post) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+      <div className={`min-h-screen bg-dark-gradient-primary ${pageClassName}`}>
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-3xl font-bold mb-4">Article Not Found</h1>
-            <p className="text-muted-foreground mb-8">
-              The article you're looking for doesn't exist or may have been moved.
-            </p>
-            <Button onClick={() => navigate("/blog")} size="lg" variant="coral">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Blog
-            </Button>
+            <div className="glass-modal p-12">
+              <h1 className="text-3xl font-bold mb-4 text-glass-light">Article Not Found</h1>
+              <p className="text-glass-medium mb-8">
+                The article you're looking for doesn't exist or may have been moved.
+                <br />
+                <small className="text-glass-medium">Looking for ID: {postId}</small>
+              </p>
+              <Button onClick={() => navigate("/blog")} size="lg" className="glass-btn-secondary">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Blog
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -64,7 +73,7 @@ export default function BlogPost({ id }: BlogPostProps) {
 
   // Generate sample content based on the post data
   const generateContent = (post: typeof BLOG_POSTS[number]) => {
-    const sections = [
+    return [
       {
         title: "Introduction",
         content: `${post.excerpt} In this comprehensive guide, we'll explore the key aspects that every real estate professional and investor should understand.`
@@ -82,14 +91,12 @@ export default function BlogPost({ id }: BlogPostProps) {
         content: "As we move forward, staying informed about market trends and leveraging technology will be key to success in the real estate industry. TripleCheck remains committed to providing the tools and insights you need."
       }
     ];
-
-    return sections;
   };
 
   const contentSections = generateContent(post);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className={`min-h-screen bg-dark-gradient-primary ${pageClassName}`}>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Back button */}
@@ -102,7 +109,7 @@ export default function BlogPost({ id }: BlogPostProps) {
             Back to Blog
           </Button>
 
-          <article className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <article className="glass-modal overflow-hidden">
             {/* Hero image */}
             <div className="aspect-video relative">
               <picture>
@@ -180,7 +187,7 @@ export default function BlogPost({ id }: BlogPostProps) {
             </div>
 
             {/* Article footer */}
-            <div className="p-8 bg-secondary/10 border-t">
+            <div className="p-8 bg-glass-secondary border-t border-glass-light">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div>
@@ -192,19 +199,17 @@ export default function BlogPost({ id }: BlogPostProps) {
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    variant="coral-outline"
                     size="sm"
                     onClick={handleShare}
-                    className="hover:bg-secondary/10"
+                    className="glass-btn"
                   >
                     <Share2 className="w-4 h-4 mr-2" />
                     Share
                   </Button>
                   <Button
-                    variant="coral"
                     size="sm"
                     onClick={() => navigate('/blog')}
-                    className="hover:bg-secondary/90"
+                    className="glass-btn-secondary"
                   >
                     More Articles
                   </Button>
@@ -215,12 +220,12 @@ export default function BlogPost({ id }: BlogPostProps) {
 
           {/* Related articles section */}
           <div className="mt-12">
-            <h3 className="text-2xl font-bold mb-6 text-secondary">Related Articles</h3>
+            <h3 className="text-2xl font-bold mb-6 text-glass-light">Related Articles</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {BLOG_POSTS.filter(p => p.id !== post.id).slice(0, 2).map((relatedPost) => (
                 <Card 
                   key={relatedPost.id}
-                  className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 group cursor-pointer"
+                  className="glass-property-card overflow-hidden group cursor-pointer"
                   onClick={() => navigate(`/blog/${relatedPost.id}`)}
                 >
                   <div className="aspect-video relative">

@@ -4,8 +4,9 @@
  */
 
 import { useEffect, useState, useCallback, createContext, useContext } from 'react';
-import { coreWebVitalsTracker, CoreWebVitalsMetrics, MetricRating } from './core-web-vitals';
+
 import { bundleAnalyzer, BundleMetrics } from './bundle-analyzer';
+import { coreWebVitalsTracker, CoreWebVitalsMetrics, MetricRating } from './core-web-vitals';
 import { resourceHintsManager, ResourceHintMetrics } from './resource-hints';
 
 export interface PerformanceMonitoringState {

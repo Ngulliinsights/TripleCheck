@@ -24,8 +24,8 @@ import {
   CardContent,
 } from "../../shared/components/ui/card";
 import { Input } from "../../shared/components/ui/input";
-import { Skeleton } from "../../shared/components/ui/skeleton";
 import { LandImage } from "../../shared/components/ui/land-image";
+import { Skeleton } from "../../shared/components/ui/skeleton";
 import { Property } from "../../shared/types/property";
 
 // Types for land listings extending the base Property interface

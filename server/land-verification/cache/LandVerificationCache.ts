@@ -1,5 +1,3 @@
-import { cacheService, CacheKeys } from '../../cache/CacheService';
-import { logger } from '../../infrastructure/monitoring/logger';
 import type {
   VerificationSession,
   LayerExecutionResult,
@@ -8,6 +6,8 @@ import type {
   CommunityIntelligence,
   PhysicalVerificationResult
 } from '../../../src/types/land-verification';
+import { cacheService, CacheKeys } from '../../cache/CacheService';
+import { logger } from '../../infrastructure/monitoring/logger';
 
 export interface LandVerificationCacheConfig {
   sessionTTL: number;

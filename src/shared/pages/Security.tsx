@@ -1,8 +1,9 @@
-import React from 'react';
 import { Shield, Lock, Eye, Server, AlertTriangle, CheckCircle, Users, FileText } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import React from 'react';
+
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function Security() {
   const securityFeatures = [

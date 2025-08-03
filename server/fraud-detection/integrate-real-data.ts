@@ -11,12 +11,13 @@
  */
 
 import "dotenv/config";
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
-import { count, eq, desc, and, or } from "drizzle-orm";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+
+import { neon } from "@neondatabase/serverless";
+import { count, eq, desc, and, or } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/neon-http";
 
 // Import schema from correct location
 import { users, properties, reviews } from "../../src/shared/schema";

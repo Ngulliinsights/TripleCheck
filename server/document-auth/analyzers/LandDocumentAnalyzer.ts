@@ -1,7 +1,9 @@
+import * as crypto from 'crypto';
+
+import { PDFDocument } from 'pdf-lib';
+
 import { logger } from '../../infrastructure/monitoring/logger';
 import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';
-import * as crypto from 'crypto';
-import { PDFDocument } from 'pdf-lib';
 
 export interface LandDocumentAnalysisResult {
   checks: VerificationCheck[];
@@ -83,7 +85,7 @@ export class LandDocumentAnalyzer {
 
     try {
       const checks: VerificationCheck[] = [];
-      let landSpecificData: LandDocumentData = { documentType: 'unknown' };
+      const landSpecificData: LandDocumentData = { documentType: 'unknown' };
 
       // Document type identification
       const typeIdentificationCheck = await this.identifyDocumentType(request);
@@ -872,7 +874,7 @@ async validateAgainstTemplate(request: DocumentVerificationRequest, documentType
         validationDetails.push(`Template found for: ${documentType}`);
         
         // Check required sections
-        const requiredSections = template.requiredSections;
+        const {requiredSections} = template;
         const foundSections = this.simulateRequiredSectionsCheck(requiredSections);
         const missingSections = requiredSections.filter(section => !foundSections.includes(section));
         
@@ -884,7 +886,7 @@ async validateAgainstTemplate(request: DocumentVerificationRequest, documentType
         }
         
         // Check required fields
-        const requiredFields = template.requiredFields;
+        const {requiredFields} = template;
         const foundFields = this.simulateRequiredFieldsCheck(requiredFields);
         const missingFields = requiredFields.filter(field => !foundFields.includes(field));
         

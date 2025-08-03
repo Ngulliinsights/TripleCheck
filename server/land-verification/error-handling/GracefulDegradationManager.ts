@@ -3,13 +3,13 @@
  * Handles partial data scenarios and provides degraded but functional service
  */
 
-import { logger } from "../../logger";
 import { 
   BusinessLogicError, 
   ErrorCode, 
   HttpStatusCode,
   generateCorrelationId 
 } from "../../../src/shared/utils/errors";
+import { logger } from "../../logger";
 
 export interface DegradationLevel {
   level: 'full' | 'partial' | 'minimal' | 'emergency';

@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
+
 import { RequestDeduplicator } from '../deduplication/RequestDeduplicator';
 import { cachePerformanceMonitor, CacheMetrics } from '../monitoring/CachePerformanceMonitor';
 import { monitoringDashboard } from '../monitoring/MonitoringDashboard';
@@ -316,7 +317,7 @@ export class PerformanceOptimizer extends EventEmitter {
     const currentTTL = 300000; // Default 5 minutes - in real scenario, get from config
 
     let recommendedTTL = currentTTL;
-    let expectedImpact = { hitRateImprovement: 0, memoryReduction: 0, responseTimeImprovement: 0 };
+    const expectedImpact = { hitRateImprovement: 0, memoryReduction: 0, responseTimeImprovement: 0 };
     let confidence = 0.5;
 
     if (avgHitRate < 0.7) {

@@ -304,7 +304,7 @@ async function main() {
     // Step 4: Generate real report
     generateRealOptimizationReport();
 
-    console.log("\n" + "=".repeat(60));
+    console.log(`\n${  "=".repeat(60)}`);
     console.log("🎉 REAL OPTIMIZATION IMPLEMENTATION COMPLETE");
     console.log("=".repeat(60));
     console.log("📋 Immediate actions:");

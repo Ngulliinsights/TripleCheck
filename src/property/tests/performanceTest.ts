@@ -194,9 +194,9 @@ ${this.generateRecommendations()}
     const percentage = (passedTests / totalTests) * 100;
     
     if (percentage === 100) return 'EXCELLENT (100%)';
-    if (percentage >= 80) return 'GOOD (' + percentage + '%)';
-    if (percentage >= 60) return 'FAIR (' + percentage + '%)';
-    return 'NEEDS IMPROVEMENT (' + percentage + '%)';
+    if (percentage >= 80) return `GOOD (${  percentage  }%)`;
+    if (percentage >= 60) return `FAIR (${  percentage  }%)`;
+    return `NEEDS IMPROVEMENT (${  percentage  }%)`;
   }
 
   private generateRecommendations(): string {

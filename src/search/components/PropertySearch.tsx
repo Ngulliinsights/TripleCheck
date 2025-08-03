@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Button } from '../../shared/components/ui/button';
 import { Search } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Button } from '../../shared/components/ui/button';
 
 interface PropertySearchProps {
   onSearch?: (query: string) => void;

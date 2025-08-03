@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
 import { Badge } from "@shared/components/ui/badge";
 import { Button } from "@shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
 import { Linkedin, Mail, Users, Briefcase, ArrowRight } from "lucide-react";
 
 // Type definition for team member data structure

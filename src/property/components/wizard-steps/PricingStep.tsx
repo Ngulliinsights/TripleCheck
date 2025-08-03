@@ -1,12 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Input } from '@shared/components/ui/input';
-import { Label } from '@shared/components/ui/label';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Badge } from '@shared/components/ui/badge';
+import { Input } from '@shared/components/ui/input';
+import { Label } from '@shared/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
-import { Alert, AlertDescription } from '@shared/components/ui/alert';
-import { PropertyFormData } from '../PropertyListingWizard';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -17,6 +15,9 @@ import {
   BarChart3,
   Lightbulb
 } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+
+import { PropertyFormData } from '../PropertyListingWizard';
 
 interface PricingStepProps {
   data: PropertyFormData;
@@ -141,7 +142,7 @@ export function PricingStep({ data, onUpdate, onValidation }: PricingStepProps) 
     if (!marketInsights || !data.price) return null;
     
     const userPrice = data.price;
-    const recommendedPrice = marketInsights.recommendedPrice;
+    const {recommendedPrice} = marketInsights;
     const difference = ((userPrice - recommendedPrice) / recommendedPrice) * 100;
     
     if (Math.abs(difference) < 5) {

@@ -12,7 +12,7 @@ interface ExtendedRequest extends Request {
   apiVersion?: ApiVersionContext;
 }
 import { logger } from "../monitoring/logger";
-import { performanceMonitor } from "../monitoring/PerformanceMonitor";
+import { performanceMonitor, MetricUnit, MetricCategory } from "../monitoring/PerformanceMonitor";
 
 export interface ApiVersion {
   version: string;
@@ -264,8 +264,6 @@ export function apiVersioningMiddleware(
     next: NextFunction
   ): Promise<void> => {
     try {
-      const startTime = Date.now();
-
       // Extract and resolve version
       const requestedVersion = extractVersionFromRequest(req, config);
       const versionContext = resolveVersionContext(requestedVersion, config);
@@ -312,7 +310,12 @@ export function apiVersioningMiddleware(
       }
 
       // Performance monitoring
-      performanceMonitor.recordMetric("api_versioning_middleware_duration");
+      performanceMonitor.recordMetric({
+        name: "api_versioning_middleware_duration",
+        category: MetricCategory.RESPONSE_TIME,
+        value: 1,
+        unit: MetricUnit.COUNT
+      });
 
       next();
     } catch (error) {
@@ -406,8 +409,14 @@ function transformToV1Response(data: unknown): unknown {
     for (const [key, value] of Object.entries(data)) {
       // Keys from Object.entries are always strings, but adding check for security
       if (typeof key === "string" && key.length > 0) {
-        const safeKey = key.replace(/[^a-zA-Z0-9_]/g, "_"); // Sanitize key
-        transformed[safeKey] = transformToV1Response(value);
+        const safeKey = key.replace(/\W/g, "_"); // Sanitize key using concise regex
+        // Use Object.defineProperty to safely set the property
+        Object.defineProperty(transformed, safeKey, {
+          value: transformToV1Response(value),
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
       }
     }
     return transformed;

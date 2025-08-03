@@ -1,13 +1,16 @@
 import { EventEmitter } from 'events';
-import { logger } from '../infrastructure/monitoring/logger';
-import { db } from '../infrastructure/database/connection';
+
+import { eq, and, desc } from 'drizzle-orm';
+
 import { 
   communityFeedback, 
   landVerificationSessions,
   properties,
   verificationLayers
 } from '../../src/shared/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { db } from '../infrastructure/database/connection';
+import { logger } from '../infrastructure/monitoring/logger';
+
 
 export interface InterviewTemplate {
   id: string;
@@ -534,7 +537,7 @@ export class CommunityIntelligenceService extends EventEmitter {
 
   private anonymizeName(name: string): string {
     const parts = name.split(' ');
-    return parts.map(part => part.charAt(0).toUpperCase() + '.').join(' ');
+    return parts.map(part => `${part.charAt(0).toUpperCase()  }.`).join(' ');
   }
 
   private async encryptContactInfo(contactInfo: string): Promise<string> {
@@ -565,7 +568,7 @@ export class CommunityIntelligenceService extends EventEmitter {
   }
 
   private calculateCompletenessScore(feedback: CommunityFeedback): number {
-    let totalFields = 9;
+    const totalFields = 9;
     let completedFields = 0;
 
     if (feedback.sourceDetails.name) completedFields++;
@@ -610,7 +613,7 @@ export class CommunityIntelligenceService extends EventEmitter {
     const distribution: Record<string, number> = {};
     
     for (const feedback of feedbackData) {
-      const source = feedback.source;
+      const {source} = feedback;
       distribution[source] = (distribution[source] || 0) + 1;
     }
 

@@ -207,7 +207,7 @@ export class GracefulDegradation {
     const availableLayers = this.getAvailableVerificationLayers();
     const unavailableLayers = requestedLayers.filter(layer => !availableLayers.includes(layer));
     const adaptations: string[] = [];
-    let confidence = this.currentDegradationLevel.confidence;
+    let {confidence} = this.currentDegradationLevel;
 
     // Suggest adaptations for unavailable layers
     for (const unavailableLayer of unavailableLayers) {

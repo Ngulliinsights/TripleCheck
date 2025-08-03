@@ -6,6 +6,8 @@
  */
 
 import express from 'express';
+
+import { CacheService } from '../../cache/CacheService';
 import { 
   createRateLimitingMiddleware,
   rateLimitCounterMiddleware,
@@ -15,7 +17,6 @@ import {
   CircuitBreakerManager,
   ApiCallTracker
 } from '../index';
-import { CacheService } from '../../cache/CacheService';
 
 // Example 1: Basic Express app setup with comprehensive rate limiting
 export function setupBasicRateLimiting(app: express.Application) {
@@ -372,7 +373,7 @@ export function setupRateLimitingAdmin(app: express.Application) {
 
   // Reset circuit breaker endpoint
   app.post('/api/internal/rate-limiting/reset-circuit-breaker/:name', (req, res) => {
-    const name = req.params.name;
+    const {name} = req.params;
     const circuitBreakerManager = CircuitBreakerManager.getInstance();
     
     const circuitBreaker = circuitBreakerManager.getCircuitBreaker(name);

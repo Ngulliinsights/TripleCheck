@@ -1,4 +1,5 @@
-import { db } from "../infrastructure/database/connection";
+import { eq, and, desc, sql, count, avg, ilike, or } from "drizzle-orm";
+
 import { 
   communityExperiences, 
   experienceComments, 
@@ -6,7 +7,8 @@ import {
   contentReports,
   users 
 } from "../../src/shared/schema";
-import { eq, and, desc, sql, count, avg, ilike, or } from "drizzle-orm";
+import { db } from "../infrastructure/database/connection";
+
 import { NotificationService } from "./notification-service";
 
 interface CommunityExperience {
@@ -723,7 +725,7 @@ export class CommunityResourcesService {
     }
     
     // Add content-based tags
-    const content = (experienceData.whatHappened + ' ' + (experienceData.lessonsLearned || '')).toLowerCase();
+    const content = (`${experienceData.whatHappened  } ${  experienceData.lessonsLearned || ''}`).toLowerCase();
     if (content.includes('title')) tags.push('title-fraud');
     if (content.includes('broker')) tags.push('broker-scam');
     if (content.includes('developer')) tags.push('developer-fraud');

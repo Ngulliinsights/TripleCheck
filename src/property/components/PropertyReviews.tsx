@@ -1,16 +1,18 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSafeUserQuery } from "@shared/hooks/useSafeQuery";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@shared/components/ui/card";
+import { Badge } from "@shared/components/ui/badge";
 import { Button } from "@shared/components/ui/button";
-import { Textarea } from "@shared/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@shared/components/ui/card";
 import { Label } from "@shared/components/ui/label";
 import { Separator } from "@shared/components/ui/separator";
-import { Badge } from "@shared/components/ui/badge";
+import { Textarea } from "@shared/components/ui/textarea";
+import { useSafeUserQuery } from "@shared/hooks/useSafeQuery";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Star, MessageCircle, ThumbsUp, Flag, User } from "lucide-react";
-import { useToast } from "@/shared/hooks/use-toast";
-import { apiRequest, getQueryFn } from "@/infrastructure/api/queryClient";
+import { useState } from "react";
+
 import { formatDate } from "../../shared/utils/date-utils";
+
+import { apiRequest, getQueryFn } from "@/infrastructure/api/queryClient";
+import { useToast } from "@/shared/hooks/use-toast";
 
 interface PropertyReviewsProps {
   propertyId: string;
@@ -63,8 +65,7 @@ export function PropertyReviews({ propertyId }: PropertyReviewsProps) {
 
   const createReviewMutation = useMutation({
     mutationFn: async (reviewData: { rating: number; comment: string }) => {
-      const response = await apiRequest("POST", `/api/properties/${propertyId}/reviews`, reviewData);
-      return response;
+      return await apiRequest("POST", `/api/properties/${propertyId}/reviews`, reviewData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/properties/${propertyId}/reviews`] });

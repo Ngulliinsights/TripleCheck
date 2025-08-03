@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
 import { Badge } from '@shared/components/ui/badge';
-import { Slider } from '@shared/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Progress } from '@shared/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
+import { Slider } from '@shared/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { cn } from '@shared/lib/utils';
 import { 
   BarChart3, 
   PieChart, 
@@ -18,7 +18,8 @@ import {
   RefreshCw,
   Download
 } from 'lucide-react';
-import { cn } from '@shared/lib/utils';
+import React, { useState, useMemo } from 'react';
+
 import type { 
   RiskFactorWithContext,
   RiskLevel,

@@ -1,8 +1,9 @@
-import { defineConfig } from 'vitest/config'
 import { resolve } from 'path'
-import react from '@vitejs/plugin-react'
-import themePlugin from '@replit/vite-plugin-shadcn-theme-json'
+
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal'
+import themePlugin from '@replit/vite-plugin-shadcn-theme-json'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vitest/config'
 
 export const baseConfig = defineConfig({
   plugins: [

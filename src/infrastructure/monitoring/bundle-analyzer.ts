@@ -153,7 +153,7 @@ class BundleAnalyzer {
     const scripts = Array.from(document.querySelectorAll('script[src]'));
     
     scripts.forEach((script) => {
-      const src = (script as HTMLScriptElement).src;
+      const {src} = (script as HTMLScriptElement);
       if (!src) return;
 
       const chunkName = this.extractChunkName(src) || this.extractFileName(src);
@@ -322,7 +322,7 @@ class BundleAnalyzer {
 
   private estimateScriptSize(script: HTMLScriptElement): number {
     // This is an estimation - in practice, you'd get this from bundler stats
-    const src = script.src;
+    const {src} = script;
     if (src.includes('vendor') || src.includes('node_modules')) {
       return 300000; // 300KB estimate for vendor chunks
     }
@@ -349,7 +349,7 @@ class BundleAnalyzer {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))  } ${  sizes[i]}`;
   }
 
   private sendMetricsToAnalytics(): void {

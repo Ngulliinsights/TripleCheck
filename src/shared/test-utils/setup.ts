@@ -1,8 +1,9 @@
 import { vi, beforeAll, afterEach, afterAll } from 'vitest';
+
 import '@testing-library/jest-dom';
-import { setupMswServer } from './msw-server';
 import { TestDataFactory } from './fixtures';
 import { memoryManager, cleanupTestMemory } from './memory-manager';
+import { setupMswServer } from './msw-server';
 
 // Set up MSW server for API mocking
 setupMswServer({

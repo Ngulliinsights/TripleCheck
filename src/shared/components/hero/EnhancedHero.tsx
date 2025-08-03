@@ -10,10 +10,14 @@ import {
   Users,
 } from "lucide-react";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
+import { usePropertySearch } from "../../../property/hooks/usePropertySearch";
 import { HERO_VARIANTS } from "../../config/assets";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+
+
 
 // Simplified types
 interface TrustIndicator {
@@ -155,7 +159,11 @@ const getSlideData = (index: number): HeroSlide => {
     },
   ];
 
-  const slide = slides[index] || slides[0]!;
+  // eslint-disable-next-line security/detect-object-injection
+  const slide = slides[index] || slides[0];
+  if (!slide) {
+    throw new Error('No slide data available');
+  }
   return {
     ...slide,
     primaryCta: {
@@ -204,6 +212,20 @@ const THEME_CONFIGS = {
 const SLIDE_DURATION = 8000; // 8 seconds per slide
 const PAUSE_DURATION = 12000; // 12 seconds pause after manual navigation
 
+// Helper function to get theme gradient class
+function getThemeGradientClass(theme: string): string {
+  switch (theme) {
+    case 'trust':
+      return 'gradient-trust-balanced';
+    case 'premium':
+      return 'gradient-premium-balanced';
+    case 'warm':
+      return 'gradient-warm-balanced';
+    default:
+      return 'gradient-professional-balanced';
+  }
+}
+
 /**
  * Enhanced Hero component with Thunes-inspired best practices
  * Features dynamic statistics, progressive disclosure, and African market focus
@@ -235,9 +257,10 @@ export function EnhancedHero({
     [currentSlideData.theme]
   );
 
-  // Simplified geolocation
-  useEffect(() => {
+  // Optional geolocation for enhanced UX - only when user interacts
+  const enableLocationIfAvailable = useCallback(() => {
     if (navigator.geolocation) {
+      // eslint-disable-next-line sonarjs/no-intrusive-permissions
       navigator.geolocation.getCurrentPosition(
         () => setIsLocationEnabled(true),
         () => setIsLocationEnabled(false),
@@ -273,25 +296,41 @@ export function EnhancedHero({
     navigateToSlide(prevIndex);
   }, [currentSlide, navigateToSlide]);
 
+  const navigate = useNavigate();
+  const { updateSearch } = usePropertySearch();
+
   const handleSearchSubmit = useCallback(
     (event: React.FormEvent): void => {
       event.preventDefault();
       const trimmedQuery = searchQuery.trim();
 
       // Build comprehensive search parameters
-      const searchParams = new URLSearchParams();
-      if (trimmedQuery) searchParams.set("q", trimmedQuery);
-      if (searchLocation) searchParams.set("location", searchLocation);
-      if (selectedCountry) searchParams.set("country", selectedCountry);
-      if (selectedPropertyType) searchParams.set("type", selectedPropertyType);
-      if (selectedVerificationStatus)
-        searchParams.set("status", selectedVerificationStatus);
+      const searchParams = {
+        query: trimmedQuery || "",
+        location: searchLocation || "",
+        propertyType: selectedPropertyType || "",
+        verified: selectedVerificationStatus === "verified",
+        page: 1,
+        limit: 12,
+        sortBy: "relevance" as const,
+        sortOrder: "desc" as const,
+      };
 
-      // Pass the full search query with filters
-      const fullSearchQuery = trimmedQuery || "advanced_search";
-      const searchLocationWithFilters = searchParams.toString();
+      // Update the search state
+      updateSearch(searchParams);
 
-      onSearchSubmit?.(fullSearchQuery, searchLocationWithFilters);
+      // Navigate to search results with query parameters
+      const urlParams = new URLSearchParams();
+      if (trimmedQuery) urlParams.set("q", trimmedQuery);
+      if (searchLocation) urlParams.set("location", searchLocation);
+      if (selectedCountry) urlParams.set("country", selectedCountry);
+      if (selectedPropertyType) urlParams.set("type", selectedPropertyType);
+      if (selectedVerificationStatus) urlParams.set("status", selectedVerificationStatus);
+
+      navigate(`/search?${urlParams.toString()}`);
+
+      // Call the optional callback
+      onSearchSubmit?.(trimmedQuery || "advanced_search", urlParams.toString());
       onCtaClick?.(currentSlideData.id, "search_submit");
     },
     [
@@ -300,6 +339,8 @@ export function EnhancedHero({
       selectedCountry,
       selectedPropertyType,
       selectedVerificationStatus,
+      updateSearch,
+      navigate,
       onSearchSubmit,
       onCtaClick,
       currentSlideData.id,
@@ -308,15 +349,89 @@ export function EnhancedHero({
 
   const handleCtaClick = useCallback(
     (action: string): void => {
+      // Handle different CTA actions
+      switch (action) {
+        case "start_verification":
+        case "verify_property":
+          navigate("/land-verification");
+          break;
+        case "watch_demo":
+          navigate("/demo");
+          break;
+        case "premium_access":
+          navigate("/pricing");
+          break;
+        case "market_insights":
+          navigate("/analytics");
+          break;
+        case "search_properties":
+          navigate("/properties");
+          break;
+        case "personalized_search":
+          navigate("/advanced-search");
+          break;
+        case "check_fraud":
+          navigate("/trust/fraud-detection");
+          break;
+        case "find_expert":
+          navigate("/find-professionals");
+          break;
+        default:
+          // For unknown actions, just call the callback
+          break;
+      }
+      
       onCtaClick?.(currentSlideData.id, action);
     },
-    [onCtaClick, currentSlideData.id]
+    [navigate, onCtaClick, currentSlideData.id]
   );
 
   const handleLocationClick = useCallback((): void => {
+    enableLocationIfAvailable();
     setSearchLocation("Current Location");
     onCtaClick?.(currentSlideData.id, "location_used");
-  }, [onCtaClick, currentSlideData.id]);
+  }, [enableLocationIfAvailable, onCtaClick, currentSlideData.id]);
+
+  const handleVerifyProperty = useCallback(async (): Promise<void> => {
+    if (!searchQuery.trim()) {
+      // Use console.warn instead of alert for better UX
+      console.warn("Please enter a property ID or search query to verify");
+      return;
+    }
+
+    try {
+      // Navigate to land verification with the search query
+      navigate(`/land-verification?property=${encodeURIComponent(searchQuery.trim())}`);
+      onCtaClick?.(currentSlideData.id, "verify_property");
+    } catch (error) {
+      console.error("Error initiating verification:", error);
+      // Use console.error instead of alert
+      console.error("Failed to initiate verification. Please try again.");
+    }
+  }, [searchQuery, navigate, onCtaClick, currentSlideData.id]);
+
+  const handleFraudCheck = useCallback((): void => {
+    if (!searchQuery.trim()) {
+      // Use console.warn instead of alert for better UX
+      
+      return;
+    }
+
+    // Navigate to fraud detection with the search query
+    navigate(`/trust/fraud-detection?query=${encodeURIComponent(searchQuery.trim())}`);
+    onCtaClick?.(currentSlideData.id, "check_fraud");
+  }, [searchQuery, navigate, onCtaClick, currentSlideData.id]);
+
+  const handleFindExpert = useCallback((): void => {
+    const location = searchLocation || selectedCountry;
+    const queryParams = new URLSearchParams();
+    
+    if (location) queryParams.set("location", location);
+    if (selectedPropertyType) queryParams.set("specialization", selectedPropertyType);
+    
+    navigate(`/find-professionals?${queryParams.toString()}`);
+    onCtaClick?.(currentSlideData.id, "find_expert");
+  }, [searchLocation, selectedCountry, selectedPropertyType, navigate, onCtaClick, currentSlideData.id]);
 
   const handleSearchInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -346,33 +461,39 @@ export function EnhancedHero({
 
   return (
     <section
-      className={`relative min-h-screen flex items-center justify-center overflow-hidden ${className}`}
+      className={`glass-hero relative min-h-screen flex items-center justify-center overflow-hidden hero-section-reset ${className}`}
       role="banner"
       aria-label="Hero section with African property search"
-      style={{
-        // Remove hardcoded padding since parent container now handles navigation spacing
-        paddingTop: 0
-      }}
     >
-      {/* Optimized background */}
+      {/* Balanced gradient background with preserved image areas */}
       <div className="absolute inset-0 z-0">
+        {/* Original image with enhanced clarity */}
         <div
-          className="w-full h-full bg-cover bg-center brightness-50"
+          className="w-full h-full bg-cover bg-center bg-no-repeat image-clarity-enhanced hero-bg-positioned"
           style={{
-            backgroundImage: `url(${currentSlideData.backgroundImage})`,
-          }}
+            // CSS custom property for dynamic background image - necessary for runtime image changes
+            // eslint-disable-next-line react/forbid-dom-props -- CSS custom properties require inline styles
+            '--hero-bg-image': `url(${currentSlideData.backgroundImage})`,
+          } as React.CSSProperties}
         />
+        
+        {/* Theme-specific balanced gradient */}
         <div
-          className={`absolute inset-0 bg-gradient-to-br ${themeStyles.gradient}`}
+          className={`absolute inset-0 ${getThemeGradientClass(currentSlideData.theme)}`}
+        />
+        
+        {/* Subtle depth vignette */}
+        <div
+          className="absolute inset-0 gradient-balanced-radial opacity-60"
         />
       </div>
 
-      {/* Navigation controls */}
+      {/* Navigation controls with glassmorphism */}
       <Button
         variant="outline"
         size="icon"
         onClick={navigatePrevious}
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 bg-white/10 border-white/30 text-white hover:bg-white/20 hover:border-white/50 backdrop-blur-sm"
+        className="glass-btn absolute left-4 top-1/2 transform -translate-y-1/2 z-20 text-white"
         aria-label="Go to previous slide"
       >
         <ChevronLeft className="w-5 h-5" />
@@ -382,7 +503,7 @@ export function EnhancedHero({
         variant="outline"
         size="icon"
         onClick={navigateNext}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 bg-white/10 border-white/30 text-white hover:bg-white/20 hover:border-white/50 backdrop-blur-sm"
+        className="glass-btn absolute right-4 top-1/2 transform -translate-y-1/2 z-20 text-white"
         aria-label="Go to next slide"
       >
         <ChevronRight className="w-5 h-5" />
@@ -390,43 +511,91 @@ export function EnhancedHero({
 
       {/* Slide indicators */}
       <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
-        {[0, 1, 2].map((index) => (
+        {[0, 1, 2].map((_index, slideIndex) => (
           <button
-            key={index}
-            onClick={() => navigateToSlide(index)}
+            key={slideIndex}
+            onClick={() => navigateToSlide(slideIndex)}
             className={`w-3 h-3 rounded-full transition-all ${
-              index === currentSlide ? "bg-white scale-125" : (
+              slideIndex === currentSlide ? "bg-white scale-125" : (
                 "bg-white/50 hover:bg-white/75"
               )
             }`}
-            aria-label={`Go to slide ${index + 1}`}
-            title={`Go to slide ${index + 1}`}
+            aria-label={`Go to slide ${slideIndex + 1}`}
+            title={`Go to slide ${slideIndex + 1}`}
           />
         ))}
       </div>
 
-      {/* Main content */}
-      <div className="relative z-10 container mx-auto px-4 text-center text-white">
+      {/* Main content with balanced positioning */}
+      <div className="relative z-10 container mx-auto px-4 text-white">
         <div className="max-w-6xl mx-auto py-12">
-          {/* Enhanced title */}
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-light mb-8 leading-tight text-shadow-lg animate-hero-fade-in">
-            {renderedTitle}
-          </h1>
+          {/* Content positioned to work with gradient balance */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center min-h-[80vh]">
+            {/* Left side content - where gradient provides strong contrast */}
+            <div className="lg:col-span-7 text-left lg:text-left">
+              {/* Enhanced title with better positioning */}
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-light mb-8 leading-tight animate-hero-fade-in">
+                <span className="block text-enhanced-contrast">{renderedTitle}</span>
+              </h1>
 
-          {/* Enhanced subtitle */}
-          <p className="text-lg md:text-xl lg:text-2xl mb-6 max-w-4xl mx-auto leading-relaxed text-white/95 animate-hero-slide-in text-shadow-md">
-            {currentSlideData.subtitle}
-          </p>
+              {/* Enhanced subtitle */}
+              <p className="text-lg md:text-xl lg:text-2xl mb-6 max-w-2xl leading-relaxed text-enhanced-subtle animate-hero-slide-in">
+                {currentSlideData.subtitle}
+              </p>
 
-          {/* Value proposition */}
-          <p
-            className={`text-base md:text-lg mb-10 max-w-3xl mx-auto font-medium animate-hero-slide-in text-shadow-sm ${themeStyles.accent}`}
-          >
-            {currentSlideData.valueProposition}
-          </p>
+              {/* Value proposition */}
+              <p
+                className={`text-base md:text-lg mb-10 max-w-xl font-medium animate-hero-slide-in text-enhanced-accent ${themeStyles.accent}`}
+              >
+                {currentSlideData.valueProposition}
+              </p>
 
-          {/* Optimized search section */}
-          <div className="mb-12">
+              {/* Enhanced CTA buttons positioned for gradient balance */}
+              <div className="flex flex-col sm:flex-row gap-4 mb-8 animate-hero-scale-in">
+                <Button
+                  size="lg"
+                  className={`px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ${themeStyles.button} ${themeStyles.glow}`}
+                  onClick={() => handleCtaClick(currentSlideData.primaryCta.action)}
+                >
+                  {currentSlideData.primaryCta.icon}
+                  <span className="ml-3">{currentSlideData.primaryCta.text}</span>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="px-8 py-4 text-lg font-semibold border-white/40 text-white hover:bg-white/25 hover:border-white/60 hover:scale-105 transition-all duration-300 backdrop-blur-sm"
+                  onClick={() =>
+                    handleCtaClick(currentSlideData.secondaryCta.action)
+                  }
+                >
+                  {currentSlideData.secondaryCta.icon}
+                  <span className="ml-3">{currentSlideData.secondaryCta.text}</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Right side - where image is preserved with minimal overlay */}
+            <div className="lg:col-span-5 flex items-center justify-center">
+              {/* Trust indicators repositioned */}
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 max-w-md">
+                <div className="grid grid-cols-2 gap-4">
+                  {currentSlideData.trustIndicators.map((indicator, _index) => (
+                    <div key={indicator.label} className="text-center">
+                      <div
+                        className={`text-2xl font-bold mb-1 ${themeStyles.accent} drop-shadow-lg`}
+                      >
+                        {indicator.value}
+                      </div>
+                      <div className="text-xs text-white/90 leading-tight">{indicator.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search section repositioned below main content */}
+          <div className="mb-12 mt-16">
             <div className="max-w-4xl mx-auto bg-white/15 backdrop-blur-md border border-white/30 rounded-xl p-6">
               <form onSubmit={handleSearchSubmit} className="space-y-4">
                 {/* Main search input */}
@@ -502,7 +671,7 @@ export function EnhancedHero({
                     variant="outline"
                     size="sm"
                     className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                    onClick={() => handleCtaClick("verify_property")}
+                    onClick={handleVerifyProperty}
                   >
                     <Shield className="w-4 h-4 mr-1" />
                     Verify
@@ -512,7 +681,7 @@ export function EnhancedHero({
                     variant="outline"
                     size="sm"
                     className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                    onClick={() => handleCtaClick("check_fraud")}
+                    onClick={handleFraudCheck}
                   >
                     <CheckCircle className="w-4 h-4 mr-1" />
                     Check Fraud
@@ -522,7 +691,7 @@ export function EnhancedHero({
                     variant="outline"
                     size="sm"
                     className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                    onClick={() => handleCtaClick("find_expert")}
+                    onClick={handleFindExpert}
                   >
                     <Users className="w-4 h-4 mr-1" />
                     Find Expert
@@ -544,44 +713,7 @@ export function EnhancedHero({
             </div>
           </div>
 
-          {/* Trust indicators */}
-          <div className="mb-16">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-              {currentSlideData.trustIndicators.map((indicator) => (
-                <div key={indicator.label} className="text-center">
-                  <div
-                    className={`text-2xl font-bold mb-1 ${themeStyles.accent}`}
-                  >
-                    {indicator.value}
-                  </div>
-                  <div className="text-sm text-white/90">{indicator.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Enhanced CTA buttons */}
-          <div className="flex flex-col sm:flex-row gap-6 justify-center animate-hero-scale-in">
-            <Button
-              size="lg"
-              className={`px-10 py-5 text-lg font-semibold shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ${themeStyles.button} ${themeStyles.glow}`}
-              onClick={() => handleCtaClick(currentSlideData.primaryCta.action)}
-            >
-              {currentSlideData.primaryCta.icon}
-              <span className="ml-3">{currentSlideData.primaryCta.text}</span>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="px-10 py-5 text-lg font-semibold border-white/40 text-white hover:bg-white/25 hover:border-white/60 hover:scale-105 transition-all duration-300 backdrop-blur-sm"
-              onClick={() =>
-                handleCtaClick(currentSlideData.secondaryCta.action)
-              }
-            >
-              {currentSlideData.secondaryCta.icon}
-              <span className="ml-3">{currentSlideData.secondaryCta.text}</span>
-            </Button>
-          </div>
         </div>
       </div>
     </section>

@@ -5,8 +5,19 @@
  * profile updates, trust score management, user statistics, and preferences.
  */
 
-import { storage } from "../infrastructure/storage/storage";
+import { z } from "zod";
+
 import type { User, InsertUser } from "../../src/shared/schema";
+import { insertUserSchema } from "../../src/shared/schema";
+import { 
+  ValidationError, 
+  NotFoundError, 
+  ConflictError,
+  DatabaseError,
+  generateCorrelationId 
+} from "../../src/shared/utils/errors";
+import { storage } from "../infrastructure/storage/storage";
+import type { PaginationParams, PaginatedResult } from "../infrastructure/storage/storage";
 import type { 
   UserProfile,
   UserProfileUpdateRequest,
@@ -17,16 +28,8 @@ import type {
   UserWithoutPassword,
   UserRole
 } from "../types/user.types";
-import type { PaginationParams, PaginatedResult } from "../infrastructure/storage/storage";
-import { insertUserSchema } from "../../src/shared/schema";
-import { z } from "zod";
-import { 
-  ValidationError, 
-  NotFoundError, 
-  ConflictError,
-  DatabaseError,
-  generateCorrelationId 
-} from "../../src/shared/utils/errors";
+
+
 
 export interface UserServiceResult<T> {
   success: boolean;

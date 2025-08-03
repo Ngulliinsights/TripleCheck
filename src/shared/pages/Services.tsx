@@ -1,5 +1,3 @@
-import React from 'react';
-import { Button } from '../components/ui/button';
 import { 
   Shield, 
   FileCheck, 
@@ -12,14 +10,34 @@ import {
   Star,
   Clock
 } from 'lucide-react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { Button } from '../components/ui/button';
 import { useNavigationTracking } from '../utils/navigation';
 
 export default function Services() {
+  const navigate = useNavigate();
   const { trackNavigation, setUserType } = useNavigationTracking();
 
   const handleServiceClick = (service: string, userType?: string) => {
     if (userType) setUserType(userType);
-    trackNavigation('/services', `/services/${service}`, 'service_selection');
+    
+    // Map service IDs to correct routes
+    const routeMap: Record<string, string> = {
+      'basic-checks': '/trust/basic-checks',
+      'fraud-detection': '/trust/fraud-detection', 
+      'document-auth': '/trust/document-auth',
+      'reputation': '/trust/reputation',
+      'reports': '/trust/reports',
+      'list-property': '/list-property'
+    };
+    
+    const route = routeMap[service] || `/services/${service}`;
+    trackNavigation('/services', route, 'service_selection');
+    
+    // Navigate to the correct route
+    navigate(route);
   };
 
   const services = [
@@ -139,7 +157,10 @@ export default function Services() {
                 size="lg" 
                 variant="outline" 
                 className="border-white text-white hover:bg-white hover:text-primary"
-                onClick={() => trackNavigation('/services', '/pricing', 'pricing_interest')}
+                onClick={() => {
+                  trackNavigation('/services', '/pricing', 'pricing_interest');
+                  navigate('/pricing');
+                }}
               >
                 View Pricing
               </Button>
@@ -315,7 +336,10 @@ export default function Services() {
               size="lg" 
               variant="outline" 
               className="border-white text-white hover:bg-white hover:text-primary"
-              onClick={() => trackNavigation('/services', '/contact', 'contact_interest')}
+              onClick={() => {
+                trackNavigation('/services', '/contact', 'contact_interest');
+                navigate('/contact');
+              }}
             >
               Talk to an Expert
             </Button>

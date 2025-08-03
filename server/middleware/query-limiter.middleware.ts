@@ -1,5 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
 import { performance } from 'perf_hooks';
+
+import { Request, Response, NextFunction } from 'express';
 
 interface QueryTracker {
   endpoint: string;
@@ -26,7 +27,7 @@ class QueryLimiterMiddleware {
   private generateQueryKey(req: Request): string {
     const clientId = this.getClientId(req);
     const endpoint = req.path;
-    const method = req.method;
+    const {method} = req;
     const queryParams = JSON.stringify(req.query);
     return `${clientId}:${method}:${endpoint}:${queryParams}`;
   }

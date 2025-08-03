@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+
 import { Logger } from '../infrastructure/monitoring/logger';
 import { storage } from '../infrastructure/storage/storage';
 

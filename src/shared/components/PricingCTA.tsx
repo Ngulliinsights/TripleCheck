@@ -1,6 +1,7 @@
+import { CheckCircle, ArrowRight } from "lucide-react";
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, ArrowRight } from "lucide-react";
+
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 

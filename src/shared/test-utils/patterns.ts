@@ -2,10 +2,11 @@
  * Common testing patterns and utilities
  */
 
-import { vi, type MockedFunction } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
-import { userEventInstance } from './user-event';
+import { vi, type MockedFunction } from 'vitest';
+
 import type { TestUser, TestProperty } from './fixtures';
+import { userEventInstance } from './user-event';
 
 // Common test patterns
 export class TestPatterns {

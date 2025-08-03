@@ -5,8 +5,8 @@ import { queryKeys } from "../../infrastructure/api/queryClient";
 import { useDebounce } from "../../shared/hooks/useDebounce";
 import { useOptimisticMutation } from "../../shared/hooks/useOptimisticMutation";
 import { useSafeQuery } from "../../shared/hooks/useSafeQuery";
+import { Property, PropertySearchParams } from "../../shared/types/api.types";
 import { propertyApi } from "../services/property-api";
-import { Property, PropertySearchParams } from "../types/property.types";
 
 // Enhanced type definitions that properly handle optional properties with exactOptionalPropertyTypes
 interface LocationData {
@@ -277,18 +277,23 @@ export function useProperties(params: PropertySearchParams = {}) {
       }
 
       const response = data as Record<string, unknown>;
+
+      // Handle the API response format which includes a 'success' field
+      const actualData = (response.success ? response.data || response : response) as Record<string, unknown>;
+
       const validatedResponse = {
-        data: Array.isArray(response.data) ? response.data : [],
-        total: typeof response.total === "number" ? response.total : 0,
-        page: typeof response.page === "number" ? response.page : 1,
-        limit: typeof response.limit === "number" ? response.limit : 10,
-        hasNext: Boolean(response.hasNext),
-        hasPrev: Boolean(response.hasPrev),
+        data: Array.isArray(actualData.data) ? actualData.data : [],
+        total: typeof actualData.total === "number" ? actualData.total : 0,
+        page: typeof actualData.page === "number" ? actualData.page : 1,
+        limit: typeof actualData.limit === "number" ? actualData.limit : 10,
+        hasNext: Boolean(actualData.hasNext),
+        hasPrev: Boolean(actualData.hasPrev),
       };
 
       logger("Properties data validated successfully", {
         count: validatedResponse.data.length,
         total: validatedResponse.total,
+        success: response.success,
       });
 
       return validatedResponse;
@@ -296,7 +301,10 @@ export function useProperties(params: PropertySearchParams = {}) {
     debounceMs: debounceDelay,
     deduplicate: true,
     context: "properties-list",
-    cacheKey: useMemo(() => `${CACHE_KEYS.PROPERTIES}-${JSON.stringify(debouncedParams)}`, [debouncedParams]),
+    cacheKey: useMemo(
+      () => `${CACHE_KEYS.PROPERTIES}-${JSON.stringify(debouncedParams)}`,
+      [debouncedParams]
+    ),
     ...CACHE_CONFIG.PROPERTIES_LIST,
     refetchOnWindowFocus: false,
     refetchOnMount: false,

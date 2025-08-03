@@ -1,5 +1,6 @@
-import { logger } from '../infrastructure/monitoring/logger';
 import { DocumentAuthService, DocumentVerificationRequest, DocumentVerificationResult } from '../document-auth/DocumentAuthService';
+import { logger } from '../infrastructure/monitoring/logger';
+
 import { LandVerificationService, VerificationLayer, LayerResult } from './LandVerificationService';
 
 export interface LandDocumentVerificationRequest {
@@ -310,7 +311,7 @@ export class DocumentIntegration {
     }
 
     // Check overall scores
-    const overallScore = standardResult.overallScore;
+    const {overallScore} = standardResult;
     const landSpecificScore = landSpecificChecks.length > 0 ?
       landSpecificChecks.reduce((sum, check) => sum + check.score, 0) / landSpecificChecks.length : 100;
 

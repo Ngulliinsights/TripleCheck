@@ -2,9 +2,10 @@
  * Test chunking utilities to prevent memory overflow
  */
 
-import { glob } from 'glob';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+
+import { glob } from 'glob';
 
 export interface TestChunk {
   id: string;
@@ -214,7 +215,7 @@ export class TestChunker {
       throw new Error(`Chunk ${chunkId} not found`);
     }
 
-    const config = {
+    return {
       test: {
         // Include only files from the target chunk, or all files if no chunk specified
         include: targetChunk ? targetChunk.files : chunks.flatMap(c => c.files),
@@ -242,8 +243,6 @@ export class TestChunker {
         },
       },
     };
-
-    return config;
   }
 
   /**
@@ -286,9 +285,9 @@ export class TestChunker {
       .join(' && ');
     
     // Parallel execution script (for CI with more resources)
-    scripts['test:chunked-parallel'] = chunks
+    scripts['test:chunked-parallel'] = `${chunks
       .map(c => `npm run test:${c.id}`)
-      .join(' & ') + ' && wait';
+      .join(' & ')  } && wait`;
     
     return scripts;
   }

@@ -1,7 +1,8 @@
-import { memo, useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
 import { MapPin, CheckCircle, Clock, Users } from "lucide-react";
+import { memo, useState, useCallback } from "react";
+
+import { Badge } from "./ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 interface Country {
   readonly id: string;

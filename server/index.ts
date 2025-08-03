@@ -1,17 +1,19 @@
 import 'dotenv/config';
-import express, { type Request, type Response, type NextFunction } from "express";
 import { createServer } from "http";
-import session from "express-session";
-import rateLimit from "express-rate-limit";
-import helmet from "helmet";
+
 import cors from "cors";
-import { registerRoutes } from "./routes/index";
-import { registerAIRoutes } from "./routes/ai-routes";
-import { registerMLRoutes } from "./routes/ml-routes";
-import { setupVite, serveStatic, log as viteLog } from "./vite";
+import express, { type Request, type Response, type NextFunction } from "express";
+import rateLimit from "express-rate-limit";
+import session from "express-session";
+import helmet from "helmet";
+
+import { initializeDatabase, runMigrations, seedDatabase } from "./infrastructure/database/connection";
 import { logger } from "./infrastructure/monitoring/logger";
 import { errorHandler, notFoundHandler, corsErrorHandler, timeoutHandler } from "./middleware/error-handler";
-import { initializeDatabase, runMigrations, seedDatabase } from "./infrastructure/database/connection";
+import { registerAIRoutes } from "./routes/ai-routes";
+import { registerRoutes } from "./routes/index";
+import { registerMLRoutes } from "./routes/ml-routes";
+import { setupVite, serveStatic, log as viteLog } from "./vite";
 
 const app = express();
 
@@ -94,7 +96,7 @@ app.use(session({
 // Enhanced logging middleware with proper typing
 app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
-  const path = req.path;
+  const {path} = req;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   // Store original json method with proper typing
@@ -118,7 +120,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       }
 
       if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+        logLine = `${logLine.slice(0, 79)  }…`;
       }
 
       logger.apiRequest(req.method, path, res.statusCode, duration);

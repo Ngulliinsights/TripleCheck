@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import { alertingService } from './AlertingService';
 
 const router = Router();

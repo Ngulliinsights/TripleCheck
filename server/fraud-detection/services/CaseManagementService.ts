@@ -1,6 +1,8 @@
-import { Logger } from '../utils/Logger';
-import { DatabaseService } from './DatabaseService';
 import { EventEmitter } from 'events';
+
+import { Logger } from '../utils/Logger';
+
+import { DatabaseService } from './DatabaseService';
 
 export interface InvestigationCase {
   id: string;

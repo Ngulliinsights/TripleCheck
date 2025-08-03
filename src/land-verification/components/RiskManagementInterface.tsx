@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
-import { Badge } from '@shared/components/ui/badge';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Badge } from '@shared/components/ui/badge';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { cn } from '@shared/lib/utils';
 import { 
   BarChart3, 
   Settings, 
@@ -16,14 +16,14 @@ import {
   Save,
   Share
 } from 'lucide-react';
-import { cn } from '@shared/lib/utils';
+import React, { useState, useCallback, useMemo } from 'react';
 
-import RiskProfileVisualization from './RiskProfileVisualization';
-import RiskAssessmentDisplay from './RiskAssessmentDisplay';
-import ScenarioModelingTool from './ScenarioModelingTool';
-import RiskFactorAnalysis from './RiskFactorAnalysis';
-import RiskWeightingControls from './RiskWeightingControls';
 import RecommendationEngine from './RecommendationEngine';
+import RiskAssessmentDisplay from './RiskAssessmentDisplay';
+import RiskFactorAnalysis from './RiskFactorAnalysis';
+import RiskProfileVisualization from './RiskProfileVisualization';
+import RiskWeightingControls from './RiskWeightingControls';
+import ScenarioModelingTool from './ScenarioModelingTool';
 
 import type { 
   RiskAssessmentResponse,

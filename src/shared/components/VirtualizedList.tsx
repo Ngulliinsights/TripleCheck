@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { FixedSizeList as List, VariableSizeList, ListChildComponentProps } from 'react-window';
-import { FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window';
+import { FixedSizeList as List, VariableSizeList, ListChildComponentProps , FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
+
 import { LoadingSkeleton } from './ui/loading-skeleton';
 
 export interface VirtualizedListProps<T> {

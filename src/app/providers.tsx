@@ -1,8 +1,8 @@
-import React, { ReactNode } from 'react';
 import { AuthProvider } from '@auth/contexts/AuthContext';
 import { PropertyProvider } from '@property/contexts/PropertyContext';
-import { TrustProvider } from '@trust/contexts/TrustContext';
 import { ThemeProvider } from '@shared/contexts/ThemeContext';
+import { TrustProvider } from '@trust/contexts/TrustContext';
+import React, { ReactNode } from 'react';
 
 interface AppProvidersProps {
   children: ReactNode;

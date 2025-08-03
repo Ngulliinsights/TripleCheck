@@ -1,12 +1,13 @@
+import { Filter, SlidersHorizontal, MapPin } from 'lucide-react';
 import React, { useState, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { Button } from '../../shared/components/ui/button';
-import { Badge } from '../../shared/components/ui/badge';
+
 import ListingCard from '../../property/components/ListingCard';
 import { CompareProvider } from '../../property/contexts/CompareContext';
-import PropertySearch from '../components/PropertySearch';
-import { Filter, SlidersHorizontal, MapPin } from 'lucide-react';
+import { Badge } from '../../shared/components/ui/badge';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
 import { Property } from '../../shared/types/property';
+import PropertySearch from '../components/PropertySearch';
 
 // Enhanced type definitions for better TypeScript safety
 interface SearchFilters {
@@ -163,7 +164,7 @@ export default function SearchResults() {
     }
 
     // Apply sorting
-    const sorted = [...filtered].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'price-asc':
           return parseInt(a.price.toString(), 10) - parseInt(b.price.toString(), 10);
@@ -177,8 +178,6 @@ export default function SearchResults() {
           return 0;
       }
     });
-
-    return sorted;
   }, [filters, sortBy, searchQuery]); // Include searchQuery for future search implementation
 
   // Memoized results count to prevent unnecessary recalculations

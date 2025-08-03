@@ -4,6 +4,7 @@
 
 // Import from auth types and schema
 import type { User } from "../../src/shared/schema";
+
 import type { UserRole } from "./auth.types";
 
 // User without password type

@@ -1,11 +1,11 @@
 // Removed Framer Motion for better performance and stability
-import { Heart, Share2, Star, MapPin, Maximize2, Bed, Bath, Square } from "lucide-react";
-import { Button } from "@shared/components/ui/button";
-import { Badge } from "@shared/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@shared/components/ui/tooltip";
 import { B2BContextualPrompt } from "@shared/components/b2b";
-import { useState, useCallback, useMemo } from "react";
+import { Badge } from "@shared/components/ui/badge";
+import { Button } from "@shared/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@shared/components/ui/tooltip";
 import { cn } from "@shared/lib/utils";
+import { Heart, Share2, Star, MapPin, Maximize2, Bed, Bath, Square } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
 
 // More precise type definitions for better type safety
 type PropertyType = "residential" | "commercial";

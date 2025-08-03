@@ -1,9 +1,11 @@
 #!/usr/bin/env tsx
 import "dotenv/config";
 import * as fs from "fs/promises";
+
 import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
 import * as bcrypt from "bcrypt";
+import { drizzle } from "drizzle-orm/neon-http";
+
 import { users, properties, reviews } from "../src/shared/schema";
 
 const logger = {

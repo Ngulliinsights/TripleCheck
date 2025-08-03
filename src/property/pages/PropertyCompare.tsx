@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 
-import { useCompare, CompareProvider } from "../contexts/CompareContext";
 import { Badge } from "../../shared/components/ui/badge";
 import { Button } from "../../shared/components/ui/button";
 import {
@@ -35,6 +34,7 @@ import { useSafePropertiesQuery } from "../../shared/hooks/useSafeQuery";
 import { cn } from "../../shared/lib/utils";
 import type { PropertyFeatures } from "../../shared/schema";
 import type { Property } from "../../shared/types/property";
+import { useCompare, CompareProvider } from "../contexts/CompareContext";
 
 // Type-safe comparison result enum for better maintainability
 type ComparisonResult = "equal" | "higher" | "lower" | "different";

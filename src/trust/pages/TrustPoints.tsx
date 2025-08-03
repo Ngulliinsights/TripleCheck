@@ -1,7 +1,8 @@
+import { Shield, Award, Star, Users, CheckCircle, ArrowRight } from "lucide-react";
+
+import { Button } from "../../shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
 import { Progress } from "../../shared/components/ui/progress";
-import { Button } from "../../shared/components/ui/button";
-import { Shield, Award, Star, Users, CheckCircle, ArrowRight } from "lucide-react";
 import { formatDate } from "../../shared/utils/date-utils";
 
 export default function TrustPointsPage() {

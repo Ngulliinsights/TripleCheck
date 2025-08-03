@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { RegistrationWizard } from '../components/RegistrationWizard';
 import { RegisterData } from '../types/auth.types';
 

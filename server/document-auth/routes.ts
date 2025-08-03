@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import { DocumentAuthService, DocumentVerificationRequest } from './DocumentAuthService';
+
 import { Logger } from '../infrastructure/monitoring/logger';
+
+import { DocumentAuthService, DocumentVerificationRequest } from './DocumentAuthService';
 
 const router = Router();
 const logger = new Logger();

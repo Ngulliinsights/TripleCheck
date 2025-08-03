@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { setupMswServer, mockApiSuccess, mockApiError } from '../../test-utils/msw-server';
+import { setupMswServer, mockApiSuccess, mockApiError , server } from '../../test-utils/msw-server';
 import { ApiClient } from '../api-client';
 import { propertyApi, type ResidentialProperty, type ResidentialFilters } from '../propertyApi';
 import { http, HttpResponse } from 'msw';
-import { server } from '../../test-utils/msw-server';
+
 
 // Setup MSW server for all tests
 setupMswServer({ quiet: true });

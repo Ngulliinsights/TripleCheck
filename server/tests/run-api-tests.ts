@@ -6,8 +6,8 @@
  */
 
 import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,7 +31,7 @@ class APITestRunner {
   async runTests(): Promise<TestResult> {
     const startTime = Date.now();
     let output = '';
-    let errors: string[] = [];
+    const errors: string[] = [];
 
     console.log('🚀 Starting Backend API Tests...');
     console.log(`📁 Test file: ${this.testFile}`);
@@ -92,7 +92,7 @@ class APITestRunner {
   }
 
   private showSummary(output: string, success: boolean, duration: number): void {
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     console.log('📊 API TEST SUMMARY');
     console.log('='.repeat(60));
 

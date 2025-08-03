@@ -9,16 +9,18 @@
  */
 
 import { Router, Response } from 'express';
-import { VerificationService, DocumentVerificationRequest } from '../services/VerificationService';
+import fileUpload from 'express-fileupload';
+import { z } from 'zod';
+
 import { requireAuth, AuthenticatedRequest, optionalAuth } from '../middleware/auth.middleware';
 import validateRequest, { 
   CommonValidationSchemas, 
   ValidatedRequest 
 } from '../middleware/validation.middleware';
-import { ResponseHelper } from '../utils/response-helpers';
+import { VerificationService, DocumentVerificationRequest } from '../services/VerificationService';
 import { HTTP_STATUS } from '../utils/constants';
-import { z } from 'zod';
-import fileUpload from 'express-fileupload';
+import { ResponseHelper } from '../utils/response-helpers';
+
 
 // Validation schemas for verification endpoints
 const VerificationValidationSchemas = {

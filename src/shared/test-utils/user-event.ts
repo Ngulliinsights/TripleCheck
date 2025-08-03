@@ -294,7 +294,7 @@ export async function testKeyboardNavigation(
   // Test tab navigation
   for (let i = 0; i < focusableElements.length; i++) {
     await user.tab();
-    const activeElement = document.activeElement;
+    const {activeElement} = document;
     
     if (activeElement !== focusableElements[i]) {
       console.warn(`Expected focus on element ${i}, but got:`, activeElement);
@@ -304,7 +304,7 @@ export async function testKeyboardNavigation(
   // Test reverse tab navigation
   for (let i = focusableElements.length - 1; i >= 0; i--) {
     await user.tab({ shift: true });
-    const activeElement = document.activeElement;
+    const {activeElement} = document;
     
     if (activeElement !== focusableElements[i]) {
       console.warn(`Expected focus on element ${i} (reverse), but got:`, activeElement);

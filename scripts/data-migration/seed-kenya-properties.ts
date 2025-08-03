@@ -6,9 +6,11 @@
  * the land verification system with authentic data patterns.
  */
 
+import { neon } from "@neondatabase/serverless";
+import bcrypt from "bcrypt";
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
+
 import { 
   users, 
   properties, 
@@ -31,7 +33,7 @@ import type {
   InsertExpertAssignment,
   InsertPropertyMonitoring
 } from "../../src/shared/schema";
-import bcrypt from "bcrypt";
+
 
 // Load environment variables
 config();

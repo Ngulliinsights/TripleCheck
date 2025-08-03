@@ -95,7 +95,7 @@ for (const category of testCategories) {
 }
 
 // Generate comprehensive report
-console.log('\n' + '='.repeat(60));
+console.log(`\n${  '='.repeat(60)}`);
 console.log('📊 ACCESSIBILITY TEST REPORT');
 console.log('='.repeat(60));
 
@@ -144,7 +144,7 @@ console.log(`   3. Perform manual keyboard navigation testing`);
 console.log(`   4. Validate color contrast in production`);
 console.log(`   5. Set up continuous accessibility monitoring`);
 
-console.log('\n' + '='.repeat(60));
+console.log(`\n${  '='.repeat(60)}`);
 
 // Exit with appropriate code
 process.exit(failedTests > 0 ? 1 : 0);

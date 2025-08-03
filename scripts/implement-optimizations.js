@@ -324,7 +324,7 @@ async function main() {
     // Step 4: Create optimization report
     createOptimizationReport();
     
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     console.log('🎉 OPTIMIZATION IMPLEMENTATION COMPLETE');
     console.log('='.repeat(60));
     console.log('📋 Next steps:');

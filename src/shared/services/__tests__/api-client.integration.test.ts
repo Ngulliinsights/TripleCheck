@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
-import { setupMswServer, mockApiSuccess, mockApiError, simulateNetworkConditions, withTemporaryHandlers } from '../../test-utils/msw-server';
+import { setupMswServer, mockApiSuccess, mockApiError, simulateNetworkConditions, withTemporaryHandlers , server } from '../../test-utils/msw-server';
 import { ApiClient, apiClient, api, type ApiResponse, type ApiClientConfig, type RequestInterceptor, type ResponseInterceptor } from '../api-client';
 import { http, HttpResponse } from 'msw';
-import { server } from '../../test-utils/msw-server';
+
 
 // Setup MSW server for all tests
 setupMswServer({ quiet: true });

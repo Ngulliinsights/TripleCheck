@@ -1,5 +1,6 @@
-import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
+
 import { useProperties, useProperty } from './property/hooks/useProperty';
 import { usePropertySearch } from './property/hooks/usePropertySearch';
 

@@ -5,10 +5,12 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { apiVersionManager, VersionedRequest, ApiVersion } from './ApiVersionManager';
-import { logger } from '../monitoring/logger';
-import { ResponseHelper } from '../../utils/response-helpers';
+
 import { HTTP_STATUS } from '../../utils/constants';
+import { ResponseHelper } from '../../utils/response-helpers';
+import { logger } from '../monitoring/logger';
+
+import { apiVersionManager, VersionedRequest, ApiVersion } from './ApiVersionManager';
 
 /**
  * Main versioning middleware that processes all API requests

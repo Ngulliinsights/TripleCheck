@@ -12,13 +12,15 @@
  */
 
 import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
-import { count, eq, inArray, sql } from 'drizzle-orm';
+import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import crypto from 'crypto';
+
+import { neon } from '@neondatabase/serverless';
+import { count, eq, inArray, sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/neon-http';
+
 
 import { users, properties, reviews } from '../shared/schema';
 import type { InsertUser, InsertProperty, InsertReview } from '../shared/schema';

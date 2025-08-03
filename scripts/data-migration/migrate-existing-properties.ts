@@ -6,10 +6,11 @@
  * and prepares them for the Kenya Land Verification System.
  */
 
-import { config } from "dotenv";
-import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
+import { config } from "dotenv";
 import { eq, and, isNull } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/neon-http";
+
 import { properties, landVerificationSessions } from "../../src/shared/schema";
 
 // Load environment variables
@@ -162,7 +163,7 @@ function isLandRelatedProperty(property: any): boolean {
   }
 
   // Check if property has coordinates (suggests surveyed land)
-  if (property.coordinates && property.coordinates.lat && property.coordinates.lng) {
+  if (property.coordinates?.lat && property.coordinates.lng) {
     return true;
   }
 

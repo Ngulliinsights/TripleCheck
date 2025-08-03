@@ -5,9 +5,11 @@
  * to provide comprehensive verification and risk assessment capabilities.
  */
 
-import { Logger } from "../fraud-detection/utils/Logger";
 import { FraudDetectionEngine, FraudAlert } from "../fraud-detection/core/FraudDetectionEngine";
+import { Logger } from "../fraud-detection/utils/Logger";
 import { storage } from "../infrastructure/storage/storage";
+import { detectFraud as aiDetectFraud } from "../routes/ai-routes";
+import type { DatabaseProperty } from "../types/property.types";
 import type {
   VerificationResult,
   CompleteFraudDetectionResult,
@@ -17,10 +19,9 @@ import type {
   VerificationStatus,
   RiskLevel
 } from "../types/verification.types";
-import type { DatabaseProperty } from "../types/property.types";
 
 // Import AI functions from existing ai-routes and ai-ml-service
-import { detectFraud as aiDetectFraud } from "../routes/ai-routes";
+
 import { 
   detectTransactionFraud,
   analyzePropertyDocument,

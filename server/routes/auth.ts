@@ -1,5 +1,12 @@
 import { Express, Router, Request, Response } from "express";
 import { z } from "zod";
+
+import {
+  LoginSchema,
+  RegisterSchema,
+  hashPassword,
+  verifyPassword
+} from "../middleware/auth";
 import {
   AuthenticatedRequest,
   AUTH_ERRORS,
@@ -7,12 +14,6 @@ import {
   authRateLimit,
   validateSession
 } from "../middleware/auth.middleware";
-import {
-  LoginSchema,
-  RegisterSchema,
-  hashPassword,
-  verifyPassword
-} from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 
 // Import storage (you'll need to adjust this import based on your storage implementation)

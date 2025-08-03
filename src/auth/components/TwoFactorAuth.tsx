@@ -1,7 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { 
   Shield, 
   Smartphone, 
@@ -17,15 +14,14 @@ import {
   EyeOff
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
-import { Button } from '../../shared/components/ui/button';
-import { Input } from '../../shared/components/ui/input';
 import { Alert, AlertDescription } from '../../shared/components/ui/alert';
-import { Logo } from '../../shared/components/ui/logo';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs';
 import { Badge } from '../../shared/components/ui/badge';
-import { Separator } from '../../shared/components/ui/separator';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
 import {
   Form,
   FormControl,
@@ -35,6 +31,10 @@ import {
   FormMessage,
   FormDescription,
 } from '../../shared/components/ui/form';
+import { Input } from '../../shared/components/ui/input';
+import { Logo } from '../../shared/components/ui/logo';
+import { Separator } from '../../shared/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs';
 import { User } from '../types/auth.types';
 
 // Validation schemas

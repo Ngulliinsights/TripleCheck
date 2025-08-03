@@ -524,7 +524,7 @@ class ApiClient {
    * @private
    */
   private isClientError(error: Error): boolean {
-    const message = error.message;
+    const {message} = error;
     return (
       message.includes("HTTP 4") ||
       message.includes("Bad Request") ||

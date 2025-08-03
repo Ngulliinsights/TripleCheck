@@ -1,7 +1,8 @@
 import { useInfiniteQuery, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
-import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+
 import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
 
 interface UseInfiniteScrollOptions<TData, TError = Error> {
   queryKey: unknown[];

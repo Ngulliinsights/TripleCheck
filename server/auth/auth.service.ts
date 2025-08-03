@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+
 import { LoginCredentials, RegisterData, User } from '../../src/auth/types/auth.types';
 
 interface AuthResponse<T> {

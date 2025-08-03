@@ -624,7 +624,7 @@ export class OperationTracker {
       if (op.dependencies.length > 0 && op.endTime) {
         op.dependencies.forEach(depId => {
           const dependency = operations.find(o => o.id === depId);
-          if (dependency && dependency.endTime && dependency.endTime > op.endTime!) {
+          if (dependency?.endTime && dependency.endTime > op.endTime!) {
             patterns.push({
               type: 'out_of_order',
               severity: 'high',
@@ -668,7 +668,7 @@ export class OperationTracker {
     
     let bar = '·'.repeat(barLength);
     for (let i = startPos; i <= Math.min(endPos, barLength - 1); i++) {
-      bar = bar.substring(0, i) + '█' + bar.substring(i + 1);
+      bar = `${bar.substring(0, i)  }█${  bar.substring(i + 1)}`;
     }
     
     return `[${bar}]`;

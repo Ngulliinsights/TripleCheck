@@ -7,10 +7,11 @@
  */
 
 import { config } from "dotenv";
+
 import { migrateExistingProperties, type MigrationStats } from "./migrate-existing-properties";
 import { seedKenyaProperties, type SeedingStats } from "./seed-kenya-properties";
-import { validateMigration, type ValidationSummary } from "./validate-migration";
 import { runMigrationTests, type TestSummary } from "./test-migration";
+import { validateMigration, type ValidationSummary } from "./validate-migration";
 
 // Load environment variables
 config();
@@ -145,7 +146,7 @@ async function runCompleteMigration(plan: MigrationPlan = {
 }
 
 function printMigrationSummary(result: MigrationResult, plan: MigrationPlan) {
-  console.log("\n" + "=".repeat(60));
+  console.log(`\n${  "=".repeat(60)}`);
   console.log("📊 MIGRATION SUMMARY");
   console.log("=".repeat(60));
   
@@ -218,7 +219,7 @@ function printMigrationSummary(result: MigrationResult, plan: MigrationPlan) {
     console.log("   - tsx scripts/data-migration/rollback-migration.ts full");
   }
 
-  console.log("\n" + "=".repeat(60));
+  console.log(`\n${  "=".repeat(60)}`);
 }
 
 // Command line interface

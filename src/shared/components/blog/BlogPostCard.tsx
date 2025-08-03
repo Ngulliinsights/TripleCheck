@@ -1,9 +1,10 @@
-import { memo, useMemo, useCallback } from "react";
-import { Card, CardContent } from "../ui/card";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
 import { Calendar, User, Clock, ArrowRight } from "lucide-react";
+import { memo, useMemo, useCallback } from "react";
+
 import { formatDate } from "../../utils/date-utils";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { Card, CardContent } from "../ui/card";
 
 // Unified blog post type that works with both static and dynamic data
 export interface BlogPost {
@@ -86,7 +87,7 @@ export const BlogPostCard = memo<BlogPostCardProps>(({
 
   return (
     <Card 
-      className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 group cursor-pointer"
+      className="glass-property-card h-full overflow-hidden group cursor-pointer"
       onClick={handleCardClick}
     >
       {/* Blog Image */}
@@ -107,16 +108,16 @@ export const BlogPostCard = memo<BlogPostCardProps>(({
         
         {/* Badges */}
         <div className="absolute top-4 left-4 flex items-center gap-2">
-          <Badge variant="coral" className="text-secondary-foreground">
+          <Badge className="glass-secondary text-white">
             {post.category}
           </Badge>
           {post.featured && (
-            <Badge variant="coral-soft" className="text-xs">
+            <Badge className="glass-accent text-white text-xs">
               Featured
             </Badge>
           )}
           {isNew && (
-            <Badge variant="coral" className="text-xs animate-pulse">
+            <Badge className="glass-primary text-white text-xs animate-pulse">
               New
             </Badge>
           )}
@@ -124,7 +125,7 @@ export const BlogPostCard = memo<BlogPostCardProps>(({
         
         {/* View count */}
         {showViewCount && post.viewCount && (
-          <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs px-2 py-1 rounded">
+          <div className="absolute bottom-4 right-4 glass-card px-2 py-1 text-xs text-glass-dark">
             {formatViewCount(post.viewCount)} views
           </div>
         )}
@@ -132,7 +133,7 @@ export const BlogPostCard = memo<BlogPostCardProps>(({
 
       <CardContent className="p-6 flex flex-col h-full">
         {/* Meta Information */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+        <div className="flex items-center gap-4 text-sm text-glass-medium mb-3">
           <div className="flex items-center gap-1">
             <Calendar className="w-4 h-4" />
             <span>{formattedDate}</span>
@@ -144,12 +145,12 @@ export const BlogPostCard = memo<BlogPostCardProps>(({
         </div>
         
         {/* Title */}
-        <h3 className="text-xl font-semibold mb-3 line-clamp-2 hover:text-secondary transition-colors flex-shrink-0">
+        <h3 className="text-xl font-semibold mb-3 line-clamp-2 hover:text-secondary transition-colors flex-shrink-0 text-glass-dark">
           {post.title}
         </h3>
         
         {/* Excerpt */}
-        <p className="text-muted-foreground mb-4 flex-grow leading-relaxed line-clamp-3">
+        <p className="text-glass-medium mb-4 flex-grow leading-relaxed line-clamp-3">
           {post.excerpt}
         </p>
         
@@ -171,15 +172,14 @@ export const BlogPostCard = memo<BlogPostCardProps>(({
         
         {/* Author and Button */}
         <div className="flex items-center justify-between mt-auto">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-glass-medium">
             <User className="w-4 h-4" />
             <span>By {authorName}</span>
           </div>
           <Button
             size="sm"
-            variant="coral"
             onClick={handleButtonClick}
-            className="hover:bg-secondary/90 transition-colors"
+            className="glass-btn-secondary"
           >
             Read More
             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />

@@ -1,7 +1,9 @@
-import { defineConfig, mergeConfig } from 'vitest/config'
-import { baseConfig } from './vitest.base.config'
-import { glob } from 'glob'
 import path from 'path'
+
+import { glob } from 'glob'
+import { defineConfig, mergeConfig } from 'vitest/config'
+
+import { baseConfig } from './vitest.base.config'
 
 export interface ChunkConfig {
   chunkId: number

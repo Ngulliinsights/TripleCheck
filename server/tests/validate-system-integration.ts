@@ -2,6 +2,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
+
 import { db as database } from '../infrastructure/database/connection';
 
 interface ValidationResult {

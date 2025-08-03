@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import { ArrowRight, Building2, Mail, Phone, Calendar, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
@@ -24,7 +25,7 @@ export default function ContactSales() {
 
     try {
       // Track sales inquiry
-      if (typeof window !== 'undefined' && window.gtag) {
+      if (window?.gtag) {
         window.gtag('event', 'sales_inquiry', {
           event_category: 'B2B',
           event_label: 'contact_sales_form',

@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Input } from '@shared/components/ui/input';
-import { Label } from '@shared/components/ui/label';
+import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Badge } from '@shared/components/ui/badge';
 import { Checkbox } from '@shared/components/ui/checkbox';
+import { Input } from '@shared/components/ui/input';
+import { Label } from '@shared/components/ui/label';
 import { Textarea } from '@shared/components/ui/textarea';
-import { PropertyFormData } from '../PropertyListingWizard';
 import { 
   Bed, 
   Bath, 
@@ -22,6 +20,9 @@ import {
   Zap,
   Wind
 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+
+import { PropertyFormData } from '../PropertyListingWizard';
 
 interface FeaturesStepProps {
   data: PropertyFormData;

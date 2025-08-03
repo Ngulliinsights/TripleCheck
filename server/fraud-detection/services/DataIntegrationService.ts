@@ -1,4 +1,5 @@
 import { Logger } from '../utils/Logger';
+
 import { DatabaseService } from './DatabaseService';
 import { ExternalAPIService } from './ExternalAPIService';
 
@@ -670,7 +671,7 @@ export class DataIntegrationService {
       'investment fraud', 'ponzi scheme', 'money laundering'
     ];
 
-    const text = (content.title + ' ' + content.content).toLowerCase();
+    const text = (`${content.title  } ${  content.content}`).toLowerCase();
     return fraudKeywords.some(keyword => text.includes(keyword));
   }
 

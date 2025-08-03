@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
 import { Building2, Shield, Users, Zap, Mail, Handshake, ArrowRight } from "lucide-react";
 import { useMemo } from "react";
+
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
 // Define TypeScript interfaces for better type safety
 interface Partner {

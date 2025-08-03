@@ -3,9 +3,9 @@
  * Provides document context in messaging and automated notifications
  */
 
-import { Message, NotificationChannel, DocumentContext } from '../types';
-import { DocumentVerificationResult } from '../../trust/types';
 import { safeNavigate } from '../../shared/utils/safe-navigation';
+import { DocumentVerificationResult } from '../../trust/types';
+import { Message, NotificationChannel, DocumentContext } from '../types';
 
 export interface DocumentNotification {
   readonly type: 'verification_complete' | 'verification_failed' | 'document_flagged' | 'expert_review_needed';

@@ -1,8 +1,10 @@
-import { logger } from '../../infrastructure/monitoring/logger';
-import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';
 import * as crypto from 'crypto';
+
 import * as exifParser from 'exif-parser';
 import { PDFDocument } from 'pdf-lib';
+
+import { logger } from '../../infrastructure/monitoring/logger';
+import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';
 
 export interface MetadataAnalysisResult {
   checks: VerificationCheck[];

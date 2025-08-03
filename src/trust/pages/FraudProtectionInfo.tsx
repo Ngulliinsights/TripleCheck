@@ -1,5 +1,3 @@
-import React, { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Shield,
   CheckCircle,
@@ -11,6 +9,8 @@ import {
   Zap,
   Award,
 } from "lucide-react";
+import React, { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface TrustMetric {
   readonly label: string;

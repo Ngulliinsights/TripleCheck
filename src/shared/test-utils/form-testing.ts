@@ -3,10 +3,12 @@
  * Specialized utilities for testing form components, validation, and user interactions
  */
 
-import { vi, type MockedFunction } from 'vitest';
 import { screen, waitFor, within, fireEvent } from '@testing-library/react';
-import { userEventInstance } from './user-event';
 import type { UserEvent } from '@testing-library/user-event';
+import { vi, type MockedFunction } from 'vitest';
+
+import { userEventInstance } from './user-event';
+
 
 export interface FormField {
   name: string;

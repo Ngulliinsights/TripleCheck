@@ -1,9 +1,10 @@
-import React, { useRef, useState, useCallback } from 'react';
 import { Upload, X, FileText, Image, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useRef, useState, useCallback } from 'react';
+
+import { useFileUpload } from '../../hooks/useForm';
+import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
-import { cn } from '../../lib/utils';
-import { useFileUpload } from '../../hooks/useForm';
 
 export interface FileUploadProps {
   name: string;
@@ -99,7 +100,7 @@ export function FileUpload({
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))  } ${  sizes[i]}`;
   };
 
   const getFileIcon = (file: File) => {

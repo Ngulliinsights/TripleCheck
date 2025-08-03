@@ -1,12 +1,13 @@
 import { EventEmitter } from 'events';
-import { Logger } from '../utils/Logger';
-import { MetadataAnalyzer } from '../analyzers/MetadataAnalyzer';
-import { VisualAnalyzer } from '../analyzers/VisualAnalyzer';
-import { SignatureAnalyzer } from '../analyzers/SignatureAnalyzer';
+
 import { ContentAnalyzer } from '../analyzers/ContentAnalyzer';
-import { MLDocumentClassifier } from '../ml/MLDocumentClassifier';
+import { MetadataAnalyzer } from '../analyzers/MetadataAnalyzer';
+import { SignatureAnalyzer } from '../analyzers/SignatureAnalyzer';
+import { VisualAnalyzer } from '../analyzers/VisualAnalyzer';
 import { ForgeryDetector } from '../ml/ForgeryDetector';
+import { MLDocumentClassifier } from '../ml/MLDocumentClassifier';
 import { DatabaseService } from '../services/DatabaseService';
+import { Logger } from '../utils/Logger';
 
 export interface DocumentAnalysisRequest {
   id: string;

@@ -10,14 +10,15 @@
  * - Multi-factor authentication
  */
 
-import type { Express, Request, Response } from "express";
 import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
-import { z } from "zod";
+
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import multer from 'multer';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { z } from "zod";
 
 // Import session type augmentation
 import './types';
@@ -318,7 +319,7 @@ class SecureDocumentStorage {
     );
     
     try {
-      await fs.appendFile(auditLogPath, JSON.stringify(logEntry) + '\n');
+      await fs.appendFile(auditLogPath, `${JSON.stringify(logEntry)  }\n`);
     } catch (error) {
       console.error('Failed to write audit log:', error);
     }
@@ -458,7 +459,7 @@ Extract: Any relevant identifying information
       `
     };
 
-    return prompts[documentType] + `
+    return `${prompts[documentType]  }
 
 Respond in JSON format:
 {

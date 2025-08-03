@@ -107,7 +107,7 @@ class PerformanceMonitor {
     window.addEventListener('load', () => {
       // Track memory usage
       if ('memory' in performance) {
-        const memory = (performance as any).memory;
+        const {memory} = (performance as any);
         this.recordMetrics({
           memoryUsage: memory.usedJSHeapSize,
         });
@@ -142,7 +142,7 @@ class PerformanceMonitor {
     // Get memory usage if available
     let memoryDelta = 0;
     if ('memory' in performance) {
-      const memory = (performance as any).memory;
+      const {memory} = (performance as any);
       memoryDelta = memory.usedJSHeapSize;
     }
 

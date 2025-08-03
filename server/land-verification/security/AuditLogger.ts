@@ -1,6 +1,7 @@
+import { eq } from 'drizzle-orm';
+
 import { logger } from '../../infrastructure/monitoring/logger';
 import { db } from '../../lib/database';
-import { eq } from 'drizzle-orm';
 
 export interface AuditEvent {
   id?: string;

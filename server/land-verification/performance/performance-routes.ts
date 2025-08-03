@@ -1,9 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { performanceManager } from './PerformanceManager';
-import { landVerificationCache } from '../cache/LandVerificationCache';
-import { asyncProcessor } from '../AsyncProcessor';
-import { databaseOptimizer } from '../DatabaseOptimizer';
+
 import { logger } from '../../infrastructure/monitoring/logger';
+import { asyncProcessor } from '../AsyncProcessor';
+import { landVerificationCache } from '../cache/LandVerificationCache';
+import { databaseOptimizer } from '../DatabaseOptimizer';
+
+import { performanceManager } from './PerformanceManager';
 
 const router = Router();
 

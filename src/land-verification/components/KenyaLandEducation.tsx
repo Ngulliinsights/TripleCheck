@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { Book, AlertTriangle, CheckCircle, FileText, Users, Scale, MapPin, Shield, Gavel, Home } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface EducationSection {
   id: string;

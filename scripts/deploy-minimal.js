@@ -230,7 +230,7 @@ function generateMinimalDeploymentReport() {
     console.log(`${type.toUpperCase()}: ${files.length} files, ${(size / 1024 / 1024).toFixed(2)} MB`);
   });
   
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${  '='.repeat(60)}`);
   console.log('🚀 MINIMAL DEPLOYMENT READY');
   console.log('='.repeat(60));
   console.log(`📦 Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);

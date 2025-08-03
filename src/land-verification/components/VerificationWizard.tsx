@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
-import { Input } from '@shared/components/ui/input';
-import { Label } from '@shared/components/ui/label';
-import { Textarea } from '@shared/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
-import { Checkbox } from '@shared/components/ui/checkbox';
-import { Progress } from '@shared/components/ui/progress';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Badge } from '@shared/components/ui/badge';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Checkbox } from '@shared/components/ui/checkbox';
+import { Input } from '@shared/components/ui/input';
+import { Label } from '@shared/components/ui/label';
+import { Progress } from '@shared/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
+import { Textarea } from '@shared/components/ui/textarea';
+import { cn } from '@shared/lib/utils';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -23,7 +23,8 @@ import {
   AlertTriangle,
   Info
 } from 'lucide-react';
-import { cn } from '@shared/lib/utils';
+import React, { useState, useEffect } from 'react';
+
 import type { 
   VerificationSessionRequest,
   LayerType,

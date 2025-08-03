@@ -1,8 +1,9 @@
+import { eq, and, or } from 'drizzle-orm';
 import { Request, Response, NextFunction } from 'express';
+
+import { landVerificationSessions, users, properties } from '../../../src/shared/schema';
 import { logger } from '../../infrastructure/monitoring/logger';
 import { db } from '../../lib/database';
-import { landVerificationSessions, users, properties } from '../../../src/shared/schema';
-import { eq, and, or } from 'drizzle-orm';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 
 export interface AccessControlConfig {

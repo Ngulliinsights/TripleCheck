@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
-import { getDatabase } from '../../infrastructure/database/connection';
 import { sql } from 'drizzle-orm';
+import { Request, Response } from 'express';
 import Redis from 'ioredis';
+
+import { getDatabase } from '../../infrastructure/database/connection';
 
 interface HealthCheckResult {
   status: 'healthy' | 'unhealthy' | 'degraded';
@@ -213,8 +214,8 @@ export class HealthCheckService {
   private checkMemory(): HealthCheck {
     const memUsage = process.memoryUsage();
     const rssMemory = memUsage.rss; // Resident Set Size - actual memory used
-    const heapUsed = memUsage.heapUsed;
-    const heapTotal = memUsage.heapTotal;
+    const {heapUsed} = memUsage;
+    const {heapTotal} = memUsage;
     
     // Use RSS memory for more accurate system memory usage
     const memoryUsagePercent = (heapUsed / heapTotal) * 100;
@@ -239,10 +240,10 @@ export class HealthCheckService {
       status,
       message,
       details: {
-        heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + ' MB',
-        heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024) + ' MB',
-        external: Math.round(memUsage.external / 1024 / 1024) + ' MB',
-        rss: rssMB + ' MB',
+        heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)  } MB`,
+        heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)  } MB`,
+        external: `${Math.round(memUsage.external / 1024 / 1024)  } MB`,
+        rss: `${rssMB  } MB`,
         memoryUsage: memoryUsagePercent / 100 // For alerting service
       }
     };

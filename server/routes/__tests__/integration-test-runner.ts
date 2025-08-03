@@ -79,7 +79,7 @@ class IntegrationTestRunner {
     const passed = this.results.filter(r => r.passed).length;
     const failed = this.results.filter(r => r.passed === false).length;
 
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     console.log('📊 INTEGRATION TEST SUMMARY');
     console.log('='.repeat(60));
     console.log(`Total Tests: ${this.results.length}`);

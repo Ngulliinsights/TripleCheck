@@ -253,7 +253,7 @@ class CompatibilityTestRunner {
   }
 
   printSummary(report: CompatibilityReport): void {
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${  '='.repeat(80)}`);
     console.log('🎯 BACKWARD COMPATIBILITY AND PERFORMANCE VALIDATION COMPLETE');
     console.log('='.repeat(80));
     
@@ -271,7 +271,7 @@ class CompatibilityTestRunner {
       }
     }
     
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${  '='.repeat(80)}`);
   }
 }
 

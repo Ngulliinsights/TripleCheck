@@ -9,6 +9,7 @@ import "dotenv/config";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { migrate } from "drizzle-orm/neon-http/migrator";
+
 import * as schema from "../../src/shared/schema";
 
 const logger = {

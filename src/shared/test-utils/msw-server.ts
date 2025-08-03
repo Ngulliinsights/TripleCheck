@@ -1,5 +1,6 @@
-import { setupServer } from 'msw/node';
 import { http, HttpResponse, type RequestHandler } from 'msw';
+import { setupServer } from 'msw/node';
+
 import { handlers } from './api-handlers';
 
 // Create MSW server with default handlers
@@ -58,7 +59,7 @@ export function mockApiSuccess<T>(path: string, data: T, options: {
 } = {}) {
   const { method = 'get', status = 200, message = 'Success', delay = 0 } = options;
   
-  const handler = http[method](path, async () => {
+  return http[method](path, async () => {
     if (delay > 0) {
       await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -69,8 +70,6 @@ export function mockApiSuccess<T>(path: string, data: T, options: {
       message,
     }, { status });
   });
-  
-  return handler;
 }
 
 // Helper to create an error response with consistent format
@@ -89,7 +88,7 @@ export function mockApiError(path: string, options: {
     delay = 0
   } = options;
   
-  const handler = http[method](path, async () => {
+  return http[method](path, async () => {
     if (delay > 0) {
       await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -108,8 +107,6 @@ export function mockApiError(path: string, options: {
       }
     );
   });
-  
-  return handler;
 }
 
 // Helper to create paginated response
@@ -125,7 +122,7 @@ export function mockApiPaginated<T>(
 ) {
   const { method = 'get', defaultPage = 1, defaultLimit = 20, totalCount = items.length } = options;
   
-  const handler = http[method](path, ({ request }) => {
+  return http[method](path, ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || String(defaultPage));
     const limit = parseInt(url.searchParams.get('limit') || String(defaultLimit));
@@ -147,8 +144,6 @@ export function mockApiPaginated<T>(
       },
     });
   });
-  
-  return handler;
 }
 
 // Helper to mock authentication endpoints
@@ -265,7 +260,7 @@ export function simulateNetworkConditions(options: {
           );
         }
         // Let other handlers process the request
-        return;
+        
       })
     );
   }

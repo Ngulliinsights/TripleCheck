@@ -1,5 +1,6 @@
-import React from 'react';
 import { Shield, Eye, Lock, Database, Mail, Phone } from 'lucide-react';
+import React from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function Privacy() {

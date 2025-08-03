@@ -1,14 +1,16 @@
 import { EventEmitter } from "events";
+
 import { logger } from "../infrastructure/monitoring/logger";
-import { MLDocumentAnalyzer } from "./analyzers/MLDocumentAnalyzer";
-import { MetadataAnalyzer } from "./analyzers/MetadataAnalyzer";
-import { VisualAnalyzer } from "./analyzers/VisualAnalyzer";
-import { SignatureAnalyzer } from "./analyzers/SignatureAnalyzer";
+
 import { ContentAnalyzer } from "./analyzers/ContentAnalyzer";
 import {
   LandDocumentAnalyzer,
   LandDocumentAnalysisResult,
 } from "./analyzers/LandDocumentAnalyzer";
+import { MetadataAnalyzer } from "./analyzers/MetadataAnalyzer";
+import { MLDocumentAnalyzer } from "./analyzers/MLDocumentAnalyzer";
+import { SignatureAnalyzer } from "./analyzers/SignatureAnalyzer";
+import { VisualAnalyzer } from "./analyzers/VisualAnalyzer";
 
 export interface DocumentVerificationRequest {
   id: string;

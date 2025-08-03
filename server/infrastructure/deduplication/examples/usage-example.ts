@@ -6,6 +6,8 @@
  */
 
 import express from 'express';
+
+import { CacheService } from '../../cache/CacheService';
 import { 
   createDeduplicationMiddleware, 
   addRequestIdMiddleware, 
@@ -13,7 +15,6 @@ import {
   deduplicationResponseMiddleware,
   RequestDeduplicator 
 } from '../index';
-import { CacheService } from '../../cache/CacheService';
 
 // Example 1: Basic Express app setup with deduplication
 export function setupBasicDeduplication(app: express.Application) {

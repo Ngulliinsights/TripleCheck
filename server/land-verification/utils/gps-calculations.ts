@@ -53,7 +53,7 @@ export function calculateBearing(from: Coordinate, to: Coordinate): number {
   const y = Math.sin(dLng) * Math.cos(lat2);
   const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
 
-  let bearing = toDegrees(Math.atan2(y, x));
+  const bearing = toDegrees(Math.atan2(y, x));
   return (bearing + 360) % 360;
 }
 

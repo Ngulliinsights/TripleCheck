@@ -58,7 +58,7 @@ const ANIMATION_CLASSES = {
 } as const;
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -87,10 +87,10 @@ export function ThemeToggle() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [setTheme]);
 
-  // Memoize the current theme configuration
+  // Memoize the current theme configuration based on resolved theme
   const currentThemeConfig = useMemo(() => {
-    return THEME_OPTIONS[theme as ThemeOption] ?? THEME_OPTIONS.system;
-  }, [theme]);
+    return THEME_OPTIONS[resolvedTheme as ThemeOption] ?? THEME_OPTIONS.system;
+  }, [resolvedTheme]);
 
   // Memoize the current theme icon with animation support
   const currentThemeIcon = useMemo(() => {

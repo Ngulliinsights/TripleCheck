@@ -709,7 +709,7 @@ async function main() {
     // Create business plan
     createBusinessPlan();
     
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     console.log('🎉 API EXTRACTION COMPLETE');
     console.log('='.repeat(60));
     console.log('📋 Next steps:');

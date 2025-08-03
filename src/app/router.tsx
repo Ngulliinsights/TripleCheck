@@ -1,6 +1,7 @@
+import { LoadingSpinner } from '@shared/components/ui/LoadingSpinner';
 import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { LoadingSpinner } from '@shared/components/ui/LoadingSpinner';
+
 import { LazyRoutes } from './lazy-routes';
 
 /**
@@ -115,6 +116,7 @@ export const AppRouter: React.FC = () => {
             ========================================== */}
         <Route path="/blog" element={<LazyRoutes.Blog />} />
         <Route path="/blog/:slug" element={<LazyRoutes.BlogPost />} />
+        <Route path="/blog-test" element={<LazyRoutes.BlogTest />} />
         <Route path="/resources" element={<LazyRoutes.Resources />} />
         <Route path="/community" element={<LazyRoutes.Community />} />
         <Route path="/community-resources" element={<LazyRoutes.CommunityAndResources />} />
@@ -154,11 +156,13 @@ export const AppRouter: React.FC = () => {
             LEGAL & SUPPORT ROUTES
             ========================================== */}
         <Route path="/help" element={<LazyRoutes.Help />} />
+        <Route path="/help/getting-started" element={<LazyRoutes.GettingStarted />} />
         <Route path="/contact" element={<LazyRoutes.Contact />} />
         <Route path="/privacy" element={<LazyRoutes.Privacy />} />
         <Route path="/terms" element={<LazyRoutes.Terms />} />
         <Route path="/cookies" element={<LazyRoutes.Cookies />} />
         <Route path="/security" element={<LazyRoutes.Security />} />
+        <Route path="/static/partners" element={<LazyRoutes.Partners />} />
 
         {/* ==========================================
             DEVELOPER & ADMIN ROUTES

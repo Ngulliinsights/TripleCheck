@@ -1,5 +1,3 @@
-import React, { useState } from 'react';
-import { Button } from '../components/ui/button';
 import { 
   Users, 
   Home, 
@@ -12,6 +10,9 @@ import {
   Clock,
   Award
 } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Button } from '../components/ui/button';
 import { useNavigationTracking } from '../utils/navigation';
 
 export default function Solutions() {

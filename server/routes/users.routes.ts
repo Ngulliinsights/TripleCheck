@@ -6,7 +6,8 @@
  */
 
 import { Router, Response } from 'express';
-import { UserService } from '../services/UserService';
+import { z } from 'zod';
+
 import type { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { 
   requireAuth, 
@@ -16,8 +17,9 @@ import {
   UserContext 
 } from '../middleware/auth.middleware';
 import { validateRequest, CommonValidationSchemas, UserValidationSchemas, type ValidatedRequest } from '../middleware/validation.middleware';
+import { UserService } from '../services/UserService';
 import { ResponseHelper } from '../utils/response-helpers';
-import { z } from 'zod';
+
 
 // Combined interface for authenticated and validated requests
 interface AuthenticatedValidatedRequest extends AuthenticatedRequest {

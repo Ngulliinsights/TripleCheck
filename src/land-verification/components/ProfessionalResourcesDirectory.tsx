@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
 import { Search, MapPin, Phone, Mail, Star, Award, Filter, ExternalLink, Users, Scale, Compass } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
 
 export interface ProfessionalResource {
   id: string;
@@ -240,7 +240,7 @@ export const ProfessionalResourcesDirectory: React.FC<ProfessionalResourcesDirec
   const [showFilters, setShowFilters] = useState(false);
 
   const filteredProfessionals = useMemo(() => {
-    let filtered = MOCK_PROFESSIONALS.filter(professional => {
+    const filtered = MOCK_PROFESSIONALS.filter(professional => {
       const matchesSearch = searchTerm === '' || 
         professional.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         professional.specializations.some(spec => spec.toLowerCase().includes(searchTerm.toLowerCase())) ||

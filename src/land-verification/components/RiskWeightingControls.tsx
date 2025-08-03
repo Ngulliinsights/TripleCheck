@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
-import { Label } from '@shared/components/ui/label';
-import { Slider } from '@shared/components/ui/slider';
-import { Badge } from '@shared/components/ui/badge';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Badge } from '@shared/components/ui/badge';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Label } from '@shared/components/ui/label';
 import { Progress } from '@shared/components/ui/progress';
+import { Slider } from '@shared/components/ui/slider';
+import { cn } from '@shared/lib/utils';
 import { 
   Settings, 
   RotateCcw, 
@@ -16,7 +16,8 @@ import {
   TrendingDown,
   Target
 } from 'lucide-react';
-import { cn } from '@shared/lib/utils';
+import React, { useState, useEffect } from 'react';
+
 import type { RiskCategory } from '@/types/land-verification';
 
 interface RiskWeightingControlsProps {

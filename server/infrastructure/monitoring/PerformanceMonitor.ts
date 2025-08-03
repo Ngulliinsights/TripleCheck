@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
+
 import { logger } from './logger';
 
 export interface PerformanceMetric {

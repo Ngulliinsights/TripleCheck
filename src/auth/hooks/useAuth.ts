@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { authApi } from "../services/auth-api";
+
 import { cachePresets, queryKeys } from "../../infrastructure/api/queryClient";
+import { authApi } from "../services/auth-api";
 
 // Use standardized query keys from infrastructure
 export const authKeys = {

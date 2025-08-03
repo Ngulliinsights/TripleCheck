@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { UserBusinessLogic } from '../services/user-business-logic';
+
 import { User } from '@/auth/types/auth.types';
 import { ApiResponse } from '@/shared/types';
-import { UserBusinessLogic } from '../services/user-business-logic';
 
 // Enhanced user API with business logic integration
 const userApi = {

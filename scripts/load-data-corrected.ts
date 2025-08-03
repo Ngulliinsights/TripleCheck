@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 import "dotenv/config";
 import * as fs from "fs/promises";
+
 import { neon } from "@neondatabase/serverless";
 import * as bcrypt from "bcrypt";
 

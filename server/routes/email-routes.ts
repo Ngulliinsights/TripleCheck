@@ -1,5 +1,6 @@
 // Email routes for TripleCheck - testing and management endpoints
 import { Router } from 'express';
+
 import { getEmailService, sendTemplatedEmail, EmailServiceFactory } from '../services/email-service';
 
 const router = Router();

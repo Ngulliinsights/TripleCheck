@@ -1,8 +1,3 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { Button } from '../../shared/components/ui/button';
-import { Input } from '../../shared/components/ui/input';
-import { Badge } from '../../shared/components/ui/badge';
 import { 
   Map, 
   Search, 
@@ -15,6 +10,12 @@ import {
   Maximize,
   Navigation
 } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { Badge } from '../../shared/components/ui/badge';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Input } from '../../shared/components/ui/input';
 
 interface Property {
   id: string;

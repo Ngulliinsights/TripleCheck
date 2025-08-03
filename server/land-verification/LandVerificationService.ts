@@ -1,12 +1,7 @@
 import { EventEmitter } from "events";
-import { logger } from "../infrastructure/monitoring/logger";
-import { DocumentAuthService } from "../document-auth/DocumentAuthService";
-import { db } from "../infrastructure/database/connection";
-import {
-  RiskAssessmentService,
-  VerificationResult,
-} from "./RiskAssessmentService";
-import { CommunityIntelligenceService } from "./CommunityIntelligenceService";
+
+import { eq, and } from "drizzle-orm";
+
 import {
   landVerificationSessions,
   verificationLayers,
@@ -14,7 +9,16 @@ import {
   properties,
   users,
 } from "../../src/shared/schema";
-import { eq, and } from "drizzle-orm";
+import { DocumentAuthService } from "../document-auth/DocumentAuthService";
+import { db } from "../infrastructure/database/connection";
+import { logger } from "../infrastructure/monitoring/logger";
+
+import { CommunityIntelligenceService } from "./CommunityIntelligenceService";
+import {
+  RiskAssessmentService,
+  VerificationResult,
+} from "./RiskAssessmentService";
+
 
 export interface VerificationSession {
   id: string;

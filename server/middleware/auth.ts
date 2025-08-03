@@ -1,8 +1,8 @@
 // This file is deprecated. Please use ./auth.middleware.ts instead.
 // This file is kept for backward compatibility during the migration.
 
-import { z } from "zod";
 import bcrypt from "bcrypt";
+import { z } from "zod";
 
 // Note: This file contains legacy auth utilities
 // Main auth functionality is in auth.middleware.ts

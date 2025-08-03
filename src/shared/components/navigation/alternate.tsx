@@ -1,12 +1,13 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Logo, Wordmark, Button, ThemeToggle, NavigationSearch } from '@/ui';
+
+import { navItems } from '@/data/navItems';
+import { useDropdownManager } from '@/hooks/useDropdownManager';
+import { useScrollSpy } from '@/hooks/useScrollSpy';
+import { cn } from '@/lib/utils';
 import { MobileNav, MobileNavFallback } from '@/navigation';
 import { SafeNavigation } from '@/navigation/SafeNavigation';
-import { useScrollSpy } from '@/hooks/useScrollSpy';
-import { useDropdownManager } from '@/hooks/useDropdownManager';
-import { navItems } from '@/data/navItems';
-import { cn } from '@/lib/utils';
+import { Logo, Wordmark, Button, ThemeToggle, NavigationSearch } from '@/ui';
 
 export function Navigation({ className, variant = 'transparent' }) {
   const navigate = useNavigate();

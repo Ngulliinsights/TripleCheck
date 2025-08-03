@@ -1,9 +1,11 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+
+import bcrypt from 'bcrypt';
 import { Request, Response, NextFunction } from 'express';
-import { structuredLogger } from '../monitoring/StructuredLogger';
+import jwt from 'jsonwebtoken';
+
 import { storage } from '../infrastructure/storage/storage';
+import { structuredLogger } from '../monitoring/StructuredLogger';
 
 export interface AuthConfig {
   jwt: {
@@ -248,7 +250,7 @@ export class AuthenticationService {
   }> {
     const ip = req.ip || 'unknown';
     const userAgent = req.get('User-Agent') || '';
-    const correlationId = (req as any).correlationId;
+    const {correlationId} = (req as any);
 
     // Check if account is locked
     if (this.isAccountLocked(email)) {

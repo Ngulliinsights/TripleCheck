@@ -1,9 +1,11 @@
-import { eq, and, desc } from "drizzle-orm";
-import { db } from "../infrastructure/database/connection";
-import { properties } from "../../src/shared/schema";
 import * as crypto from 'crypto';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+import { eq, and, desc } from "drizzle-orm";
+
+import { properties } from "../../src/shared/schema";
+import { db } from "../infrastructure/database/connection";
 
 export interface DocumentFile {
   id: string;
@@ -281,7 +283,7 @@ export class DocumentAuthenticationService {
   private async checkDigitalSignature(documentFile: DocumentFile): Promise<VerificationCheck> {
     const details: string[] = [];
     let score = 50; // Neutral score for documents without signatures
-    let status: "pass" | "fail" | "warning" = "pass";
+    const status: "pass" | "fail" | "warning" = "pass";
 
     // For now, basic signature detection
     const hasSignature = this.detectDigitalSignature(documentFile.file);

@@ -1,6 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { PropertyService } from './property.service';
+
 import { AuthenticatedRequest, requireAuth } from '../middleware/auth.middleware';
+
+import { PropertyService } from './property.service';
 
 const router = Router();
 const propertyService = new PropertyService();
@@ -40,6 +42,13 @@ router.get('/:id', async (req, res, next) => {
   try {
     const includeMarketEstimate = req.query.includeMarketEstimate === 'true';
     const result = await propertyService.getProperty(req.params.id, { includeMarketEstimate });
+    if (!result.data) {
+      return res.status(404).json({
+        success: false,
+        error: 'Property not found',
+        message: `Property with ID ${req.params.id} was not found`
+      });
+    }
     res.json(result);
   } catch (error) {
     next(error);

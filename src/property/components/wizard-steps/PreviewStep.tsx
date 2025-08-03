@@ -1,9 +1,7 @@
-import React, { useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Separator } from '@shared/components/ui/separator';
-import { PropertyFormData } from '../PropertyListingWizard';
 import { 
   MapPin, 
   Bed, 
@@ -17,6 +15,9 @@ import {
   Heart,
   Star
 } from 'lucide-react';
+import React, { useEffect } from 'react';
+
+import { PropertyFormData } from '../PropertyListingWizard';
 
 interface PreviewStepProps {
   data: PropertyFormData;

@@ -1,15 +1,15 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Card, CardContent } from '../../shared/components/ui/card';
-import { Button } from '../../shared/components/ui/button';
-import { Badge } from '../../shared/components/ui/badge';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy , useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { ChevronLeft, ChevronRight, X, Maximize2, Download, Share2, ZoomIn, ZoomOut, RotateCw, Move, Eye, GripVertical } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+
+import { Badge } from '../../shared/components/ui/badge';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent } from '../../shared/components/ui/card';
 import { Dialog, DialogContent, DialogTrigger } from '../../shared/components/ui/dialog';
 import { OptimizedImage } from '../../shared/components/ui/optimized-image';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { Skeleton } from '../../shared/components/ui/skeleton';
 import { useToast } from '../../shared/hooks/use-toast';
 

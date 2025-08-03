@@ -6,9 +6,10 @@
  */
 
 import { EventEmitter } from 'events';
+
+import { standardErrorHandler, ErrorCategory } from '../error-handling/StandardErrorHandler';
 import { logger } from '../monitoring/logger';
 import { performanceMonitor } from '../monitoring/PerformanceMonitor';
-import { standardErrorHandler, ErrorCategory } from '../error-handling/StandardErrorHandler';
 
 export interface DomainEvent {
   id: string;
@@ -508,8 +509,7 @@ export class EventBus extends EventEmitter {
    */
   private getEventPriority(event: DomainEvent): number {
     const handlers = this.handlers.get(event.type) || [];
-    const maxPriority = Math.max(...handlers.map(h => h.options?.priority || EventPriority.MEDIUM));
-    return maxPriority;
+    return Math.max(...handlers.map(h => h.options?.priority || EventPriority.MEDIUM));
   }
 
   /**

@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
 import { HelpCircle, X, ChevronRight, ChevronDown } from 'lucide-react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
 export interface GuidanceStep {
   id: string;

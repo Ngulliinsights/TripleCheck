@@ -4,6 +4,15 @@
  */
 
 import express, { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
+
+import {
+  ValidationError,
+  DatabaseError,
+  AuthenticationError,
+  NotFoundError,
+} from '../../src/shared/utils/errors';
+
 import {
   centralizedErrorHandler,
   correlationIdMiddleware,
@@ -14,13 +23,6 @@ import {
   handleValidationError,
   ERROR_CONSTANTS,
 } from './centralized-error-handler';
-import {
-  ValidationError,
-  DatabaseError,
-  AuthenticationError,
-  NotFoundError,
-} from '../../src/shared/utils/errors';
-import { z } from 'zod';
 
 // Example of how to integrate the centralized error handling middleware
 export function setupErrorHandlingExample(): express.Application {

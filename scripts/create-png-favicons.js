@@ -17,7 +17,7 @@ function createSimplePNG(size, color = '#14b8a6') {
   // This is a very basic PNG - in production, you'd want to use proper image generation
   // For now, we'll create placeholder files that can be replaced with proper icons
   
-  const canvas = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
     <defs>
       <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" style="stop-color:#14b8a6;stop-opacity:1" />
@@ -32,8 +32,6 @@ function createSimplePNG(size, color = '#14b8a6') {
     </g>
     ${size >= 24 ? `<path d="M${size*0.65} ${size*0.75} L${size*0.75} ${size*0.85} L${size*0.9} ${size*0.65}" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>` : ''}
   </svg>`;
-  
-  return canvas;
 }
 
 // Create the required favicon files

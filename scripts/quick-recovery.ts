@@ -5,12 +5,14 @@
  */
 
 import "dotenv/config";
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
-import { users, properties, reviews, transactions, statistics } from "../src/shared/schema";
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+import { neon } from "@neondatabase/serverless";
 import * as bcrypt from "bcrypt";
+import { drizzle } from "drizzle-orm/neon-http";
+
+import { users, properties, reviews, transactions, statistics } from "../src/shared/schema";
 
 async function quickRecovery() {
   try {

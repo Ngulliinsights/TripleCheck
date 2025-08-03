@@ -6,10 +6,11 @@
  */
 
 import 'dotenv/config';
-import { UnifiedDataGenerator } from '../unified-data-generator.js';
 import { spawn } from 'child_process';
-import path from 'path';
 import fs from 'fs/promises';
+import path from 'path';
+
+import { UnifiedDataGenerator } from '../unified-data-generator.js';
 
 interface IntegrationOptions {
   users?: number;

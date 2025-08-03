@@ -1,11 +1,14 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
-import { Badge } from '@shared/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@shared/components/ui/avatar';
+import { Badge } from '@shared/components/ui/badge';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { User, Edit, Mail, Phone, MapPin, Calendar } from 'lucide-react';
-import { User as UserType } from '@/auth/types/auth.types';
+import React from 'react';
+
 import { formatDate } from '../../shared/utils/date-utils';
+
+import { User as UserType } from '@/auth/types/auth.types';
+
 
 interface UserProfileProps {
   user: UserType;

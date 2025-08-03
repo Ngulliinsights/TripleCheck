@@ -1,8 +1,9 @@
-import React from 'react';
 import { Cookie, Settings, Eye, BarChart3, Shield, ToggleLeft, ToggleRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
+import React from 'react';
+
 import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function Cookies() {
   const [preferences, setPreferences] = React.useState({

@@ -1,10 +1,11 @@
 import { EventEmitter } from 'events';
-import { Logger } from '../utils/Logger';
-import { DataIntegrationService } from '../services/DataIntegrationService';
+
 import { MLAnalyticsEngine } from '../analytics/MLAnalyticsEngine';
 import { NetworkAnalysisService } from '../analytics/NetworkAnalysisService';
 import { CaseManagementService } from '../services/CaseManagementService';
 import { ComplianceReportingService } from '../services/ComplianceReportingService';
+import { DataIntegrationService } from '../services/DataIntegrationService';
+import { Logger } from '../utils/Logger';
 
 export interface FraudAlert {
   id: string;

@@ -2,8 +2,8 @@ import { MapPin, Bed, Bath, Square, Camera, Plus, Check } from 'lucide-react';
 import React from 'react';
 
 import { Badge } from '../../shared/components/ui/badge';
-import { Card, CardContent } from '../../shared/components/ui/card';
 import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent } from '../../shared/components/ui/card';
 import { Property } from '../../shared/types/property';
 import { useCompare } from '../contexts/CompareContext';
 
@@ -161,8 +161,8 @@ const ListingCard = React.memo<ListingCardProps>(({
   return (
     <Card 
       className={`
-        overflow-hidden transition-all duration-300 
-        ${isInteractive ? 'cursor-pointer hover:shadow-lg hover:scale-105 group' : 'hover:shadow-md'} 
+        glass-property-card overflow-hidden transition-all duration-300 
+        ${isInteractive ? 'cursor-pointer group' : ''} 
         ${className}
       `.trim()}
       onClick={isInteractive ? handleCardClick : undefined}

@@ -1,5 +1,6 @@
-import type { User } from '../../src/shared/schema';
 import type { Request } from 'express';
+
+import type { User } from '../../src/shared/schema';
 
 // User role type for authorization
 export type UserRole = 'user' | 'agent' | 'admin';

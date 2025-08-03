@@ -1,8 +1,8 @@
 // Comprehensive test script for all critical TripleCheck services
+import { getAIMLService, analyzePropertyDocument, detectTransactionFraud } from './services/ai-ml-service';
 import { getEmailService, sendTemplatedEmail } from './services/email-service';
 import { getFileStorageService, uploadPropertyImage, uploadDocument } from './services/file-storage-service';
 import { getMpesaService, processPropertyPayment } from './services/mpesa-service-enhanced';
-import { getAIMLService, analyzePropertyDocument, detectTransactionFraud } from './services/ai-ml-service';
 
 async function testCriticalServices() {
   console.log('🧪 Testing All Critical TripleCheck Services...\n');
@@ -237,7 +237,7 @@ async function testCriticalServices() {
   }
 
   // Test Results Summary
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${  '='.repeat(60)}`);
   console.log('📊 CRITICAL SERVICES TEST RESULTS');
   console.log('='.repeat(60));
   
@@ -246,7 +246,7 @@ async function testCriticalServices() {
     console.log(`${statusIcon} ${result.service.padEnd(15)} | ${result.status.padEnd(4)} | ${result.details}`);
   });
   
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${  '='.repeat(60)}`);
   
   const passedTests = testResults.filter(r => r.status === 'PASS').length;
   const totalTests = testResults.length;

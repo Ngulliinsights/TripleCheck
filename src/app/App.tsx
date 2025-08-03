@@ -48,7 +48,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main Content Area */}
       <ErrorBoundary>
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 transparent-navbar-content">{children}</main>
       </ErrorBoundary>
 
       {/* Footer with error boundary */}

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import { metricsService } from './MetricsService';
 
 const router = Router();

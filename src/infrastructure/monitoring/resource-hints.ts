@@ -357,7 +357,7 @@ class ResourceHintsManager {
     let hoverTimeout: number;
 
     document.addEventListener('mouseenter', (event) => {
-      const target = event.target;
+      const {target} = event;
       if (!target || !(target instanceof HTMLElement)) return;
       
       const link = target.closest('a[href]') as HTMLAnchorElement;

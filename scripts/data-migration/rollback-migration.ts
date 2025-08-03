@@ -6,10 +6,11 @@
  * and can restore the database to a previous state.
  */
 
-import { config } from "dotenv";
-import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
+import { config } from "dotenv";
 import { eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/neon-http";
+
 import { 
   properties, 
   landVerificationSessions,

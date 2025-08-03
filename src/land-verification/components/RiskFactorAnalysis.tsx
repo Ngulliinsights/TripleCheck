@@ -1,13 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Badge } from '@shared/components/ui/badge';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Input } from '@shared/components/ui/input';
 import { Label } from '@shared/components/ui/label';
+import { Progress } from '@shared/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
-import { Progress } from '@shared/components/ui/progress';
-import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { cn } from '@shared/lib/utils';
 import { 
   Search,
   Filter,
@@ -22,7 +22,8 @@ import {
   Info,
   ChevronRight
 } from 'lucide-react';
-import { cn } from '@shared/lib/utils';
+import React, { useState, useMemo } from 'react';
+
 import type { 
   RiskFactorWithContext,
   RiskInteraction,
@@ -70,7 +71,7 @@ export default function RiskFactorAnalysis({
 
   // Filter and sort risk factors
   const filteredAndSortedFactors = useMemo(() => {
-    let filtered = riskFactors.filter(factor => {
+    const filtered = riskFactors.filter(factor => {
       if (filters.category !== 'all' && factor.category !== filters.category) return false;
       if (filters.severity !== 'all' && factor.severity !== filters.severity) return false;
       if (filters.mitigationStatus !== 'all' && factor.mitigationStatus !== filters.mitigationStatus) return false;

@@ -2,8 +2,8 @@
  * Comprehensive accessibility testing utilities
  */
 
-import { axe, toHaveNoViolations } from 'jest-axe';
 import type { AxeResults, RunOptions } from 'axe-core';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import { vi } from 'vitest';
 
 // Extend Jest matchers
@@ -113,7 +113,7 @@ export const testKeyboardAccessibility = async (
   for (const selector of expectFocusable) {
     const element = container.querySelector(selector);
     if (element) {
-      const tabIndex = (element as HTMLElement).tabIndex;
+      const {tabIndex} = (element as HTMLElement);
       const isFocusable = tabIndex >= 0 || 
         ['INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'A'].includes(element.tagName) ||
         element.hasAttribute('contenteditable');
@@ -126,7 +126,7 @@ export const testKeyboardAccessibility = async (
   for (const selector of expectNotFocusable) {
     const element = container.querySelector(selector);
     if (element) {
-      const tabIndex = (element as HTMLElement).tabIndex;
+      const {tabIndex} = (element as HTMLElement);
       expect(tabIndex).toBe(-1);
     }
   }

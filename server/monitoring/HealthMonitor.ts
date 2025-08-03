@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
-import { structuredLogger } from './StructuredLogger';
+
 import { cacheService } from '../cache/CacheService';
 import { storage } from '../infrastructure/storage/storage';
+
+import { structuredLogger } from './StructuredLogger';
 
 export interface HealthCheck {
   name: string;

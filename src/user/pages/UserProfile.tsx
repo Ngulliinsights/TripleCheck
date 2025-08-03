@@ -1,10 +1,3 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { Button } from '../../shared/components/ui/button';
-import { Input } from '../../shared/components/ui/input';
-import { Label } from '../../shared/components/ui/label';
-import { Badge } from '../../shared/components/ui/badge';
-import { Separator } from '../../shared/components/ui/separator';
 import { 
   User, 
   Mail, 
@@ -17,6 +10,14 @@ import {
   Star,
   Award
 } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Badge } from '../../shared/components/ui/badge';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Input } from '../../shared/components/ui/input';
+import { Label } from '../../shared/components/ui/label';
+import { Separator } from '../../shared/components/ui/separator';
 
 interface UserData {
   id: string;

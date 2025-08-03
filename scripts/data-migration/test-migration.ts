@@ -6,13 +6,14 @@
  * for the Kenya Land Verification System.
  */
 
+import { neon } from "@neondatabase/serverless";
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
+
 import { migrateExistingProperties, type MigrationStats } from "./migrate-existing-properties";
+import { rollbackMigration, type RollbackStats } from "./rollback-migration";
 import { seedKenyaProperties, type SeedingStats } from "./seed-kenya-properties";
 import { validateMigration, type ValidationSummary } from "./validate-migration";
-import { rollbackMigration, type RollbackStats } from "./rollback-migration";
 
 // Load environment variables
 config();

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+
 import { FormManager, FormField, FormState, ValidationRule } from '../utils/form-validation';
 
 export interface UseFormOptions {
@@ -75,8 +76,7 @@ export function useForm(options: UseFormOptions): UseFormReturn {
 
   // Subscribe to form manager updates
   useEffect(() => {
-    const unsubscribe = formManager.subscribe(setFormState);
-    return unsubscribe;
+    return formManager.subscribe(setFormState);
   }, [formManager]);
 
   // Prevent navigation on dirty form

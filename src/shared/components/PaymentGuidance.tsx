@@ -1,8 +1,9 @@
-import React from 'react';
 import { AlertTriangle, CreditCard, Building, Shield, CheckCircle, XCircle } from 'lucide-react';
+import React from 'react';
+
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 interface PaymentMethod {
   name: string;

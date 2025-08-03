@@ -361,7 +361,7 @@ class LoadTestValidator {
   }
 
   printReport(report: LoadTestReport): void {
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${  '='.repeat(80)}`);
     console.log('📊 LOAD TEST VALIDATION RESULTS');
     console.log('='.repeat(80));
     
@@ -398,7 +398,7 @@ class LoadTestValidator {
       console.log('🚨 CRITICAL: System performance is below acceptable thresholds');
     }
     
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${  '='.repeat(80)}`);
   }
 }
 

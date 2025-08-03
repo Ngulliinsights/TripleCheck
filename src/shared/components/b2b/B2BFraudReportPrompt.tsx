@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
 import { Shield, AlertTriangle, TrendingUp, Building2, ArrowRight, Eye } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
+
 import { cn } from '@/shared/lib/utils';
 
 interface B2BFraudReportPromptProps {
@@ -25,7 +27,7 @@ export function B2BFraudReportPrompt({
 
   const handleAPIInterest = () => {
     // Track fraud report API interest
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (window?.gtag) {
       window.gtag('event', 'fraud_api_interest', {
         event_category: 'B2B',
         event_label: 'fraud_report_prompt',

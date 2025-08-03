@@ -21,6 +21,20 @@ export interface ApiMetadata {
   riskLevel?: string;
   fraudDetectionPerformed?: boolean;
   requiresManualReview?: boolean;
+  timestamp?: string;
+  correlationId?: string;
+  // API Versioning metadata
+  supportedVersions?: string[];
+  availableVersions?: string[];
+  availableInVersions?: string[];
+  currentVersion?: string;
+  feature?: string;
+  versioningMethods?: string[];
+  versionDetails?: Array<{
+    version: string;
+    status: string;
+    releaseDate: Date;
+  }>;
 }
 
 // Search filters interface

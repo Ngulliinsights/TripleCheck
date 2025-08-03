@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import request from 'supertest';
+
 import app from '../app';
 import { storage } from '../infrastructure/storage/storage';
 
@@ -302,7 +303,7 @@ class LoadTester {
   }
 
   printReport(report: LoadTestReport): void {
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${  '='.repeat(80)}`);
     console.log('📊 LOAD TEST RESULTS');
     console.log('='.repeat(80));
     
@@ -326,7 +327,7 @@ class LoadTester {
       console.log(`    Error Rate: ${result.errorRate.toFixed(2)}%`);
     }
     
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${  '='.repeat(80)}`);
   }
 }
 

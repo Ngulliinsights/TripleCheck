@@ -1,6 +1,8 @@
-import React from 'react';
 import { Building2, ArrowRight, Zap, Shield } from 'lucide-react';
+import React from 'react';
+
 import { Button } from '../ui/button';
+
 import { cn } from '@/shared/lib/utils';
 
 interface B2BContextualPromptProps {

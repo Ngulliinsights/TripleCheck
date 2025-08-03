@@ -1,5 +1,5 @@
-import { FraudDetectionEngine } from './core/FraudDetectionEngine';
 import { FraudDetectionAPI } from './api/FraudDetectionAPI';
+import { FraudDetectionEngine } from './core/FraudDetectionEngine';
 import { Logger } from './utils/Logger';
 
 async function startFraudDetectionSystem() {

@@ -1,5 +1,6 @@
-import { z } from 'zod';
 import { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
+
 import { ValidationError } from '../../../src/shared/utils/errors';
 import { logger } from '../../infrastructure/monitoring/logger';
 

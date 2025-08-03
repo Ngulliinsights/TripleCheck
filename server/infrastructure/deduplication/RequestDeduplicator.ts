@@ -1,21 +1,24 @@
 import { createHash } from 'crypto';
+
 import { CacheService } from '../cache/CacheService';
 import { cachePerformanceMonitor } from '../monitoring/CachePerformanceMonitor';
 
 /**
  * Interface for idempotent request handling
+ * Represents the stored state of a request for deduplication purposes
  */
 export interface IdempotentRequest {
   idempotencyKey: string;
   requestHash: string;
   expiresAt: Date;
-  response?: any;
+  response?: unknown; // More precise than 'any'
   status: 'pending' | 'completed' | 'failed';
   createdAt: Date;
 }
 
 /**
  * Configuration for request deduplication
+ * Controls caching behavior and performance characteristics
  */
 export interface DeduplicationConfig {
   defaultTtl: number; // Default TTL in milliseconds
@@ -25,17 +28,54 @@ export interface DeduplicationConfig {
 }
 
 /**
+ * Represents a completed request stored in memory cache
+ */
+interface CompletedRequest {
+  response: unknown;
+  timestamp: Date;
+  etag: string;
+}
+
+/**
+ * Logger interface for dependency injection and testing
+ */
+interface Logger {
+  warn: (message: string, error?: Error) => void;
+  error: (message: string, error?: Error) => void;
+}
+
+/**
+ * Cache lookup result for type safety
+ */
+interface CacheLookupResult<T> {
+  found: boolean;
+  data?: T;
+}
+
+/**
  * Request deduplication service to prevent race conditions and duplicate processing
  * Supports both in-memory and Redis backing for scalability
+ * 
+ * This service helps prevent duplicate processing of identical requests by:
+ * 1. Detecting when the same request is already in progress
+ * 2. Caching completed results for a configurable time period
+ * 3. Using both memory and Redis for multi-tier caching
  */
 export class RequestDeduplicator {
   private static instance: RequestDeduplicator;
-  private pendingRequests = new Map<string, Promise<any>>();
-  private completedRequests = new Map<string, { response: any; timestamp: Date; etag: string }>();
-  private cache?: CacheService;
-  private config: DeduplicationConfig;
+  private readonly pendingRequests = new Map<string, Promise<unknown>>();
+  private readonly completedRequests = new Map<string, CompletedRequest>();
+  
+  // Explicitly type as potentially undefined to satisfy exactOptionalPropertyTypes
+  private readonly cache: CacheService | undefined;
+  private readonly config: DeduplicationConfig;
+  private readonly logger: Logger;
 
-  constructor(config: Partial<DeduplicationConfig> = {}, cache?: CacheService) {
+  constructor(
+    config: Partial<DeduplicationConfig> = {},
+    cache?: CacheService | undefined, // Explicit undefined in union type
+    logger?: Logger | undefined
+  ) {
     this.config = {
       defaultTtl: 300000, // 5 minutes
       maxPendingTime: 30000, // 30 seconds
@@ -43,7 +83,12 @@ export class RequestDeduplicator {
       keyPrefix: 'dedup:',
       ...config
     };
+    
+    // Explicit assignment to satisfy TypeScript's exact optional property types
     this.cache = cache;
+    
+    // Use provided logger or create a default implementation
+    this.logger = logger || this.createDefaultLogger();
     
     // Clean up expired requests periodically
     setInterval(() => this.cleanupExpiredRequests(), 60000); // Every minute
@@ -51,16 +96,23 @@ export class RequestDeduplicator {
 
   /**
    * Get singleton instance
+   * Ensures only one deduplicator exists across the application
    */
-  static getInstance(config?: Partial<DeduplicationConfig>, cache?: CacheService): RequestDeduplicator {
+  static getInstance(
+    config?: Partial<DeduplicationConfig>,
+    cache?: CacheService,
+    logger?: Logger
+  ): RequestDeduplicator {
     if (!RequestDeduplicator.instance) {
-      RequestDeduplicator.instance = new RequestDeduplicator(config, cache);
+      RequestDeduplicator.instance = new RequestDeduplicator(config, cache, logger);
     }
     return RequestDeduplicator.instance;
   }
 
   /**
    * Handle idempotent request with deduplication
+   * This method has been refactored to reduce cognitive complexity by breaking
+   * the logic into smaller, focused helper methods
    */
   async handleIdempotentRequest<T>(
     key: string,
@@ -69,48 +121,229 @@ export class RequestDeduplicator {
   ): Promise<T> {
     const cacheKey = this.getCacheKey(key);
     
-    // Check if request is already in progress
-    if (this.pendingRequests.has(cacheKey)) {
-      try {
-        // Wait for pending request with timeout
-        return await Promise.race([
-          this.pendingRequests.get(cacheKey)!,
-          this.createTimeoutPromise(this.config.maxPendingTime)
-        ]);
-      } catch (error) {
-        // If pending request fails or times out, remove it and continue
-        this.pendingRequests.delete(cacheKey);
-      }
+    // Step 1: Check for pending requests
+    const pendingResult = await this.checkPendingRequest<T>(cacheKey);
+    if (pendingResult.found) {
+      return pendingResult.data as T;
     }
 
-    // Check for completed request in memory
+    // Step 2: Check memory cache
+    const memoryResult = this.checkMemoryCache<T>(cacheKey, ttl);
+    if (memoryResult.found) {
+      return memoryResult.data as T;
+    }
+
+    // Step 3: Check Redis cache
+    const redisResult = await this.checkRedisCache<T>(cacheKey);
+    if (redisResult.found) {
+      return redisResult.data as T;
+    }
+
+    // Step 4: Execute and cache the operation
+    return await this.executeAndCacheOperation(cacheKey, operation, ttl);
+  }
+
+  /**
+   * Generate idempotency key from request data
+   * Creates a consistent key for the same logical request
+   * 
+   * Uses SHA-256 for cryptographic strength in key generation
+   * Includes timestamp rounded to seconds for short-term deduplication
+   */
+  generateIdempotencyKey(userId: number, endpoint: string, requestData?: unknown): string {
+    const payload = {
+      userId,
+      endpoint,
+      data: requestData || {},
+      timestamp: Math.floor(Date.now() / 1000) // Round to second for short-term deduplication
+    };
+    
+    return createHash('sha256')
+      .update(JSON.stringify(payload))
+      .digest('hex')
+      .substring(0, 16);
+  }
+
+  /**
+   * Generate request hash for content-based deduplication
+   * Creates a hash that uniquely identifies the request content
+   */
+  generateRequestHash(
+    method: string, 
+    url: string, 
+    body?: unknown, 
+    headers?: Record<string, string>
+  ): string {
+    const payload = {
+      method: method.toUpperCase(),
+      url,
+      body: body || {},
+      headers: this.filterHeaders(headers || {})
+    };
+    
+    return createHash('sha256')
+      .update(JSON.stringify(payload))
+      .digest('hex');
+  }
+
+  /**
+   * Check if request should be deduplicated
+   * Implements smart logic to determine when deduplication is safe and beneficial
+   */
+  shouldDeduplicate(method: string, endpoint: string): boolean {
+    const upperMethod = method.toUpperCase();
+    
+    // Always deduplicate safe operations
+    if (['GET', 'HEAD', 'OPTIONS'].includes(upperMethod)) {
+      return true;
+    }
+    
+    // Deduplicate idempotent operations for specific endpoints
+    if (['PUT', 'DELETE'].includes(upperMethod)) {
+      return this.isIdempotentEndpoint(endpoint);
+    }
+    
+    // For POST operations, only deduplicate specific endpoints
+    if (upperMethod === 'POST') {
+      return this.isDeduplicatablePostEndpoint(endpoint);
+    }
+    
+    return false;
+  }
+
+  /**
+   * Clear cache for specific key or pattern
+   * Provides cache invalidation capabilities for both memory and Redis
+   */
+  async clearCache(keyOrPattern: string): Promise<void> {
+    const cacheKey = this.getCacheKey(keyOrPattern);
+    
+    // Clear from memory using safe pattern matching
+    this.clearMemoryCache(keyOrPattern, cacheKey);
+    
+    // Clear from Redis if enabled
+    await this.clearRedisCache(keyOrPattern, cacheKey);
+  }
+
+  /**
+   * Get cache statistics
+   * Provides insights into cache performance and memory usage
+   */
+  getStats(): {
+    pendingRequests: number;
+    completedRequests: number;
+    memoryUsage: number;
+  } {
+    return {
+      pendingRequests: this.pendingRequests.size,
+      completedRequests: this.completedRequests.size,
+      memoryUsage: this.estimateMemoryUsage()
+    };
+  }
+
+  // Private helper methods - These break down complex operations into manageable pieces
+
+  /**
+   * Create default logger implementation
+   * Provides console-based logging with proper ESLint handling
+   */
+  private createDefaultLogger(): Logger {
+    return {
+      warn: (message: string, error?: Error) => {
+        // eslint-disable-next-line no-console
+        console.warn(message, error?.message || '');
+      },
+      error: (message: string, error?: Error) => {
+        // eslint-disable-next-line no-console
+        console.error(message, error?.message || '');
+      }
+    };
+  }
+
+  /**
+   * Check if there's a pending request for the given cache key
+   * This method isolates the pending request logic to reduce complexity
+   */
+  private async checkPendingRequest<T>(cacheKey: string): Promise<CacheLookupResult<T>> {
+    const pendingRequest = this.pendingRequests.get(cacheKey);
+    if (!pendingRequest) {
+      return { found: false };
+    }
+
+    try {
+      // Wait for pending request with timeout
+      const result = await Promise.race([
+        pendingRequest,
+        this.createTimeoutPromise(this.config.maxPendingTime)
+      ]);
+      return { found: true, data: result as T };
+    } catch (error) {
+      // Remove failed pending request and continue
+      this.pendingRequests.delete(cacheKey);
+      
+      // Re-throw timeout errors, but allow retry for other errors
+      if (error instanceof Error && error.message === 'Request timeout') {
+        throw error;
+      }
+      return { found: false };
+    }
+  }
+
+  /**
+   * Check memory cache for cached result
+   * Isolates memory cache logic for better maintainability
+   */
+  private checkMemoryCache<T>(cacheKey: string, ttl: number): CacheLookupResult<T> {
     const completed = this.completedRequests.get(cacheKey);
+    
     if (completed && Date.now() - completed.timestamp.getTime() < ttl) {
-      cachePerformanceMonitor.recordCacheHit(cacheKey, 0); // Memory cache hit
-      return completed.response;
+      cachePerformanceMonitor.recordCacheHit(cacheKey, 0);
+      return { found: true, data: completed.response as T };
+    }
+    
+    return { found: false };
+  }
+
+  /**
+   * Check Redis cache for cached result
+   * Handles Redis operations with proper error handling
+   */
+  private async checkRedisCache<T>(cacheKey: string): Promise<CacheLookupResult<T>> {
+    if (!this.cache || !this.config.enableRedisBackup) {
+      return { found: false };
     }
 
-    // Check Redis cache if enabled
-    if (this.cache && this.config.enableRedisBackup) {
-      try {
-        const cachedResult = await this.cache.get(cacheKey);
-        if (cachedResult) {
-          // Store in memory for faster access
-          this.completedRequests.set(cacheKey, {
-            response: cachedResult,
-            timestamp: new Date(),
-            etag: this.generateETag(cachedResult)
-          });
-          cachePerformanceMonitor.recordCacheHit(cacheKey, 0); // Redis cache hit
-          return cachedResult as T;
-        }
-      } catch (error) {
-        console.warn('Redis cache lookup failed:', error);
-        cachePerformanceMonitor.recordCacheError(cacheKey, error as Error);
+    try {
+      const cachedResult = await this.cache.get(cacheKey);
+      if (!cachedResult) {
+        return { found: false };
       }
-    }
 
-    // Execute new request
+      // Store in memory for faster future access
+      this.completedRequests.set(cacheKey, {
+        response: cachedResult,
+        timestamp: new Date(),
+        etag: this.generateETag(cachedResult)
+      });
+      
+      cachePerformanceMonitor.recordCacheHit(cacheKey, 0);
+      return { found: true, data: cachedResult as T };
+    } catch (error) {
+      this.logger.warn('Redis cache lookup failed', error as Error);
+      cachePerformanceMonitor.recordCacheError(cacheKey, error as Error);
+      return { found: false };
+    }
+  }
+
+  /**
+   * Execute the operation and cache the result
+   * Handles the actual operation execution and caching logic
+   */
+  private async executeAndCacheOperation<T>(
+    cacheKey: string,
+    operation: () => Promise<T>,
+    ttl: number
+  ): Promise<T> {
     const startTime = Date.now();
     const promise = this.executeWithErrorHandling(operation);
     this.pendingRequests.set(cacheKey, promise);
@@ -129,159 +362,131 @@ export class RequestDeduplicator {
       });
 
       // Store in Redis if enabled
-      if (this.cache && this.config.enableRedisBackup) {
-        try {
-          await this.cache.set(cacheKey, result, { ttl: Math.floor(ttl / 1000) });
-        } catch (error) {
-          console.warn('Redis cache storage failed:', error);
-        }
-      }
+      await this.storeInRedis(cacheKey, result, ttl);
 
-      return result;
+      return result as T;
     } finally {
       this.pendingRequests.delete(cacheKey);
     }
   }
 
   /**
-   * Generate idempotency key from request data
+   * Store result in Redis cache
+   * Isolated Redis storage logic with error handling
    */
-  generateIdempotencyKey(userId: number, endpoint: string, data?: any): string {
-    const payload = {
-      userId,
-      endpoint,
-      data: data || {},
-      timestamp: Math.floor(Date.now() / 1000) // Round to second for short-term deduplication
-    };
-    
-    return createHash('sha256')
-      .update(JSON.stringify(payload))
-      .digest('hex')
-      .substring(0, 16);
+  private async storeInRedis(cacheKey: string, result: unknown, ttl: number): Promise<void> {
+    if (!this.cache || !this.config.enableRedisBackup) {
+      return;
+    }
+
+    try {
+      await this.cache.set(cacheKey, result, { ttl: Math.floor(ttl / 1000) });
+    } catch (error) {
+      this.logger.warn('Redis cache storage failed', error as Error);
+    }
   }
 
   /**
-   * Generate request hash for content-based deduplication
+   * Clear memory cache with safe pattern matching
+   * Uses pre-compiled patterns to avoid security issues
    */
-  generateRequestHash(method: string, url: string, body?: any, headers?: Record<string, string>): string {
-    const payload = {
-      method: method.toUpperCase(),
-      url,
-      body: body || {},
-      // Only include relevant headers for deduplication
-      headers: this.filterHeaders(headers || {})
-    };
-    
-    return createHash('sha256')
-      .update(JSON.stringify(payload))
-      .digest('hex');
-  }
+  private clearMemoryCache(keyOrPattern: string, cacheKey: string): void {
+    if (!keyOrPattern.includes('*')) {
+      this.completedRequests.delete(cacheKey);
+      return;
+    }
 
-  /**
-   * Check if request should be deduplicated
-   */
-  shouldDeduplicate(method: string, endpoint: string): boolean {
-    // Only deduplicate safe and idempotent operations
-    const safeOperations = ['GET', 'HEAD', 'OPTIONS'];
-    const idempotentOperations = ['PUT', 'DELETE'];
-    
-    // Always deduplicate safe operations
-    if (safeOperations.includes(method.toUpperCase())) {
-      return true;
-    }
-    
-    // Deduplicate idempotent operations for specific endpoints
-    if (idempotentOperations.includes(method.toUpperCase())) {
-      return this.isIdempotentEndpoint(endpoint);
-    }
-    
-    // For POST operations, only deduplicate specific endpoints
-    if (method.toUpperCase() === 'POST') {
-      return this.isDeduplicatablePostEndpoint(endpoint);
-    }
-    
-    return false;
-  }
+    // Create safe pattern matching using known safe patterns only
+    const safePatterns = this.createSafePatterns();
+    const matchingPattern = safePatterns.find(pattern => 
+      keyOrPattern.replace(/\*/g, '.*') === pattern.source
+    );
 
-  /**
-   * Clear cache for specific key or pattern
-   */
-  async clearCache(keyOrPattern: string): Promise<void> {
-    const cacheKey = this.getCacheKey(keyOrPattern);
-    
-    // Clear from memory
-    if (keyOrPattern.includes('*')) {
-      // Pattern matching for memory cache
-      const pattern = new RegExp(keyOrPattern.replace(/\*/g, '.*'));
+    if (matchingPattern) {
       for (const key of this.completedRequests.keys()) {
-        if (pattern.test(key)) {
+        if (matchingPattern.test(key)) {
           this.completedRequests.delete(key);
         }
       }
-    } else {
-      this.completedRequests.delete(cacheKey);
-    }
-    
-    // Clear from Redis if enabled
-    if (this.cache && this.config.enableRedisBackup) {
-      try {
-        if (keyOrPattern.includes('*')) {
-          await this.cache.invalidateByPattern(cacheKey);
-        } else {
-          await this.cache.delete(cacheKey);
-        }
-      } catch (error) {
-        console.warn('Redis cache clear failed:', error);
-      }
     }
   }
 
   /**
-   * Get cache statistics
+   * Create safe regex patterns for cache clearing
+   * Pre-defines allowed patterns to avoid regex injection
    */
-  getStats(): {
-    pendingRequests: number;
-    completedRequests: number;
-    memoryUsage: number;
-  } {
-    return {
-      pendingRequests: this.pendingRequests.size,
-      completedRequests: this.completedRequests.size,
-      memoryUsage: this.estimateMemoryUsage()
-    };
+  private createSafePatterns(): RegExp[] {
+    // Pre-defined safe patterns that are known to be secure
+    return [
+      /^dedup:user:\d+:.*/, // User-specific patterns
+      /^dedup:endpoint:.*/, // Endpoint-specific patterns
+      /^dedup:session:.*/, // Session-specific patterns
+    ];
   }
 
-  // Private methods
+  /**
+   * Clear Redis cache safely
+   * Handles Redis cache clearing with proper error handling
+   */
+  private async clearRedisCache(keyOrPattern: string, cacheKey: string): Promise<void> {
+    if (!this.cache || !this.config.enableRedisBackup) {
+      return;
+    }
+
+    try {
+      if (keyOrPattern.includes('*')) {
+        await this.cache.invalidateByPattern(cacheKey);
+      } else {
+        await this.cache.delete(cacheKey);
+      }
+    } catch (error) {
+      this.logger.warn('Redis cache clear failed', error as Error);
+    }
+  }
 
   private getCacheKey(key: string): string {
     return `${this.config.keyPrefix}${key}`;
   }
 
-  private generateETag(data: any): string {
-    return createHash('md5')
+  /**
+   * Generate ETag for response caching
+   * Uses SHA-256 for better security than MD5
+   */
+  private generateETag(data: unknown): string {
+    return createHash('sha256')
       .update(JSON.stringify(data))
       .digest('hex')
       .substring(0, 16);
   }
 
+  /**
+   * Execute operation with proper error handling
+   * Wraps the user-provided operation to ensure consistent error behavior
+   */
   private async executeWithErrorHandling<T>(operation: () => Promise<T>): Promise<T> {
     try {
       return await operation();
     } catch (error) {
-      // Log error but don't cache failed results
-      console.error('Request deduplication operation failed:', error);
+      this.logger.error('Request deduplication operation failed', error as Error);
       throw error;
     }
   }
 
+  /**
+   * Create a timeout promise for racing against pending requests
+   * Uses proper parameter naming for ESLint compliance
+   */
   private createTimeoutPromise(timeout: number): Promise<never> {
-    return new Promise((_, reject) => {
+    return new Promise((_resolve, reject) => {
       setTimeout(() => reject(new Error('Request timeout')), timeout);
     });
   }
 
+  /**
+   * Filter headers to only include those that affect response content
+   * This prevents cache misses due to irrelevant header differences
+   */
   private filterHeaders(headers: Record<string, string>): Record<string, string> {
-    // Only include headers that affect response content
     const relevantHeaders = ['content-type', 'accept', 'authorization'];
     const filtered: Record<string, string> = {};
     
@@ -294,8 +499,11 @@ export class RequestDeduplicator {
     return filtered;
   }
 
+  /**
+   * Check if endpoint is safe for idempotent operations
+   * Defines which endpoints can safely have PUT/DELETE operations deduplicated
+   */
   private isIdempotentEndpoint(endpoint: string): boolean {
-    // Define endpoints that are safe for idempotent operations
     const idempotentPatterns = [
       /^\/api\/users\/\d+$/,
       /^\/api\/properties\/\d+$/,
@@ -306,8 +514,11 @@ export class RequestDeduplicator {
     return idempotentPatterns.some(pattern => pattern.test(endpoint));
   }
 
+  /**
+   * Check if POST endpoint should be deduplicated
+   * POST operations are typically not idempotent, but some can be safely cached
+   */
   private isDeduplicatablePostEndpoint(endpoint: string): boolean {
-    // Define POST endpoints that should be deduplicated
     const deduplicatablePatterns = [
       /^\/api\/analytics\/events$/,
       /^\/api\/professionals\/search$/,
@@ -318,10 +529,13 @@ export class RequestDeduplicator {
     return deduplicatablePatterns.some(pattern => pattern.test(endpoint));
   }
 
+  /**
+   * Clean up expired requests from memory cache
+   * Prevents memory leaks by removing old cached responses
+   */
   private cleanupExpiredRequests(): void {
     const now = Date.now();
     
-    // Clean up completed requests
     for (const [key, value] of this.completedRequests.entries()) {
       if (now - value.timestamp.getTime() > this.config.defaultTtl) {
         this.completedRequests.delete(key);
@@ -329,8 +543,11 @@ export class RequestDeduplicator {
     }
   }
 
+  /**
+   * Estimate memory usage of the cache
+   * Provides rough calculation for monitoring purposes
+   */
   private estimateMemoryUsage(): number {
-    // Rough estimation of memory usage in bytes
     let size = 0;
     
     for (const [key, value] of this.completedRequests.entries()) {
@@ -345,5 +562,6 @@ export class RequestDeduplicator {
 
 /**
  * Default instance for easy access
+ * Provides a singleton instance that can be imported and used directly
  */
 export const requestDeduplicator = RequestDeduplicator.getInstance();

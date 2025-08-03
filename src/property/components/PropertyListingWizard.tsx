@@ -1,15 +1,13 @@
-import React, { useState, useCallback } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Badge } from "@shared/components/ui/badge";
+import { Button } from "@shared/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@shared/components/ui/card";
-import { Button } from "@shared/components/ui/button";
 import { Progress } from "@shared/components/ui/progress";
-import { Badge } from "@shared/components/ui/badge";
-import { useToast } from "@/shared/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Home,
   MapPin,
@@ -22,8 +20,14 @@ import {
   Save,
   Send,
 } from "lucide-react";
+import React, { useState, useCallback } from "react";
 
 // Import step components
+
+// Import types
+import { propertyApi } from "../services/property-api";
+import { Property } from "../types/property.types";
+
 import {
   BasicDetailsStep,
   LocationStep,
@@ -33,9 +37,7 @@ import {
   PreviewStep,
 } from "./wizard-steps";
 
-// Import types
-import { Property } from "../types/property.types";
-import { propertyApi } from "../services/property-api";
+import { useToast } from "@/shared/hooks/use-toast";
 
 export interface PropertyFormData {
   // Basic Details

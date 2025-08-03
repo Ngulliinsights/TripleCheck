@@ -90,6 +90,9 @@ interface ProfessionalCategory {
   color: string;
 }
 
+// Constants
+const PLACEHOLDER_PROFILE_IMAGE = "/api/placeholder/150/150";
+
 // Mock data for professionals (in real app, this would come from API)
 const PROFESSIONAL_CATEGORIES: ProfessionalCategory[] = [
   {
@@ -168,7 +171,7 @@ const SAMPLE_PROFESSIONALS: Professional[] = [
     completedProjects: 245,
     responseTime: "< 2 hours",
     languages: ["English", "Swahili", "Kikuyu"],
-    profileImage: "/api/placeholder/150/150",
+    profileImage: PLACEHOLDER_PROFILE_IMAGE,
     bio: "Experienced real estate professional specializing in Nairobi residential properties with a track record of helping over 200 families find their dream homes.",
     services: [
       "Property Sales",
@@ -223,7 +226,7 @@ const SAMPLE_PROFESSIONALS: Professional[] = [
     completedProjects: 156,
     responseTime: "< 4 hours",
     languages: ["English", "Swahili"],
-    profileImage: "/api/placeholder/150/150",
+    profileImage: PLACEHOLDER_PROFILE_IMAGE,
     bio: "Experienced property lawyer with over 12 years specializing in conveyancing and property disputes. Helped resolve complex land ownership issues.",
     services: [
       "Legal Due Diligence",
@@ -282,7 +285,7 @@ const SAMPLE_PROFESSIONALS: Professional[] = [
     completedProjects: 189,
     responseTime: "< 6 hours",
     languages: ["English", "Swahili"],
-    profileImage: "/api/placeholder/150/150",
+    profileImage: PLACEHOLDER_PROFILE_IMAGE,
     bio: "Professional land surveyor with expertise in cadastral surveys and boundary determination. Committed to accurate and timely survey services.",
     services: [
       "Land Surveys",
@@ -549,9 +552,9 @@ export default function FindProfessionals() {
               Find Verified Real Estate Professionals
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8">
-              Connect with Kenya's most trusted real estate agents, lawyers,
-              surveyors, and property experts. All professionals are verified
-              and rated by the community.
+              Connect with Kenya&apos;s most trusted real estate agents,
+              lawyers, surveyors, and property experts. All professionals are
+              verified and rated by the community.
             </p>
 
             {/* Search Bar */}
@@ -992,8 +995,8 @@ export default function FindProfessionals() {
               Are You a Real Estate Professional?
             </h2>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join Kenya's most trusted professional network and connect with
-              verified clients looking for your expertise.
+              Join Kenya&apos;s most trusted professional network and connect
+              with verified clients looking for your expertise.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button

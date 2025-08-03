@@ -186,7 +186,7 @@ async function deployDatabase(): Promise<DeploymentResult> {
     result.duration = Date.now() - startTime;
     
     // Success summary
-    logger.info("\n" + "=" .repeat(60));
+    logger.info(`\n${  "=" .repeat(60)}`);
     logger.success("🎉 DATABASE DEPLOYMENT COMPLETED SUCCESSFULLY!");
     logger.info("=" .repeat(60));
     logger.info(`Total Duration: ${(result.duration / 1000).toFixed(2)} seconds`);
@@ -211,7 +211,7 @@ async function deployDatabase(): Promise<DeploymentResult> {
     result.errors.push(`Deployment failed: ${error}`);
     result.duration = Date.now() - startTime;
     
-    logger.error("\n" + "=" .repeat(60));
+    logger.error(`\n${  "=" .repeat(60)}`);
     logger.error("❌ DATABASE DEPLOYMENT FAILED");
     logger.error("=" .repeat(60));
     logger.error(`Duration: ${(result.duration / 1000).toFixed(2)} seconds`);

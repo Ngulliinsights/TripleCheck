@@ -6,11 +6,14 @@
  */
 
 import { Express } from "express";
+
 import { DatabaseStorage } from "../infrastructure/storage/storage";
-import { initializeDatabase, runMigrations, seedDatabase } from "./connection";
-import { registerAuthRoutes } from "../routes/auth";
-import { errorHandler, notFoundHandler } from "../middleware/error-handler";
 import { validateSession } from "../middleware/auth.middleware";
+import { errorHandler, notFoundHandler } from "../middleware/error-handler";
+import { registerAuthRoutes } from "../routes/auth";
+
+import { initializeDatabase, runMigrations, seedDatabase } from "./connection";
+
 
 // Integration configuration
 interface IntegrationConfig {

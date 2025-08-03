@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { GlobalPerformanceMonitor } from '../utils/globalPerformanceMonitor';
-import { raceConditionTester } from '../../property/utils/raceConditionTest';
 import { AlertTriangle, CheckCircle, Activity, Zap, BarChart3, Monitor } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
+import { raceConditionTester } from '../../property/utils/raceConditionTest';
+import { GlobalPerformanceMonitor } from '../utils/globalPerformanceMonitor';
+
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+
 
 interface GlobalPerformanceTestPanelProps {
   className?: string;

@@ -7,12 +7,14 @@
  * Run this script to initialize your database after setting up the DATABASE_URL.
  */
 
-import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
+import bcrypt from "bcrypt";
+import { drizzle } from "drizzle-orm/neon-http";
 import { migrate } from "drizzle-orm/neon-http/migrator";
+
 import { users, properties, reviews } from "../src/shared/schema";
 import type { InsertUser, InsertProperty, User } from "../src/shared/schema";
-import bcrypt from "bcrypt";
+
 
 async function setupDatabase() {
   console.log("🚀 Starting database setup...");

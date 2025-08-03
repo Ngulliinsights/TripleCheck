@@ -1,7 +1,8 @@
 import { sql, SQL, and, or, eq, ne, gt, gte, lt, lte, like, ilike, inArray, isNull, isNotNull } from 'drizzle-orm';
 import { PgSelect, PgSelectQueryBuilder } from 'drizzle-orm/pg-core';
-import { Logger } from '../infrastructure/monitoring/logger';
+
 import { cacheService, CacheKeys } from '../cache/CacheService';
+import { Logger } from '../infrastructure/monitoring/logger';
 
 export interface QueryOptions {
   cache?: {

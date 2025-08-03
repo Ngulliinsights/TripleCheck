@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { structuredLogger } from '../monitoring/StructuredLogger';
+
 import { generateCorrelationId } from '../../src/shared/utils/errors';
+import { structuredLogger } from '../monitoring/StructuredLogger';
 
 export interface LoggingOptions {
   logRequests?: boolean;

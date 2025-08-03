@@ -1,176 +1,145 @@
-#!/usr/bin/env node
-
 /**
- * Backend-Frontend Integration Test
- * 
- * This script tests the integration between backend and frontend
- * by making actual HTTP requests to the API endpoints.
+ * Integration Test Endpoint
+ * Tests the complete integration between frontend, backend, and database
  */
 
-import 'dotenv/config';
+import { Router } from 'express';
+import { getDatabase } from './infrastructure/database/init';
 
-// Enhanced fetch with race condition protection
-async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-  
+const router = Router();
+
+// Test database connection and basic CRUD operations
+router.get('/api/test/integration', async (req, res) => {
   try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-    return response;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-async function testIntegration() {
-  console.log('🧪 Testing Backend-Frontend Integration...\n');
-
-  const baseUrl = 'http://localhost:5000';
-  const tests = [];
-
-  // Test 1: Basic API Health Check
-  try {
-    console.log('1️⃣ Testing API Health Check...');
-    const response = await safeFetch(`${baseUrl}/api/health`);
+    const db = getDatabase();
     
-    if (response.ok) {
-      const data = await response.json();
-      console.log('✅ Health check passed:', data);
-      tests.push({ name: 'Health Check', status: 'PASS' });
-    } else {
-      console.log('❌ Health check failed:', response.status);
-      tests.push({ name: 'Health Check', status: 'FAIL', error: `HTTP ${response.status}` });
-    }
-  } catch (error) {
-    console.log('❌ Health check error:', error);
-    tests.push({ name: 'Health Check', status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
-  }
-
-  // Test 2: Properties API (No Search)
-  try {
-    console.log('\n2️⃣ Testing Properties API (No Search)...');
-    const response = await safeFetch(`${baseUrl}/api/properties`);
+    // Test database connection
+    const connectionTest = await db.execute('SELECT 1 as test');
     
-    if (response.ok) {
-      const data = await response.json();
-      console.log('✅ Properties API passed');
-      console.log(`   Found ${data.data?.properties?.length || 0} properties`);
-      tests.push({ name: 'Properties API', status: 'PASS', count: data.data?.properties?.length || 0 });
-    } else {
-      console.log('❌ Properties API failed:', response.status);
-      tests.push({ name: 'Properties API', status: 'FAIL', error: `HTTP ${response.status}` });
-    }
-  } catch (error) {
-    console.log('❌ Properties API error:', error);
-    tests.push({ name: 'Properties API', status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
-  }
-
-  // Test 3: Search API
-  try {
-    console.log('\n3️⃣ Testing Search API...');
-    const searchTerm = 'apartment';
-    const response = await safeFetch(`${baseUrl}/api/properties?q=${encodeURIComponent(searchTerm)}`);
-    
-    if (response.ok) {
-      const data = await response.json();
-      console.log('✅ Search API passed');
-      console.log(`   Search for "${searchTerm}" found ${data.data?.properties?.length || 0} results`);
-      tests.push({ name: 'Search API', status: 'PASS', count: data.data?.properties?.length || 0 });
-    } else {
-      console.log('❌ Search API failed:', response.status);
-      tests.push({ name: 'Search API', status: 'FAIL', error: `HTTP ${response.status}` });
-    }
-  } catch (error) {
-    console.log('❌ Search API error:', error);
-    tests.push({ name: 'Search API', status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
-  }
-
-  // Test 4: CORS Headers
-  try {
-    console.log('\n4️⃣ Testing CORS Headers...');
-    const response = await safeFetch(`${baseUrl}/api/properties`, {
-      method: 'OPTIONS'
-    });
-    
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
-      'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
-      'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
-    };
-    
-    console.log('✅ CORS headers:', corsHeaders);
-    tests.push({ name: 'CORS Headers', status: 'PASS', headers: corsHeaders });
-  } catch (error) {
-    console.log('❌ CORS test error:', error);
-    tests.push({ name: 'CORS Headers', status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
-  }
-
-  // Test 5: Database Connection (via API)
-  try {
-    console.log('\n5️⃣ Testing Database Connection...');
-    const response = await safeFetch(`${baseUrl}/api/properties`);
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success && Array.isArray(data.data?.properties)) {
-        console.log('✅ Database connection working');
-        console.log(`   Database has ${data.data.properties.length} properties`);
-        tests.push({ name: 'Database Connection', status: 'PASS' });
-      } else {
-        console.log('❌ Database response format invalid');
-        tests.push({ name: 'Database Connection', status: 'FAIL', error: 'Invalid response format' });
+    // Test properties query
+    const propertiesTest = await db.query.properties.findMany({
+      limit: 3,
+      with: {
+        // Add any relations if needed
       }
-    } else {
-      console.log('❌ Database connection failed via API');
-      tests.push({ name: 'Database Connection', status: 'FAIL', error: `HTTP ${response.status}` });
-    }
+    });
+    
+    // Test users query
+    const usersTest = await db.query.users.findMany({
+      limit: 3,
+      columns: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        trustScore: true
+      }
+    });
+    
+    res.json({
+      success: true,
+      message: 'Integration test passed',
+      data: {
+        database: {
+          connected: true,
+          connectionTest: connectionTest.length > 0
+        },
+        properties: {
+          count: propertiesTest.length,
+          sample: propertiesTest.map(p => ({
+            id: p.id,
+            title: p.title,
+            price: p.price,
+            location: p.location,
+            verificationStatus: p.verificationStatus
+          }))
+        },
+        users: {
+          count: usersTest.length,
+          sample: usersTest.map(u => ({
+            id: u.id,
+            username: u.username,
+            role: u.role,
+            trustScore: u.trustScore
+          }))
+        }
+      },
+      timestamp: new Date().toISOString()
+    });
+    
   } catch (error) {
-    console.log('❌ Database test error:', error);
-    tests.push({ name: 'Database Connection', status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
+    console.error('Integration test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Integration test failed',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
   }
+});
 
-  // Summary
-  console.log('\n📊 Integration Test Summary:');
-  console.log('=' .repeat(50));
-  
-  const passed = tests.filter(t => t.status === 'PASS').length;
-  const failed = tests.filter(t => t.status === 'FAIL').length;
-  const errors = tests.filter(t => t.status === 'ERROR').length;
-  
-  tests.forEach(test => {
-    const status = test.status === 'PASS' ? '✅' : test.status === 'FAIL' ? '❌' : '⚠️';
-    console.log(`${status} ${test.name}: ${test.status}`);
-    if (test.error) console.log(`   Error: ${test.error}`);
-    if (test.count !== undefined) console.log(`   Count: ${test.count}`);
-  });
-  
-  console.log('\n📈 Results:');
-  console.log(`   Passed: ${passed}`);
-  console.log(`   Failed: ${failed}`);
-  console.log(`   Errors: ${errors}`);
-  console.log(`   Total:  ${tests.length}`);
-  
-  if (failed === 0 && errors === 0) {
-    console.log('\n🎉 All integration tests passed! Backend and frontend are properly connected.');
-  } else {
-    console.log('\n⚠️  Some tests failed. Check the errors above and ensure:');
-    console.log('   1. Server is running on port 5000');
-    console.log('   2. Database is connected and seeded');
-    console.log('   3. Environment variables are set');
-    console.log('   4. No firewall blocking requests');
+// Test property API endpoints
+router.get('/api/test/properties', async (req, res) => {
+  try {
+    const db = getDatabase();
+    
+    const properties = await db.query.properties.findMany({
+      limit: 10,
+      orderBy: (properties, { desc }) => [desc(properties.createdAt)]
+    });
+    
+    res.json({
+      success: true,
+      data: properties,
+      total: properties.length,
+      page: 1,
+      limit: 10,
+      hasNext: false,
+      hasPrev: false
+    });
+    
+  } catch (error) {
+    console.error('Properties test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Properties test failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
-}
+});
 
-// Run the test if this script is executed directly
-if (require.main === module) {
-  testIntegration().catch(console.error);
-}
+// Test single property endpoint
+router.get('/api/test/properties/:id', async (req, res) => {
+  try {
+    const db = getDatabase();
+    const { id } = req.params;
+    
+    const property = await db.query.properties.findFirst({
+      where: (properties, { eq }) => eq(properties.id, parseInt(id))
+    });
+    
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        error: 'Property not found',
+        message: `Property with ID ${id} was not found`
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: property,
+      cached: false
+    });
+    
+  } catch (error) {
+    console.error('Single property test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Single property test failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
-export { testIntegration };
+export { router as testIntegrationRouter };

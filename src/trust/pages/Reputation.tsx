@@ -1,9 +1,3 @@
-import { useState } from "react";
-import { Button } from "../../shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../shared/components/ui/card";
-import { Progress } from "../../shared/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../shared/components/ui/tabs";
-import { Badge } from "../../shared/components/ui/badge";
 import { 
   Award, 
   Shield, 
@@ -17,6 +11,13 @@ import {
   Calendar,
   Briefcase
 } from "lucide-react";
+import { useState } from "react";
+
+import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../shared/components/ui/card";
+import { Progress } from "../../shared/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../shared/components/ui/tabs";
 import { useToast } from "../../shared/hooks/use-toast";
 
 export default function ReputationPage() {

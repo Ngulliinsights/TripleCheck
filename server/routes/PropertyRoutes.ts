@@ -1,15 +1,17 @@
+import fs from 'fs';
+import path from 'path';
+
 import { Router, Response } from 'express';
-import { PropertyService } from '../services/PropertyService';
-import { VerificationService } from '../services/VerificationService';
-import { validateRequest, PropertyValidationSchemas, CommonValidationSchemas, type ValidatedRequest } from '../middleware/validation.middleware';
+
+import type { PaginationParams } from '../infrastructure/storage/storage';
 import { requireAuth, optionalAuth, requireResourceOwnership, type AuthenticatedRequest } from '../middleware/auth.middleware';
-import { ResponseHelper } from '../utils/response-helpers';
+import { validateRequest, PropertyValidationSchemas, CommonValidationSchemas, type ValidatedRequest } from '../middleware/validation.middleware';
+import { PropertyService } from '../services/PropertyService';
+import type { PropertyCreateRequest, PropertyUpdateRequest, PropertySearchFilters } from '../services/PropertyService';
+import { VerificationService } from '../services/VerificationService';
 import { HTTP_STATUS } from '../utils/constants';
 import { PROPERTY_ERROR_MESSAGES } from '../utils/error-messages';
-import type { PropertyCreateRequest, PropertyUpdateRequest, PropertySearchFilters } from '../services/PropertyService';
-import type { PaginationParams } from '../infrastructure/storage/storage';
-import path from 'path';
-import fs from 'fs';
+import { ResponseHelper } from '../utils/response-helpers';
 
 /**
  * PropertyRoutes class handles all property-related endpoints

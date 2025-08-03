@@ -1,7 +1,8 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { Button } from '../../shared/components/ui/button';
 import { Shield, CheckCircle, LucideIcon } from 'lucide-react';
+import React from 'react';
+
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
 
 // Define types for better type safety and code organization
 interface CheckItem {

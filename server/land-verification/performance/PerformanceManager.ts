@@ -1,10 +1,11 @@
 import { EventEmitter } from 'events';
+
+import { cacheService } from '../../cache/CacheService';
 import { logger } from '../../infrastructure/monitoring/logger';
-import { landVerificationCache } from '../cache/LandVerificationCache';
 import { asyncProcessor } from '../AsyncProcessor';
+import { landVerificationCache } from '../cache/LandVerificationCache';
 import { databaseOptimizer } from '../DatabaseOptimizer';
 import { paginationService } from '../PaginationService';
-import { cacheService } from '../../cache/CacheService';
 
 export interface PerformanceMetrics {
   timestamp: Date;

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
 import { HelpCircle, Book, AlertTriangle, CheckCircle, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
 export interface HelpContent {
   id: string;

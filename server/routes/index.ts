@@ -1,15 +1,18 @@
 import { Express } from 'express';
+
+import { storage } from '../infrastructure/storage/storage';
+import { AuthService } from '../services/AuthService';
+import { PropertyService } from '../services/PropertyService';
+import { ReviewService } from '../services/ReviewService';
+import { UserService } from '../services/UserService';
+import { VerificationService } from '../services/VerificationService';
+
 import { AuthRoutes } from './AuthRoutes';
+import professionalsRoutes from './professionals.routes';
 import { PropertyRoutes } from './PropertyRoutes';
 import { ReviewRoutes } from './reviews.routes';
 import { UserRoutes } from './users.routes';
 import { VerificationRoutes } from './verification.routes';
-import { AuthService } from '../services/AuthService';
-import { UserService } from '../services/UserService';
-import { PropertyService } from '../services/PropertyService';
-import { VerificationService } from '../services/VerificationService';
-import { ReviewService } from '../services/ReviewService';
-import { storage } from '../infrastructure/storage/storage';
 
 /**
  * Main routes coordinator that registers all domain-specific route modules
@@ -98,6 +101,9 @@ export class RoutesCoordinator {
 
       // Register verification routes (mixed auth requirements)
       this.app.use('/api/verification', this.verificationRoutes.getRouter());
+
+      // Register professional routes (mixed auth requirements)
+      this.app.use('/api/professionals', professionalsRoutes);
 
       console.log('All routes registered successfully');
     } catch (error) {

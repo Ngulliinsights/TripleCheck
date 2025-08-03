@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 
+import { createHash } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
-import { createHash } from 'crypto';
 
 // ✅ FIXED INTERFACES - Added missing properties
 interface APICall {

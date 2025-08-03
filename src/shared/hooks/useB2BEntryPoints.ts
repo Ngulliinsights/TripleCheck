@@ -196,7 +196,7 @@ export function useB2BEntryPoints() {
 
   // Track entry point analytics
   const trackEntryPointEngagement = useCallback((entryPoint: EntryPointConfig, action: string) => {
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (window?.gtag) {
       window.gtag('event', 'b2b_entry_point_engagement', {
         event_category: 'B2B',
         event_label: `${entryPoint.source}_${action}`,

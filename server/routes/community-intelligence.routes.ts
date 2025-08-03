@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import { CommunityIntelligenceService } from '../services/CommunityIntelligenceService';
 import type { CommunityReport } from '../services/CommunityIntelligenceService';
 

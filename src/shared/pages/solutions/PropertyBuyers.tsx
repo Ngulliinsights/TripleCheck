@@ -1,8 +1,10 @@
-import React from 'react';
 import { Shield, CheckCircle, AlertTriangle, TrendingUp, Users, FileText, Clock, DollarSign } from 'lucide-react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { useNavigate } from 'react-router-dom';
+
 
 export default function PropertyBuyers() {
   const navigate = useNavigate();

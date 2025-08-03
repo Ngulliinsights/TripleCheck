@@ -204,7 +204,7 @@ function generateFinalReport() {
     console.log(`  ${filePath}: ${(size / 1024 / 1024).toFixed(2)} MB`);
   });
   
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${  '='.repeat(60)}`);
   console.log('🚀 AGGRESSIVE OPTIMIZATION COMPLETE');
   console.log('='.repeat(60));
   console.log(`📦 Final optimized size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);

@@ -208,7 +208,7 @@ export class ApiRateLimiter {
     }
     
     const sanitizedEndpoint = this.sanitizeEndpoint(endpoint);
-    const keyGenerator = this.defaultConfig.keyGenerator;
+    const {keyGenerator} = this.defaultConfig;
     if (!keyGenerator) {
       throw new Error('Key generator is required for rate limiting');
     }
@@ -244,7 +244,7 @@ export class ApiRateLimiter {
     }
     
     const sanitizedEndpoint = this.sanitizeEndpoint(endpoint);
-    const keyGenerator = this.defaultConfig.keyGenerator;
+    const {keyGenerator} = this.defaultConfig;
     if (!keyGenerator) {
       throw new Error('Key generator is required for rate limiting');
     }

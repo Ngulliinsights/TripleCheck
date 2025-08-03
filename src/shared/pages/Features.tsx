@@ -1,6 +1,7 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Shield, FileText, Star, Users, CheckCircle, Zap } from 'lucide-react';
+import React from 'react';
+
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
 const features = [
   {

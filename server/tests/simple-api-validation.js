@@ -422,7 +422,7 @@ try {
 }
 
 // Summary
-console.log('\n' + '='.repeat(60));
+console.log(`\n${  '='.repeat(60)}`);
 console.log('📊 BACKEND API BUG FIXES VALIDATION SUMMARY');
 console.log('='.repeat(60));
 console.log('✅ Error Classes: Proper inheritance and prototype chain');

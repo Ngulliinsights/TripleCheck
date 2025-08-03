@@ -1,7 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { 
   User, 
   Mail, 
@@ -15,16 +12,16 @@ import {
   AlertCircle,
   CheckCircle
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import zxcvbn from 'zxcvbn';
 
-import { Button } from '../../shared/components/ui/button';
-import { Input } from '../../shared/components/ui/input';
-import { Checkbox } from '../../shared/components/ui/checkbox';
 import { Alert, AlertDescription } from '../../shared/components/ui/alert';
-import { Progress } from '../../shared/components/ui/progress';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../../shared/components/ui/avatar';
-import { Textarea } from '../../shared/components/ui/textarea';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Checkbox } from '../../shared/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -33,8 +30,12 @@ import {
   FormLabel,
   FormMessage,
 } from '../../shared/components/ui/form';
+import { Input } from '../../shared/components/ui/input';
+import { Progress } from '../../shared/components/ui/progress';
+import { Textarea } from '../../shared/components/ui/textarea';
 import { useRegister } from '../hooks/useAuth';
 import { RegisterData } from '../types/auth.types';
+
 import { Logo } from '@/shared';
 
 // Step schemas

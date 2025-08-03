@@ -7,19 +7,16 @@ import { aiRouter } from './ai/ai.controller';
 import { analyticsRouter } from './analytics/analytics.controller';
 import { authRouter } from './auth/auth.controller';
 import { communicationRouter } from './communication/communication.controller';
-import { propertyRouter } from './property/property.controller';
-import { searchRouter } from './search/search.controller';
-import { trustRouter } from './trust/trust.controller';
-import { userRouter } from './user/user.controller';
+import { CacheService } from './infrastructure/cache/CacheService';
+import { storage } from './infrastructure/storage/storage';
+import { setupApiVersioning } from './infrastructure/versioning';
+import { healthRoutes } from './land-verification/health/health-routes';
 
 // Infrastructure imports (core system dependencies)
-import { storage } from './infrastructure/storage/storage';
 
 // Request Deduplication System imports (simplified)
-import { CacheService } from './infrastructure/cache/CacheService';
 
 // Land verification and monitoring imports (specialized domain modules)
-import { healthRoutes } from './land-verification/health/health-routes';
 import { alertingRoutes } from './land-verification/monitoring/alerting-routes';
 import { AlertingService } from './land-verification/monitoring/AlertingService';
 import { metricsRoutes } from './land-verification/monitoring/metrics-routes';
@@ -29,6 +26,7 @@ import { landVerificationRouter } from './land-verification/routes';
 // Middleware imports (application layer)
 import { errorHandler } from './middleware/error.middleware';
 import queryLimiterMiddleware from './middleware/query-limiter.middleware';
+import { propertyRouter } from './property/property.controller';
 
 // Route registration functions (alphabetically ordered)
 import { registerAIRoutes } from './routes/ai-routes';
@@ -42,12 +40,14 @@ import { registerFraudIntelligenceRoutes } from './routes/fraud-intelligence.rou
 import { registerMLRoutes } from './routes/ml-routes';
 import { registerPaymentRoutes } from './routes/payments';
 import { seedRouter } from './routes/seed';
+import { searchRouter } from './search/search.controller';
+import { trustRouter } from './trust/trust.controller';
+import { userRouter } from './user/user.controller';
 
 // Utility imports (support functions)
 import { cleanupManager } from './utils/cleanup-manager';
 
 // API Versioning System
-import { setupApiVersioning } from './infrastructure/versioning';
 
 const app = express();
 
@@ -397,6 +397,10 @@ registerPaymentRoutes(app);
 // Development seed route (only in development)
 if (isDevelopment) {
   app.use('/api/seed', seedRouter);
+  
+  // Integration test routes
+  const { testIntegrationRouter } = await import('./test-integration');
+  app.use('/', testIntegrationRouter);
 }
 
 // Start monitoring services with environment-appropriate intervals

@@ -440,7 +440,7 @@ export const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction
     const failed = this.results.filter(r => r.status === 'FAILED').length;
     const skipped = this.results.filter(r => r.status === 'SKIPPED').length;
 
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${  '='.repeat(80)}`);
     console.log('Authentication Fix Report');
     console.log('='.repeat(80));
     console.log(`Total Issues Addressed: ${this.results.length}`);

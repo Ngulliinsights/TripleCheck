@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+
 import { Property } from '../../shared/types/property';
 
 interface CompareContextType {

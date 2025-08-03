@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
-import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { Button } from '../../shared/components/ui/button';
-import { Badge } from '../../shared/components/ui/badge';
 import { Bell, X, Check, AlertTriangle, Info, MessageSquare, Home } from 'lucide-react';
-import { useWebSocketMessage } from '../../infrastructure/realtime/websocket-client';
+import React, { useState } from 'react';
+
 import { useAuth } from '../../auth/hooks/useAuth';
+import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+import { useWebSocketMessage } from '../../infrastructure/realtime/websocket-client';
+import { Badge } from '../../shared/components/ui/badge';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
 // Removed Framer Motion for better performance and stability
 
 interface RealTimeNotification {
@@ -42,7 +43,7 @@ export function RealTimeNotifications({
 
   // Handle new notifications from WebSocket
   useSafeEffect(() => {
-    if (lastMessage && lastMessage.payload && user) {
+    if (lastMessage?.payload && user) {
       const notification = lastMessage.payload as RealTimeNotification;
       
       // Only show notifications for the current user

@@ -1,12 +1,14 @@
 import { EventEmitter } from "events";
-import { logger } from "../infrastructure/monitoring/logger";
-import { db } from "../infrastructure/database/connection";
+
 import {
   BoundaryPoint,
   SurveyBeacon,
   SurveyDetails,
   LayerExecutionResult,
 } from "../../src/types/land-verification";
+import { db } from "../infrastructure/database/connection";
+import { logger } from "../infrastructure/monitoring/logger";
+
 import * as gpsUtils from "./utils/gps-calculations";
 
 export interface GPSCoordinate {
@@ -292,7 +294,7 @@ export class PhysicalVerificationService extends EventEmitter {
 
     // Compare boundary distances
     if (Array.isArray(actualMeasurements.boundaryDistances) && surveyDetails.boundaries) {
-      const boundaryDistances = actualMeasurements.boundaryDistances;
+      const {boundaryDistances} = actualMeasurements;
       for (let i = 0; i < surveyDetails.boundaries.length - 1; i++) {
         const surveyDistance = surveyDetails.boundaries[i].distanceToNext || 0;
         const actualDistance = boundaryDistances[i] || 0;

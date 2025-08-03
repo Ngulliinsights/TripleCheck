@@ -1,1006 +1,190 @@
-/* B2B Component Animations */
-@import './b2b-animations.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  :root {
-    /* 
-      STRATEGIC COLOR ARCHITECTURE - TRIPLECHECK
-      ==========================================
-      Streamlined color system focused on trust, warmth, and premium positioning.
-      Each color serves specific psychological and functional purposes.
-    */
-
-    /* Core System Foundation - Optimized for Light Mode Contrast */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%; /* Very dark for maximum contrast */
-    --radius: 0.75rem;
-
-    /* 
-      PRIMARY TRUST SYSTEM: Darker Teal - Enhanced Contrast
-      ====================================
-      Establishes credibility and professional competence for real estate decisions.
-      Optimized for WCAG AAA compliance in light mode.
-    */
-    --primary: 180 84% 20%; /* Darker for better contrast */
-    --primary-foreground: 0 0% 100%; /* Pure white for maximum contrast */
-    --primary-hover: 180 84% 15%;
-    --primary-active: 180 84% 12%;
-    --primary-muted: 180 84% 95%;
-
-    /* 
-      SECONDARY WARMTH SYSTEM: Coral - Enhanced Contrast
-      ========================================
-      Creates approachable human connection, balancing professionalism with warmth.
-      Adjusted for better readability in light mode.
-    */
-    --secondary: 7 86% 55%; /* Darker for better contrast */
-    --secondary-foreground: 0 0% 100%; /* Pure white for maximum contrast */
-    --secondary-hover: 7 86% 50%;
-    --secondary-active: 7 65% 40%;
-    --secondary-muted: 7 86% 95%;
-
-    /* 
-      PREMIUM ACCENT SYSTEM: Gold - Enhanced Contrast
-      ====================================
-      Signals exclusive, high-value opportunities and premium experiences.
-      Adjusted for better readability in light mode.
-    */
-    --accent: 45 100% 40%; /* Darker gold for better contrast */
-    --accent-foreground: 0 0% 100%; /* Pure white for maximum contrast */
-    --accent-hover: 45 100% 35%;
-    --accent-active: 45 100% 30%;
-    --accent-muted: 45 100% 96%;
-
-    /* 
-      PROPERTY SEMANTIC COLORS - Enhanced Light Mode Contrast
-      ========================
-      Clear visual hierarchy for different property types.
-      Optimized for accessibility in light mode.
-    */
-    --property-residential: 7 86% 55%; /* Darker coral for better contrast */
-    --property-commercial: 180 100% 20%; /* Darker teal for better contrast */
-    --property-featured: 45 100% 35%; /* Darker gold for better contrast */
-    --property-luxury: 280 100% 45%; /* Darker purple for better contrast */
-
-    /* 
-      TRUST & VERIFICATION SYSTEM - Enhanced Contrast
-      ===========================
-      Universal status communication for user confidence.
-      Optimized for accessibility in light mode.
-    */
-    --trust-verified: 142 72% 25%; /* Darker green for better contrast */
-    --trust-pending: 45 93% 35%; /* Darker amber for better contrast */
-    --trust-warning: 25 95% 40%; /* Darker orange for better contrast */
-    --trust-danger: 0 84% 45%; /* Darker red for better contrast */
-
-    /* Status colors for consistent UI feedback - Enhanced Contrast */
-    --status-success: 142 72% 25%;
-    --status-warning: 45 93% 35%;
-    --status-error: 0 84% 45%;
-    --status-info: 210 100% 40%; /* Darker blue for better contrast */
-
-    /* 
-      UI FOUNDATION - Enhanced Light Mode Contrast
-      ============
-      Essential interface colors with optimal contrast ratios.
-    */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 25%; /* Much darker for better contrast */
-    --border: 214.3 31.8% 85%; /* Slightly darker border for visibility */
-    --input: 214.3 31.8% 91.4%;
-    --ring: 180 100% 25%;
-
-    /* Card system - Enhanced Contrast */
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%; /* Very dark for maximum contrast */
-    --card-hover: 210 40% 98%;
-    --card-border: 214.3 31.8% 85%; /* Darker border for better visibility */
-
-    /* Destructive actions - Enhanced Contrast */
-    --destructive: 0 84% 45%; /* Darker red for better contrast */
-    --destructive-foreground: 0 0% 100%; /* Pure white for maximum contrast */
-    --destructive-hover: 0 84% 40%;
-  }
-
-  /* 
-    DARK MODE OPTIMIZATION
-    =====================
-    Maintains color psychology while ensuring readability.
-    Supports both system preference and manual dark mode toggle.
-  */
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: 222.2 84% 4.9%;
-      --foreground: 210 40% 98%;
-
-      --primary: 180 84% 35%;
-      --primary-foreground: 222.2 84% 4.9%;
-      --primary-hover: 180 84% 40%;
-      --primary-muted: 180 84% 10%;
-
-      --secondary: 7 86% 75%;
-      --secondary-foreground: 222.2 84% 4.9%;
-      --secondary-hover: 7 86% 80%;
-      --secondary-muted: 7 86% 10%;
-
-      --accent: 45 100% 60%;
-      --accent-foreground: 222.2 84% 4.9%;
-      --accent-hover: 45 100% 65%;
-      --accent-muted: 45 100% 10%;
-
-      --property-residential: 7 86% 75%;
-      --property-commercial: 180 100% 40%;
-      --property-featured: 45 100% 60%;
-      --property-luxury: 280 100% 75%;
-
-      --trust-verified: 142 72% 50%;
-      --trust-pending: 45 93% 60%;
-      --trust-warning: 25 95% 65%;
-      --trust-danger: 0 84% 70%;
-
-      --muted: 217.2 32.6% 17.5%;
-      --muted-foreground: 215 20.2% 75%; /* Improved dark mode contrast */
-      --border: 217.2 32.6% 17.5%;
-      --input: 217.2 32.6% 17.5%;
-
-      --card: 222.2 84% 4.9%;
-      --card-foreground: 210 40% 98%;
-      --card-hover: 217.2 32.6% 17.5%;
-      --card-border: 217.2 32.6% 17.5%;
-
-      --destructive: 0 84% 70%;
-      --destructive-hover: 0 84% 75%;
-    }
-  }
-
-  /* 
-    EXPLICIT DARK MODE CLASS
-    ========================
-    Manual dark mode toggle support - takes precedence over system preference.
-  */
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --primary: 180 84% 35%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --primary-hover: 180 84% 40%;
-    --primary-muted: 180 84% 10%;
-
-    --secondary: 7 86% 75%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --secondary-hover: 7 86% 80%;
-    --secondary-muted: 7 86% 10%;
-
-    --accent: 45 100% 60%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --accent-hover: 45 100% 65%;
-    --accent-muted: 45 100% 10%;
-
-    --property-residential: 7 86% 75%;
-    --property-commercial: 180 100% 40%;
-    --property-featured: 45 100% 60%;
-    --property-luxury: 280 100% 75%;
-
-    --trust-verified: 142 72% 50%;
-    --trust-pending: 45 93% 60%;
-    --trust-warning: 25 95% 65%;
-    --trust-danger: 0 84% 70%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 75%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --card-hover: 217.2 32.6% 17.5%;
-    --card-border: 217.2 32.6% 17.5%;
-
-    --destructive: 0 84% 70%;
-    --destructive-hover: 0 84% 75%;
-  }
-
-  /* 
-    TYPOGRAPHY FOUNDATION
-    ====================
-    Optimized for readability and brand consistency.
-  */
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings:
-      "kern" 1,
-      "liga" 1,
-      "clig" 1,
-      "calt" 1;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    color: hsl(var(--foreground)); /* Use foreground for better contrast */
-    font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: -0.025em;
-  }
-
-  /* Enhanced accessibility - Better contrast for focus states */
-  *:focus-visible {
-    outline: 2px solid hsl(var(--primary));
-    outline-offset: 2px;
-    border-radius: calc(var(--radius) - 2px);
-    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.2);
-  }
-
-  /* Mobile Navigation Enhancements */
-  .mobile-nav-panel {
-    background: rgba(255, 255, 255, 0.98);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-  }
-
-  .mobile-nav-header {
-    background: rgb(15, 118, 110); /* teal-700 */
-    background: linear-gradient(135deg, rgb(15, 118, 110) 0%, rgb(13, 148, 136) 100%);
-  }
-
-  .mobile-nav-overlay {
-    background: rgba(0, 0, 0, 0.8);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
-  }
-
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
-  }
-
-  /* Enhanced animations for property listings */
-  @keyframes fadeInUp {
-    from { 
-      opacity: 0; 
-      transform: translateY(16px); 
-    }
-    to { 
-      opacity: 1; 
-      transform: translateY(0); 
-    }
-  }
-
-  .animate-fadeInUp { 
-    animation: fadeInUp 0.5s ease forwards; 
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-
-    .animate-fadeInUp {
-      animation: none;
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  /* Brand-consistent text selection */
-  ::selection {
-    background-color: hsl(var(--secondary) / 0.2);
-    color: hsl(var(--secondary));
-  }
-
-  /* Enhanced placeholder styling */
-  ::placeholder {
-    color: hsl(var(--muted-foreground));
-    opacity: 1;
-  }
-}
-
-@layer components {
-  /* 
-    STREAMLINED PROPERTY SYSTEM
-    ===========================
-    Unified badge system with consistent interaction states.
-  */
-  .property-badge {
-    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium;
-    @apply transition-all duration-300 ease-out cursor-pointer select-none;
-    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
-  }
-
-  .property-badge--residential {
-    background-color: hsl(var(--property-residential) / 0.1);
-    color: hsl(var(--property-residential));
-    border: 1px solid hsl(var(--property-residential) / 0.3);
-  }
-
-  .property-badge--residential:hover {
-    background-color: hsl(var(--property-residential) / 0.15);
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 4px 12px hsl(var(--property-residential) / 0.25);
-  }
-
-  .property-badge--commercial {
-    background-color: hsl(var(--property-commercial) / 0.1);
-    color: hsl(var(--property-commercial));
-    border: 1px solid hsl(var(--property-commercial) / 0.3);
-  }
-
-  .property-badge--commercial:hover {
-    background-color: hsl(var(--property-commercial) / 0.15);
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 4px 12px hsl(var(--property-commercial) / 0.25);
-  }
-
-  .property-badge--featured {
-    background-color: hsl(var(--property-featured) / 0.1);
-    color: hsl(var(--property-featured));
-    border: 1px solid hsl(var(--property-featured) / 0.3);
-  }
-
-  .property-badge--featured:hover {
-    background-color: hsl(var(--property-featured) / 0.15);
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 4px 12px hsl(var(--property-featured) / 0.3);
-  }
-
-  .property-badge--luxury {
-    background-color: hsl(var(--property-luxury) / 0.1);
-    color: hsl(var(--property-luxury));
-    border: 1px solid hsl(var(--property-luxury) / 0.3);
-  }
-
-  .property-badge--luxury:hover {
-    background-color: hsl(var(--property-luxury) / 0.15);
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 4px 12px hsl(var(--property-luxury) / 0.3);
-  }
-
-  /* 
-    TRUST STATUS SYSTEM
-    ==================
-    Clear visual hierarchy for verification states.
-  */
-  .trust-badge {
-    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium;
-    @apply transition-all duration-200 ease-out select-none;
-  }
-
-  .trust-badge--verified {
-    background-color: hsl(var(--trust-verified) / 0.1);
-    color: hsl(var(--trust-verified));
-    border: 1px solid hsl(var(--trust-verified) / 0.3);
-  }
-
-  .trust-badge--pending {
-    background-color: hsl(var(--trust-pending) / 0.1);
-    color: hsl(var(--trust-pending));
-    border: 1px solid hsl(var(--trust-pending) / 0.3);
-  }
-
-  .trust-badge--warning {
-    background-color: hsl(var(--trust-warning) / 0.1);
-    color: hsl(var(--trust-warning));
-    border: 1px solid hsl(var(--trust-warning) / 0.3);
-  }
-
-  .trust-badge--danger {
-    background-color: hsl(var(--trust-danger) / 0.1);
-    color: hsl(var(--trust-danger));
-    border: 1px solid hsl(var(--trust-danger) / 0.3);
-  }
-
-  /* 
-    OPTIMIZED PROPERTY CARDS
-    =======================
-    Performance-focused card system with smooth interactions.
-  */
-  .property-card {
-    @apply bg-card border border-card-border rounded-lg p-6 cursor-pointer;
-    @apply transition-all duration-300 ease-out will-change-transform;
-    @apply focus:outline-none focus:ring-2 focus:ring-primary/50;
-  }
-
-  .property-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px -8px hsl(var(--secondary) / 0.15);
-  }
-
-  .property-card--featured {
-    border-color: hsl(var(--secondary));
-    background: linear-gradient(
-      135deg,
-      hsl(var(--secondary-muted)) 0%,
-      hsl(var(--background)) 100%
-    );
-  }
-
-  .property-card--featured:hover {
-    box-shadow: 0 12px 24px -8px hsl(var(--secondary) / 0.25);
-  }
-
-  /* 
-    STREAMLINED BUTTON SYSTEM
-    ========================
-    Consistent button styles with optimal performance.
-  */
-  .btn {
-    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
-    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply select-none will-change-transform;
-  }
-
-  .btn-primary {
-    @apply btn;
-    background-color: hsl(var(--secondary));
-    color: hsl(var(--secondary-foreground));
-    border: 1px solid hsl(var(--secondary));
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background-color: hsl(var(--secondary-hover));
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px hsl(var(--secondary) / 0.3);
-  }
-
-  .btn-primary:focus {
-    --tw-ring-color: hsl(var(--secondary) / 0.5);
-  }
-
-  .btn-secondary {
-    @apply btn;
-    background-color: transparent;
-    color: hsl(var(--secondary));
-    border: 1px solid hsl(var(--secondary));
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background-color: hsl(var(--secondary));
-    color: hsl(var(--secondary-foreground));
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px hsl(var(--secondary) / 0.25);
-  }
-
-  .btn-accent {
-    @apply btn;
-    background-color: hsl(var(--accent));
-    color: hsl(var(--accent-foreground));
-    border: 1px solid hsl(var(--accent));
-  }
-
-  .btn-accent:hover:not(:disabled) {
-    background-color: hsl(var(--accent-hover));
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px hsl(var(--accent) / 0.3);
-  }
-
-  /* 
-    ENHANCED FORM SYSTEM
-    ===================
-    Accessible form elements with improved contrast.
-  */
-  .form-input {
-    @apply w-full px-3 py-2 border border-input rounded-md;
-    @apply bg-background text-foreground placeholder:text-muted-foreground;
-    @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary;
-    @apply transition-colors duration-200;
-  }
-
-  .form-input:hover:not(:focus) {
-    border-color: hsl(var(--primary) / 0.5);
-  }
-
-  .form-input:invalid {
-    border-color: hsl(var(--trust-danger));
-  }
-
-  .form-input:valid {
-    border-color: hsl(var(--trust-verified));
-  }
-
-  .form-label {
-    @apply text-sm font-medium text-foreground block mb-1;
-  }
-
-  .form-error {
-    @apply text-sm text-trust-danger mt-1;
-  }
-
-  /* 
-    LOADING STATES
-    =============
-    Consistent loading indicators.
-  */
-  .loading-spinner {
-    @apply inline-block animate-spin rounded-full border-2 border-current border-t-transparent;
-    width: 1rem;
-    height: 1rem;
-  }
-
-  .loading-skeleton {
-    @apply animate-pulse bg-muted rounded;
-  }
-}
-
-@layer utilities {
-  /* 
-    STRATEGIC COLOR UTILITIES
-    ========================
-    Essential color utilities for the streamlined system.
-  */
-
-  /* Property type colors */
-  .text-property-residential {
-    color: hsl(var(--property-residential));
-  }
-  .text-property-commercial {
-    color: hsl(var(--property-commercial));
-  }
-  .text-property-featured {
-    color: hsl(var(--property-featured));
-  }
-  .text-property-luxury {
-    color: hsl(var(--property-luxury));
-  }
-
-  .bg-property-residential {
-    background-color: hsl(var(--property-residential) / 0.05);
-  }
-  .bg-property-commercial {
-    background-color: hsl(var(--property-commercial) / 0.05);
-  }
-  .bg-property-featured {
-    background-color: hsl(var(--property-featured) / 0.05);
-  }
-  .bg-property-luxury {
-    background-color: hsl(var(--property-luxury) / 0.05);
-  }
-
-  .border-property-residential {
-    border-color: hsl(var(--property-residential));
-  }
-  .border-property-commercial {
-    border-color: hsl(var(--property-commercial));
-  }
-  .border-property-featured {
-    border-color: hsl(var(--property-featured));
-  }
-  .border-property-luxury {
-    border-color: hsl(var(--property-luxury));
-  }
-
-  /* Trust status colors */
-  .text-trust-verified {
-    color: hsl(var(--trust-verified));
-  }
-  .text-trust-pending {
-    color: hsl(var(--trust-pending));
-  }
-  .text-trust-warning {
-    color: hsl(var(--trust-warning));
-  }
-  .text-trust-danger {
-    color: hsl(var(--trust-danger));
-  }
-
-  .bg-trust-verified {
-    background-color: hsl(var(--trust-verified) / 0.1);
-  }
-  .bg-trust-pending {
-    background-color: hsl(var(--trust-pending) / 0.1);
-  }
-  .bg-trust-warning {
-    background-color: hsl(var(--trust-warning) / 0.1);
-  }
-  .bg-trust-danger {
-    background-color: hsl(var(--trust-danger) / 0.1);
-  }
-
-  /* Enhanced gradients */
-  .text-gradient-brand {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--primary)),
-      hsl(var(--secondary))
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  .text-gradient-premium {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--accent)),
-      hsl(var(--accent-active))
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  .bg-gradient-brand {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--primary)),
-      hsl(var(--secondary))
-    );
-  }
-
-  .bg-gradient-premium {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--secondary)),
-      hsl(var(--accent))
-    );
-  }
-
-  /* High contrast hero gradients for accessibility */
-  .bg-gradient-hero-primary {
-    background: linear-gradient(
-      135deg,
-      hsl(222.2 84% 4.9%),
-      hsl(var(--primary)),
-      hsl(var(--primary) / 0.9)
-    );
-  }
-
-  .bg-gradient-hero-dark {
-    background: linear-gradient(
-      135deg,
-      hsl(222.2 84% 4.9%),
-      hsl(220 13% 18%),
-      hsl(215 28% 17%)
-    );
-  }
-
-  /* Fluid typography */
-  .text-fluid-xs {
-    font-size: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
-  }
-  .text-fluid-sm {
-    font-size: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
-  }
-  .text-fluid-base {
-    font-size: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
-  }
-  .text-fluid-lg {
-    font-size: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);
-  }
-  .text-fluid-xl {
-    font-size: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
-  }
-  .text-fluid-2xl {
-    font-size: clamp(1.5rem, 1.3rem + 1vw, 2rem);
-  }
-  .text-fluid-3xl {
-    font-size: clamp(1.875rem, 1.6rem + 1.375vw, 2.5rem);
-  }
-
-  /* Enhanced hover effects */
-  .hover-glow-warm:hover {
-    box-shadow: 0 0 20px hsl(var(--secondary) / 0.3);
-    transition: box-shadow 0.3s ease;
-  }
-
-  .hover-glow-trust:hover {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
-    transition: box-shadow 0.3s ease;
-  }
-
-  .hover-glow-premium:hover {
-    box-shadow: 0 0 20px hsl(var(--accent) / 0.3);
-    transition: box-shadow 0.3s ease;
-  }
-
-  /* Coral theme utilities */
-  .text-coral {
-    color: hsl(var(--secondary));
-  }
-  .text-coral-dark {
-    color: hsl(var(--secondary-active));
-  }
-  .bg-coral {
-    background-color: hsl(var(--secondary));
-  }
-  .border-coral {
-    border-color: hsl(var(--secondary));
-  }
-
-  .hover-coral:hover {
-    color: hsl(var(--secondary));
-    transition: color 0.2s ease-in-out;
-  }
-
-  /* Enhanced wordmark styles */
-  .wordmark-triple {
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  }
-
-  .wordmark-check {
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    background: linear-gradient(
-      135deg,
-      hsl(var(--secondary)),
-      hsl(var(--secondary-active))
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Animation utilities with performance optimization */
-  .animate-fade-in {
-    animation: fadeIn 0.4s ease-out forwards;
-    will-change: opacity;
-  }
-
-  .animate-slide-up {
-    animation: slideUp 0.4s ease-out forwards;
-    will-change: opacity, transform;
-  }
-
-  .animate-scale-in {
-    animation: scaleIn 0.2s ease-out forwards;
-    will-change: opacity, transform;
-  }
-
-  /* Animation delays for staggered effects */
-  .animation-delay-0 {
-    animation-delay: 0ms;
-  }
-  .animation-delay-100 {
-    animation-delay: 100ms;
-  }
-  .animation-delay-150 {
-    animation-delay: 150ms;
-  }
-  .animation-delay-200 {
-    animation-delay: 200ms;
-  }
-  .animation-delay-300 {
-    animation-delay: 300ms;
-  }
-  .animation-delay-400 {
-    animation-delay: 400ms;
-  }
-  .animation-delay-450 {
-    animation-delay: 450ms;
-  }
-  .animation-delay-500 {
-    animation-delay: 500ms;
-  }
-  .animation-delay-600 {
-    animation-delay: 600ms;
-  }
-
-  /* Background pattern utilities */
-  .bg-dot-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239ca3af' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/svg%3E");
-  }
-
-  /* Mobile navigation drag transform utility */
-  .mobile-nav-drag {
-    transition: none !important;
-  }
-
-  .mobile-nav-drag[data-drag-offset] {
-    transform: translateX(attr(data-drag-offset px, 0px));
-  }
-  
-  /* Fallback for browsers that don't support attr() in transform */
-  @supports not (transform: translateX(attr(data-drag-offset px))) {
-    .mobile-nav-drag[data-drag-offset="-50"] { transform: translateX(-50px); }
-    .mobile-nav-drag[data-drag-offset="-100"] { transform: translateX(-100px); }
-    .mobile-nav-drag[data-drag-offset="-150"] { transform: translateX(-150px); }
-    .mobile-nav-drag[data-drag-offset="-200"] { transform: translateX(-200px); }
-    .mobile-nav-drag[data-drag-offset="-250"] { transform: translateX(-250px); }
-    .mobile-nav-drag[data-drag-offset="-300"] { transform: translateX(-300px); }
-  }
-
-  /* Progress bar width utility for developer dashboard */
-  .progress-bar[data-width] {
-    width: calc(var(--progress-width, 0) * 1%);
-  }
-}
+/* 
+  TRIPLECHECK GLOBAL STYLES
+  =========================
+  Unified design system entry point
+*/
+
+/* Unified Design System - Includes all styles and animations */
+@import "./design-system.css";
 
 /* 
-  PERFORMANCE-OPTIMIZED KEYFRAMES
-  ==============================
-  Essential animations with GPU acceleration and will-change optimization.
+  LEGACY COMPATIBILITY
+  ===================
+  Backward compatibility for existing components
 */
-@keyframes fadeIn {
+
+/* Legacy fadeInUp animation for existing components */
+@keyframes fadeInUp {
   from {
     opacity: 0;
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 20px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease forwards;
 }
 
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale3d(0.95, 0.95, 1);
-  }
-  to {
-    opacity: 1;
-    transform: scale3d(1, 1, 1);
-  }
-}
-
-/* 
-  ACCESSIBILITY & PERFORMANCE
-  ===========================
-  Ensure optimal experience for all users.
-*/
-@media (prefers-reduced-motion: reduce) {
-  .animate-fade-in,
-  .animate-slide-up,
-  .animate-scale-in {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-
-  .property-card:hover,
-  .property-badge:hover,
-  .btn:hover {
-    transform: none;
-  }
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .text-gradient-brand,
-  .text-gradient-premium,
-  .wordmark-check {
-    background: none;
-    color: hsl(var(--foreground));
-    -webkit-text-fill-color: unset;
-  }
-}
+/* Legacy progress bar utility */
 .progressFill {
   height: 0.5rem;
-  background-color: var(--color-primary);
+  background-color: hsl(var(--secondary));
   border-radius: 9999px;
   transition: width 300ms ease;
 }
-/* 
-  N
-AVIGATION-AWARE SPACING UTILITIES
-  ==================================
-  Utilities for handling fixed navigation spacing and scroll behavior.
-*/
 
-/* CSS custom property for dynamic navigation height */
+/* Navigation height and transparency variables */
 :root {
-  --nav-height: 88px; /* Default navigation height (py-4 + content) */
+  --nav-height: 88px;
+  --nav-blur-strength: 20px;
+  --nav-saturation: 180%;
 }
 
-/* Utility class for content that needs to account for fixed navigation */
-.nav-aware-spacing {
-  padding-top: var(--nav-height);
-}
-
-/* Scroll margin for headings to prevent navigation overlap */
-.scroll-margin-nav {
-  scroll-margin-top: calc(var(--nav-height) + 1rem);
-}
-
-/* Enhanced scroll behavior for smooth navigation */
-html {
-  scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  
-  /* Disable navigation transitions for reduced motion */
-  nav {
-    transition: none !important;
-  }
-}
-
-/* Ensure headings don't get hidden behind navigation */
-h1, h2, h3, h4, h5, h6 {
-  scroll-margin-top: calc(var(--nav-height) + 1rem);
-}
-
-/* Special handling for sections with IDs (for anchor links) */
-section[id], div[id] {
-  scroll-margin-top: calc(var(--nav-height) + 0.5rem);
-}
-/* 
-  NAV
-IGATION-AWARE SPACING UTILITIES
-  ==================================
-  Utilities for handling fixed navigation spacing and scroll behavior.
-*/
-
-/* Utility class for page containers that need navbar clearance */
+/* Legacy page container utility */
 .page-container {
-  padding-top: 6rem; /* 96px - accounts for navbar height */
+  padding-top: 6rem;
   padding-bottom: 2rem;
 }
 
 @media (min-width: 768px) {
   .page-container {
-    padding-top: 6rem; /* Keep consistent on larger screens */
+    padding-top: 6rem;
   }
 }
 
-/* 
-  NAVBAR SPACING UTILITIES
-  ========================
-  Prevents fixed navbar overlap with page content.
-  
-  Usage Guidelines:
-  - .navbar-offset: Standard pages (dashboards, forms, content pages)
-  - .navbar-offset-hero: Hero sections and landing pages
-  - .navbar-offset-minimal: Compact layouts and modals
-  
-  The navbar height is dynamically set via CSS custom property --nav-height
-  but these classes provide consistent fallbacks for all scenarios.
-*/
-
+/* Legacy navbar offset utilities */
 .navbar-offset {
-  padding-top: 5.5rem; /* 88px - standard navbar height */
+  padding-top: 5.5rem;
 }
 
 .navbar-offset-hero {
-  padding-top: 5rem; /* 80px - reduced spacing for hero sections */
+  padding-top: 5rem;
 }
 
 .navbar-offset-minimal {
-  padding-top: 4rem; /* 64px - minimal spacing for compact layouts */
+  padding-top: 4rem;
 }
 
 @media (min-width: 768px) {
   .navbar-offset {
-    padding-top: 6rem; /* 96px on larger screens */
+    padding-top: 6rem;
   }
-  
+
   .navbar-offset-hero {
-    padding-top: 5.5rem; /* 88px on larger screens */
+    padding-top: 5.5rem;
+  }
+
+  .navbar-offset-minimal {
+    padding-top: 4.5rem;
+  }
+}
+
+/* Legacy mobile navigation drag utilities */
+.mobile-nav-drag {
+  transition: none !important;
+}
+
+.mobile-nav-drag[data-drag-offset] {
+  transform: translateX(attr(data-drag-offset px, 0px));
+}
+
+@supports not (transform: translateX(attr(data-drag-offset px))) {
+  .mobile-nav-drag[data-drag-offset="-50"] {
+    transform: translateX(-50px);
+  }
+  .mobile-nav-drag[data-drag-offset="-100"] {
+    transform: translateX(-100px);
+  }
+  .mobile-nav-drag[data-drag-offset="-150"] {
+    transform: translateX(-150px);
+  }
+  .mobile-nav-drag[data-drag-offset="-200"] {
+    transform: translateX(-200px);
+  }
+  .mobile-nav-drag[data-drag-offset="-250"] {
+    transform: translateX(-250px);
+  }
+  .mobile-nav-drag[data-drag-offset="-300"] {
+    transform: translateX(-300px);
+  }
+}
+
+/* Legacy progress bar width utility */
+.progress-bar[data-width] {
+  width: calc(var(--progress-width, 0) * 1%);
+}
+
+/* Legacy navigation utilities */
+.nav-aware-spacing {
+  padding-top: var(--nav-height);
+}
+
+.scroll-margin-nav {
+  scroll-margin-top: calc(var(--nav-height) + 1rem);
+}
+
+/* 
+  TRANSPARENT NAVBAR ENHANCEMENTS
+  ===============================
+  Enhanced blur effects for transparent navigation
+*/
+
+/* Ensure content behind transparent navbar gets proper blur treatment */
+.transparent-navbar-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Enhanced backdrop blur for transparent elements */
+.enhanced-backdrop-blur {
+  backdrop-filter: blur(var(--nav-blur-strength)) saturate(var(--nav-saturation));
+  -webkit-backdrop-filter: blur(var(--nav-blur-strength)) saturate(var(--nav-saturation));
+}
+
+/* Glassmorphism utility classes */
+.glass-light {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-medium {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px) saturate(180%);
+  -webkit-backdrop-filter: blur(15px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Ensure smooth transitions for transparency changes */
+.navbar-transition {
+  transition: background-color 300ms ease, backdrop-filter 300ms ease, border-color 300ms ease;
+}
+
+/* 
+  ACCESSIBILITY OVERRIDES
+  =======================
+  Ensure accessibility is maintained
+*/
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeInUp {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
   
-  .navbar-offset-minimal {
-    padding-top: 4.5rem; /* 72px on larger screens */
+  .navbar-transition {
+    transition: none;
   }
 }

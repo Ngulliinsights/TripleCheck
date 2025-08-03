@@ -94,6 +94,8 @@
     "deploy:preview": "vercel",
     "postinstall": "npm run build",
     "test": "vitest",
+    "test:integration": "node scripts/test-integration.js",
+    "setup:dev": "node scripts/setup-dev.js",
     "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",

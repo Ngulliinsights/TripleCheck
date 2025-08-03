@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+
 import { Logger } from '../infrastructure/monitoring/logger';
 
 export interface CacheConfig {

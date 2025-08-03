@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { TrustScore, VerificationCheck, FraudAlert } from '../types/trust.types';
 
 // Trust validation schemas

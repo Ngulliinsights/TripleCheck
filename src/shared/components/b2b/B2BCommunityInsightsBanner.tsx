@@ -1,6 +1,8 @@
-import React from 'react';
 import { Users, MessageSquare, BarChart3, Building2, ArrowRight, MapPin } from 'lucide-react';
+import React from 'react';
+
 import { Button } from '../ui/button';
+
 import { cn } from '@/shared/lib/utils';
 
 interface B2BCommunityInsightsBannerProps {
@@ -14,7 +16,7 @@ interface B2BCommunityInsightsBannerProps {
 
 export function B2BCommunityInsightsBanner({ className, communityStats }: B2BCommunityInsightsBannerProps) {
   const handleAPIInterest = () => {
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (window?.gtag) {
       window.gtag('event', 'community_banner_click', {
         event_category: 'B2B',
         event_label: 'community_insights_banner'

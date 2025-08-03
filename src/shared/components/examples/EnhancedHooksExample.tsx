@@ -7,25 +7,25 @@
  * - useOperationTracking for performance monitoring
  */
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
-import { Input } from '@shared/components/ui/input';
 import { Badge } from '@shared/components/ui/badge';
-import { Loader2, CheckCircle, AlertCircle, Activity } from 'lucide-react';
-
-// Import our enhanced hooks
-import { 
-  useSafePropertiesQuery, 
-  useSafeUserQuery, 
-  useSafeTrustScoreQuery 
-} from '@shared/hooks/useSafeQuery';
-import { useOptimisticMutation } from '@shared/hooks/useOptimisticMutation';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Input } from '@shared/components/ui/input';
 import { 
   useComponentTracking, 
   useInteractionTracking, 
   useOperationDebug 
 } from '@shared/hooks/useOperationTracking';
+import { useOptimisticMutation } from '@shared/hooks/useOptimisticMutation';
+import { 
+  useSafePropertiesQuery, 
+  useSafeUserQuery, 
+  useSafeTrustScoreQuery 
+} from '@shared/hooks/useSafeQuery';
+import { Loader2, CheckCircle, AlertCircle, Activity } from 'lucide-react';
+
+// Import our enhanced hooks
+import React, { useState } from 'react';
 
 export default function EnhancedHooksExample() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,8 +55,7 @@ export default function EnhancedHooksExample() {
         // Custom validation for our specific needs
         if (!Array.isArray(data)) return [];
         return data.filter(property => 
-          property && 
-          property.id && 
+          property?.id && 
           property.title &&
           property.price > 0
         );

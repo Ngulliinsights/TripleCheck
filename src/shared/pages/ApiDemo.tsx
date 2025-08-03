@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import { ArrowRight, Building2, Shield, Zap, CheckCircle, Copy, Play } from 'lucide-react';
+import React, { useState } from 'react';
+
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
@@ -15,7 +16,7 @@ export default function ApiDemo() {
     setTimeout(() => {
       setResult({
         success: true,
-        verificationId: "ver_" + Math.random().toString(36).substr(2, 9),
+        verificationId: `ver_${  Math.random().toString(36).substr(2, 9)}`,
         status: "completed",
         riskScore: 0.15,
         ownership: "verified",

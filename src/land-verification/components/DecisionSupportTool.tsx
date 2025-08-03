@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
 import { AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, HelpCircle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
 
 export interface RiskFactor {
   id: string;

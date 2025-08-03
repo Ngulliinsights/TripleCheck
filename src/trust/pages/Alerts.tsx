@@ -1,13 +1,14 @@
+import { Bell, Home, TrendingUp, AlertTriangle } from "lucide-react";
 import { useState } from "react";
+
+import FormField from "../../shared/components/forms/FormField";
 import { Button } from "../../shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
 import { Input } from "../../shared/components/ui/input";
 import { Label } from "../../shared/components/ui/label";
 import { Switch } from "../../shared/components/ui/switch";
-import { Bell, Home, TrendingUp, AlertTriangle } from "lucide-react";
-import { useForm } from "../../shared/hooks/useForm";
-import FormField from "../../shared/components/forms/FormField";
 import { useToast } from "../../shared/hooks/use-toast";
+import { useForm } from "../../shared/hooks/useForm";
 
 interface AlertPreference {
   id: string;

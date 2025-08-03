@@ -1,6 +1,7 @@
+import { Shield, FileText, Users, TrendingUp, CheckCircle, AlertTriangle } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, FileText, Users, TrendingUp, CheckCircle, AlertTriangle } from 'lucide-react';
+
 import DocumentAuthentication from '../../trust/components/DocumentAuthentication';
 import PropertyRiskAssessment from '../../trust/components/PropertyRiskAssessment';
 

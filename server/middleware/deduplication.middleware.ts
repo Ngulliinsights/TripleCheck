@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { RequestDeduplicator } from "../infrastructure/deduplication/RequestDeduplicator";
+
 import { CacheService } from "../infrastructure/cache/CacheService";
+import { RequestDeduplicator } from "../infrastructure/deduplication/RequestDeduplicator";
 
 /**
  * Configuration for deduplication middleware
@@ -111,7 +112,7 @@ export function createDeduplicationMiddleware(
       );
 
       // If we got a cached result, send it directly
-      if (result && result.fromCache) {
+      if (result?.fromCache) {
         req.deduplication.isFromCache = true;
         return res.status(result.status || 200).json({
           ...result.data,

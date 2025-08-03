@@ -1,5 +1,5 @@
-import React from 'react';
 import { Home, Search, Menu } from 'lucide-react';
+import React from 'react';
 
 /**
  * Simple fallback navigation component for when the main navigation crashes

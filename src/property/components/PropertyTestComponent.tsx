@@ -1,9 +1,10 @@
+import { Loader2 } from 'lucide-react';
 import React from 'react';
+
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
 import { useProperties, useProperty } from '../hooks/useProperty';
 import { usePropertySearch } from '../hooks/usePropertySearch';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { Button } from '../../shared/components/ui/button';
-import { Loader2 } from 'lucide-react';
 
 /**
  * Test component to verify that infinite API calls are resolved

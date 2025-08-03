@@ -1,6 +1,7 @@
+import sharp from 'sharp';
+
 import { logger } from '../../infrastructure/monitoring/logger';
 import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';
-import sharp from 'sharp';
 // import * as cv from 'opencv4nodejs'; // Optional dependency - commented out for now
 
 export interface VisualAnalysisResult {

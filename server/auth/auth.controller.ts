@@ -1,6 +1,8 @@
 import { Router } from 'express';
-import { AuthService } from './auth.service';
+
 import validateRequest, { UserValidationSchemas } from '../middleware/validation.middleware';
+
+import { AuthService } from './auth.service';
 
 const router = Router();
 const authService = new AuthService();

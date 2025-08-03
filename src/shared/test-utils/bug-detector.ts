@@ -4,6 +4,7 @@
 
 import { readFileSync, existsSync } from "fs";
 import { join, dirname, relative } from "path";
+
 import { glob } from "glob";
 
 export interface BugReport {
@@ -813,7 +814,7 @@ export class BugDetector {
 
         // Try index files
         for (const ext of extensions) {
-          const indexPath = join(resolved, "index" + ext);
+          const indexPath = join(resolved, `index${  ext}`);
           if (existsSync(indexPath)) {
             return indexPath;
           }
@@ -825,7 +826,7 @@ export class BugDetector {
         const aliasPath = importPath.replace("@/", "src/");
         return this.resolveImportPath(
           fromFile,
-          "./" + relative(dirname(fromFile), join(this.projectRoot, aliasPath))
+          `./${  relative(dirname(fromFile), join(this.projectRoot, aliasPath))}`
         );
       } else {
         // Node modules import
@@ -898,7 +899,7 @@ export class BugDetector {
     // Check exact match or if it starts with a built-in module followed by /
     return (
       builtinModules.includes(importPath) ||
-      builtinModules.some((module) => importPath.startsWith(module + "/"))
+      builtinModules.some((module) => importPath.startsWith(`${module  }/`))
     );
   }
 

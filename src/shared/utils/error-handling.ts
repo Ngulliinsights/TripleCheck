@@ -42,8 +42,8 @@ export function parseError(error: any): AppError {
 
   // Handle API response errors
   if (error?.response) {
-    const status = error.response.status;
-    const data = error.response.data;
+    const {status} = error.response;
+    const {data} = error.response;
     
     return {
       message: data?.message || getStatusMessage(status),

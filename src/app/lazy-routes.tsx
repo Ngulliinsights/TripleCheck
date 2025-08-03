@@ -225,6 +225,10 @@ export const LazyRoutes = {
     routePath: "/blog/:slug",
     preloadPriority: "low",
   }),
+  BlogTest: createLazyRoute(() => import("../shared/pages/BlogTest"), {
+    routePath: "/blog-test",
+    preloadPriority: "low",
+  }),
   Resources: createLazyRoute(() => import("../shared/pages/Resources"), {
     routePath: "/resources",
     preloadPriority: "low",
@@ -435,6 +439,10 @@ export const LazyRoutes = {
     routePath: "/help",
     preloadPriority: "normal",
   }),
+  GettingStarted: createLazyRoute(() => import("../shared/pages/GettingStarted"), {
+    routePath: "/help/getting-started",
+    preloadPriority: "normal",
+  }),
   Contact: createLazyRoute(() => import("../shared/pages/Contact"), {
     routePath: "/contact",
     preloadPriority: "normal",
@@ -475,10 +483,13 @@ export const LazyRoutes = {
     routePath: "/demo",
     preloadPriority: "high",
   }),
-  NavigationTest: createLazyRoute(() => import("../shared/pages/NavigationTest"), {
-    routePath: "/nav-test",
-    preloadPriority: "low",
-  }),
+  NavigationTest: createLazyRoute(
+    () => import("../shared/pages/NavigationTest"),
+    {
+      routePath: "/nav-test",
+      preloadPriority: "low",
+    }
+  ),
   ApiDemo: createLazyRoute(() => import("../shared/pages/ApiDemo"), {
     routePath: "/api-demo",
     preloadPriority: "normal",
@@ -542,6 +553,13 @@ export const LazyRoutes = {
   CommunityIntelligence: createComingSoonRoute(
     "Community Intelligence",
     "Leverage community insights for better verification decisions."
+  ),
+  FindProfessionals: createLazyRoute(
+    () => import("../shared/pages/FindProfessionals"),
+    {
+      routePath: "/find-professionals",
+      preloadPriority: "normal",
+    }
   ),
   HelpGettingStarted: createComingSoonRoute(
     "Getting Started Guide",
@@ -703,6 +721,7 @@ export const preloadRoutes = {
         import("../shared/pages/Services"),
         import("../shared/pages/Solutions"),
         import("../shared/pages/Help"),
+        import("../shared/pages/FindProfessionals"),
       ]),
       "content"
     ),
@@ -727,9 +746,16 @@ export const preloadRoutes = {
   },
 
   preloadMultiple: async (categories: PreloadCategory[]) => {
-    const batches: Promise<SettledResult[]>[] = categories.map((c) =>
-      preloadRoutes[c]()
-    );
+    const batches: Promise<SettledResult[]>[] = categories.map((c) => {
+      // Use Object.prototype.hasOwnProperty to safely check for the property
+      if (Object.prototype.hasOwnProperty.call(preloadRoutes, c)) {
+        const preloadFunction = preloadRoutes[c as keyof typeof preloadRoutes];
+        if (typeof preloadFunction === "function") {
+          return (preloadFunction as () => Promise<SettledResult[]>)();
+        }
+      }
+      return Promise.resolve([]);
+    });
     return (await Promise.all(batches)).flat();
   },
 
@@ -751,7 +777,14 @@ export const preloadRoutes = {
       ] as PreloadCategory[],
       low: ["content", "analytics", "legal"] as PreloadCategory[],
     };
-    return preloadRoutes.preloadMultiple(map[priority]);
+
+    // Use Object.prototype.hasOwnProperty to safely check for the property
+    if (Object.prototype.hasOwnProperty.call(map, priority)) {
+      const categories = map[priority as keyof typeof map];
+      return preloadRoutes.preloadMultiple(categories);
+    }
+
+    return [];
   },
 } as const;
 
@@ -760,9 +793,12 @@ export const preloadRoutes = {
 /* ---------------------------------- */
 export type RouteNames = keyof typeof LazyRoutes;
 export const getRouteComponent = (name: RouteNames) => {
-  const C = LazyRoutes[name];
-  if (!C) throw new Error(`Route "${name}" not found`);
-  return C;
+  // Use Object.prototype.hasOwnProperty to safely check for the property
+  if (Object.prototype.hasOwnProperty.call(LazyRoutes, name)) {
+    const C = LazyRoutes[name as keyof typeof LazyRoutes];
+    if (C) return C;
+  }
+  throw new Error(`Route "${name}" not found`);
 };
 
 // Backward compatibility

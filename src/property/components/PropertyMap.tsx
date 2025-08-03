@@ -39,15 +39,15 @@ interface GoogleMapsAPI {
 
 declare const google: GoogleMapsAPI;
 import { Loader } from "@googlemaps/js-api-loader";
-import { Skeleton } from "@shared/components/ui/skeleton";
+import { Badge } from "@shared/components/ui/badge";
+import { Button } from "@shared/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@shared/components/ui/card";
-import { Button } from "@shared/components/ui/button";
-import { Badge } from "@shared/components/ui/badge";
+import { Skeleton } from "@shared/components/ui/skeleton";
 import {
   MapPin,
   Navigation,
@@ -230,10 +230,10 @@ export function PropertyMap({
       title: location.title || location.address,
       icon: {
         url:
-          "data:image/svg+xml;charset=UTF-8," +
+          `data:image/svg+xml;charset=UTF-8,${ 
           encodeURIComponent(
             '<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="12" fill="#14B8A6" stroke="white" stroke-width="2"/><path d="M16 8L20 14H12L16 8Z" fill="white"/><circle cx="16" cy="20" r="2" fill="white"/></svg>'
-          ),
+          )}`,
         scaledSize: new google.maps.Size(32, 32),
         anchor: new google.maps.Point(16, 32),
       },
@@ -260,10 +260,10 @@ export function PropertyMap({
         title: p.title || p.address,
         icon: {
           url:
-            "data:image/svg+xml;charset=UTF-8," +
+            `data:image/svg+xml;charset=UTF-8,${ 
             encodeURIComponent(
               '<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" fill="#10B981" stroke="white" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="white"/></svg>'
-            ),
+            )}`,
           scaledSize: new google.maps.Size(24, 24),
           anchor: new google.maps.Point(12, 24),
         },

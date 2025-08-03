@@ -1,6 +1,7 @@
-import { WebSocket, WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
 import { parse } from 'url';
+
+import { WebSocket, WebSocketServer } from 'ws';
 
 /**
  * Real-time Notification Service
@@ -230,8 +231,8 @@ export class NotificationService {
     }
 
     // Replace variables in template
-    let title = template.title;
-    let message = template.message;
+    let {title} = template;
+    let {message} = template;
     
     Object.entries(variables).forEach(([key, value]) => {
       const placeholder = `{${key}}`;

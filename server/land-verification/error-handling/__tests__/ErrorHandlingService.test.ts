@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ErrorHandlingService, ErrorContext } from '../ErrorHandlingService';
-import { DegradationContext } from '../GracefulDegradationManager';
+import { DegradationContext , gracefulDegradationManager } from '../GracefulDegradationManager';
 
 // Mock the dependencies
 vi.mock('../RetryPolicyManager', () => ({
@@ -39,7 +39,7 @@ vi.mock('../AuditLogger', () => ({
 
 import { retryPolicyManager } from '../RetryPolicyManager';
 import { fallbackManager } from '../FallbackManager';
-import { gracefulDegradationManager } from '../GracefulDegradationManager';
+
 import { auditLogger } from '../AuditLogger';
 
 describe('ErrorHandlingService', () => {

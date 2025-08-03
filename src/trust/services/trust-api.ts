@@ -1,8 +1,10 @@
-import { ApiResponse } from '@/shared/types';
 import { TrustScore, VerificationCheck, FraudAlert } from '../types/trust.types';
+
 import { TrustBusinessLogic } from './trust-business-logic';
+
 import { apiRequest } from '@/infrastructure/api/queryClient';
 import { requestManager } from '@/infrastructure/api/request-manager';
+import { ApiResponse } from '@/shared/types';
 
 const API_BASE = '/api/trust';
 
@@ -154,9 +156,9 @@ export const trustApi = {
     
     const data = await response.json();
     
-    if (data.data && data.data.checks) {
+    if (data.data?.checks) {
       // Calculate completion percentage and next steps
-      const checks = data.data.checks;
+      const {checks} = data.data;
       const totalChecks = 4; // document, identity, property, financial
       const completedChecks = checks.filter((check: VerificationCheck) => 
         check.status === 'verified'

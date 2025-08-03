@@ -1,6 +1,6 @@
+import { Building2, Shield, Users, TrendingUp, CheckCircle, ArrowRight, MapPin, FileText, Clock, Award } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, Shield, Users, TrendingUp, CheckCircle, ArrowRight, MapPin, FileText, Clock, Award } from 'lucide-react';
 
 const PropertyDevelopers: React.FC = () => {
   return (

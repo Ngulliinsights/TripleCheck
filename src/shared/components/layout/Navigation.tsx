@@ -1,5 +1,12 @@
+/* global requestAnimationFrame, cancelAnimationFrame */
 import { Search, ChevronDown, Building2 } from "lucide-react";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import { MobileNavFallback } from "../fallbacks/MobileNavFallback";
@@ -13,426 +20,447 @@ import { cn } from "@/shared/lib/utils";
 
 interface NavigationProps {
   readonly className?: string;
-  readonly variant?: "default" | "transparent";
 }
 
-// Constants for duplicate strings
-const BUTTON_HOVER_CLASSES =
-  "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20";
-const TRANSPARENT_BUTTON_HOVER_CLASSES =
-  "hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20";
-const BUTTON_DISABLED_CLASSES =
-  "disabled:opacity-50 disabled:cursor-not-allowed";
-const DROPDOWN_BUTTON_CLASSES =
-  "w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors duration-150 mx-1 rounded-lg";
-const TRANSPARENT_LIGHT_CLASSES = "text-white hover:bg-white/10 hover:text-white";
-const DEFAULT_DARK_CLASSES = "text-gray-700 hover:text-primary";
-
-// Helper function to get navigation items
-function getNavigationItems() {
-  return [
-    {
-      label: "Home",
-      href: "/",
-      primary: true,
-      description: "Return to homepage",
-    },
-    {
-      label: "Properties",
-      href: "/properties",
-      dropdown: [
-        {
-          label: "Browse Properties",
-          href: "/properties",
-          description: "Explore verified listings",
-          cta: "Browse Now",
-        },
-        {
-          label: "Residential",
-          href: "/properties/residential",
-          description: "Houses and apartments",
-          cta: "View Homes",
-        },
-        {
-          label: "Commercial",
-          href: "/properties/commercial",
-          description: "Office and retail spaces",
-          cta: "View Commercial",
-        },
-        {
-          label: "Land",
-          href: "/properties/land",
-          description: "Development opportunities",
-          cta: "View Land",
-        },
-      ],
-    },
-    {
-      label: "Services",
-      href: "/services",
-      dropdown: [
-        {
-          label: "Property Verification",
-          href: "/services/basic-checks",
-          description: "Complete property checks",
-          cta: "Start Now",
-          featured: true,
-        },
-        {
-          label: "Fraud Detection",
-          href: "/services/fraud-detection",
-          description: "AI-powered protection",
-          cta: "Check Property",
-        },
-        {
-          label: "Document Authentication",
-          href: "/services/document-auth",
-          description: "Secure verification",
-          cta: "Verify Documents",
-        },
-        {
-          label: "List Your Property",
-          href: "/services/list-property",
-          description: "Verified listings",
-          cta: "List Now",
-          highlight: true,
-        },
-      ],
-    },
-    {
-      label: "Help",
-      href: "/help",
-      dropdown: [
-        {
-          label: "Help Center",
-          href: "/help",
-          description: "Get support",
-          cta: "Get Help",
-        },
-        {
-          label: "Contact Us",
-          href: "/contact",
-          description: "Talk to experts",
-          cta: "Contact",
-        },
-        {
-          label: "About Us",
-          href: "/our-story",
-          description: "Our story",
-          cta: "Learn More",
-        },
-        {
-          label: "Plans & Pricing",
-          href: "/pricing",
-          description: "View our service plans",
-          cta: "View Plans",
-        },
-      ],
-    },
-  ];
+// Define types for better type safety
+interface BaseNavigationItem {
+  readonly label: string;
+  readonly href: string;
+  readonly primary?: boolean;
+  readonly description: string;
 }
 
-// Helper function to get search suggestions
-function getSearchSuggestions() {
-  return [
-    "Nairobi apartments",
-    "Westlands properties",
-    "Mombasa commercial",
-    "Karen land for sale",
-  ];
+interface DropdownItem {
+  readonly label: string;
+  readonly href: string;
+  readonly description: string;
+  readonly cta: string;
+  readonly featured?: boolean;
+  readonly highlight?: boolean;
 }
 
-export function Navigation({
-  className,
-  variant = "transparent",
-}: NavigationProps) {
+interface NavigationItemWithDropdown extends BaseNavigationItem {
+  readonly dropdown: readonly DropdownItem[];
+}
+
+interface NavigationItemWithoutDropdown extends BaseNavigationItem {
+  readonly dropdown?: never;
+}
+
+type NavigationItem =
+  | NavigationItemWithDropdown
+  | NavigationItemWithoutDropdown;
+
+// Enhanced style constants with better transitions and effects
+const STYLE_CONSTANTS = {
+  BUTTON_HOVER:
+    "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20",
+  TRANSPARENT_HOVER:
+    "hover:bg-white/15 hover:backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30",
+  BUTTON_DISABLED: "disabled:opacity-50 disabled:cursor-not-allowed",
+  DROPDOWN_ITEM:
+    "w-full text-left px-4 py-3 hover:bg-primary/5 hover:text-primary transition-all duration-200 mx-2 rounded-lg group",
+  TRANSPARENT_LIGHT:
+    "text-white hover:bg-white/15 hover:text-white hover:backdrop-blur-sm",
+  DEFAULT_DARK: "text-gray-700 hover:text-primary hover:bg-primary/5",
+  NAV_HEIGHTS: {
+    expanded: "88px",
+    compact: "72px",
+  },
+  TIMEOUTS: {
+    dropdown: 100, // Reduced for more responsive feel
+    navigation: 100,
+    search: 200,
+  },
+} as const;
+
+// Navigation data with proper typing - memoized to prevent recreation
+const NAVIGATION_ITEMS: readonly NavigationItem[] = [
+  {
+    label: "Home",
+    href: "/",
+    primary: true,
+    description: "Return to homepage",
+  },
+  {
+    label: "Properties",
+    href: "/properties",
+    description: "Explore property listings",
+    dropdown: [
+      {
+        label: "Browse Properties",
+        href: "/properties",
+        description: "Explore verified listings",
+        cta: "Browse Now",
+      },
+      {
+        label: "Residential",
+        href: "/properties/residential",
+        description: "Houses and apartments",
+        cta: "View Homes",
+      },
+      {
+        label: "Commercial",
+        href: "/properties/commercial",
+        description: "Office and retail spaces",
+        cta: "View Commercial",
+      },
+      {
+        label: "Land",
+        href: "/properties/land",
+        description: "Development opportunities",
+        cta: "View Land",
+      },
+    ],
+  },
+  {
+    label: "Services",
+    href: "/services",
+    description: "Our verification services",
+    dropdown: [
+      {
+        label: "Property Verification",
+        href: "/services/basic-checks",
+        description: "Complete property checks",
+        cta: "Start Now",
+        featured: true,
+      },
+      {
+        label: "Fraud Detection",
+        href: "/services/fraud-detection",
+        description: "AI-powered protection",
+        cta: "Check Property",
+      },
+      {
+        label: "Document Authentication",
+        href: "/services/document-auth",
+        description: "Secure verification",
+        cta: "Verify Documents",
+      },
+      {
+        label: "List Your Property",
+        href: "/services/list-property",
+        description: "Verified listings",
+        cta: "List Now",
+        highlight: true,
+      },
+    ],
+  },
+  {
+    label: "Help",
+    href: "/help",
+    description: "Get support and information",
+    dropdown: [
+      {
+        label: "Help Center",
+        href: "/help",
+        description: "Get support",
+        cta: "Get Help",
+      },
+      {
+        label: "Contact Us",
+        href: "/contact",
+        description: "Talk to experts",
+        cta: "Contact",
+      },
+      {
+        label: "About Us",
+        href: "/our-story",
+        description: "Our story",
+        cta: "Learn More",
+      },
+      {
+        label: "Plans & Pricing",
+        href: "/pricing",
+        description: "View our service plans",
+        cta: "View Plans",
+      },
+    ],
+  },
+] as const;
+
+const SEARCH_SUGGESTIONS = [
+  "Nairobi apartments",
+  "Westlands properties",
+  "Mombasa commercial",
+  "Karen land for sale",
+] as const;
+
+// Type guard function to safely check for dropdown items
+function hasDropdown(item: NavigationItem): item is NavigationItemWithDropdown {
+  return "dropdown" in item && Array.isArray(item.dropdown);
+}
+
+export function Navigation({ className }: NavigationProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
+
+  // Core state with better organization
+  const [navigationState, setNavigationState] = useState({
+    isScrolled: false,
+    activeDropdown: null as string | null,
+    isNavigating: false,
+    hoveredDropdown: null as string | null, // New state for hover tracking
+  });
+
+  const [searchState, setSearchState] = useState({
+    query: "",
+    isFocused: false,
+  });
+
+  // Refs for cleanup and DOM manipulation
   const navRef = useRef<HTMLElement>(null);
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollRafRef = useRef<number | null>(null);
 
-  // Determine if we're on the homepage for transparent navbar
-  const isHomepage = location.pathname === "/";
-  const shouldBeTransparent = isHomepage && !isScrolled;
+  // Memoized computed values to prevent unnecessary recalculations
+  const isHomepage = useMemo(
+    () => location.pathname === "/",
+    [location.pathname]
+  );
+  const shouldBeTransparent = useMemo(
+    () => isHomepage && !navigationState.isScrolled,
+    [isHomepage, navigationState.isScrolled]
+  );
 
-  // Enhanced safe navigation function with proper timeout management
+  // Optimized navigation handler with proper error handling
   const handleNavigation = useCallback(
     (href: string, event?: React.MouseEvent) => {
-      // Prevent multiple simultaneous navigations
-      if (isNavigating) return;
+      if (navigationState.isNavigating || !href) return;
+
+      event?.preventDefault();
+      event?.stopPropagation();
+
+      // Immediate UI cleanup - prevents race conditions
+      setNavigationState((prev) => ({
+        ...prev,
+        isNavigating: true,
+        activeDropdown: null,
+        hoveredDropdown: null,
+      }));
+      setSearchState((prev) => ({ ...prev, isFocused: false }));
+
+      // Clear any pending timeouts
+      if (dropdownTimeoutRef.current) {
+        clearTimeout(dropdownTimeoutRef.current);
+        dropdownTimeoutRef.current = null;
+      }
 
       try {
-        // Prevent default link behavior if event is provided
-        if (event) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-
-        // Validate href before navigation
-        if (!href || typeof href !== "string") {
-          throw new Error("Invalid navigation href");
-        }
-
-        // Set loading state
-        setIsNavigating(true);
-
-        // Clean up UI state immediately
-        setActiveDropdown(null);
-        setIsSearchFocused(false);
-
-        // Clear any pending dropdown timeouts
-        if (dropdownTimeoutRef.current) {
-          clearTimeout(dropdownTimeoutRef.current);
-          dropdownTimeoutRef.current = null;
-        }
-
-        // Use navigate with proper error handling
         navigate(href);
-
-        // Reset loading state after a short delay
+        // Reset navigation state after successful navigation
         setTimeout(() => {
-          setIsNavigating(false);
-        }, 100);
+          setNavigationState((prev) => ({ ...prev, isNavigating: false }));
+        }, STYLE_CONSTANTS.TIMEOUTS.navigation);
       } catch (error) {
-        setIsNavigating(false);
-        // Navigation failed, falling back to window.location
-        // Navigation failed, using fallback - log in development only
-        if (process.env.NODE_ENV === "development") {
-          // eslint-disable-next-line no-console
-          console.warn("Navigation failed, using fallback", error);
-        }
-
-        // Fallback to direct navigation
-        try {
-          window.location.href = href;
-        } catch (fallbackError) {
-          // Complete navigation failure - log in development only
-          if (process.env.NODE_ENV === "development") {
-            // eslint-disable-next-line no-console
-            console.error("Complete navigation failure", fallbackError);
-          }
-          // Last resort - reload to home
-          window.location.href = "/";
-        }
+        // Fallback navigation without console logging
+        setNavigationState((prev) => ({ ...prev, isNavigating: false }));
+        window.location.href = href;
       }
     },
-    [navigate, isNavigating]
+    [navigate, navigationState.isNavigating]
   );
 
-  // Safe search function with proper error handling
+  // Optimized search handler with proper error handling
   const handleSearch = useCallback(
     (query: string) => {
-      if (!query.trim() || isNavigating) return;
+      const trimmedQuery = query.trim();
+      if (!trimmedQuery || navigationState.isNavigating) return;
+
+      setNavigationState((prev) => ({ ...prev, isNavigating: true }));
+      setSearchState((prev) => ({ ...prev, isFocused: false }));
 
       try {
-        setIsNavigating(true);
-        setIsSearchFocused(false);
-
-        const searchUrl = `/search?q=${encodeURIComponent(query.trim())}`;
+        const searchUrl = `/search?q=${encodeURIComponent(trimmedQuery)}`;
         navigate(searchUrl);
 
-        // Reset navigation state
-        setTimeout(() => setIsNavigating(false), 200);
+        setTimeout(() => {
+          setNavigationState((prev) => ({ ...prev, isNavigating: false }));
+        }, STYLE_CONSTANTS.TIMEOUTS.search);
       } catch (error) {
-        setIsNavigating(false);
-        // Search navigation failed - log in development only
-        if (process.env.NODE_ENV === "development") {
-          // eslint-disable-next-line no-console
-          console.warn("Search navigation failed", error);
-        }
-
-        // Fallback to direct URL navigation
-        try {
-          window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
-        } catch (fallbackError) {
-          // Search fallback failed - log in development only
-          if (process.env.NODE_ENV === "development") {
-            // eslint-disable-next-line no-console
-            console.error("Search fallback failed", fallbackError);
-          }
-        }
+        // Fallback navigation without console logging
+        setNavigationState((prev) => ({ ...prev, isNavigating: false }));
+        window.location.href = `/search?q=${encodeURIComponent(trimmedQuery)}`;
       }
     },
-    [navigate, isNavigating]
+    [navigate, navigationState.isNavigating]
   );
 
-  // Enhanced scroll detection with proper throttling and cleanup
+  // Scroll state update function
+  const updateScrollState = useCallback(() => {
+    const scrollTop = window.scrollY;
+    const shouldBeScrolled = scrollTop > 20;
+    const navHeight =
+      shouldBeScrolled ?
+        STYLE_CONSTANTS.NAV_HEIGHTS.compact
+      : STYLE_CONSTANTS.NAV_HEIGHTS.expanded;
+
+    setNavigationState((prev) =>
+      prev.isScrolled !== shouldBeScrolled ?
+        { ...prev, isScrolled: shouldBeScrolled }
+      : prev
+    );
+
+    document.documentElement.style.setProperty("--nav-height", navHeight);
+  }, []);
+
+  // Highly optimized scroll handler with RAF throttling
   useEffect(() => {
-    let ticking = false;
-    let rafId: number | null = null;
-
     const handleScroll = () => {
-      if (!ticking) {
-        rafId = window.requestAnimationFrame(() => {
-          try {
-            const scrollTop = window.scrollY;
-            const shouldBeScrolled = scrollTop > 20;
+      if (scrollRafRef.current) return;
 
-            // Only update state if it actually changed to prevent unnecessary re-renders
-            setIsScrolled((prev) =>
-              prev !== shouldBeScrolled ? shouldBeScrolled : prev
-            );
-
-            // Update CSS custom property for scroll-aware spacing
-            document.documentElement.style.setProperty(
-              "--nav-height",
-              shouldBeScrolled ? "72px" : "88px" // py-2 + content ≈ 72px, py-4 + content ≈ 88px
-            );
-          } catch (error) {
-            // Scroll handler error - log in development only
-            if (process.env.NODE_ENV === "development") {
-              // eslint-disable-next-line no-console
-              console.warn("Scroll handler error", error);
-            }
-          } finally {
-            ticking = false;
-            rafId = null;
-          }
-        });
-        ticking = true;
-      }
+      scrollRafRef.current = requestAnimationFrame(() => {
+        updateScrollState();
+        scrollRafRef.current = null;
+      });
     };
 
-    // Set initial nav height
-    document.documentElement.style.setProperty("--nav-height", "88px");
-
-    // Initial scroll check
-    handleScroll();
+    // Initialize scroll state
+    updateScrollState();
 
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      if (rafId) {
-        window.cancelAnimationFrame(rafId);
+      if (scrollRafRef.current) {
+        cancelAnimationFrame(scrollRafRef.current);
       }
     };
-  }, []);
+  }, [updateScrollState]);
 
-  // Debounced dropdown handlers to prevent hanging
-  const handleDropdownEnter = useCallback((itemLabel: string) => {
+  // Enhanced dropdown handlers with immediate response and mutual exclusion
+  const dropdownHandlers = useMemo(
+    () => ({
+      enter: (itemLabel: string) => {
+        if (dropdownTimeoutRef.current) {
+          clearTimeout(dropdownTimeoutRef.current);
+          dropdownTimeoutRef.current = null;
+        }
+        // Close any other open dropdown and open this one
+        setNavigationState((prev) => ({
+          ...prev,
+          activeDropdown: itemLabel,
+          hoveredDropdown: itemLabel,
+        }));
+      },
+
+      leave: () => {
+        setNavigationState((prev) => ({ ...prev, hoveredDropdown: null }));
+        if (dropdownTimeoutRef.current) {
+          clearTimeout(dropdownTimeoutRef.current);
+        }
+        dropdownTimeoutRef.current = setTimeout(() => {
+          setNavigationState((prev) => ({ ...prev, activeDropdown: null }));
+        }, STYLE_CONSTANTS.TIMEOUTS.dropdown);
+      },
+
+      toggle: (itemLabel: string) => {
+        // Ensure only one dropdown is open at a time
+        setNavigationState((prev) => ({
+          ...prev,
+          activeDropdown: prev.activeDropdown === itemLabel ? null : itemLabel,
+          hoveredDropdown: prev.activeDropdown === itemLabel ? null : itemLabel,
+        }));
+      },
+    }),
+    []
+  );
+
+  // Outside click handler function
+  const handleOutsideClick = useCallback((event: MouseEvent) => {
+    if (navRef.current?.contains(event.target as Node)) return;
+
+    setNavigationState((prev) => ({
+      ...prev,
+      activeDropdown: null,
+      hoveredDropdown: null,
+    }));
+    setSearchState((prev) => ({ ...prev, isFocused: false }));
+
     if (dropdownTimeoutRef.current) {
       clearTimeout(dropdownTimeoutRef.current);
+      dropdownTimeoutRef.current = null;
     }
-    setActiveDropdown(itemLabel);
   }, []);
 
-  const handleDropdownLeave = useCallback(() => {
-    if (dropdownTimeoutRef.current) {
-      clearTimeout(dropdownTimeoutRef.current);
-    }
-    dropdownTimeoutRef.current = setTimeout(() => {
-      setActiveDropdown(null);
-    }, 150); // Small delay to prevent flickering
-  }, []);
-
-  // Close dropdown when clicking outside with proper cleanup
+  // Consolidated outside click handler
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      try {
-        if (
-          navRef.current &&
-          event.target &&
-          !navRef.current.contains(event.target as Node)
-        ) {
-          setActiveDropdown(null);
-          setIsSearchFocused(false);
-          if (dropdownTimeoutRef.current) {
-            clearTimeout(dropdownTimeoutRef.current);
-            dropdownTimeoutRef.current = null;
-          }
-        }
-      } catch (error) {
-        // Click outside handler error - log in development only
-        if (process.env.NODE_ENV === "development") {
-          // eslint-disable-next-line no-console
-          console.warn("Click outside handler error", error);
-        }
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside, {
+    document.addEventListener("mousedown", handleOutsideClick, {
       passive: true,
     });
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [handleOutsideClick]);
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      if (dropdownTimeoutRef.current) {
-        clearTimeout(dropdownTimeoutRef.current);
-        dropdownTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
-  // Reset navigation state on route change
+  // Route change cleanup
   useEffect(() => {
-    setIsNavigating(false);
-    setActiveDropdown(null);
-    setIsSearchFocused(false);
+    setNavigationState((prev) => ({
+      ...prev,
+      isNavigating: false,
+      activeDropdown: null,
+      hoveredDropdown: null,
+    }));
+    setSearchState((prev) => ({ ...prev, isFocused: false }));
+
     if (dropdownTimeoutRef.current) {
       clearTimeout(dropdownTimeoutRef.current);
       dropdownTimeoutRef.current = null;
     }
   }, [location.pathname]);
 
-  // Comprehensive cleanup on unmount to prevent memory leaks
+  // Comprehensive cleanup on unmount
   useEffect(() => {
     return () => {
-      // Clear all timeouts
       if (dropdownTimeoutRef.current) {
         clearTimeout(dropdownTimeoutRef.current);
-        dropdownTimeoutRef.current = null;
       }
-
-      // Reset all state
-      setIsNavigating(false);
-      setActiveDropdown(null);
-      setIsSearchFocused(false);
-      setSearchQuery("");
+      if (scrollRafRef.current) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
     };
   }, []);
 
-  // Streamlined navigation focused on core user journeys
-  const navigationItems = getNavigationItems();
-  const searchSuggestions = getSearchSuggestions();
+  // Enhanced class calculations with better transparency handling - no borders
+  const navClasses = useMemo(
+    () =>
+      cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out",
+        shouldBeTransparent ? "bg-transparent" : "bg-white/90 backdrop-blur-xl",
+        navigationState.isScrolled ? "py-2" : "py-4",
+        className
+      ),
+    [shouldBeTransparent, navigationState.isScrolled, className]
+  );
+
+  const buttonBaseClasses = useMemo(
+    () => ({
+      hover:
+        shouldBeTransparent ?
+          STYLE_CONSTANTS.TRANSPARENT_HOVER
+        : STYLE_CONSTANTS.BUTTON_HOVER,
+      color:
+        shouldBeTransparent ?
+          STYLE_CONSTANTS.TRANSPARENT_LIGHT
+        : STYLE_CONSTANTS.DEFAULT_DARK,
+    }),
+    [shouldBeTransparent]
+  );
 
   return (
-    <nav
-      ref={navRef}
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out",
-        shouldBeTransparent ?
-          "bg-transparent"
-        : "bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100",
-        isScrolled && "py-2",
-        !isScrolled && "py-4",
-        className
-      )}
-      style={{
-        // Ensure navigation doesn't interfere with content below
-        willChange:
-          isScrolled ? "background-color, backdrop-filter, box-shadow" : "auto",
-      }}
-    >
+    <nav ref={navRef} className={navClasses}>
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between min-h-[64px]">
-          {/* Logo and Wordmark - Single clickable unit */}
+          {/* Logo Section - Optimized for accessibility */}
           <div className="flex-shrink-0 min-w-[200px]">
             <button
               type="button"
-              className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity duration-200 bg-transparent border-none p-1 -m-1 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className={cn(
+                "flex items-center gap-2.5 cursor-pointer transition-all duration-200 bg-transparent border-none p-1 -m-1 rounded-md focus:outline-none focus:ring-2",
+                shouldBeTransparent ?
+                  "hover:bg-white/10 focus:ring-white/30"
+                : "hover:bg-primary/5 focus:ring-primary/20"
+              )}
               onClick={() => handleNavigation("/")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleNavigation("/");
-                }
-              }}
+              disabled={navigationState.isNavigating}
               aria-label="Go to homepage"
             >
               <Logo
@@ -449,194 +477,232 @@ export function Navigation({
             </button>
           </div>
 
-          {/* Desktop Navigation with improved spacing */}
+          {/* Desktop Navigation - Enhanced with better responsiveness */}
           <div className="hidden lg:flex items-center space-x-1 flex-1 justify-center max-w-xl mx-12">
-            {navigationItems.map((item) => (
+            {NAVIGATION_ITEMS.map((item) => (
               <div key={item.label} className="relative">
-                {item.dropdown ?
+                {hasDropdown(item) ?
                   <button
                     type="button"
-                    disabled={isNavigating}
+                    disabled={navigationState.isNavigating}
                     className={cn(
-                      "flex items-center space-x-1.5 px-3 py-2 rounded-lg transition-all duration-200 font-medium text-sm",
-                      shouldBeTransparent ? TRANSPARENT_BUTTON_HOVER_CLASSES : BUTTON_HOVER_CLASSES,
-                      BUTTON_DISABLED_CLASSES,
-                      shouldBeTransparent ?
-                        TRANSPARENT_LIGHT_CLASSES
-                      : DEFAULT_DARK_CLASSES,
-                      activeDropdown === item.label && (shouldBeTransparent ? "bg-white/10" : "bg-gray-100")
+                      "flex items-center space-x-1.5 px-4 py-2.5 rounded-lg transition-all duration-200 font-medium text-sm relative",
+                      buttonBaseClasses.hover,
+                      buttonBaseClasses.color,
+                      STYLE_CONSTANTS.BUTTON_DISABLED,
+                      (navigationState.activeDropdown === item.label ||
+                        navigationState.hoveredDropdown === item.label) &&
+                        (shouldBeTransparent ?
+                          "bg-white/15 backdrop-blur-sm"
+                        : "bg-primary/10 text-primary")
                     )}
-                    onClick={() =>
-                      setActiveDropdown(
-                        activeDropdown === item.label ? null : item.label
-                      )
+                    onClick={() => dropdownHandlers.toggle(item.label)}
+                    onMouseEnter={() => dropdownHandlers.enter(item.label)}
+                    onMouseLeave={dropdownHandlers.leave}
+                    aria-expanded={
+                      navigationState.activeDropdown === item.label ?
+                        "true"
+                      : "false"
                     }
-                    onMouseEnter={() => handleDropdownEnter(item.label)}
-                    onMouseLeave={handleDropdownLeave}
+                    aria-haspopup="true"
                   >
                     <span>{item.label}</span>
                     <ChevronDown
                       className={cn(
-                        "w-3.5 h-3.5 transition-transform duration-200",
-                        activeDropdown === item.label && "rotate-180"
+                        "w-3.5 h-3.5 transition-all duration-200",
+                        navigationState.activeDropdown === item.label &&
+                          "rotate-180",
+                        navigationState.hoveredDropdown === item.label &&
+                          !shouldBeTransparent &&
+                          "text-primary"
                       )}
                     />
                   </button>
                 : <button
                     type="button"
-                    disabled={isNavigating}
+                    disabled={navigationState.isNavigating}
                     onClick={(e) => handleNavigation(item.href, e)}
                     className={cn(
-                      "px-3 py-2 rounded-lg transition-all duration-200 font-medium text-sm",
-                      shouldBeTransparent ? TRANSPARENT_BUTTON_HOVER_CLASSES : BUTTON_HOVER_CLASSES,
-                      BUTTON_DISABLED_CLASSES,
-                      shouldBeTransparent ?
-                        TRANSPARENT_LIGHT_CLASSES
-                      : DEFAULT_DARK_CLASSES
+                      "px-4 py-2.5 rounded-lg transition-all duration-200 font-medium text-sm",
+                      buttonBaseClasses.hover,
+                      buttonBaseClasses.color,
+                      STYLE_CONSTANTS.BUTTON_DISABLED
                     )}
                   >
                     {item.label}
                   </button>
                 }
 
-                {/* Streamlined Dropdown Menu */}
-                {item.dropdown && activeDropdown === item.label && (
-                  <div
-                    className="absolute top-full left-0 mt-2 w-60 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50"
-                    onMouseEnter={() => {
-                      if (dropdownTimeoutRef.current) {
-                        clearTimeout(dropdownTimeoutRef.current);
-                      }
-                    }}
-                    onMouseLeave={handleDropdownLeave}
-                  >
-                    {item.dropdown.map((dropdownItem) => (
-                      <button
-                        key={dropdownItem.href}
-                        type="button"
-                        disabled={isNavigating}
-                        onClick={(e) => handleNavigation(dropdownItem.href, e)}
-                        className={cn(
-                          "group block w-full text-left px-3 py-2.5 hover:bg-gray-50 transition-colors duration-150 mx-1 rounded-lg",
-                          BUTTON_DISABLED_CLASSES,
-                          dropdownItem.featured &&
-                            "bg-gradient-to-r from-primary/5 to-primary/10 border-l-2 border-primary ml-1",
-                          dropdownItem.highlight &&
-                            "bg-gradient-to-r from-secondary/5 to-secondary/10 border-l-2 border-secondary ml-1"
-                        )}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div
-                              className={cn(
-                                "font-medium text-sm transition-colors duration-150",
-                                dropdownItem.featured ? "text-primary" : (
-                                  "text-gray-900 group-hover:text-primary"
-                                ),
-                                dropdownItem.highlight && "text-secondary"
-                              )}
-                            >
-                              {dropdownItem.label}
-                              {dropdownItem.featured && (
-                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary text-white">
-                                  Popular
-                                </span>
-                              )}
-                              {dropdownItem.highlight && (
-                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground">
-                                  Sell
-                                </span>
-                              )}
+                {/* Enhanced Dropdown Menu with reduced width and better styling */}
+                {hasDropdown(item) &&
+                  navigationState.activeDropdown === item.label && (
+                    <div
+                      className="absolute top-full left-0 mt-2 w-64 bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 py-3 z-50 animate-in slide-in-from-top-2 duration-200"
+                      onMouseEnter={() => dropdownHandlers.enter(item.label)}
+                      onMouseLeave={dropdownHandlers.leave}
+                      role="menu"
+                      aria-orientation="vertical"
+                      tabIndex={-1}
+                    >
+                      {item.dropdown.map((dropdownItem) => (
+                        <button
+                          key={dropdownItem.href}
+                          type="button"
+                          disabled={navigationState.isNavigating}
+                          onClick={(e) =>
+                            handleNavigation(dropdownItem.href, e)
+                          }
+                          className={cn(
+                            "group block w-full text-left px-4 py-3 transition-all duration-200 mx-2 rounded-lg",
+                            "hover:bg-primary/8 hover:scale-[1.02] hover:shadow-sm",
+                            STYLE_CONSTANTS.BUTTON_DISABLED,
+                            dropdownItem.featured &&
+                              "bg-gradient-to-r from-primary/8 to-primary/12 border-l-3 border-primary ml-2",
+                            dropdownItem.highlight &&
+                              "bg-gradient-to-r from-secondary/8 to-secondary/12 border-l-3 border-secondary ml-2"
+                          )}
+                          role="menuitem"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div
+                                className={cn(
+                                  "font-semibold text-sm transition-all duration-200 mb-1",
+                                  "text-primary group-hover:text-primary/90", // All subheadings use primary color
+                                  dropdownItem.highlight &&
+                                    "text-secondary group-hover:text-secondary/90"
+                                )}
+                              >
+                                {dropdownItem.label}
+                                {dropdownItem.featured && (
+                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                                    Popular
+                                  </span>
+                                )}
+                                {dropdownItem.highlight && (
+                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary/20 text-secondary border border-secondary/30">
+                                    Sell
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-600 group-hover:text-gray-700 transition-colors duration-200">
+                                {dropdownItem.description}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-600 mt-0.5">
-                              {dropdownItem.description}
+                            <div className="ml-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform group-hover:translate-x-1">
+                              <span
+                                className={cn(
+                                  "text-xs font-semibold inline-flex items-center",
+                                  dropdownItem.highlight ? "text-secondary" : (
+                                    "text-primary"
+                                  )
+                                )}
+                              >
+                                {dropdownItem.cta}
+                                <svg
+                                  className="w-3 h-3 ml-1"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 5l7 7-7 7"
+                                  />
+                                </svg>
+                              </span>
                             </div>
                           </div>
-                          <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <span
-                              className={`text-xs font-medium ${dropdownItem.highlight ? "text-secondary" : "text-primary"}`}
-                            >
-                              {dropdownItem.cta} →
-                            </span>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
               </div>
             ))}
           </div>
 
-          {/* Search and Actions */}
+          {/* Enhanced Search Section with better transparency */}
           <div className="hidden lg:flex items-center space-x-3 flex-shrink-0 min-w-[320px] justify-end">
-            {/* Enhanced Search */}
             <div className="relative">
               <div className="relative">
-                <Search className={cn(
-                  "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4",
-                  shouldBeTransparent ? "text-white/70" : "text-gray-400"
-                )} />
+                <Search
+                  className={cn(
+                    "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors duration-200",
+                    shouldBeTransparent ? "text-white/80" : "text-gray-400"
+                  )}
+                />
                 <input
                   type="search"
                   placeholder="Search properties..."
-                  value={searchQuery}
-                  disabled={isNavigating}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => !isNavigating && setIsSearchFocused(true)}
+                  value={searchState.query}
+                  disabled={navigationState.isNavigating}
+                  onChange={(e) =>
+                    setSearchState((prev) => ({
+                      ...prev,
+                      query: e.target.value,
+                    }))
+                  }
+                  onFocus={() =>
+                    !navigationState.isNavigating &&
+                    setSearchState((prev) => ({ ...prev, isFocused: true }))
+                  }
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && searchQuery && !isNavigating) {
-                      handleSearch(searchQuery);
+                    if (
+                      e.key === "Enter" &&
+                      searchState.query &&
+                      !navigationState.isNavigating
+                    ) {
+                      handleSearch(searchState.query);
+                    }
+                    if (e.key === "Escape") {
+                      setSearchState((prev) => ({ ...prev, isFocused: false }));
                     }
                   }}
                   className={cn(
-                    "w-44 pl-10 pr-4 py-2 rounded-lg border transition-all duration-200 text-sm",
+                    "w-44 pl-10 pr-4 py-2.5 rounded-lg border transition-all duration-200 text-sm",
                     shouldBeTransparent ?
-                      "bg-white/10 border-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40"
-                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
-                    BUTTON_DISABLED_CLASSES
+                      "bg-white/10 backdrop-blur-sm border-white/30 text-white placeholder-white/80 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/50 focus:bg-white/15"
+                    : "bg-white/90 backdrop-blur-sm border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white",
+                    STYLE_CONSTANTS.BUTTON_DISABLED
                   )}
+                  aria-label="Search for properties"
                 />
               </div>
 
-              {/* Search Suggestions */}
-              {isSearchFocused && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-50">
-                  {searchQuery ?
+              {/* Enhanced Search Suggestions */}
+              {searchState.isFocused && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 py-2 z-50 animate-in slide-in-from-top-2 duration-200">
+                  {searchState.query ?
                     <button
                       type="button"
-                      disabled={isNavigating}
-                      className={cn(
-                        DROPDOWN_BUTTON_CLASSES,
-                        BUTTON_DISABLED_CLASSES
-                      )}
-                      onClick={() => handleSearch(searchQuery)}
+                      disabled={navigationState.isNavigating}
+                      className="w-full text-left px-4 py-3 hover:bg-primary/5 hover:text-primary transition-all duration-200 mx-2 rounded-lg group"
+                      onClick={() => handleSearch(searchState.query)}
                     >
                       <div className="flex items-center">
-                        <Search className="w-4 h-4 text-gray-400 mr-2.5" />
-                        <span className="text-gray-900 text-sm">
-                          Search for &quot;{searchQuery}&quot;
+                        <Search className="w-4 h-4 text-gray-400 group-hover:text-primary mr-3 transition-colors duration-200" />
+                        <span className="text-gray-900 group-hover:text-primary text-sm font-medium transition-colors duration-200">
+                          Search for &quot;{searchState.query}&quot;
                         </span>
                       </div>
                     </button>
                   : <>
-                      <div className="px-3 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      <div className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wide">
                         Popular Searches
                       </div>
-                      {searchSuggestions.map((suggestion) => (
+                      {SEARCH_SUGGESTIONS.map((suggestion) => (
                         <button
                           key={suggestion}
                           type="button"
-                          disabled={isNavigating}
-                          className={cn(
-                            DROPDOWN_BUTTON_CLASSES,
-                            BUTTON_DISABLED_CLASSES
-                          )}
+                          disabled={navigationState.isNavigating}
+                          className="w-full text-left px-4 py-3 hover:bg-primary/5 hover:text-primary transition-all duration-200 mx-2 rounded-lg group"
                           onClick={() => handleSearch(suggestion)}
                         >
                           <div className="flex items-center">
-                            <Search className="w-4 h-4 text-gray-400 mr-2.5" />
-                            <span className="text-gray-900 text-sm">
+                            <Search className="w-4 h-4 text-gray-400 group-hover:text-primary mr-3 transition-colors duration-200" />
+                            <span className="text-gray-900 group-hover:text-primary text-sm transition-colors duration-200">
                               {suggestion}
                             </span>
                           </div>
@@ -648,143 +714,81 @@ export function Navigation({
               )}
             </div>
 
-            {/* B2B API Access Button */}
+            {/* Enhanced B2B API Access */}
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleNavigation("/api-demo")}
-              disabled={isNavigating}
-              className="items-center space-x-1.5 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 text-xs font-medium px-3 py-1.5"
+              disabled={navigationState.isNavigating}
+              className={cn(
+                "items-center space-x-1.5 text-xs font-medium px-3 py-2 transition-all duration-200",
+                shouldBeTransparent ?
+                  "border-white/30 text-white hover:bg-white/10 hover:border-white/40 backdrop-blur-sm"
+                : "border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/40"
+              )}
             >
               <Building2 className="w-3.5 h-3.5" />
               <span>API</span>
             </Button>
 
-            {/* Separator */}
-            <div className="h-5 w-px bg-gray-300" />
+            <div
+              className={cn(
+                "h-5 w-px transition-colors duration-200",
+                shouldBeTransparent ? "bg-white/30" : "bg-gray-300"
+              )}
+            />
 
-            {/* User Authentication/Dashboard Links */}
-            {/* For MVP demo - showing login/register buttons */}
-            {
-              // Authentication state - currently showing unauthenticated state for MVP
-              // eslint-disable-next-line no-constant-condition
-              false ?
-                // Authenticated user menu
-                <div className="relative">
-                  <button
-                    type="button"
-                    disabled={isNavigating}
-                    className={cn(
-                      "flex items-center space-x-1.5 px-2 py-1.5 rounded-lg transition-all duration-200",
-                      shouldBeTransparent ? TRANSPARENT_BUTTON_HOVER_CLASSES : BUTTON_HOVER_CLASSES,
-                      BUTTON_DISABLED_CLASSES,
-                      shouldBeTransparent ?
-                        TRANSPARENT_LIGHT_CLASSES
-                      : DEFAULT_DARK_CLASSES
-                    )}
-                    onClick={() =>
-                      setActiveDropdown(
-                        activeDropdown === "user" ? null : "user"
-                      )
-                    }
-                  >
-                    <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-medium">U</span>
-                    </div>
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-
-                  {/* User Dropdown */}
-                  {activeDropdown === "user" && (
-                    <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-50">
-                      <button
-                        type="button"
-                        disabled={isNavigating}
-                        onClick={() => handleNavigation("/dashboard")}
-                        className={cn(
-                          DROPDOWN_BUTTON_CLASSES,
-                          BUTTON_DISABLED_CLASSES
-                        )}
-                      >
-                        <div className="font-medium text-sm text-gray-900">
-                          Dashboard
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isNavigating}
-                        onClick={() => handleNavigation("/inbox")}
-                        className={cn(
-                          DROPDOWN_BUTTON_CLASSES,
-                          BUTTON_DISABLED_CLASSES
-                        )}
-                      >
-                        <div className="font-medium text-sm text-gray-900">
-                          Messages
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isNavigating}
-                        onClick={() => handleNavigation("/team")}
-                        className={cn(
-                          DROPDOWN_BUTTON_CLASSES,
-                          BUTTON_DISABLED_CLASSES
-                        )}
-                      >
-                        <div className="font-medium text-sm text-gray-900">
-                          Team
-                        </div>
-                      </button>
-                      <div className="border-t border-gray-100 my-1.5 mx-2"></div>
-                      <button type="button" className={DROPDOWN_BUTTON_CLASSES}>
-                        <div className="font-medium text-sm text-gray-900">
-                          Sign Out
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </div>
-                // Unauthenticated user buttons
-              : <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={isNavigating}
-                    onClick={() => handleNavigation("/auth/login")}
-                    className="text-sm font-medium px-4 py-2"
-                  >
-                    {isNavigating ? "Loading..." : "Login"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={isNavigating}
-                    onClick={() => handleNavigation("/auth/register")}
-                    className="text-sm font-medium px-4 py-2"
-                  >
-                    {isNavigating ? "Loading..." : "Get Started"}
-                  </Button>
-                </>
-
-            }
+            {/* Enhanced Authentication Buttons */}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={navigationState.isNavigating}
+              onClick={() => handleNavigation("/auth/login")}
+              className={cn(
+                "text-sm font-medium px-4 py-2 transition-all duration-200",
+                shouldBeTransparent ?
+                  "border-white/30 text-white hover:bg-white/10 hover:border-white/40 backdrop-blur-sm"
+                : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+              )}
+            >
+              {navigationState.isNavigating ? "Loading..." : "Login"}
+            </Button>
+            <Button
+              size="sm"
+              disabled={navigationState.isNavigating}
+              onClick={() => handleNavigation("/auth/register")}
+              className={cn(
+                "text-sm font-medium px-4 py-2 transition-all duration-200",
+                shouldBeTransparent && "backdrop-blur-sm"
+              )}
+            >
+              {navigationState.isNavigating ? "Loading..." : "Get Started"}
+            </Button>
           </div>
 
-          {/* Tablet Navigation - Simplified */}
+          {/* Responsive Navigation */}
           <div className="hidden md:flex lg:hidden items-center space-x-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={isNavigating}
+              disabled={navigationState.isNavigating}
               onClick={() => handleNavigation("/auth/login")}
-              className="text-xs px-3 py-1.5"
+              className={cn(
+                "text-xs px-3 py-1.5 transition-all duration-200",
+                shouldBeTransparent &&
+                  "border-white/30 text-white hover:bg-white/10 backdrop-blur-sm"
+              )}
             >
               Login
             </Button>
             <Button
               size="sm"
-              disabled={isNavigating}
+              disabled={navigationState.isNavigating}
               onClick={() => handleNavigation("/auth/register")}
-              className="text-xs px-3 py-1.5"
+              className={cn(
+                "text-xs px-3 py-1.5 transition-all duration-200",
+                shouldBeTransparent && "backdrop-blur-sm"
+              )}
             >
               Get Started
             </Button>
@@ -793,7 +797,6 @@ export function Navigation({
             </SafeNavigation>
           </div>
 
-          {/* Mobile Menu */}
           <div className="md:hidden flex items-center">
             <SafeNavigation fallback={<MobileNavFallback />}>
               <MobileNav />

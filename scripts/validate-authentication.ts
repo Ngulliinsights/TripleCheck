@@ -830,7 +830,7 @@ class AuthenticationValidator {
       const reportPath = join(process.cwd(), 'temp-files', 'auth-validation-report.json');
       writeFileSync(reportPath, JSON.stringify(report, null, 2));
 
-      console.log('\n' + '='.repeat(80));
+      console.log(`\n${  '='.repeat(80)}`);
       console.log(report.summary);
       console.log('='.repeat(80));
       console.log(`\n📄 Detailed report saved to: ${reportPath}`);

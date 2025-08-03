@@ -1,6 +1,7 @@
-import React from 'react';
-import { Button } from './ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import React from "react";
+
+import { Button } from "./ui/button";
 
 interface PaginationProps {
   currentPage: number;
@@ -13,21 +14,23 @@ export const Pagination: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
   onPageChange,
-  className = ''
+  className = "",
 }) => {
   const getVisiblePages = () => {
     const delta = 2;
     const range = [];
     const rangeWithDots = [];
 
-    for (let i = Math.max(2, currentPage - delta); 
-         i <= Math.min(totalPages - 1, currentPage + delta); 
-         i++) {
+    for (
+      let i = Math.max(2, currentPage - delta);
+      i <= Math.min(totalPages - 1, currentPage + delta);
+      i++
+    ) {
       range.push(i);
     }
 
     if (currentPage - delta > 2) {
-      rangeWithDots.push(1, '...');
+      rangeWithDots.push(1, "...");
     } else {
       rangeWithDots.push(1);
     }
@@ -35,7 +38,7 @@ export const Pagination: React.FC<PaginationProps> = ({
     rangeWithDots.push(...range);
 
     if (currentPage + delta < totalPages - 1) {
-      rangeWithDots.push('...', totalPages);
+      rangeWithDots.push("...", totalPages);
     } else {
       rangeWithDots.push(totalPages);
     }
@@ -61,18 +64,17 @@ export const Pagination: React.FC<PaginationProps> = ({
       <div className="flex items-center gap-1">
         {getVisiblePages().map((page, index) => (
           <React.Fragment key={index}>
-            {page === '...' ? (
+            {page === "..." ?
               <span className="px-2 py-1 text-muted-foreground">...</span>
-            ) : (
-              <Button
-                variant={currentPage === page ? 'default' : 'outline'}
+            : <Button
+                variant={currentPage === page ? "default" : "outline"}
                 size="sm"
                 onClick={() => onPageChange(page as number)}
                 className="min-w-[40px]"
               >
                 {page}
               </Button>
-            )}
+            }
           </React.Fragment>
         ))}
       </div>

@@ -1,8 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Shield,
   Mail,
@@ -16,18 +12,20 @@ import {
   Info,
   AlertTriangle,
 } from "lucide-react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useForm } from "react-hook-form";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { z } from "zod";
 import zxcvbn from "zxcvbn";
 
-import { Button } from "../../shared/components/ui/button";
-import { Input } from "../../shared/components/ui/input";
 import { Alert, AlertDescription } from "../../shared/components/ui/alert";
+import { Button } from "../../shared/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "../../shared/components/ui/card";
-import { Progress } from "../../shared/components/ui/progress";
 import {
   Form,
   FormControl,
@@ -36,6 +34,8 @@ import {
   FormLabel,
   FormMessage,
 } from "../../shared/components/ui/form";
+import { Input } from "../../shared/components/ui/input";
+import { Progress } from "../../shared/components/ui/progress";
 import { useRequestPasswordReset, useResetPassword } from "../hooks/useAuth";
 
 // Simple logging utility to replace console statements
@@ -122,7 +122,7 @@ const resetPasswordSchema = z
 // Utility functions
 const createSimpleHash = (input: string): string => {
   // Simple hash for demo - in production, use proper hashing like bcrypt
-  if (typeof window !== "undefined" && typeof window.btoa !== "undefined") {
+  if (typeof window?.btoa !== "undefined") {
     return window.btoa(input);
   }
   // Fallback for environments without btoa

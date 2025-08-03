@@ -2,8 +2,8 @@
  * System health checker to validate that all critical components are working
  */
 
-import { queryClient } from "../api/queryClient";
 import { parseError, logError } from "../../shared/utils/error-handling";
+import { queryClient } from "../api/queryClient";
 
 export interface HealthCheck {
   name: string;

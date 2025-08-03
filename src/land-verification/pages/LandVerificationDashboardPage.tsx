@@ -1,19 +1,21 @@
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@shared/components/ui/dialog';
+import { Skeleton } from '@shared/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+
 import { 
   LandVerificationDashboard,
   VerificationProgressTracker,
   RiskAssessmentDisplay,
   ExpertCoordinationInterface
 } from '../components';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@shared/components/ui/dialog';
-import { Alert, AlertDescription } from '@shared/components/ui/alert';
-import { Skeleton } from '@shared/components/ui/skeleton';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+
 import type { 
   VerificationSessionResponse,
   VerificationLayerWithResults,

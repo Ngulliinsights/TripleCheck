@@ -3,13 +3,13 @@
  * Provides fallback mechanisms when external services are unavailable
  */
 
-import { logger } from "../../logger";
 import { 
   ExternalServiceError, 
   ErrorCode, 
   HttpStatusCode,
   generateCorrelationId 
 } from "../../../src/shared/utils/errors";
+import { logger } from "../../logger";
 
 export interface FallbackConfig {
   enabled: boolean;

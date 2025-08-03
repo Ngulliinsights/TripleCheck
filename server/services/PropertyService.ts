@@ -1,8 +1,10 @@
-import { storage } from "../infrastructure/storage/storage";
+import { z } from "zod";
+
 import type { Property, InsertProperty } from "../../src/shared/schema";
+import { storage } from "../infrastructure/storage/storage";
 import type { PropertyFilter, PaginationParams, PaginatedResult } from "../infrastructure/storage/storage";
 import { PropertyValidationSchemas } from "../middleware/validation.middleware";
-import { z } from "zod";
+
 
 // Property-specific types
 export interface PropertySearchFilters {

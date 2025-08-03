@@ -1,12 +1,13 @@
-import express, { type Express } from "express";
-import fs from "fs/promises";
 import fsSync from "fs";
+import fs from "fs/promises";
+import { type Server } from "http";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
-import vite from "vite";
-import { type Server } from "http";
-// import viteConfig from "../vite.config"; // Removed to fix import issues
+
+import express, { type Express } from "express";
 import { nanoid } from "nanoid";
+import vite from "vite";
+// import viteConfig from "../vite.config"; // Removed to fix import issues
 
 // Calculate __dirname once at module level for better performance
 const __filename = fileURLToPath(import.meta.url);

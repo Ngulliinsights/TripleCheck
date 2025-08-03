@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { Card, CardContent } from '../../shared/components/ui/card';
 import { LoginForm } from '../components/LoginForm';
 import { User } from '../types/auth.types';

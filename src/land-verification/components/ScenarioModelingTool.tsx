@@ -1,15 +1,15 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Input } from '@shared/components/ui/input';
 import { Label } from '@shared/components/ui/label';
+import { Progress } from '@shared/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
 import { Slider } from '@shared/components/ui/slider';
-import { Badge } from '@shared/components/ui/badge';
-import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
 import { Textarea } from '@shared/components/ui/textarea';
-import { Progress } from '@shared/components/ui/progress';
+import { cn } from '@shared/lib/utils';
 import { 
   Play, 
   RotateCcw, 
@@ -26,7 +26,8 @@ import {
   Settings,
   BarChart3
 } from 'lucide-react';
-import { cn } from '@shared/lib/utils';
+import React, { useState, useMemo } from 'react';
+
 import type { 
   RiskFactorWithContext,
   RiskLevel,
@@ -327,7 +328,7 @@ export default function ScenarioModelingTool({
   };
 
   const ScenarioResultCard = ({ result }: { result: ScenarioResult }) => {
-    const riskChange = result.impactAnalysis.riskChange;
+    const {riskChange} = result.impactAnalysis;
     const isImprovement = riskChange < 0;
 
     return (

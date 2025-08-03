@@ -1,6 +1,7 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Express, Request, Response } from "express";
 import fileUpload from "express-fileupload";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
 import { storage } from "../infrastructure/storage/storage";
 
 // Type definitions
@@ -64,7 +65,7 @@ export async function handleDocumentVerification(req: FileUploadRequest, res: Re
     }
 
     // Process uploaded documents
-    const documents = req.files.documents;
+    const {documents} = req.files;
     const documentsList = Array.isArray(documents) ? documents : [documents];
     const documentTypes = Array.isArray(req.body.documentTypes) 
       ? req.body.documentTypes 

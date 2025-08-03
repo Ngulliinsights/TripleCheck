@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { Menu, X, Home, Search } from 'lucide-react';
+import React, { useState } from 'react';
 
 /**
  * Simple fallback mobile navigation for when the main MobileNav crashes

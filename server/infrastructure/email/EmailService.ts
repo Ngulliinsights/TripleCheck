@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+
 import { logger } from '../monitoring/logger';
 
 export interface EmailConfig {
@@ -115,7 +116,7 @@ export class EmailService {
     logger.info('Email fallback - would send:', {
       to: message.to,
       subject: message.subject,
-      preview: message.html.substring(0, 100) + '...',
+      preview: `${message.html.substring(0, 100)  }...`,
     });
 
     // In development, you could also write to a file or database

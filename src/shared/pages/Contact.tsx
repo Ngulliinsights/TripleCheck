@@ -11,6 +11,7 @@ import {
   Users,
   Headphones,
   AlertCircle,
+  Star,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -224,87 +225,91 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-white py-24 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.1\'%3E%3Ccircle cx=\'30\' cy=\'30\' r=\'2\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
-        </div>
+      <section className="relative bg-gradient-brand text-white py-32 overflow-hidden">
+        {/* Enhanced Background Pattern */}
+        <div className="absolute inset-0 bg-dot-pattern opacity-20"></div>
+        <div className="absolute inset-0 gradient-balanced-primary"></div>
+        
+        {/* Floating Elements */}
+        <div className="absolute top-20 left-10 w-32 h-32 bg-white/5 rounded-full blur-xl animate-pulse-glow animation-delay-0"></div>
+        <div className="absolute bottom-20 right-10 w-24 h-24 bg-secondary/10 rounded-full blur-lg animate-pulse-glow animation-delay-300"></div>
 
-        <div className="container mx-auto px-4 relative">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Icon */}
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full mb-6">
-              <MessageCircle className="h-10 w-10 text-white" />
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-5xl mx-auto text-center">
+            {/* Enhanced Icon */}
+            <div className="inline-flex items-center justify-center w-24 h-24 glass-base bg-white/10 rounded-2xl mb-8 hover-glow-warm">
+              <MessageCircle className="h-12 w-12 text-white drop-shadow-lg" />
             </div>
 
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white">
-              Get in Touch with Our Experts
+            <h1 className="text-fluid-3xl md:text-7xl font-bold mb-8 text-enhanced-contrast animate-fade-in">
+              Get in Touch with Our 
+              <span className="text-gradient-premium block mt-2">Expert Team</span>
             </h1>
-            <p className="text-xl md:text-2xl mb-12 text-white/90 max-w-3xl mx-auto leading-relaxed">
-              Have questions about property verification? Need help with our
-              services? Our team of experts is here to help you make informed
-              real estate decisions.
+            <p className="text-fluid-lg md:text-2xl mb-16 text-enhanced-subtle max-w-4xl mx-auto leading-relaxed animate-slide-up animation-delay-100">
+              Have questions about property verification? Need help with our services? 
+              Our team of experts is here to help you make informed real estate decisions.
             </p>
 
-            {/* Quick Contact Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-3xl mx-auto">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">
-                  {"< 4hrs"}
-                </div>
-                <div className="text-white/80">Response Time</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">24/7</div>
-                <div className="text-white/80">Live Chat Support</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">99.8%</div>
-                <div className="text-white/80">Customer Satisfaction</div>
-              </div>
+            {/* Enhanced Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20 max-w-4xl mx-auto">
+              {[
+                { value: "< 4hrs", label: "Response Time", icon: Clock },
+                { value: "24/7", label: "Live Chat Support", icon: Headphones },
+                { value: "99.8%", label: "Customer Satisfaction", icon: Shield }
+              ].map((stat, index) => {
+                const IconComponent = stat.icon;
+                return (
+                  <div key={index} className="glass-base bg-white/10 rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300 enhance-hover-subtle animate-slide-up" style={{animationDelay: `${200 + index * 100}ms`}}>
+                    <IconComponent className="h-8 w-8 text-white/80 mx-auto mb-3" />
+                    <div className="text-3xl font-bold text-white mb-2">{stat.value}</div>
+                    <div className="text-white/70 text-sm font-medium">{stat.label}</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
 
       {/* Contact Methods */}
-      <section className="py-20 -mt-12 relative z-10">
+      <section className="py-24 -mt-16 relative z-10">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {contactMethods.map((method, index) => {
               const IconComponent = method.icon;
               return (
                 <div
                   key={index}
-                  className={`group bg-white rounded-2xl shadow-xl border-2 p-8 text-center hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer ${
-                    method.primary ?
-                      "border-primary ring-2 ring-primary/20"
-                    : "border-gray-100"
+                  className={`group card p-8 text-center cursor-pointer layer-depth-2 enhance-hover animate-slide-up ${
+                    method.primary ? "border-secondary/30 bg-gradient-to-br from-secondary/5 to-secondary/10" : ""
                   }`}
+                  style={{animationDelay: `${index * 150}ms`}}
                 >
-                  <div
-                    className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 transition-colors duration-300 ${
-                      method.primary ?
-                        "bg-gradient-to-br from-primary to-primary/80 text-white"
-                      : "bg-gradient-to-br from-primary/10 to-primary/5 text-primary group-hover:from-primary/20 group-hover:to-primary/10"
-                    }`}
-                  >
-                    <IconComponent className="h-10 w-10" />
+                  <div className={`inline-flex items-center justify-center w-24 h-24 rounded-3xl mb-8 transition-all duration-300 ${
+                    method.primary 
+                      ? "bg-gradient-brand text-white shadow-lg hover-glow-warm" 
+                      : "bg-gradient-to-br from-primary/10 to-secondary/10 text-primary group-hover:from-primary/20 group-hover:to-secondary/20"
+                  }`}>
+                    <IconComponent className="h-12 w-12" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  
+                  <h3 className="text-2xl font-bold text-high-contrast mb-4">
                     {method.title}
                   </h3>
-                  <p className="text-gray-600 mb-4 leading-relaxed">
+                  <p className="text-high-contrast-muted mb-6 leading-relaxed text-lg">
                     {method.description}
                   </p>
-                  <p className="text-sm text-gray-500 mb-8 bg-gray-50 rounded-full px-4 py-2 inline-block">
-                    {method.details}
-                  </p>
+                  
+                  <div className="glass-base bg-muted/50 rounded-xl px-4 py-3 mb-8 inline-block">
+                    <span className="text-sm font-medium text-high-contrast-muted">{method.details}</span>
+                  </div>
+                  
                   <Button
-                    className="w-full group-hover:shadow-lg transition-shadow duration-300"
-                    variant={method.primary ? "default" : "outline"}
+                    className={`w-full font-semibold ${method.primary ? "glass-btn-primary hover-glow-warm" : "btn-glass"}`}
+                    size="lg"
                   >
                     {method.action}
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
               );
@@ -314,20 +319,22 @@ export default function Contact() {
       </section>
 
       {/* Contact Form & Info */}
-      <section className="py-20">
+      <section className="py-24 bg-gradient-to-b from-muted/30 to-background">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 max-w-7xl mx-auto">
             {/* Contact Form */}
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                Send Us a Message
-              </h2>
-              <p className="text-gray-600 mb-8">
-                Fill out the form below and we\u2019ll get back to you as soon
-                as possible.
-              </p>
+            <div className="animate-slide-up">
+              <div className="mb-12">
+                <h2 className="text-fluid-2xl font-bold text-high-contrast mb-6">
+                  Send Us a Message
+                </h2>
+                <p className="text-high-contrast-muted text-lg leading-relaxed">
+                  Fill out the form below and we'll get back to you as soon as possible. 
+                  Our expert team is ready to help with your property verification needs.
+                </p>
+              </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              <form onSubmit={handleSubmit} className="glass-base bg-white/80 rounded-3xl p-8 space-y-8 layer-depth-1" noValidate>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     label="Full Name"
@@ -439,30 +446,42 @@ export default function Contact() {
             </div>
 
             {/* Contact Information */}
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                Contact Information
-              </h2>
+            <div className="animate-slide-up animation-delay-200">
+              <div className="mb-12">
+                <h2 className="text-fluid-2xl font-bold text-high-contrast mb-6">
+                  Contact Information
+                </h2>
+                <p className="text-high-contrast-muted text-lg leading-relaxed">
+                  Visit our offices or reach out through any of our communication channels.
+                </p>
+              </div>
 
               {/* Office Locations */}
-              <div className="space-y-8 mb-12">
+              <div className="space-y-6 mb-12">
                 {officeLocations.map((office, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  <div key={index} className="glass-base bg-white/60 rounded-2xl p-8 hover:bg-white/80 transition-all duration-300 enhance-hover-subtle">
+                    <h3 className="text-xl font-bold text-high-contrast mb-6 flex items-center">
+                      <div className="w-3 h-3 bg-gradient-brand rounded-full mr-3"></div>
                       {office.city} Office
                     </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-start">
-                        <MapPin className="h-5 w-5 text-primary mr-3 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">{office.address}</span>
+                    <div className="space-y-4">
+                      <div className="flex items-start group">
+                        <div className="p-2 bg-primary/10 rounded-lg mr-4 group-hover:bg-primary/20 transition-colors">
+                          <MapPin className="h-5 w-5 text-primary" />
+                        </div>
+                        <span className="text-high-contrast-muted leading-relaxed">{office.address}</span>
                       </div>
-                      <div className="flex items-center">
-                        <Phone className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
-                        <span className="text-gray-700">{office.phone}</span>
+                      <div className="flex items-center group">
+                        <div className="p-2 bg-secondary/10 rounded-lg mr-4 group-hover:bg-secondary/20 transition-colors">
+                          <Phone className="h-5 w-5 text-secondary" />
+                        </div>
+                        <span className="text-high-contrast-muted font-medium">{office.phone}</span>
                       </div>
-                      <div className="flex items-center">
-                        <Clock className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
-                        <span className="text-gray-700">{office.hours}</span>
+                      <div className="flex items-center group">
+                        <div className="p-2 bg-accent/10 rounded-lg mr-4 group-hover:bg-accent/20 transition-colors">
+                          <Clock className="h-5 w-5 text-accent" />
+                        </div>
+                        <span className="text-high-contrast-muted">{office.hours}</span>
                       </div>
                     </div>
                   </div>
@@ -470,39 +489,43 @@ export default function Contact() {
               </div>
 
               {/* Why Choose Us */}
-              <div className="bg-primary/5 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <div className="glass-base bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-8 layer-depth-1">
+                <h3 className="text-xl font-bold text-high-contrast mb-6 flex items-center">
+                  <Star className="h-6 w-6 text-accent mr-3" />
                   Why Choose TripleCheck?
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {[
                     {
                       icon: Shield,
                       title: "Trusted Verification",
                       description: "99.8% accuracy rate with expert validation",
+                      color: "primary"
                     },
                     {
                       icon: Users,
                       title: "Expert Support",
                       description: "Real estate professionals ready to help",
+                      color: "secondary"
                     },
                     {
                       icon: Headphones,
                       title: "24/7 Availability",
                       description: "Support when you need it most",
+                      color: "accent"
                     },
                   ].map((feature, index) => {
                     const IconComponent = feature.icon;
                     return (
-                      <div key={index} className="flex items-start">
-                        <div className="p-2 bg-primary/10 rounded-lg mr-4">
-                          <IconComponent className="h-5 w-5 text-primary" />
+                      <div key={index} className="flex items-start group enhance-hover-subtle">
+                        <div className={`p-3 bg-${feature.color}/10 rounded-xl mr-4 group-hover:bg-${feature.color}/20 transition-colors`}>
+                          <IconComponent className={`h-6 w-6 text-${feature.color}`} />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900">
+                          <h4 className="font-bold text-high-contrast mb-1">
                             {feature.title}
                           </h4>
-                          <p className="text-gray-600 text-sm">
+                          <p className="text-high-contrast-muted leading-relaxed">
                             {feature.description}
                           </p>
                         </div>
@@ -517,41 +540,63 @@ export default function Contact() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            Ready to Verify Your Property?
-          </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Don\u2019t wait for problems to arise. Start your property
-            verification today and invest with confidence.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              onClick={() => {
-                trackNavigation(
-                  "/contact",
-                  BASIC_CHECKS_URL,
-                  "cta_verification"
-                );
-                window.location.href = BASIC_CHECKS_URL;
-              }}
-              className="flex items-center"
-            >
-              Start Verification Now
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => {
-                trackNavigation("/contact", "/pricing", "cta_pricing");
-                window.location.href = "/pricing";
-              }}
-            >
-              View Pricing Plans
-            </Button>
+      <section className="py-24 bg-gradient-brand text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-dot-pattern opacity-10"></div>
+        <div className="absolute top-10 right-10 w-40 h-40 bg-white/5 rounded-full blur-2xl animate-pulse-glow"></div>
+        <div className="absolute bottom-10 left-10 w-32 h-32 bg-secondary/10 rounded-full blur-xl animate-pulse-glow animation-delay-500"></div>
+        
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-fluid-2xl md:text-5xl font-bold mb-8 text-enhanced-contrast">
+              Ready to Verify Your Property?
+            </h2>
+            <p className="text-fluid-lg mb-12 text-enhanced-subtle max-w-3xl mx-auto leading-relaxed">
+              Don't wait for problems to arise. Start your property verification today 
+              and invest with confidence in Kenya's real estate market.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => {
+                  trackNavigation("/contact", BASIC_CHECKS_URL, "cta_verification");
+                  window.location.href = BASIC_CHECKS_URL;
+                }}
+                className="glass-btn-primary px-8 py-4 text-lg font-semibold hover-glow-warm"
+              >
+                <Shield className="mr-3 h-5 w-5" />
+                Start Verification Now
+                <ArrowRight className="ml-3 h-5 w-5" />
+              </Button>
+              
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => {
+                  trackNavigation("/contact", "/pricing", "cta_pricing");
+                  window.location.href = "/pricing";
+                }}
+                className="btn-glass border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg font-semibold"
+              >
+                View Pricing Plans
+              </Button>
+            </div>
+            
+            <div className="mt-12 flex items-center justify-center space-x-8 text-sm text-white/70">
+              <div className="flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                No Setup Fees
+              </div>
+              <div className="flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                30-Day Guarantee
+              </div>
+              <div className="flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Expert Support
+              </div>
+            </div>
           </div>
         </div>
       </section>

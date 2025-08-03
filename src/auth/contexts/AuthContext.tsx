@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+
 import { User } from '../types/auth.types';
 
 interface AuthState {

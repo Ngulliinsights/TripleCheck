@@ -9,6 +9,7 @@
  */
 
 import { writeFileSync, mkdirSync } from 'fs';
+
 import { bugDetector } from '../src/shared/test-utils/bug-detector';
 
 /**

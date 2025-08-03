@@ -69,7 +69,7 @@ export function useB2BMessaging() {
       }
 
       // Determine messaging strategy
-      let showBanner = !isBannerDismissed();
+      const showBanner = !isBannerDismissed();
       let showLeadCapture = false;
       let bannerVariant: 'default' | 'compact' | 'prominent' = 'default';
       let leadCaptureTrigger: 'high_usage' | 'high_value' | 'business_hours' | 'manual' = 'manual';
@@ -118,7 +118,7 @@ export function useB2BMessaging() {
   const trackB2BInteraction = useCallback((action: string, context?: Record<string, any>) => {
     try {
       // Google Analytics tracking
-      if (typeof window !== 'undefined' && window.gtag) {
+      if (window?.gtag) {
         window.gtag('event', 'b2b_interaction', {
           event_category: 'B2B',
           event_label: action,

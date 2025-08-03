@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
-import { logger } from '../infrastructure/monitoring/logger';
-import { db } from '../infrastructure/database/connection';
+
+import { eq, and, or, inArray } from 'drizzle-orm';
+
 import { 
   landVerificationSessions, 
   verificationLayers,
@@ -8,7 +9,9 @@ import {
   expertProfiles,
   expertReports
 } from '../../src/shared/schema';
-import { eq, and, or, inArray } from 'drizzle-orm';
+import { db } from '../infrastructure/database/connection';
+import { logger } from '../infrastructure/monitoring/logger';
+
 
 export interface Expert {
   id: string;

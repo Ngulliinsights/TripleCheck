@@ -1,5 +1,3 @@
-import { useSafePropertiesQuery } from "../hooks/useSafeQuery";
-import { usePageSpacing } from "../hooks/useNavigationSpacing";
 import { Search, ArrowRight, CheckCircle, Globe, Star, Shield } from "lucide-react";
 import { useState, useEffect, useCallback, memo, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -18,6 +16,8 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Skeleton } from "../components/ui/skeleton";
+import { usePageSpacing } from "../hooks/useNavigationSpacing";
+import { useSafePropertiesQuery } from "../hooks/useSafeQuery";
 import { ServiceCategories, Testimonials } from "../index";
 import { Property } from "../types/property";
 
@@ -40,7 +40,7 @@ interface PricingPlan {
 
 // Enhanced type for better component props handling
 interface PropertyGridProps {
-  readonly properties?: Property[];
+  readonly properties?: Partial<Property>[];
   readonly isLoading: boolean;
   readonly error?: Error | null;
 }
@@ -53,53 +53,7 @@ interface PricingCardProps {
 /* ------------------------------------------------------------------ */
 /*  Constants                                                         */
 /* ------------------------------------------------------------------ */
-const PRICING_PLANS: readonly PricingPlan[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "$29/mo",
-    description: "Perfect for individual buyers & small investors",
-    features: [
-      "Up to 3 verifications / month",
-      "10-country fraud detection",
-      "24-hour email support",
-    ] as const,
-    africanFocus: ["Kenya, Nigeria, SA", "Mobile money ready"] as const,
-    isPopular: false,
-    buttonVariant: "outline",
-  },
-  {
-    id: "professional",
-    name: "Professional",
-    price: "$99/mo",
-    description: "Built for agents & professionals",
-    features: [
-      "Up to 25 verifications / month",
-      "54-country fraud detection",
-      "2-hour priority support",
-      "White-label reports",
-    ] as const,
-    africanFocus: ["Pan-African coverage", "Multi-currency"] as const,
-    isPopular: true,
-    buttonVariant: "coral",
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "Custom",
-    description: "For large developers & institutions",
-    features: [
-      "Unlimited verifications",
-      "AI insights & API access",
-      "Dedicated account manager",
-      "24/7 support",
-    ] as const,
-    africanFocus: ["Government APIs", "Custom compliance"] as const,
-    isPopular: false,
-    buttonVariant: "outline",
-    buttonText: "Contact Sales",
-  },
-] as const;
+
 
 // Enhanced trust metrics for consistent display - Pre-launch values
 const TRUST_METRICS = [
@@ -182,27 +136,7 @@ const parseSearchQuery = (search: string): string => {
   }
 };
 
-/**
- * Performs smooth scrolling to element with enhanced error handling
- * @param elementId - The ID of the target element
- */
-const smoothScrollToElement = (elementId: string): void => {
-  const element = document.getElementById(elementId);
-  if (!element) {
-    // In production, this would typically be logged to an error tracking service
-    // For development, consider using a proper logging solution
-    return;
-  }
 
-  const targetPosition = Math.max(
-    0,
-    element.offsetTop - ANIMATION_DELAYS.SCROLL_OFFSET
-  );
-  window.scrollTo({
-    top: targetPosition,
-    behavior: "smooth",
-  });
-};
 
 /**
  * Safely opens external URL in new tab with security measures
@@ -544,7 +478,7 @@ export default function HomePage() {
     switch (action) {
       case "primary_cta":
       case "start_verification":
-        navigate("/property/verification");
+        navigate("/verify-property");
         break;
       case "watch_demo":
         openExternalUrl(DEMO_VIDEO_URL);
@@ -561,8 +495,13 @@ export default function HomePage() {
    * Navigates to appropriate service pages
    */
   const handleServiceSelect = useCallback(
-    (_serviceName: string, action: string) => {
-      navigate(`/${action}`);
+    (_categoryId: string, _subServiceId: string, action: string) => {
+      // Handle different action formats
+      if (action.startsWith('/')) {
+        navigate(action);
+      } else {
+        navigate(`/${action}`);
+      }
     },
     [navigate]
   );
@@ -590,7 +529,7 @@ export default function HomePage() {
 
   return (
     <CompareProvider>
-      <div className={`min-h-screen bg-background ${pageClassName}`}>
+      <div className={`min-h-screen bg-dark-gradient-primary ${pageClassName}`}>
       {/* Hero Section with Enhanced Search */}
       <EnhancedHero
         variant="A"
@@ -600,13 +539,14 @@ export default function HomePage() {
 
       {/* Conditional Search Results Section */}
       {showSearchResults && (
-        <section className="py-20 bg-muted/30" aria-label="Search results">
-          <div className="container mx-auto px-4">
+        <section className="py-20 bg-dark-gradient-secondary relative overflow-hidden" aria-label="Search results">
+          <div className="absolute inset-0 bg-glass-white backdrop-blur-glass-light"></div>
+          <div className="container mx-auto px-4 relative z-10">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4 text-foreground">
+              <h2 className="text-3xl font-bold mb-4 text-glass-light">
                 Results for &ldquo;{searchQuery}&rdquo;
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-glass-medium">
                 Found {Array.isArray(properties) ? properties.length : 0} properties matching your search (verification system launching soon)
               </p>
             </div>
@@ -615,14 +555,17 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Trust Indicators Section - Consistent with design system */}
-      <section className="py-20 bg-background" aria-label="Trust indicators">
-        <div className="container mx-auto px-4">
+      {/* Trust Indicators Section - Enhanced Glassmorphism Design */}
+      <section className="py-20 bg-dark-gradient-accent relative overflow-hidden" aria-label="Trust indicators">
+        <div className="absolute inset-0 bg-glass-primary backdrop-blur-glass-medium"></div>
+        {/* Subtle background pattern for visual interest */}
+        <div className="absolute inset-0 bg-pattern-subtle"></div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-6 text-foreground">
+            <h2 className="text-4xl font-bold mb-6 text-glass-light">
               Launching Soon Across Africa
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-glass-medium max-w-3xl mx-auto leading-relaxed">
               Our comprehensive verification platform is preparing to protect property investments across the continent
             </p>
           </div>
@@ -635,17 +578,19 @@ export default function HomePage() {
                   key={metric.id} 
                   className={`text-center group ${delayClass}`}
                 >
-                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/50 mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/10 ${metric.color}`}>
-                    {metric.icon}
-                  </div>
-                  <div className={`text-3xl font-bold mb-2 ${metric.color}`}>
-                    {metric.value}
-                  </div>
-                  <div className="text-sm font-medium mb-1 text-foreground">
-                    {metric.label}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {metric.description}
+                  <div className="glass-card p-6 hover:glass-card-hover transition-all duration-300 enhance-hover-subtle layer-depth-1">
+                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-glass-secondary mb-4 transition-all duration-300 group-hover:scale-110 ${metric.color} layer-depth-2`}>
+                      {metric.icon}
+                    </div>
+                    <div className={`text-3xl font-bold mb-2 ${metric.color} text-enhanced-accent`}>
+                      {metric.value}
+                    </div>
+                    <div className="text-sm font-medium mb-1 text-glass-dark">
+                      {metric.label}
+                    </div>
+                    <div className="text-xs text-glass-medium">
+                      {metric.description}
+                    </div>
                   </div>
                 </div>
               );
@@ -656,8 +601,6 @@ export default function HomePage() {
 
       {/* Service Categories Section */}
       <ServiceCategories
-        variant="hover-cards"
-        showStats
         onCategorySelect={handleServiceSelect}
       />
 
@@ -667,35 +610,39 @@ export default function HomePage() {
       {/* Testimonials Section */}
       <Testimonials variant="carousel" showStats autoPlay />
 
-      {/* News & Blog Section - Wrapped for consistency */}
-      <section className="py-24 bg-muted/30" aria-label="Latest news and insights">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-6 text-foreground">
-            Latest News & Insights
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Stay updated with the latest trends in African property verification and market insights
-          </p>
+      {/* News & Blog Section - Glassmorphism Design */}
+      <section className="py-24 bg-dark-gradient-secondary relative overflow-hidden" aria-label="Latest news and insights">
+        <div className="absolute inset-0 bg-glass-accent backdrop-blur-glass-light"></div>
+        <div className="relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-6 text-glass-light">
+              Latest News & Insights
+            </h2>
+            <p className="text-xl text-glass-medium max-w-3xl mx-auto leading-relaxed">
+              Stay updated with the latest trends in African property verification and market insights
+            </p>
+          </div>
+          <NewsBlog />
         </div>
-        <NewsBlog />
       </section>
 
-      {/* Featured Properties Section - Enhanced with better visual hierarchy */}
+      {/* Featured Properties Section - Glassmorphism Design */}
       <section
         id="featured-properties"
-        className="py-24 bg-background"
+        className="py-24 bg-dark-gradient-primary relative overflow-hidden"
         aria-label="Featured properties"
       >
-        <div className="container mx-auto px-4">
+        <div className="absolute inset-0 bg-glass-secondary backdrop-blur-glass-medium"></div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-property-featured/10 rounded-full border border-property-featured/20 mb-6">
+            <div className="glass-card inline-flex items-center gap-2 px-4 py-2 mb-6 border-glass-medium">
               <Star className="w-4 h-4 text-property-featured" />
               <span className="text-sm font-medium text-property-featured">Featured Properties</span>
             </div>
-            <h2 className="text-4xl font-bold mb-6 text-foreground">
+            <h2 className="text-4xl font-bold mb-6 text-glass-light">
               Verified African Properties
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-glass-medium max-w-3xl mx-auto leading-relaxed">
               Discover verified investment opportunities across Africa's most promising markets
             </p>
           </div>
@@ -705,7 +652,7 @@ export default function HomePage() {
           <div className="text-center mt-12">
             <Button 
               size="lg" 
-              className="px-8 py-3 hover:scale-105 transition-all duration-300"
+              className="glass-btn-secondary px-8 py-3 hover:scale-105 transition-all duration-300"
               onClick={() => navigate('/properties')}
             >
               View All Properties
@@ -715,37 +662,39 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Schedule Demo Section */}
-      <section className="py-24 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
-        <div className="container mx-auto px-4">
+      {/* Schedule Demo Section - Premium Glassmorphism */}
+      <section className="py-24 bg-dark-gradient-accent relative overflow-hidden">
+        <div className="absolute inset-0 bg-glass-primary backdrop-blur-glass-heavy"></div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl font-bold text-foreground mb-6">
-              Ready to Secure Your Property Investment?
-            </h2>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              Experience our comprehensive verification platform and see how we protect property investments across Africa.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                onClick={() => navigate("/mvp-demo")}
-                className="bg-primary hover:bg-primary/90 px-8 py-3"
-              >
-                <Shield className="w-5 h-5 mr-2" />
-                Try Live Demo
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={() => navigate("/contact")}
-                className="px-8 py-3"
-              >
-                Schedule Consultation
-              </Button>
+            <div className="glass-modal p-12 mx-auto max-w-3xl">
+              <h2 className="text-4xl font-bold text-glass-dark mb-6">
+                Ready to Secure Your Property Investment?
+              </h2>
+              <p className="text-xl text-glass-medium mb-8 max-w-2xl mx-auto leading-relaxed">
+                Experience our comprehensive verification platform and see how we protect property investments across Africa.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate("/demo")}
+                  className="glass-btn-primary px-8 py-3"
+                >
+                  <Shield className="w-5 h-5 mr-2" />
+                  Try Live Demo
+                </Button>
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate("/contact")}
+                  className="glass-btn px-8 py-3"
+                >
+                  Schedule Consultation
+                </Button>
+              </div>
+              <p className="text-sm text-glass-medium mt-4">
+                No signup required • Full access to verification tools
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground mt-4">
-              No signup required • Full access to verification tools
-            </p>
           </div>
         </div>
       </section>

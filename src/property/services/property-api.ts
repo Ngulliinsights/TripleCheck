@@ -1,8 +1,8 @@
-import { ApiResponse, PaginatedResponse } from "../../shared/types";
-import { Property, PropertySearchParams } from "../types/property.types";
-import { PropertyBusinessLogic } from "./property-validation";
 import { apiRequest } from "../../infrastructure/api/queryClient";
 import { requestManager } from "../../infrastructure/api/request-manager";
+import { ApiResponse, PaginatedResponse, Property, PropertySearchParams } from "../../shared/types/api.types";
+
+import { PropertyBusinessLogic } from "./property-validation";
 
 const API_BASE = "/api/properties";
 
@@ -92,7 +92,7 @@ const validateApiResponse = <T>(
   response: ApiResponse<T>
 ): response is ApiResponse<T> & { data: T } => {
   return (
-    response !== null && response !== undefined && response.data !== undefined
+    response?.data !== undefined
   );
 };
 

@@ -1,12 +1,13 @@
 import { Router, Response } from 'express';
+
+import { requireAuth, authRateLimit, clearAuthAttempts, type AuthenticatedRequest } from '../middleware/auth.middleware';
+import { validateRequest, UserValidationSchemas, type ValidatedRequest } from '../middleware/validation.middleware';
 import { AuthService } from '../services/AuthService';
 import { UserService } from '../services/UserService';
-import { validateRequest, UserValidationSchemas, type ValidatedRequest } from '../middleware/validation.middleware';
-import { requireAuth, authRateLimit, clearAuthAttempts, type AuthenticatedRequest } from '../middleware/auth.middleware';
-import { ResponseHelper } from '../utils/response-helpers';
-import { AUTH_ERROR_MESSAGES } from '../utils/error-messages';
-import { HTTP_STATUS } from '../utils/constants';
 import type { LoginRequest, RegisterRequest } from '../types/auth.types';
+import { HTTP_STATUS } from '../utils/constants';
+import { AUTH_ERROR_MESSAGES } from '../utils/error-messages';
+import { ResponseHelper } from '../utils/response-helpers';
 
 /**
  * AuthRoutes class handles all authentication-related endpoints

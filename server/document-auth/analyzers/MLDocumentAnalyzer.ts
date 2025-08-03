@@ -69,7 +69,7 @@ export class MLDocumentAnalyzer {
 
   private async createPlaceholderModel(inputShape: number[]): Promise<any> {
     // Simulate model creation without TensorFlow
-    const model = {
+    return {
       inputShape,
       predict: (input: any) => ({
         data: async () => [Math.random()], // Simulate prediction result
@@ -77,8 +77,6 @@ export class MLDocumentAnalyzer {
       }),
       dispose: () => {} // Simulate model disposal
     };
-
-    return model;
   }
 
   async analyze(request: DocumentVerificationRequest): Promise<MLAnalysisResult> {

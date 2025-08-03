@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
-import { logger } from '../infrastructure/monitoring/logger';
-import { db } from '../infrastructure/database/connection';
+
+import { eq, and, desc } from 'drizzle-orm';
+
 import { 
   riskFactors,
   landVerificationSessions,
@@ -8,7 +9,9 @@ import {
   governmentDesignations,
   communityFeedback
 } from '../../src/shared/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { db } from '../infrastructure/database/connection';
+import { logger } from '../infrastructure/monitoring/logger';
+
 
 // Core interfaces for risk assessment
 export interface RiskProfile {

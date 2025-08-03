@@ -6,8 +6,10 @@
  */
 
 import React from 'react';
-import { cn } from '@/shared/lib/utils';
+
 import { NavbarSpacer } from './NavbarSpacer';
+
+import { cn } from '@/shared/lib/utils';
 
 interface PageWrapperProps {
   readonly children: React.ReactNode;

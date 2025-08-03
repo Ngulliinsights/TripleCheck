@@ -4,6 +4,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
+
 import { fetchMockLandProperty, hasMockLandProperty, type MockLandProperty } from "../services/mock-land-data";
 
 interface UseLandPropertyResult {

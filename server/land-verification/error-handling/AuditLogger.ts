@@ -3,9 +3,9 @@
  * Provides detailed logging and audit trails for all verification activities
  */
 
-import { logger } from "../../logger";
 import { generateCorrelationId } from "../../../src/shared/utils/errors";
 import { db } from "../../lib/database";
+import { logger } from "../../logger";
 
 export interface AuditEvent {
   id?: string;

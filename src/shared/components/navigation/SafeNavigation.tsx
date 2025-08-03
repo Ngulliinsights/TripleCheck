@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+
 import { NavigationErrorBoundary } from './NavigationErrorBoundary';
 
 interface SafeNavigationProps {

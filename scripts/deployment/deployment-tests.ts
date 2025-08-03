@@ -214,7 +214,7 @@ class DeploymentTester {
       const response = await this.makeRequest('/health');
       const health = await response.json();
       
-      const externalAPIs = health.checks.externalAPIs;
+      const {externalAPIs} = health.checks;
       if (externalAPIs.status === 'fail') {
         throw new Error(`External API check failed: ${externalAPIs.message}`);
       }
@@ -263,7 +263,7 @@ class DeploymentTester {
         throw new Error(`Health endpoint too slow: ${responseTime.toFixed(2)}ms`);
       }
       
-      return { responseTime: responseTime.toFixed(2) + 'ms' };
+      return { responseTime: `${responseTime.toFixed(2)  }ms` };
     }));
 
     // Test concurrent requests
@@ -284,8 +284,8 @@ class DeploymentTester {
       
       return { 
         concurrentRequests,
-        totalTime: totalTime.toFixed(2) + 'ms',
-        averageTime: (totalTime / concurrentRequests).toFixed(2) + 'ms'
+        totalTime: `${totalTime.toFixed(2)  }ms`,
+        averageTime: `${(totalTime / concurrentRequests).toFixed(2)  }ms`
       };
     }));
 

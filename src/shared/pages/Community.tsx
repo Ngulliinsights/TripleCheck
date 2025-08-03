@@ -1,5 +1,3 @@
-import React, { useState, useCallback, useMemo, memo } from "react";
-import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MessageSquare,
@@ -17,18 +15,21 @@ import {
   User,
   ArrowLeft,
 } from "lucide-react";
-import { useDebounce } from "../hooks/useDebounce";
-// Removed useInfiniteScroll import since we're using regular useQuery
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import React, { useState, useCallback, useMemo, memo } from "react";
+import { Link } from "react-router-dom";
+
+import FormField from "../components/forms/FormField";
 import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+// Removed useInfiniteScroll import since we're using regular useQuery
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Textarea } from "../components/ui/textarea";
 import { useToast } from "../hooks/use-toast";
+import { useDebounce } from "../hooks/useDebounce";
 import { useForm } from "../hooks/useForm";
 import { ValidationRule } from "../utils/form-validation";
-import FormField from "../components/forms/FormField";
 
 // Types for better TypeScript support
 interface Experience {

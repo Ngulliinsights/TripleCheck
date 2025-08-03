@@ -1,11 +1,9 @@
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../shared/components/ui/card";
-import { Progress } from "../../shared/components/ui/progress";
-import { Button } from "../../shared/components/ui/button";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@shared/components/ui/tooltip";
 import {
   Gauge,
   CheckCircle2,
@@ -15,12 +13,15 @@ import {
   Shield,
   Users,
 } from "lucide-react";
+
+import { Button } from "../../shared/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@shared/components/ui/tooltip";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../shared/components/ui/card";
+import { Progress } from "../../shared/components/ui/progress";
 import { formatDate } from "../../shared/utils/date-utils";
 
 export default function KarmaScorePage() {

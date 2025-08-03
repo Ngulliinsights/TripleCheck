@@ -325,7 +325,7 @@ export function B2BLeadCapture({
 
     try {
       // Track lead capture with enhanced data
-      if (typeof window !== "undefined" && window.gtag) {
+      if (window?.gtag) {
         window.gtag("event", "b2b_lead_capture", {
           event_category: "B2B",
           event_label: trigger,
@@ -376,7 +376,7 @@ export function B2BLeadCapture({
       }, 5000);
     } catch (error) {
       // Log error for debugging without using console
-      if (typeof window !== "undefined" && window.gtag) {
+      if (window?.gtag) {
         window.gtag("event", "b2b_lead_error", {
           event_category: "Error",
           event_label: "Lead capture submission failed",

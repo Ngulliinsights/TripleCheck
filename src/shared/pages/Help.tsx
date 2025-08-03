@@ -176,90 +176,102 @@ export default function Help() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-white py-24 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div 
-            className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.1\'%3E%3Ccircle cx=\'30\' cy=\'30\' r=\'2\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"
-          />
-        </div>
+      <section className="relative bg-gradient-brand text-white py-32 overflow-hidden">
+        {/* Enhanced Background */}
+        <div className="absolute inset-0 bg-dot-pattern opacity-20"></div>
+        <div className="absolute inset-0 gradient-balanced-primary"></div>
         
-        <div className="container mx-auto px-4 relative">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Icon */}
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full mb-6">
-              <HelpCircle className="h-10 w-10 text-white" />
+        {/* Floating Elements */}
+        <div className="absolute top-20 left-20 w-32 h-32 bg-white/5 rounded-full blur-xl animate-pulse-glow"></div>
+        <div className="absolute bottom-20 right-20 w-24 h-24 bg-secondary/10 rounded-full blur-lg animate-pulse-glow animation-delay-300"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-5xl mx-auto text-center">
+            {/* Enhanced Icon */}
+            <div className="inline-flex items-center justify-center w-24 h-24 glass-base bg-white/10 rounded-3xl mb-8 hover-glow-trust animate-fade-in">
+              <HelpCircle className="h-12 w-12 text-white drop-shadow-lg" />
             </div>
             
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white">
-              How Can We Help You?
+            <h1 className="text-fluid-3xl md:text-7xl font-bold mb-8 text-enhanced-contrast animate-slide-up">
+              How Can We 
+              <span className="text-gradient-premium block mt-2">Help You?</span>
             </h1>
-            <p className="text-xl md:text-2xl mb-12 text-white/90 max-w-3xl mx-auto leading-relaxed">
-              Find answers, get support, and learn how to make the most of TripleCheck\u2019s property verification platform
+            <p className="text-fluid-lg md:text-2xl mb-16 text-enhanced-subtle max-w-4xl mx-auto leading-relaxed animate-slide-up animation-delay-100">
+              Find answers, get support, and learn how to make the most of TripleCheck's 
+              property verification platform
             </p>
             
-            {/* Search Bar */}
-            <div className="max-w-2xl mx-auto relative">
-              <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl p-2 shadow-2xl">
-                <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                  type="search"
-                  placeholder="Search for help articles, guides, or FAQs..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-14 pr-32 py-4 text-lg bg-transparent border-0 text-gray-900 placeholder:text-gray-500 focus:ring-0 focus:outline-none"
-                />
-                <Button 
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg"
-                  onClick={() => {
-                    if (searchQuery) {
-                      trackNavigation('/help', `/help/search?q=${searchQuery}`, 'help_search');
-                    }
-                  }}
-                >
-                  Search
-                </Button>
+            {/* Enhanced Search Bar */}
+            <div className="max-w-3xl mx-auto relative mb-16 animate-slide-up animation-delay-200">
+              <div className="glass-base bg-white/95 rounded-3xl p-3 shadow-2xl layer-depth-2">
+                <div className="relative flex items-center">
+                  <Search className="absolute left-6 h-6 w-6 text-gray-400" />
+                  <Input
+                    type="search"
+                    placeholder="Search for help articles, guides, or FAQs..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-16 pr-40 py-4 text-lg bg-transparent border-0 text-gray-900 placeholder:text-gray-500 focus:ring-0 focus:outline-none rounded-2xl"
+                  />
+                  <Button 
+                    className="absolute right-2 glass-btn-primary px-8 py-3 rounded-2xl font-semibold hover-glow-warm"
+                    onClick={() => {
+                      if (searchQuery) {
+                        trackNavigation('/help', `/help/search?q=${searchQuery}`, 'help_search');
+                      }
+                    }}
+                  >
+                    Search
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
             
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-3xl mx-auto">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">500+</div>
-                <div className="text-white/80">Help Articles</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">24/7</div>
-                <div className="text-white/80">Support Available</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">{'< 4hrs'}</div>
-                <div className="text-white/80">Response Time</div>
-              </div>
+            {/* Enhanced Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              {[
+                { value: "500+", label: "Help Articles", icon: BookOpen },
+                { value: "24/7", label: "Support Available", icon: MessageCircle },
+                { value: "< 4hrs", label: "Response Time", icon: Clock }
+              ].map((stat, index) => {
+                const IconComponent = stat.icon;
+                return (
+                  <div key={index} className="glass-base bg-white/10 rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300 enhance-hover-subtle animate-slide-up" style={{animationDelay: `${300 + index * 100}ms`}}>
+                    <IconComponent className="h-8 w-8 text-white/80 mx-auto mb-3" />
+                    <div className="text-3xl font-bold text-white mb-2">{stat.value}</div>
+                    <div className="text-white/70 text-sm font-medium">{stat.label}</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
 
       {/* Quick Actions */}
-      <section className="py-20 -mt-12 relative z-10">
+      <section className="py-24 -mt-16 relative z-10">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             {quickActions.map((action, index) => {
               const IconComponent = action.icon;
               return (
                 <button 
                   key={index}
                   type="button"
-                  className="group bg-white rounded-2xl shadow-xl border border-gray-100 p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer w-full text-left"
+                  className="group card p-8 text-center cursor-pointer layer-depth-2 enhance-hover animate-slide-up"
                   onClick={action.action}
+                  style={{animationDelay: `${index * 100}ms`}}
                 >
-                  <div className="flex flex-col items-center text-center">
-                    <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl mb-6 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors duration-300">
-                      <IconComponent className="h-8 w-8 text-primary" />
+                  <div className="flex flex-col items-center">
+                    <div className="p-6 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-3xl mb-8 group-hover:from-primary/20 group-hover:to-secondary/20 transition-all duration-300 hover-glow-trust">
+                      <IconComponent className="h-10 w-10 text-primary" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{action.title}</h3>
-                    <p className="text-gray-600 leading-relaxed">{action.description}</p>
+                    <h3 className="text-xl font-bold text-high-contrast mb-4">{action.title}</h3>
+                    <p className="text-high-contrast-muted leading-relaxed text-lg">{action.description}</p>
+                    <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <ArrowRight className="h-5 w-5 text-primary mx-auto" />
+                    </div>
                   </div>
                 </button>
               );

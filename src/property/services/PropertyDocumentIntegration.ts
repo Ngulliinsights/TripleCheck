@@ -3,9 +3,9 @@
  * Automatically verify property listing documents and enhance search
  */
 
-import { Property, PropertyDocument, DocumentVerificationStatus } from '../types';
-import { DocumentVerificationResult } from '../../trust/types';
 import { safeNavigate, NAVIGATION_TIMEOUTS } from '../../shared/utils/safe-navigation';
+import { DocumentVerificationResult } from '../../trust/types';
+import { Property, PropertyDocument, DocumentVerificationStatus } from '../types';
 
 export interface PropertyDocumentStatus {
   readonly propertyId: string;

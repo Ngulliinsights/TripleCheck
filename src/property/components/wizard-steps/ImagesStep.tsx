@@ -1,10 +1,8 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Badge } from '@shared/components/ui/badge';
 import { Progress } from '@shared/components/ui/progress';
-import { Alert, AlertDescription } from '@shared/components/ui/alert';
-import { PropertyFormData } from '../PropertyListingWizard';
 import { 
   Upload, 
   Camera, 
@@ -16,6 +14,9 @@ import {
   CheckCircle,
   RotateCw
 } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+
+import { PropertyFormData } from '../PropertyListingWizard';
 
 interface ImagesStepProps {
   data: PropertyFormData;

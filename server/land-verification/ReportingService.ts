@@ -1,4 +1,3 @@
-import { logger } from '../infrastructure/monitoring/logger';
 import type {
   VerificationSessionResponse,
   RiskAssessmentResponse,
@@ -9,6 +8,7 @@ import type {
   GovernmentDesignation,
   PropertyUpdate
 } from '../../src/types/land-verification';
+import { logger } from '../infrastructure/monitoring/logger';
 
 export interface ReportTemplate {
   id: string;

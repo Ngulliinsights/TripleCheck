@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
+
 import { Logger } from '../infrastructure/monitoring/logger';
-import { TrustScoringService } from './TrustScoringService';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
+
+import { TrustScoringService } from './TrustScoringService';
 
 const router = Router();
 const logger = new Logger('TrustController');
@@ -15,7 +17,7 @@ trustScoringService.initialize().catch(error => {
 // Get user trust score with detailed breakdown
 router.get('/score/:userId', async (req: Request, res: Response) => {
   try {
-    const userId = req.params.userId;
+    const {userId} = req.params;
     
     if (!userId) {
       return res.status(400).json({
@@ -69,7 +71,7 @@ router.get('/property/:propertyId', async (req: Request, res: Response) => {
 // Update user trust score based on actions
 router.post('/update/:userId', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userId = req.params.userId;
+    const {userId} = req.params;
     const { action, details } = req.body;
     
     if (!userId || !action) {
@@ -98,7 +100,7 @@ router.post('/update/:userId', async (req: AuthenticatedRequest, res: Response) 
 // Get trust analytics for a user
 router.get('/analytics/:userId', async (req: Request, res: Response) => {
   try {
-    const userId = req.params.userId;
+    const {userId} = req.params;
     
     if (!userId) {
       return res.status(400).json({
@@ -157,7 +159,7 @@ router.post('/verify', async (req: AuthenticatedRequest, res: Response) => {
 // Get trust score history
 router.get('/history/:userId', async (req: Request, res: Response) => {
   try {
-    const userId = req.params.userId;
+    const {userId} = req.params;
     const { limit = 50, offset = 0 } = req.query;
     
     if (!userId) {

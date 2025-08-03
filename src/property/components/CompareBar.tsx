@@ -14,7 +14,11 @@ import { Button } from "../../shared/components/ui/button";
 import { Card } from "../../shared/components/ui/card";
 import { useCompare } from "../contexts/CompareContext";
 
-export function CompareBar() {
+interface CompareBarProps {
+  onQuickCompare?: () => void;
+}
+
+export function CompareBar({ onQuickCompare }: CompareBarProps = {}) {
   const { selectedProperties, removeFromCompare, clearCompare } = useCompare();
   const navigate = useNavigate();
 
@@ -114,6 +118,16 @@ export function CompareBar() {
               >
                 Clear All
               </Button>
+              {onQuickCompare && selectedProperties.length >= 2 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onQuickCompare}
+                  className="text-xs"
+                >
+                  Quick Compare
+                </Button>
+              )}
               <Button
                 onClick={handleCompare}
                 size="sm"

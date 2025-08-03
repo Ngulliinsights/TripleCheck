@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Shield, TrendingUp, Users, MapPin, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
 interface PropertyRiskAssessmentProps {
   propertyId: number;

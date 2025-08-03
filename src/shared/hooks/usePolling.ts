@@ -1,7 +1,8 @@
-import { useCallback, useRef, useState } from 'react';
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
-import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+import { useCallback, useRef, useState } from 'react';
+
 import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
 
 interface UsePollingOptions<TData, TError = Error> {
   queryKey: unknown[];

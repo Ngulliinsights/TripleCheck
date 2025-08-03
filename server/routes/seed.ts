@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { db } from '../infrastructure/database/connection';
+
 import { properties, users } from '../../src/shared/schema';
+import { db } from '../infrastructure/database/connection';
 
 const router = Router();
 

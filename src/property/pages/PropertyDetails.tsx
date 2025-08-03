@@ -20,9 +20,9 @@ import { useParams } from 'react-router-dom';
 import { Badge } from '../../shared/components/ui/badge';
 import { Button } from '../../shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Property, PropertyFeatures, AIVerificationResults, LocationData } from '../../shared/types/property';
 import { formatDate } from '../../shared/utils/date-utils';
 import { useProperty } from '../hooks/useProperty';
-import { Property, PropertyFeatures, AIVerificationResults, LocationData } from '../../shared/types/property';
 
 interface PropertyOwner {
   name: string;

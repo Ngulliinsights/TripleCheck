@@ -56,7 +56,7 @@ export function useIntersectionObserver(
   }, []);
 
   useEffect(() => {
-    if (skip || typeof window === 'undefined' || !window.IntersectionObserver) {
+    if (skip || !window?.IntersectionObserver) {
       return;
     }
 

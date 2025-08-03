@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { validateRequest } from '../middleware/validation.middleware';
+
 import { requireAuth } from '../middleware/auth.middleware';
 import { asyncHandler } from '../middleware/error.middleware';
+import { validateRequest } from '../middleware/validation.middleware';
 // Import statements removed - using mock services for MVP
 // These will be restored when implementing real services
 // Simple logger for development
@@ -21,7 +22,7 @@ const landVerificationCache = {
     return null; // No cache for MVP
   },
   async setVerificationSession(session: any) {
-    return; // No cache for MVP
+     // No cache for MVP
   },
   async getLayerResult(sessionId: string, layerType: string) {
     return null; // No cache for MVP

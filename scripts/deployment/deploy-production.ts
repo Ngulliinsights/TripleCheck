@@ -9,6 +9,7 @@
 
 import { execSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
+
 import { StagingDeployment } from './deploy-staging';
 
 interface ProductionConfig {

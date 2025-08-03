@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback, useMemo } from 'react';
+
 import { SearchFilters } from '@/shared/types';
 
 // Mock search API - replace with actual implementation

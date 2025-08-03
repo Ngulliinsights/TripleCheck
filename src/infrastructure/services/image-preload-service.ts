@@ -232,7 +232,7 @@ class ImagePreloadServiceClass {
     if (typeof navigator === 'undefined') return;
 
     // Check connection speed
-    const connection = (navigator as any).connection;
+    const {connection} = (navigator as any);
     const isSlowConnection = connection && (
       connection.effectiveType === 'slow-2g' || 
       connection.effectiveType === '2g' ||

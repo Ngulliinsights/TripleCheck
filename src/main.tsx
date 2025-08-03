@@ -48,20 +48,10 @@ if (import.meta.env.DEV) {
   console.log("Loading full TripleCheck application for competition...");
 }
 
-// Set dark mode by default as requested
+// Initialize theme preference (let ThemeProvider handle the actual theme application)
 if (typeof window !== 'undefined') {
-  // Always set dark mode as default
-  if (!localStorage.getItem('theme')) {
-    localStorage.setItem('theme', 'dark');
-  }
-  document.documentElement.classList.add('dark');
-  document.documentElement.style.colorScheme = 'dark';
-  
-  // Update theme-color meta tag for mobile browsers
-  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-  if (metaThemeColor) {
-    metaThemeColor.setAttribute('content', '#000000');
-  }
+  // Clear any conflicting theme state and let ThemeProvider handle initialization
+  // The ThemeProvider default is already set to 'dark' in ThemeContext.tsx
 }
 
 try {

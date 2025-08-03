@@ -5,14 +5,15 @@
  */
 
 import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
 import { spawn } from 'child_process';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { count } from 'drizzle-orm';
+
+import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcrypt';
+import { count } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/neon-http';
 
 import { users, properties, reviews } from '../src/shared/schema';
 import type { InsertUser, InsertProperty, InsertReview } from '../src/shared/schema';

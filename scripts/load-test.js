@@ -9,9 +9,10 @@
  *   k6 run --env LOG_LEVEL=DEBUG scripts/load-test.js
  */
 
-import http from "k6/http";
 import { check, sleep } from "k6";
+import http from "k6/http";
 import { Rate, Trend } from "k6/metrics";
+
 import { Logger } from "./logger.js";
 
 // Custom metrics
@@ -390,7 +391,7 @@ export function testSearchFunctionality() {
     "search has results": (r) => {
       try {
         const data = JSON.parse(r.body);
-        return data && data.results;
+        return data?.results;
       } catch {
         return false;
       }
@@ -414,7 +415,7 @@ export function testTransactionDetails() {
       if (r.status !== 200) return true;
       try {
         const data = JSON.parse(r.body);
-        return data && data.id && data.amount && data.transactionType;
+        return data?.id && data.amount && data.transactionType;
       } catch {
         return false;
       }

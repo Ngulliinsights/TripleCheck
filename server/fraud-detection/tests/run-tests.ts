@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { spawn } from 'child_process';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 
 interface TestResult {
   suite: string;
@@ -126,7 +126,7 @@ class FraudDetectionTestRunner {
   }
 
   private printSummary(totalTime: number): void {
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     console.log('📊 TEST SUMMARY');
     console.log('='.repeat(60));
 
@@ -163,7 +163,7 @@ class FraudDetectionTestRunner {
         });
     }
 
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     
     if (failed === 0) {
       console.log('🎉 All fraud detection tests passed! System is functioning optimally.');

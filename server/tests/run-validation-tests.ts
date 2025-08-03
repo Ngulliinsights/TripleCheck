@@ -370,7 +370,7 @@ class TestRunner {
     const totalDuration = this.results.reduce((sum, result) => sum + result.duration, 0);
     const failedTests = this.results.filter(result => !result.passed);
 
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     console.log('📊 API BUG FIXES VALIDATION SUMMARY');
     console.log('='.repeat(60));
     console.log(`⏱️  Total Duration: ${totalDuration.toFixed(2)}ms`);
@@ -385,7 +385,7 @@ class TestRunner {
       });
     }
 
-    console.log('\n🎯 Task 7 Status: ' + (failedTests.length === 0 ? 'COMPLETED ✅' : 'NEEDS ATTENTION ⚠️'));
+    console.log(`\n🎯 Task 7 Status: ${  failedTests.length === 0 ? 'COMPLETED ✅' : 'NEEDS ATTENTION ⚠️'}`);
     
     if (failedTests.length === 0) {
       console.log('✅ All backend API bug fixes validated successfully');

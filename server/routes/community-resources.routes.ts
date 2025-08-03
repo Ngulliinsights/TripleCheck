@@ -1,9 +1,10 @@
 import { Express, Request, Response } from "express";
 import { z } from "zod";
-import { asyncHandler } from "../middleware/error-handler";
-import { AuthenticatedRequest, requireAuth } from "../middleware/auth.middleware";
-import { CommunityResourcesService } from "../services/CommunityResourcesService";
+
 import { CacheService, defaultCacheConfig } from "../cache/CacheService";
+import { AuthenticatedRequest, requireAuth } from "../middleware/auth.middleware";
+import { asyncHandler } from "../middleware/error-handler";
+import { CommunityResourcesService } from "../services/CommunityResourcesService";
 
 // Validation schemas
 const ShareExperienceSchema = z.object({

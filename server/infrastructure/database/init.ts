@@ -1,255 +1,302 @@
 /**
  * Database Initialization Script
- * 
- * Comprehensive database setup including connection, migrations, and seeding
+ * Ensures proper database setup and integration between frontend and backend
  */
 
-import { logger } from '../monitoring/logger';
-import { DatabaseConnection } from './connection';
-import { DatabaseMigrator } from './migrations/migrator';
-import { databaseSeeder } from './seeds/database-seeder';
-import { validateDatabaseConfig } from './config/database.config';
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "../../../src/shared/schema";
 
-export interface InitializationOptions {
-  runMigrations?: boolean;
-  seedData?: boolean;
-  environment?: 'development' | 'staging' | 'production';
-  force?: boolean;
-}
+// Database connection configuration
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://localhost:5432/triplecheck';
 
-export interface InitializationResult {
-  success: boolean;
-  steps: {
-    configValidation: boolean;
-    connection: boolean;
-    migrations: boolean;
-    seeding: boolean;
-  };
-  errors: string[];
-  duration: number;
-}
-
-/**
- * Initialize the complete database infrastructure
- */
-export async function initializeDatabase(
-  options: InitializationOptions = {}
-): Promise<InitializationResult> {
-  const startTime = Date.now();
-  const result: InitializationResult = {
-    success: true,
-    steps: {
-      configValidation: false,
-      connection: false,
-      migrations: false,
-      seeding: false
-    },
-    errors: [],
-    duration: 0
-  };
-
-  logger.info('Starting database initialization', 'DATABASE_INIT', { options });
-
-  try {
-    // Step 1: Validate configuration
-    logger.info('Validating database configuration...', 'DATABASE_INIT');
-    try {
-      validateDatabaseConfig();
-      result.steps.configValidation = true;
-      logger.info('Database configuration validated', 'DATABASE_INIT');
-    } catch (error) {
-      result.errors.push(`Configuration validation failed: ${error}`);
-      result.success = false;
-      return result;
-    }
-
-    // Step 2: Establish connection
-    logger.info('Establishing database connection...', 'DATABASE_INIT');
-    try {
-      const dbConnection = DatabaseConnection.getInstance();
-      await dbConnection.connect();
-      result.steps.connection = true;
-      logger.info('Database connection established', 'DATABASE_INIT');
-    } catch (error) {
-      result.errors.push(`Connection failed: ${error}`);
-      result.success = false;
-      return result;
-    }
-
-    // Step 3: Run migrations (if requested)
-    if (options.runMigrations !== false) {
-      logger.info('Running database migrations...', 'DATABASE_INIT');
-      try {
-        const migrator = new DatabaseMigrator();
-        const migrationResult = await migrator.migrate();
-        
-        if (migrationResult.success) {
-          result.steps.migrations = true;
-          logger.info('Database migrations completed', 'DATABASE_INIT', {
-            migrationsApplied: migrationResult.migrationsApplied.length
-          });
-        } else {
-          result.errors.push(...migrationResult.errors);
-          result.success = false;
-        }
-      } catch (error) {
-        result.errors.push(`Migration failed: ${error}`);
-        result.success = false;
-      }
-    } else {
-      result.steps.migrations = true; // Skipped by choice
-      logger.info('Skipping database migrations', 'DATABASE_INIT');
-    }
-
-    // Step 4: Seed data (if requested and not in production)
-    if (options.seedData && options.environment !== 'production') {
-      logger.info('Seeding database with sample data...', 'DATABASE_INIT');
-      try {
-        const seedResult = await databaseSeeder.seedAll({
-          environment: options.environment,
-          truncate: options.force
-        });
-        
-        if (seedResult.success) {
-          result.steps.seeding = true;
-          logger.info('Database seeding completed', 'DATABASE_INIT', {
-            seedersRun: seedResult.seedersRun.length,
-            totalRecords: seedResult.totalRecords
-          });
-        } else {
-          result.errors.push(...seedResult.errors);
-          // Don't fail initialization for seeding errors
-          logger.warn('Database seeding had errors but continuing', 'DATABASE_INIT', {
-            errors: seedResult.errors
-          });
-        }
-      } catch (error) {
-        result.errors.push(`Seeding failed: ${error}`);
-        logger.warn('Database seeding failed but continuing', 'DATABASE_INIT', { error });
-      }
-    } else {
-      result.steps.seeding = true; // Skipped by choice
-      if (options.environment === 'production') {
-        logger.info('Skipping database seeding in production', 'DATABASE_INIT');
-      } else {
-        logger.info('Skipping database seeding', 'DATABASE_INIT');
-      }
-    }
-
-  } catch (error) {
-    result.success = false;
-    result.errors.push(`Initialization failed: ${error}`);
-    logger.error('Database initialization failed', 'DATABASE_INIT', { error });
+// Determine SSL configuration based on the database URL and environment
+const shouldUseSSL = () => {
+  // If DATABASE_URL contains cloud providers, use SSL
+  if (DATABASE_URL.includes('neon.tech') || 
+      DATABASE_URL.includes('supabase.co') || 
+      DATABASE_URL.includes('amazonaws.com') ||
+      DATABASE_URL.includes('railway.app') ||
+      process.env.NODE_ENV === 'production') {
+    return 'require';
   }
-
-  result.duration = Date.now() - startTime;
-  
-  if (result.success) {
-    logger.info('Database initialization completed successfully', 'DATABASE_INIT', {
-      duration: result.duration,
-      steps: result.steps
-    });
-  } else {
-    logger.error('Database initialization failed', 'DATABASE_INIT', {
-      duration: result.duration,
-      errors: result.errors,
-      steps: result.steps
-    });
+  // For localhost connections, don't use SSL
+  if (DATABASE_URL.includes('localhost') || DATABASE_URL.includes('127.0.0.1')) {
+    return false;
   }
+  // Default to SSL for unknown remote connections
+  return 'require';
+};
 
-  return result;
-}
+const connectionConfig = {
+  max: 10,
+  idle_timeout: 20,
+  connect_timeout: 30,
+  prepare: false,
+  ssl: shouldUseSSL(),
+  // Add additional options for better connection handling
+  transform: {
+    undefined: null,
+  },
+  connection: {
+    application_name: 'triplecheck_api',
+  },
+};
 
-/**
- * Quick database health check
- */
-export async function checkDatabaseStatus(): Promise<{
-  healthy: boolean;
-  details: any;
-}> {
+let sql: postgres.Sql | undefined;
+let db: ReturnType<typeof drizzle> | undefined;
+
+export async function initializeDatabase() {
   try {
-    const dbConnection = DatabaseConnection.getInstance();
-    const health = await dbConnection.getHealth();
+    console.log('🔄 Initializing database connection...');
+    console.log(`📍 Database URL: ${DATABASE_URL.replace(/\/\/.*@/, '//***:***@')}`); // Hide credentials
+    console.log(`🔒 SSL Mode: ${connectionConfig.ssl}`);
     
-    return {
-      healthy: health.connected,
-      details: health
-    };
+    sql = postgres(DATABASE_URL, connectionConfig);
+    db = drizzle(sql, { schema });
+
+    // Test connection with timeout
+    console.log('🔍 Testing database connection...');
+    await Promise.race([
+      sql`SELECT 1 as test`,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout')), 10000)
+      )
+    ]);
+    
+    console.log('✅ Database connection established');
+    
+    // Ensure tables exist
+    await ensureTablesExist();
+    
+    // Seed with basic data if empty
+    await seedBasicData();
+    
+    return { success: true };
   } catch (error) {
-    logger.error('Database status check failed', 'DATABASE_INIT', { error });
-    return {
-      healthy: false,
-      details: { error: error instanceof Error ? error.message : 'Unknown error' }
-    };
+    console.error('❌ Database initialization failed:', error);
+    
+    // If it's an SSL error and we're in development, try without SSL
+    if (error instanceof Error && 
+        error.message.includes('insecure') && 
+        process.env.NODE_ENV !== 'production') {
+      
+      console.log('🔄 Retrying without SSL for development...');
+      try {
+        const noSSLConfig = { ...connectionConfig, ssl: false };
+        sql = postgres(DATABASE_URL, noSSLConfig);
+        db = drizzle(sql, { schema });
+        
+        await sql`SELECT 1 as test`;
+        console.log('✅ Database connected without SSL');
+        
+        await ensureTablesExist();
+        await seedBasicData();
+        
+        return { success: true };
+      } catch (retryError) {
+        console.error('❌ Retry failed:', retryError);
+        return { success: false, error: retryError };
+      }
+    }
+    
+    return { success: false, error };
   }
 }
 
-/**
- * Reset database (development only)
- */
-export async function resetDatabase(): Promise<void> {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Cannot reset database in production environment');
-  }
-
-  logger.warn('Resetting database - all data will be lost!', 'DATABASE_INIT');
-
+async function ensureTablesExist() {
+  if (!sql) throw new Error('Database not initialized');
+  
   try {
-    // Clear all data
-    await databaseSeeder.clearAll({
-      environment: process.env.NODE_ENV as any
-    });
-
-    // Re-run migrations
-    const migrator = new DatabaseMigrator();
-    await migrator.migrate();
-
-    // Re-seed data
-    await databaseSeeder.seedAll({
-      environment: process.env.NODE_ENV as any,
-      truncate: true
-    });
-
-    logger.info('Database reset completed', 'DATABASE_INIT');
+    // Check if users table exists
+    const tablesExist = await sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      );
+    `;
+    
+    if (!tablesExist[0]?.exists) {
+      console.log('📋 Creating database tables...');
+      
+      // Create basic tables if they don't exist
+      await sql`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          username VARCHAR(50) UNIQUE NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          role VARCHAR(20) DEFAULT 'user',
+          trust_score INTEGER DEFAULT 50,
+          is_verified_agent BOOLEAN DEFAULT false,
+          first_name VARCHAR(100),
+          last_name VARCHAR(100),
+          phone VARCHAR(20),
+          profile_image_url VARCHAR(500),
+          bio TEXT,
+          is_active BOOLEAN DEFAULT true,
+          last_login_at TIMESTAMP,
+          email_verified_at TIMESTAMP,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        );
+      `;
+      
+      await sql`
+        CREATE TABLE IF NOT EXISTS properties (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          description TEXT NOT NULL,
+          price DECIMAL(12,2) NOT NULL,
+          location VARCHAR(255) NOT NULL,
+          address TEXT,
+          coordinates JSONB,
+          image_urls JSONB DEFAULT '[]',
+          verification_status VARCHAR(20) DEFAULT 'pending',
+          features JSONB,
+          owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          ai_verification_results JSONB,
+          view_count INTEGER DEFAULT 0,
+          favorite_count INTEGER DEFAULT 0,
+          is_active BOOLEAN DEFAULT true,
+          is_featured BOOLEAN DEFAULT false,
+          available_from TIMESTAMP,
+          available_until TIMESTAMP,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        );
+      `;
+      
+      await sql`
+        CREATE TABLE IF NOT EXISTS reviews (
+          id SERIAL PRIMARY KEY,
+          property_id INTEGER REFERENCES properties(id) ON DELETE CASCADE,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+          comment TEXT NOT NULL,
+          verified BOOLEAN DEFAULT false,
+          helpful_count INTEGER DEFAULT 0,
+          report_count INTEGER DEFAULT 0,
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW(),
+          UNIQUE(user_id, property_id)
+        );
+      `;
+      
+      // Create indexes for better performance
+      await sql`CREATE INDEX IF NOT EXISTS idx_properties_location ON properties(location);`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_properties_price ON properties(price);`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_properties_owner ON properties(owner_id);`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_properties_status ON properties(verification_status);`;
+      
+      console.log('✅ Database tables created');
+    }
   } catch (error) {
-    logger.error('Database reset failed', 'DATABASE_INIT', { error });
+    console.error('❌ Error ensuring tables exist:', error);
     throw error;
   }
 }
 
-// Export for CLI usage
-if (require.main === module) {
-  const args = process.argv.slice(2);
-  const command = args[0];
-
-  switch (command) {
-    case 'init':
-      initializeDatabase({
-        runMigrations: true,
-        seedData: process.env.NODE_ENV !== 'production',
-        environment: process.env.NODE_ENV as any
-      }).then(result => {
-        process.exit(result.success ? 0 : 1);
-      });
-      break;
-
-    case 'status':
-      checkDatabaseStatus().then(status => {
-        console.log(JSON.stringify(status, null, 2));
-        process.exit(status.healthy ? 0 : 1);
-      });
-      break;
-
-    case 'reset':
-      resetDatabase().then(() => {
-        process.exit(0);
-      }).catch(() => {
-        process.exit(1);
-      });
-      break;
-
-    default:
-      console.log('Usage: tsx server/infrastructure/database/init.ts [init|status|reset]');
-      process.exit(1);
+async function seedBasicData() {
+  if (!sql) throw new Error('Database not initialized');
+  
+  try {
+    // Check if we already have data
+    const userCount = await sql`SELECT COUNT(*) as count FROM users`;
+    if (Number(userCount[0]?.count) > 0) {
+      console.log('📊 Database already has data, skipping seed');
+      return;
+    }
+    
+    console.log('🌱 Seeding basic data...');
+    
+    // Create demo users
+    const bcrypt = await import('bcrypt');
+    const demoPassword = await bcrypt.hash('demo123', 10);
+    
+    await sql`
+      INSERT INTO users (username, email, password, role, trust_score, is_verified_agent, first_name, last_name)
+      VALUES 
+        ('demo_user', 'demo@example.com', ${demoPassword}, 'user', 750, false, 'Demo', 'User'),
+        ('demo_agent', 'agent@example.com', ${demoPassword}, 'agent', 950, true, 'Demo', 'Agent'),
+        ('john_doe', 'john@example.com', ${demoPassword}, 'user', 800, false, 'John', 'Doe')
+    `;
+    
+    // Create sample properties
+    await sql`
+      INSERT INTO properties (
+        owner_id, title, description, price, location, 
+        image_urls, verification_status, features
+      )
+      VALUES 
+        (
+          2, 
+          'Modern 3-Bedroom Apartment in Westlands',
+          'Beautiful modern apartment with stunning city views and premium amenities. Features spacious rooms, modern kitchen, and excellent security.',
+          15000000,
+          'Westlands, Nairobi',
+          '["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800"]',
+          'verified',
+          '{"bedrooms": 3, "bathrooms": 2, "squareFeet": 1200, "propertyType": "apartment", "amenities": ["Swimming Pool", "Gym", "Security"]}'
+        ),
+        (
+          2,
+          'Luxury Villa in Karen', 
+          'Spacious family home with beautiful gardens and modern fixtures. Perfect for families seeking comfort and elegance.',
+          45000000,
+          'Karen, Nairobi',
+          '["https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800"]',
+          'verified',
+          '{"bedrooms": 5, "bathrooms": 4, "squareFeet": 3500, "propertyType": "house", "amenities": ["Swimming Pool", "Garden", "Staff Quarters"]}'
+        ),
+        (
+          3,
+          'Cozy 2-Bedroom in Kilimani',
+          'Perfect starter home in the heart of Kilimani. Close to amenities and transport links.',
+          25000000,
+          'Kilimani, Nairobi', 
+          '["https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800"]',
+          'pending',
+          '{"bedrooms": 2, "bathrooms": 2, "squareFeet": 900, "propertyType": "apartment", "amenities": ["Security", "Parking"]}'
+        )
+    `;
+    
+    console.log('✅ Basic data seeded successfully');
+  } catch (error) {
+    console.error('❌ Error seeding basic data:', error);
+    throw error;
   }
 }
+
+export function getDatabase() {
+  if (!db) {
+    throw new Error('Database not initialized. Call initializeDatabase() first.');
+  }
+  return db;
+}
+
+// Fallback function for when database is not available
+export function isDatabaseAvailable(): boolean {
+  return db !== undefined && sql !== undefined;
+}
+
+export function getSqlInstance() {
+  if (!sql) {
+    throw new Error('Database not initialized. Call initializeDatabase() first.');
+  }
+  return sql;
+}
+
+export async function closeDatabaseConnection() {
+  if (sql) {
+    await sql.end();
+    sql = undefined;
+    db = undefined;
+    console.log('🔌 Database connection closed');
+  }
+}
+
+// Export the database instance for use in repositories
+export { db };

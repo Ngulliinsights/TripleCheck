@@ -285,12 +285,10 @@ export function useWebSocketMessage<T = any>(messageType: string) {
   const [messages, setMessages] = React.useState<WebSocketMessage[]>([]);
 
   React.useEffect(() => {
-    const unsubscribe = webSocketClient.on(messageType, (message) => {
+    return webSocketClient.on(messageType, (message) => {
       setLastMessage(message);
       setMessages(prev => [...prev.slice(-99), message]); // Keep last 100 messages
     });
-
-    return unsubscribe;
   }, [messageType]);
 
   return {

@@ -6,11 +6,13 @@
  * This script fixes database connection issues and sets up test data
  */
 
-import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
+import bcrypt from "bcrypt";
+import { drizzle } from "drizzle-orm/neon-http";
+
 import { users, properties, reviews } from "../shared/schema";
 import type { InsertUser, InsertProperty, User } from "../shared/schema";
-import bcrypt from "bcrypt";
+
 
 async function fixDatabase() {
   console.log("🔧 Fixing database connection and setup...");

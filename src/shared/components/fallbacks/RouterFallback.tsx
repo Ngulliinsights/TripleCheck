@@ -1,5 +1,5 @@
-import React from 'react';
 import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
+import React from 'react';
 
 /**
  * Simple fallback router component for when the main router crashes

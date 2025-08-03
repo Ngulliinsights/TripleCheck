@@ -1,9 +1,10 @@
-import React from 'react';
-import { QueryErrorResetBoundary } from '@tanstack/react-query';
-import { ErrorBoundary } from '@/app/error-boundary';
 import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import React from 'react';
+
+import { ErrorBoundary } from '@/app/error-boundary';
 
 interface QueryErrorFallbackProps {
   error: Error;

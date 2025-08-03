@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { BLOG_POSTS } from '../config/assets';
 
 export interface BlogPost {
@@ -114,11 +115,9 @@ export function useBlogPosts() {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Sort posts by publishedAt date (most recent first)
-      const sortedPosts = [...mockPosts].sort((a, b) => 
+      return [...mockPosts].sort((a, b) => 
         new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
       );
-      
-      return sortedPosts;
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

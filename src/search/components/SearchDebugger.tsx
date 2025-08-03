@@ -6,13 +6,11 @@
  * operation timelines, race condition patterns, and debugging insights.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
 import { Badge } from '@shared/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { ScrollArea } from '@shared/components/ui/scroll-area';
-import { operationTracker, OperationRecord, RaceConditionPattern } from '@/infrastructure/monitoring/operation-tracker';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
 import { 
   Activity, 
   AlertTriangle, 
@@ -26,6 +24,9 @@ import {
   Play,
   Pause
 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+
+import { operationTracker, OperationRecord, RaceConditionPattern } from '@/infrastructure/monitoring/operation-tracker';
 
 interface OperationDebuggerProps {
   /** Whether to show the debugger by default */

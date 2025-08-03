@@ -25,7 +25,7 @@ async function runMigration() {
     console.log('─'.repeat(50));
     
     const migrationSQL = readFileSync(MIGRATION_FILE, 'utf-8');
-    console.log(migrationSQL.substring(0, 500) + '...\n');
+    console.log(`${migrationSQL.substring(0, 500)  }...\n`);
     
     console.log('✅ Migration file is ready to be executed');
     console.log('📝 To run this migration, execute the SQL file against your PostgreSQL database:\n');

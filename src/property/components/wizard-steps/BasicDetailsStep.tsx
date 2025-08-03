@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import { Badge } from '@shared/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Input } from '@shared/components/ui/input';
 import { Label } from '@shared/components/ui/label';
-import { Textarea } from '@shared/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Badge } from '@shared/components/ui/badge';
+import { Textarea } from '@shared/components/ui/textarea';
+import React, { useEffect } from 'react';
+
 import { PropertyFormData } from '../PropertyListingWizard';
 
 interface BasicDetailsStepProps {

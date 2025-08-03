@@ -1,7 +1,8 @@
-import React from 'react';
 import { FileText, Scale, AlertTriangle, Shield, Users, Gavel } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import React from 'react';
+
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function Terms() {
   return (

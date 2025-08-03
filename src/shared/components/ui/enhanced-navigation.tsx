@@ -1,6 +1,11 @@
+import { cn } from "@shared/lib/utils";
+import { Search, HelpCircle, User, LogOut, Home, Building, BarChart3, Bell } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { Button } from "./button";
+import { Input } from "./input";
+import { Logo } from "./logo";
 import { 
   NavigationMenu,
   NavigationMenuList,
@@ -9,12 +14,7 @@ import {
   NavigationMenuTrigger,
   NavigationMenuLink 
 } from "./navigation-menu";
-import { Button } from "./button";
-import { Input } from "./input";
-import { Logo } from "./logo";
 import { Wordmark } from "./wordmark";
-import { Search, HelpCircle, User, LogOut, Home, Building, BarChart3, Bell } from "lucide-react";
-import { cn } from "@shared/lib/utils";
 
 // Enhanced navigation with context awareness and micro-interactions
 export function EnhancedNavigation() {

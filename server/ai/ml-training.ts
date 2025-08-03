@@ -1,9 +1,10 @@
+import fs from 'fs';
+import path from 'path';
+
 import { storage } from '../infrastructure/storage/storage';
 import { detectTransactionFraud, analyzePropertyDocument } from '../services/ai-ml-service';
 import type { FraudAnalysis as FraudAnalysisType } from '../types/fraud.types';
 import type { Property as PropertyType } from '../types/property.types';
-import fs from 'fs';
-import path from 'path';
 
 // Adapter function to match the expected interface
 const detectFraud = async (property: PropertyType): Promise<FraudAnalysisType> => {

@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
-import { Button } from "@shared/components/ui/button";
 import { Badge } from "@shared/components/ui/badge";
+import { Button } from "@shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
 import { Bell, Check, X, AlertCircle, Info, CheckCircle } from "lucide-react";
+import { useState } from "react";
 
 interface Notification {
   id: string;

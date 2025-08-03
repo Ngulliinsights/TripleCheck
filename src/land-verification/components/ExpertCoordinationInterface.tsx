@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@shared/components/ui/avatar';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@shared/components/ui/dialog';
 import { Input } from '@shared/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@shared/components/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@shared/components/ui/dialog';
+import { cn } from '@shared/lib/utils';
 import { 
   UserCheck, 
   Star, 
@@ -21,7 +21,8 @@ import {
   Filter,
   Plus
 } from 'lucide-react';
-import { cn } from '@shared/lib/utils';
+import React, { useState } from 'react';
+
 import type { 
   ExpertProfile,
   ExpertAssignment,

@@ -1,13 +1,14 @@
+import { eq, and } from 'drizzle-orm';
 import { Request, Response, NextFunction } from 'express';
+
+import { users, landVerificationSessions } from '../../../src/shared/schema';
 import { 
   AuthenticationError, 
   AuthorizationError,
   ValidationError 
 } from '../../../src/shared/utils/errors';
-import { db } from '../../lib/database';
-import { users, landVerificationSessions } from '../../../src/shared/schema';
-import { eq, and } from 'drizzle-orm';
 import { logger } from '../../infrastructure/monitoring/logger';
+import { db } from '../../lib/database';
 
 // Extend Request interface for land verification context
 declare global {
@@ -88,7 +89,7 @@ export const sessionAuthorization = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const sessionId = req.params.sessionId;
+    const {sessionId} = req.params;
     const userId = req.user!.id;
 
     if (!sessionId) {

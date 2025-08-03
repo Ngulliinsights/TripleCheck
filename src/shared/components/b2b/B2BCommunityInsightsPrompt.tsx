@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
 import { Users, MessageSquare, TrendingUp, Building2, ArrowRight, BarChart3, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
+
 import { cn } from '@/shared/lib/utils';
 
 interface B2BCommunityInsightsPromptProps {
@@ -28,7 +30,7 @@ export function B2BCommunityInsightsPrompt({
 
   const handleAPIInterest = () => {
     // Track community insights API interest
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (window?.gtag) {
       window.gtag('event', 'community_api_interest', {
         event_category: 'B2B',
         event_label: 'community_insights_prompt',

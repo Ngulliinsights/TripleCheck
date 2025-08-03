@@ -6,6 +6,7 @@
  */
 
 import fs from 'fs';
+
 import { CodeAnalyzer } from './code-analysis.js';
 
 interface QualityGate {
@@ -102,7 +103,7 @@ class QualityGateChecker {
       }
     }
 
-    console.log('\n' + '='.repeat(40));
+    console.log(`\n${  '='.repeat(40)}`);
     
     if (criticalFailed) {
       console.log('🚨 CRITICAL QUALITY GATES FAILED');

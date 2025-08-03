@@ -3,13 +3,13 @@
  * Implements intelligent retry strategies for government API failures and external service issues
  */
 
-import { logger } from "../../logger";
 import { 
   ExternalServiceError, 
   ErrorCode, 
   HttpStatusCode,
   generateCorrelationId 
 } from "../../../src/shared/utils/errors";
+import { logger } from "../../logger";
 
 export interface RetryConfig {
   maxAttempts: number;
@@ -278,7 +278,7 @@ export class RetryPolicyManager {
    */
   private isRetryableError(error: Error, config: RetryConfig): boolean {
     // Check HTTP status codes first - don't retry client errors (4xx)
-    const statusCode = (error as any).statusCode;
+    const {statusCode} = (error as any);
     if (statusCode) {
       // Don't retry client errors (4xx)
       if (statusCode >= 400 && statusCode < 500) {

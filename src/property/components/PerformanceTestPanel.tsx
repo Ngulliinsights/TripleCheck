@@ -1,10 +1,11 @@
+import { AlertTriangle, CheckCircle, Activity, Zap } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { Button } from '../../shared/components/ui/button';
+
 import { Badge } from '../../shared/components/ui/badge';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
 import { usePerformanceMonitor } from '../utils/performanceMonitor';
 import { raceConditionTester } from '../utils/raceConditionTest';
-import { AlertTriangle, CheckCircle, Activity, Zap } from 'lucide-react';
 
 interface PerformanceTestPanelProps {
   className?: string;

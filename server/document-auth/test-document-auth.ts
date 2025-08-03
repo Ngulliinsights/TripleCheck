@@ -1,7 +1,9 @@
-import { DocumentAuthService, DocumentVerificationRequest } from './DocumentAuthService';
-import { logger } from '../infrastructure/monitoring/logger';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { logger } from '../infrastructure/monitoring/logger';
+
+import { DocumentAuthService, DocumentVerificationRequest } from './DocumentAuthService';
 
 async function testDocumentAuth() {
   logger.info('Starting Document Authentication Service test...', 'DocumentAuthTest');

@@ -1,12 +1,13 @@
+import { neon } from "@neondatabase/serverless";
 import type { 
   User, InsertUser, 
   Property, InsertProperty,
   Review, InsertReview,
   PropertyFeatures
 } from "@shared/schema";
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
 import { eq, like, and, or, gte, lte, desc } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/neon-http";
+
 import { logger } from "../monitoring/logger";
 
 // Mock database tables for TypeScript compatibility
@@ -185,12 +186,10 @@ export class DatabaseStorage implements IStorage {
 
   async getProperties(): Promise<readonly Property[]> {
     try {
-      const result = await this.db
+      return await this.db
         .select()
         .from(properties)
         .orderBy(desc(properties.createdAt));
-      
-      return result;
     } catch (error) {
       this.handleDatabaseError('get properties', error);
     }
@@ -245,7 +244,7 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
       
-      const result = await this.db
+      return await this.db
         .select()
         .from(properties)
         .where(
@@ -256,8 +255,6 @@ export class DatabaseStorage implements IStorage {
           )
         )
         .orderBy(desc(properties.createdAt));
-      
-      return result;
     } catch (error) {
       this.handleDatabaseError('search properties', error);
     }
@@ -265,13 +262,11 @@ export class DatabaseStorage implements IStorage {
 
   async getReviews(propertyId: number): Promise<readonly Review[]> {
     try {
-      const result = await this.db
+      return await this.db
         .select()
         .from(reviews)
         .where(eq(reviews.propertyId, propertyId))
         .orderBy(desc(reviews.createdAt));
-      
-      return result;
     } catch (error) {
       this.handleDatabaseError('get reviews', error);
     }

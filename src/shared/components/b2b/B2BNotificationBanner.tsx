@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
 import { X, Building2, ArrowRight, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+
 import { Button } from '../ui/button';
+
 import { cn } from '@/shared/lib/utils';
 
 interface B2BNotificationBannerProps {
@@ -24,7 +26,7 @@ export function B2BNotificationBanner({
   const handleGetStarted = () => {
     setIsAnimating(true);
     // Track B2B interest
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (window?.gtag) {
       window.gtag('event', 'b2b_interest', {
         event_category: 'B2B',
         event_label: 'banner_click'

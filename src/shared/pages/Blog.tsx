@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { BlogPostCard, type BlogPost as SharedBlogPost } from "../components/blog/BlogPostCard";
 import { BLOG_POSTS } from "../config/assets";
+import { usePageSpacing } from "../hooks/useNavigationSpacing";
 
 // Enhanced type definitions with better semantic clarity
 type StaticBlogPost = typeof BLOG_POSTS[number];
@@ -56,6 +57,7 @@ const FEATURED_POSTS_COUNT = 2;
 // Main BlogPage component with enhanced optimization strategies
 const BlogPage = memo(() => {
   const navigate = useNavigate();
+  const { pageClassName } = usePageSpacing();
 
   // Pre-transformed posts - memoized with empty dependency array since BLOG_POSTS is static
   // This prevents unnecessary recalculations on every render
@@ -104,41 +106,49 @@ const BlogPage = memo(() => {
 
   // Enhanced component structure with improved semantic HTML and accessibility features
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className={`min-h-screen bg-dark-gradient-primary ${pageClassName}`}>
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-7xl mx-auto">
           {/* Semantic header with enhanced accessibility attributes */}
           <header className="text-center mb-16" role="banner">
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              TripleCheck Insights
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Navigate Africa&rsquo;s dynamic real estate landscape with confidence. 
-              Our deep-dive analyses uncover emerging opportunities, decode market 
-              shifts, and translate complex PropTech innovations into actionable 
-              investment strategies that drive sustainable returns across the continent&rsquo;s 
-              most promising markets.
-            </p>
+            <div className="glass-modal p-12 mx-auto max-w-4xl">
+              <h1 className="text-5xl font-bold mb-6 text-glass-light">
+                TripleCheck Insights
+              </h1>
+              <p className="text-xl text-glass-medium max-w-3xl mx-auto leading-relaxed">
+                Navigate Africa&rsquo;s dynamic real estate landscape with confidence. 
+                Our deep-dive analyses uncover emerging opportunities, decode market 
+                shifts, and translate complex PropTech innovations into actionable 
+                investment strategies that drive sustainable returns across the continent&rsquo;s 
+                most promising markets.
+              </p>
+            </div>
           </header>
 
           {/* Featured posts section with proper ARIA labeling */}
-          <section className="mb-16" aria-labelledby="featured-heading">
-            <SectionHeader 
-              id="featured-heading"
-              title="Featured Articles" 
-              className="scroll-margin-nav" 
-            />
-            {renderPostGrid(featuredPosts, 'featured')}
+          <section className="mb-16 py-12 bg-dark-gradient-secondary relative overflow-hidden" aria-labelledby="featured-heading">
+            <div className="absolute inset-0 bg-glass-secondary backdrop-blur-glass-medium"></div>
+            <div className="relative z-10">
+              <SectionHeader 
+                id="featured-heading"
+                title="Featured Articles" 
+                className="scroll-margin-nav text-glass-light" 
+              />
+              {renderPostGrid(featuredPosts, 'featured')}
+            </div>
           </section>
 
           {/* All posts section with consistent semantic structure */}
-          <section aria-labelledby="all-posts-heading">
-            <SectionHeader 
-              id="all-posts-heading"
-              title="All Articles" 
-              className="scroll-margin-nav" 
-            />
-            {renderPostGrid(transformedPosts)}
+          <section className="py-12 bg-dark-gradient-accent relative overflow-hidden" aria-labelledby="all-posts-heading">
+            <div className="absolute inset-0 bg-glass-accent backdrop-blur-glass-light"></div>
+            <div className="relative z-10">
+              <SectionHeader 
+                id="all-posts-heading"
+                title="All Articles" 
+                className="scroll-margin-nav text-glass-light" 
+              />
+              {renderPostGrid(transformedPosts)}
+            </div>
           </section>
         </div>
       </div>

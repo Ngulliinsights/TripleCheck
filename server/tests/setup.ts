@@ -1,6 +1,7 @@
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { storage } from '../infrastructure/storage/storage';
+
 import { cacheService } from '../cache/CacheService';
+import { storage } from '../infrastructure/storage/storage';
 import { structuredLogger } from '../monitoring/StructuredLogger';
 
 // Test database setup

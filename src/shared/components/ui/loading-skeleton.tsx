@@ -1,6 +1,7 @@
-import React from 'react';
-import { Skeleton } from './skeleton';
 import { Loader2 } from 'lucide-react';
+import React from 'react';
+
+import { Skeleton } from './skeleton';
 
 interface LoadingSkeletonProps {
   className?: string;

@@ -6,8 +6,10 @@
  */
 
 import { EventEmitter } from 'events';
-import { cachePerformanceMonitor, CacheMetrics, DeduplicationMetrics, PerformanceAlert } from './CachePerformanceMonitor';
+
 import { RequestDeduplicator } from '../deduplication/RequestDeduplicator';
+
+import { cachePerformanceMonitor, CacheMetrics, DeduplicationMetrics, PerformanceAlert } from './CachePerformanceMonitor';
 
 export interface DashboardConfig {
   refreshInterval: number; // milliseconds

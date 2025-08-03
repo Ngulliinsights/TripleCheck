@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
 
 import { execSync } from 'child_process';
-import { performance } from 'perf_hooks';
 import fs from 'fs';
 import path from 'path';
+import { performance } from 'perf_hooks';
 
 interface TestResult {
   suite: string;

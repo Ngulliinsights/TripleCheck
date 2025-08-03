@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { Button } from "../../shared/components/ui/button";
-import { Input } from "../../shared/components/ui/input";
 import { Search, MapPin, Home, DollarSign, X, Loader2, AlertCircle } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../shared/components/ui/select";
+import { useState, useCallback, useEffect, useMemo } from "react";
+
 import { Alert, AlertDescription } from "../../shared/components/ui/alert";
 import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
+import { Input } from "../../shared/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../shared/components/ui/select";
 import { useDebounce } from "../../shared/hooks/useDebounce";
 
 interface SearchFilters {

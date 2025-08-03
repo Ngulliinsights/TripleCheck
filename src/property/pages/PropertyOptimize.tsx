@@ -1,17 +1,5 @@
-import { useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
-import { Input } from "../../shared/components/ui/input";
-import { Label } from "../../shared/components/ui/label";
-import { Textarea } from "../../shared/components/ui/textarea";
-import { Progress } from "../../shared/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../shared/components/ui/tabs";
-import { useToast } from "../../shared/hooks/use-toast";
-import { apiRequest } from "../../infrastructure/api/queryClient";
-import { Property } from "../../shared/schema";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Zap, 
   TrendingUp, 
@@ -34,6 +22,20 @@ import {
   Award,
   Sparkles
 } from "lucide-react";
+import { useState, useCallback } from "react";
+
+import { apiRequest } from "../../infrastructure/api/queryClient";
+import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
+import { Input } from "../../shared/components/ui/input";
+import { Label } from "../../shared/components/ui/label";
+import { Progress } from "../../shared/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../shared/components/ui/tabs";
+import { Textarea } from "../../shared/components/ui/textarea";
+import { useToast } from "../../shared/hooks/use-toast";
+import { Property } from "../../shared/schema";
+
 
 interface OptimizationSuggestion {
   id: string;

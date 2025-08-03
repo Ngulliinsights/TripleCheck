@@ -1,11 +1,12 @@
 import { EventEmitter } from 'events';
-import { logger } from '../../infrastructure/monitoring/logger';
-import { landVerificationCache } from '../cache/LandVerificationCache';
+
 import type {
   VerificationSession,
   LayerExecutionResult,
   VerificationLayer
 } from '../../../src/types/land-verification';
+import { logger } from '../../infrastructure/monitoring/logger';
+import { landVerificationCache } from '../cache/LandVerificationCache';
 
 export interface AsyncTask {
   id: string;

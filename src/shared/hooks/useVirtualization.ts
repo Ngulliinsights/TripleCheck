@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
+
 import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
+import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
 
 interface VirtualItem {
   index: number;

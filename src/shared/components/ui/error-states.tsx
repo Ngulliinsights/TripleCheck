@@ -1,6 +1,7 @@
-import { memo } from "react";
-import { Button } from "./button";
 import { RefreshCw, AlertCircle, Wifi, Server } from "lucide-react";
+import { memo } from "react";
+
+import { Button } from "./button";
 
 interface ErrorStateProps {
   title?: string;

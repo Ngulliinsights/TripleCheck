@@ -3,10 +3,11 @@
  * This demonstrates that the AuthRoutes class can be instantiated and configured
  */
 
-import { AuthRoutes } from './AuthRoutes';
+import { storage } from '../infrastructure/storage/storage';
 import { AuthService } from '../services/AuthService';
 import { UserService } from '../services/UserService';
-import { storage } from '../infrastructure/storage/storage';
+
+import { AuthRoutes } from './AuthRoutes';
 
 async function demonstrateAuthRoutes() {
   try {

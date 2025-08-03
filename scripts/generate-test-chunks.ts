@@ -1,8 +1,9 @@
 #!/usr/bin/env tsx
 
 import { writeFileSync } from 'fs'
-import { generateChunkConfigs, createChunkConfig } from '../config/vitest/chunk-generator'
 import path from 'path'
+
+import { generateChunkConfigs, createChunkConfig } from '../config/vitest/chunk-generator'
 
 async function generateChunkFiles() {
   console.log('🔄 Generating test chunk configurations...')

@@ -1,5 +1,3 @@
-import { memo } from "react";
-import { useNavigate } from "react-router-dom";
 import { 
   Shield, 
   AlertTriangle, 
@@ -12,6 +10,9 @@ import {
   Zap,
   Eye
 } from "lucide-react";
+import { memo } from "react";
+import { useNavigate } from "react-router-dom";
+
 import { Button } from "./ui/button";
 
 // Real-time fraud intelligence data structure

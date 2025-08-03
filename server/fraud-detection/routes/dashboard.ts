@@ -1,7 +1,8 @@
 import { Router, Response } from 'express';
+
+import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 import { FraudDetectionEngine } from '../core/FraudDetectionEngine';
 import { Logger } from '../utils/Logger';
-import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 
 interface BackgroundScan {
   id: string;

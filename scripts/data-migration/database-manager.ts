@@ -11,12 +11,14 @@
  */
 
 import 'dotenv/config';
-import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
+import bcrypt from "bcrypt";
+import { eq, sql, count, isNull, desc } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/neon-http";
+
 import { users, properties, reviews } from "../../src/shared/schema";
 import type { InsertUser, InsertProperty } from "../../src/shared/schema";
-import { eq, sql, count, isNull, desc } from "drizzle-orm";
-import bcrypt from "bcrypt";
+
 
 interface DatabaseStats {
   users: number;
@@ -499,7 +501,7 @@ class DatabaseManager {
       console.log(`   Query Time: ${report.performanceMetrics.queryTime}ms`);
     }
     
-    console.log('\n' + '='.repeat(50));
+    console.log(`\n${  '='.repeat(50)}`);
   }
 }
 

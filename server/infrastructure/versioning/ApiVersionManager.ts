@@ -6,6 +6,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+
 import { logger } from '../monitoring/logger';
 
 export type ApiVersion = 'v1' | 'v2' | 'v3';
@@ -291,7 +292,7 @@ export class ApiVersionManager {
       return undefined;
     }
 
-    const sunsetDate = config.sunsetDate;
+    const {sunsetDate} = config;
     if (sunsetDate) {
       const daysUntilSunset = Math.ceil(
         (sunsetDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)

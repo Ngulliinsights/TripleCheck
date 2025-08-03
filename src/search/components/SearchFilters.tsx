@@ -1,14 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { Button } from '../../shared/components/ui/button';
-import { Input } from '../../shared/components/ui/input';
-import { Label } from '../../shared/components/ui/label';
-import { Slider } from '../../shared/components/ui/slider';
-import { Checkbox } from '../../shared/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shared/components/ui/select';
-import { Badge } from '../../shared/components/ui/badge';
-import { Separator } from '../../shared/components/ui/separator';
 import { 
   Search, 
   Filter, 
@@ -24,6 +14,18 @@ import {
   Shield,
   Sliders
 } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { Badge } from '../../shared/components/ui/badge';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Checkbox } from '../../shared/components/ui/checkbox';
+import { Input } from '../../shared/components/ui/input';
+import { Label } from '../../shared/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shared/components/ui/select';
+import { Separator } from '../../shared/components/ui/separator';
+import { Slider } from '../../shared/components/ui/slider';
+
 
 interface SearchFilters {
   query: string;

@@ -1,8 +1,9 @@
-import { logger } from '../infrastructure/monitoring/logger';
 import { DocumentAuthService } from '../document-auth/DocumentAuthService';
-import { LandVerificationService } from './LandVerificationService';
+import { logger } from '../infrastructure/monitoring/logger';
+
 import { DocumentIntegration } from './DocumentIntegration';
 import { ExpertCoordinationService } from './ExpertCoordinationService';
+import { LandVerificationService } from './LandVerificationService';
 import { MonitoringService } from './MonitoringService';
 
 export interface LandVerificationServiceConfig {

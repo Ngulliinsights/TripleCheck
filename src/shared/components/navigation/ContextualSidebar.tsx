@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Search, Filter, X } from 'lucide-react';
-import { cn } from '@/shared/lib/utils';
+import React, { useState, useEffect } from 'react';
+
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
+import { cn } from '@/shared/lib/utils';
 
 interface SidebarSection {
   id: string;

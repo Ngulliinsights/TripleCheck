@@ -1,4 +1,3 @@
-import React, { useCallback, useEffect, useState } from "react";
 import {
   Shield,
   CheckCircle,
@@ -9,9 +8,11 @@ import {
   Eye,
   RefreshCw,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
+import React, { useCallback, useEffect, useState } from "react";
+
 import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
 import { 
   fraudDetectionApi, 
   type BackgroundScan, 

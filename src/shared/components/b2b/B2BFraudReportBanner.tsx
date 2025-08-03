@@ -1,6 +1,8 @@
-import React from 'react';
 import { Shield, AlertTriangle, Building2, ArrowRight, TrendingUp } from 'lucide-react';
+import React from 'react';
+
 import { Button } from '../ui/button';
+
 import { cn } from '@/shared/lib/utils';
 
 interface B2BFraudReportBannerProps {
@@ -14,7 +16,7 @@ interface B2BFraudReportBannerProps {
 
 export function B2BFraudReportBanner({ className, fraudStats }: B2BFraudReportBannerProps) {
   const handleAPIInterest = () => {
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (window?.gtag) {
       window.gtag('event', 'fraud_banner_click', {
         event_category: 'B2B',
         event_label: 'fraud_report_banner'

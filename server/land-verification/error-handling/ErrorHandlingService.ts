@@ -3,7 +3,6 @@
  * Integrates retry policies, fallback mechanisms, graceful degradation, and audit logging
  */
 
-import { logger } from "../../logger";
 import { 
   AppError, 
   ExternalServiceError, 
@@ -11,8 +10,9 @@ import {
   HttpStatusCode,
   generateCorrelationId 
 } from "../../../src/shared/utils/errors";
+import { logger } from "../../logger";
 
-import { retryPolicyManager, RetryResult } from "./RetryPolicyManager";
+import { auditLogger, AuditSeverity } from "./AuditLogger";
 import { fallbackManager, FallbackResult } from "./FallbackManager";
 import { 
   gracefulDegradationManager, 
@@ -20,7 +20,7 @@ import {
   DegradationResult,
   DegradationLevel 
 } from "./GracefulDegradationManager";
-import { auditLogger, AuditSeverity } from "./AuditLogger";
+import { retryPolicyManager, RetryResult } from "./RetryPolicyManager";
 
 export interface ErrorHandlingConfig {
   enableRetry: boolean;

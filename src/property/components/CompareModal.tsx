@@ -1,20 +1,25 @@
-import React from 'react';
 import { X, Home, MapPin, DollarSign, Bed, Bath, Car, Calendar, Shield } from 'lucide-react';
-import { Button } from '../../shared/components/ui/button';
+import React from 'react';
+
 import { Badge } from '../../shared/components/ui/badge';
-import { Property, PropertyFeatures } from '../../shared/types/property';
+import { Button } from '../../shared/components/ui/button';
 import { cn } from '../../shared/lib/utils';
+import { Property, PropertyFeatures } from '../../shared/types/property';
+import { useCompare } from '../contexts/CompareContext';
 
 interface CompareModalProps {
   isOpen: boolean;
   onClose: () => void;
-  properties: Property[];
 }
 
-export function CompareModal({ isOpen, onClose, properties }: CompareModalProps) {
-  if (!isOpen || properties.length < 2) {
+export function CompareModal({ isOpen, onClose }: CompareModalProps) {
+  const { selectedProperties } = useCompare();
+  
+  if (!isOpen || selectedProperties.length < 2) {
     return null;
   }
+  
+  const properties = selectedProperties;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -81,7 +86,7 @@ export function CompareModal({ isOpen, onClose, properties }: CompareModalProps)
               {properties.map((property) => (
                 <div key={property.id} className="text-center">
                   <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                    {property.images && property.images[0] ? (
+                    {property.images?.[0] ? (
                       <img
                         src={property.images[0]}
                         alt={property.title}

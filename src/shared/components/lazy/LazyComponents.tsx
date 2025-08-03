@@ -1,5 +1,6 @@
 
 import { lazy, Suspense } from 'react';
+
 import { Skeleton } from '../ui/skeleton';
 
 // Lazy load heavy components

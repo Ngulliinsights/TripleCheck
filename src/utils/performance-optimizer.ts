@@ -124,7 +124,7 @@ export const measureWebVitals = () => {
 
 // Basic Web Vitals measurement without external dependencies
 const measureBasicWebVitals = () => {
-  if (typeof window === 'undefined' || !window.performance) return;
+  if (!window?.performance) return;
 
   // Measure basic performance metrics
   const sendBasicMetric = (name: string, value: number) => {

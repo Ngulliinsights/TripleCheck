@@ -1,6 +1,8 @@
-import { Logger } from '../utils/Logger';
-import { DatabaseService } from './DatabaseService';
 import { EventEmitter } from 'events';
+
+import { Logger } from '../utils/Logger';
+
+import { DatabaseService } from './DatabaseService';
 
 export interface ComplianceCheck {
   regulation: string;
@@ -296,7 +298,7 @@ export class ComplianceReportingService extends EventEmitter {
         name: 'RESPA Dual Representation Disclosure',
         regulation: 'us_respa',
         condition: (transaction: any) => 
-          transaction.agent && transaction.agent.dualRepresentation && !transaction.agent.disclosed,
+          transaction.agent?.dualRepresentation && !transaction.agent.disclosed,
         action: 'require_disclosure_review',
         severity: 'medium'
       },

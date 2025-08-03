@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { ValidationError } from '../types/api';
 
 // Enhanced validation utilities with comprehensive error handling
@@ -87,7 +88,7 @@ export const CommonValidationSchemas = {
         const parts = email.split('@');
         if (parts.length < 2) return false;
         const localParts = parts[0]?.split('+');
-        return localParts && localParts[0] && localParts[0].length >= 3;
+        return localParts?.[0] && localParts[0].length >= 3;
       },
       'Email local part before + must be at least 3 characters'
     ),

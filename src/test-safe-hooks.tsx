@@ -1,5 +1,6 @@
-import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
+
 import { useSafeQuery } from './shared/hooks/useSafeQuery';
 
 // Create a simple query client for testing

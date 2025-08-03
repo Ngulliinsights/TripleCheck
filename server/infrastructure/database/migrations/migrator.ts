@@ -4,10 +4,11 @@
  * Handles database schema migrations with rollback capabilities
  */
 
-import { logger } from '../../../infrastructure/monitoring/logger';
-import { databaseConfig } from '../config/database.config';
 import fs from 'fs/promises';
 import path from 'path';
+
+import { logger } from '../../../infrastructure/monitoring/logger';
+import { databaseConfig } from '../config/database.config';
 
 export interface Migration {
   id: string;

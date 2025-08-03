@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { Property, PropertySearchParams } from '../types/property.types';
 
 // Property validation schemas

@@ -9,7 +9,7 @@ import 'dotenv/config';
 import postgres from 'postgres';
 
 async function testDatabaseConnection() {
-  const DATABASE_URL = process.env.DATABASE_URL;
+  const {DATABASE_URL} = process.env;
   
   if (!DATABASE_URL) {
     console.error('❌ DATABASE_URL environment variable is not set');

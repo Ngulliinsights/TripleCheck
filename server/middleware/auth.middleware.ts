@@ -1,9 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
 import type { User } from '@shared/schema';
+import { Request, Response, NextFunction } from 'express';
+
+import type { UserRole, AuthorizationContext, PermissionCheckResult, SessionConfig } from '../types/auth.types';
 import { HTTP_STATUS, AUTH_CONSTANTS, ROLE_HIERARCHY, ROLE_PERMISSIONS, TRUST_SCORE_THRESHOLDS } from '../utils/constants';
 import { AUTH_ERROR_MESSAGES } from '../utils/error-messages';
 import { ResponseHelper } from '../utils/response-helpers';
-import type { UserRole, AuthorizationContext, PermissionCheckResult, SessionConfig } from '../types/auth.types';
 
 // Storage interface for dependency injection
 interface IStorage {
@@ -79,7 +80,7 @@ export class SessionManager {
       return false;
     }
 
-    const lastActivity = req.session.lastActivity;
+    const {lastActivity} = req.session;
     if (lastActivity) {
       const sessionAge = Date.now() - new Date(lastActivity).getTime();
       return sessionAge <= maxAgeMs;

@@ -3,9 +3,9 @@
  * Seamlessly connects with existing Kenya land verification workflows
  */
 
-import { LandVerificationRequest, ExpertCoordination, RiskAssessment } from '../types';
-import { DocumentVerificationResult } from '../../trust/types';
 import { safeNavigate } from '../../shared/utils/safe-navigation';
+import { DocumentVerificationResult } from '../../trust/types';
+import { LandVerificationRequest, ExpertCoordination, RiskAssessment } from '../types';
 
 export interface KenyaLandDocument {
   readonly type: 'title_deed' | 'sale_agreement' | 'survey_report' | 'consent_letter' | 'clearance_certificate';

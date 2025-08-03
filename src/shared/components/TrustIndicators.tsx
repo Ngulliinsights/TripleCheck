@@ -1,6 +1,3 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardContent } from './ui/card';
-import { Badge } from './ui/badge';
 import { 
   Shield, 
   CheckCircle, 
@@ -14,6 +11,10 @@ import {
   Clock,
   Zap
 } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+import { Badge } from './ui/badge';
+import { Card, CardContent } from './ui/card';
 
 // Enhanced trust indicator types with African market focus
 interface TrustMetric {

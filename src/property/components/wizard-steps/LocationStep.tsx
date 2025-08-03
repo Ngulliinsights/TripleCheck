@@ -1,13 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Input } from '@shared/components/ui/input';
-import { Label } from '@shared/components/ui/label';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Badge } from '@shared/components/ui/badge';
-import { Alert, AlertDescription } from '@shared/components/ui/alert';
-import { PropertyMap } from '../PropertyMap';
-import { PropertyFormData } from '../PropertyListingWizard';
+import { Input } from '@shared/components/ui/input';
+import { Label } from '@shared/components/ui/label';
 import { MapPin, Navigation, Search, CheckCircle } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+
+import { PropertyFormData } from '../PropertyListingWizard';
+import { PropertyMap } from '../PropertyMap';
+
 
 interface LocationStepProps {
   data: PropertyFormData;
@@ -53,12 +55,12 @@ export function LocationStep({ data, onUpdate, onValidation }: LocationStepProps
       const result = await response.json();
       
       if (result.status === 'OK' && result.results.length > 0) {
-        const location = result.results[0].geometry.location;
+        const {location} = result.results[0].geometry;
         const addressComponents = result.results[0].address_components;
         
         // Extract city and state from geocoding result
-        let city = data.location.city;
-        let state = data.location.state;
+        let {city} = data.location;
+        let {state} = data.location;
         
         addressComponents.forEach((component: any) => {
           if (component.types.includes('locality')) {
@@ -123,7 +125,7 @@ export function LocationStep({ data, onUpdate, onValidation }: LocationStepProps
             
             addressComponents.forEach((component: any) => {
               if (component.types.includes('street_number') || component.types.includes('route')) {
-                address += component.long_name + ' ';
+                address += `${component.long_name  } `;
               }
               if (component.types.includes('locality')) {
                 city = component.long_name;

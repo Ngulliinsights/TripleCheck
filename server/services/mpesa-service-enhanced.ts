@@ -88,7 +88,7 @@ export class MpesaService {
 
   private async getAccessToken(): Promise<string> {
     if (this.fallbackMode) {
-      return 'fallback_token_' + Date.now();
+      return `fallback_token_${  Date.now()}`;
     }
 
     // Check if current token is still valid
@@ -128,14 +128,13 @@ export class MpesaService {
     } catch (error) {
       console.error('❌ Failed to get M-Pesa access token:', error);
       this.fallbackMode = true;
-      return 'fallback_token_' + Date.now();
+      return `fallback_token_${  Date.now()}`;
     }
   }
 
   private generatePassword(): string {
     const timestamp = this.getCurrentTimestamp();
-    const password = Buffer.from(`${this.config.businessShortCode}${this.config.passkey}${timestamp}`).toString('base64');
-    return password;
+    return Buffer.from(`${this.config.businessShortCode}${this.config.passkey}${timestamp}`).toString('base64');
   }
 
   private getCurrentTimestamp(): string {
@@ -149,7 +148,7 @@ export class MpesaService {
     // Handle different Kenyan phone number formats
     if (cleaned.startsWith('0')) {
       // Convert 0712345678 to 254712345678
-      cleaned = '254' + cleaned.slice(1);
+      cleaned = `254${  cleaned.slice(1)}`;
     } else if (cleaned.startsWith('+254')) {
       // Convert +254712345678 to 254712345678
       cleaned = cleaned.slice(1);
@@ -158,7 +157,7 @@ export class MpesaService {
       cleaned = cleaned;
     } else if (cleaned.length === 9) {
       // Assume it's missing the 254 prefix
-      cleaned = '254' + cleaned;
+      cleaned = `254${  cleaned}`;
     }
     
     // Validate Kenyan phone number format

@@ -210,7 +210,7 @@ export class TestMemoryManager {
           if (check.exceeded) {
             clearInterval(monitorInterval);
             reject(new Error(`Memory limit exceeded during ${label}: ${check.violations.join(', ')}`));
-            return;
+            
           }
         }
       }, checkInterval);

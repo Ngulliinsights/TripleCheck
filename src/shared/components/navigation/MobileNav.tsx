@@ -1,6 +1,4 @@
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { 
   Menu, 
   X, 
@@ -14,11 +12,14 @@ import {
   HelpCircle,
   DollarSign
 } from "lucide-react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Logo } from "../ui/logo";
 import { Wordmark } from "../ui/wordmark";
-import { cn } from "../../lib/utils";
 
 // Simple logging utility for development
 const logError = (message: string, error?: unknown) => {

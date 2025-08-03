@@ -10,6 +10,7 @@ export const HTTP_STATUS = {
   CONFLICT: 409,
   TOO_MANY_REQUESTS: 429,
   INTERNAL_SERVER_ERROR: 500,
+  NOT_IMPLEMENTED: 501,
 } as const;
 
 export const AUTH_CONSTANTS = {

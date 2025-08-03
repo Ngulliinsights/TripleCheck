@@ -1,9 +1,11 @@
 /**
  * Cache Performance Monitor
- * 
+ *
  * Monitors cache performance metrics including hit rates, memory usage,
  * and deduplication effectiveness for the RequestDeduplicator system.
  */
+
+import { randomUUID } from 'crypto';          // ← cryptographically strong
 
 export interface CacheMetrics {
   hitRate: number;
@@ -47,18 +49,15 @@ export class CachePerformanceMonitor {
 
   // Configuration thresholds
   private readonly thresholds = {
-    lowHitRate: 0.7, // Alert if hit rate below 70%
-    highMemoryUsage: 100 * 1024 * 1024, // Alert if memory usage above 100MB
-    highErrorRate: 0.05, // Alert if error rate above 5%
-    slowResponseTime: 1000, // Alert if average response time above 1s
+    lowHitRate: 0.7,
+    highMemoryUsage: 100 * 1024 * 1024,
+    highErrorRate: 0.05,
+    slowResponseTime: 1000,
   };
 
   private constructor() {
-    // Start periodic metrics collection
-    setInterval(() => this.collectMetrics(), 60000); // Every minute
-    
-    // Clean up old metrics (keep last 24 hours)
-    setInterval(() => this.cleanupOldMetrics(), 3600000); // Every hour
+    setInterval(() => this.collectMetrics(), 60000);
+    setInterval(() => this.cleanupOldMetrics(), 3600000);
   }
 
   static getInstance(): CachePerformanceMonitor {
@@ -68,27 +67,22 @@ export class CachePerformanceMonitor {
     return CachePerformanceMonitor.instance;
   }
 
-  /**
-   * Record a cache hit
-   */
   recordCacheHit(key: string, responseTime: number): void {
-    this.requestTimes.set(`hit_${Date.now()}_${Math.random()}`, responseTime);
+    this.requestTimes.set(`hit_${Date.now()}_${randomUUID()}`, responseTime);
   }
 
-  /**
-   * Record a cache miss
-   */
   recordCacheMiss(key: string, responseTime: number): void {
-    this.requestTimes.set(`miss_${Date.now()}_${Math.random()}`, responseTime);
+    this.requestTimes.set(`miss_${Date.now()}_${randomUUID()}`, responseTime);
   }
 
-  /**
-   * Record a deduplication event
-   */
-  recordDeduplication(originalRequests: number, actualExecutions: number, timeSaved: number): void {
+  recordDeduplication(
+    originalRequests: number,
+    actualExecutions: number,
+    timeSaved: number
+  ): void {
     const savings = originalRequests - actualExecutions;
     const efficiency = savings / originalRequests;
-    
+
     this.deduplicationMetrics.push({
       totalRequests: originalRequests,
       deduplicatedRequests: actualExecutions,
@@ -98,38 +92,24 @@ export class CachePerformanceMonitor {
       memoryEfficiency: efficiency,
     });
 
-    // Keep only recent deduplication metrics
     if (this.deduplicationMetrics.length > 1000) {
       this.deduplicationMetrics = this.deduplicationMetrics.slice(-500);
     }
   }
 
-  /**
-   * Record a cache error
-   */
   recordCacheError(key: string, error: Error): void {
-    // Errors are tracked in the metrics collection
-    console.warn(`[CachePerformanceMonitor] Cache error for key ${key}:`, error.message);
+    console.warn(`[CachePerformanceMonitor] Cache error for key ${key}:`, error.message); // eslint-disable-line
   }
 
-  /**
-   * Get current performance metrics
-   */
   getCurrentMetrics(): CacheMetrics | null {
     return this.metrics.length > 0 ? this.metrics[this.metrics.length - 1] : null;
   }
 
-  /**
-   * Get historical metrics
-   */
-  getHistoricalMetrics(hours: number = 24): CacheMetrics[] {
+  getHistoricalMetrics(hours = 24): CacheMetrics[] {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
-    return this.metrics.filter(metric => metric.timestamp >= cutoff);
+    return this.metrics.filter((m) => m.timestamp >= cutoff);
   }
 
-  /**
-   * Get deduplication effectiveness metrics
-   */
   getDeduplicationMetrics(): DeduplicationMetrics {
     if (this.deduplicationMetrics.length === 0) {
       return {
@@ -142,15 +122,15 @@ export class CachePerformanceMonitor {
       };
     }
 
-    const recent = this.deduplicationMetrics.slice(-100); // Last 100 deduplication events
+    const recent = this.deduplicationMetrics.slice(-100);
     const totals = recent.reduce(
-      (acc, metric) => ({
-        totalRequests: acc.totalRequests + metric.totalRequests,
-        deduplicatedRequests: acc.deduplicatedRequests + metric.deduplicatedRequests,
-        duplicatesSaved: acc.duplicatesSaved + metric.duplicatesSaved,
-        averageDeduplicationTime: acc.averageDeduplicationTime + metric.averageDeduplicationTime,
-        concurrentRequestsSaved: acc.concurrentRequestsSaved + metric.concurrentRequestsSaved,
-        memoryEfficiency: acc.memoryEfficiency + metric.memoryEfficiency,
+      (acc, m) => ({
+        totalRequests: acc.totalRequests + m.totalRequests,
+        deduplicatedRequests: acc.deduplicatedRequests + m.deduplicatedRequests,
+        duplicatesSaved: acc.duplicatesSaved + m.duplicatesSaved,
+        averageDeduplicationTime: acc.averageDeduplicationTime + m.averageDeduplicationTime,
+        concurrentRequestsSaved: acc.concurrentRequestsSaved + m.concurrentRequestsSaved,
+        memoryEfficiency: acc.memoryEfficiency + m.memoryEfficiency,
       }),
       {
         totalRequests: 0,
@@ -173,93 +153,78 @@ export class CachePerformanceMonitor {
     };
   }
 
-  /**
-   * Get recent alerts
-   */
-  getRecentAlerts(hours: number = 24): PerformanceAlert[] {
+  getRecentAlerts(hours = 24): PerformanceAlert[] {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
-    return this.alerts.filter(alert => alert.timestamp >= cutoff);
+    return this.alerts.filter((a) => a.timestamp >= cutoff);
   }
 
-  /**
-   * Subscribe to performance alerts
-   */
   onAlert(callback: (alert: PerformanceAlert) => void): void {
     this.alertCallbacks.push(callback);
   }
 
-  /**
-   * Generate performance report
-   */
-  generateReport(hours: number = 24): {
-    summary: CacheMetrics;
-    deduplication: DeduplicationMetrics;
-    alerts: PerformanceAlert[];
-    recommendations: string[];
-  } {
-    const historical = this.getHistoricalMetrics(hours);
+  generateReport(hours = 24) {
     const current = this.getCurrentMetrics();
     const deduplication = this.getDeduplicationMetrics();
     const alerts = this.getRecentAlerts(hours);
 
     const recommendations: string[] = [];
 
-    // Generate recommendations based on metrics
     if (current) {
       if (current.hitRate < this.thresholds.lowHitRate) {
-        recommendations.push(`Cache hit rate is low (${(current.hitRate * 100).toFixed(1)}%). Consider increasing cache TTL or reviewing cache key strategies.`);
+        recommendations.push(
+          `Cache hit rate is low (${(current.hitRate * 100).toFixed(1)}%). Consider increasing cache TTL or reviewing cache key strategies.`
+        );
       }
-
       if (current.memoryUsage > this.thresholds.highMemoryUsage) {
-        recommendations.push(`Memory usage is high (${(current.memoryUsage / 1024 / 1024).toFixed(1)}MB). Consider implementing cache size limits or more aggressive cleanup.`);
+        recommendations.push(
+          `Memory usage is high (${(current.memoryUsage / 1024 / 1024).toFixed(1)}MB). Consider implementing cache size limits or more aggressive cleanup.`
+        );
       }
-
       if (current.errorRate > this.thresholds.highErrorRate) {
-        recommendations.push(`Error rate is elevated (${(current.errorRate * 100).toFixed(1)}%). Review error logs and consider fallback strategies.`);
+        recommendations.push(
+          `Error rate is elevated (${(current.errorRate * 100).toFixed(1)}%). Review error logs and consider fallback strategies.`
+        );
       }
-
       if (current.averageResponseTime > this.thresholds.slowResponseTime) {
-        recommendations.push(`Average response time is slow (${current.averageResponseTime}ms). Consider optimizing cache lookup performance.`);
+        recommendations.push(
+          `Average response time is slow (${current.averageResponseTime}ms). Consider optimizing cache lookup performance.`
+        );
       }
     }
 
     if (deduplication.memoryEfficiency < 0.3) {
-      recommendations.push(`Deduplication efficiency is low (${(deduplication.memoryEfficiency * 100).toFixed(1)}%). Review deduplication strategies and endpoint patterns.`);
+      recommendations.push(
+        `Deduplication efficiency is low (${(deduplication.memoryEfficiency * 100).toFixed(1)}%). Review deduplication strategies and endpoint patterns.`
+      );
     }
 
     return {
-      summary: current || this.getEmptyMetrics(),
+      summary: current ?? this.getEmptyMetrics(),
       deduplication,
       alerts,
       recommendations,
     };
   }
 
-  /**
-   * Collect current metrics from cache systems
-   */
   private async collectMetrics(): Promise<void> {
     try {
-      // Calculate metrics from recorded request times
       const now = Date.now();
-      const recentRequests = Array.from(this.requestTimes.entries()).filter(
-        ([key]) => now - parseInt(key.split('_')[1]) < 60000 // Last minute
+      const recent = Array.from(this.requestTimes.entries()).filter(
+        ([k]) => now - parseInt(k.split('_')[1]!) < 60000 // non-null assertion
       );
 
-      const hits = recentRequests.filter(([key]) => key.startsWith('hit_'));
-      const misses = recentRequests.filter(([key]) => key.startsWith('miss_'));
+      const hits = recent.filter(([k]) => k.startsWith('hit_'));
+      const misses = recent.filter(([k]) => k.startsWith('miss_'));
       const total = hits.length + misses.length;
 
-      if (total === 0) {
-        return; // No requests to analyze
-      }
+      if (total === 0) return;
 
       const hitRate = hits.length / total;
       const missRate = misses.length / total;
-      const averageResponseTime = recentRequests.reduce((sum, [, time]) => sum + time, 0) / total;
+      const averageResponseTime =
+        recent.reduce((sum, [, t]) => sum + t, 0) / total;
 
-      // Estimate memory usage (this would typically come from the actual cache service)
-      const estimatedMemoryUsage = total * 1024; // Rough estimate
+      const estimatedMemoryUsage = total * 1024;
 
       const metrics: CacheMetrics = {
         hitRate,
@@ -270,26 +235,18 @@ export class CachePerformanceMonitor {
         memoryUsage: estimatedMemoryUsage,
         averageResponseTime,
         deduplicationSavings: this.calculateDeduplicationSavings(),
-        errorRate: 0, // Would be calculated from actual error tracking
+        errorRate: 0,
         timestamp: new Date(),
       };
 
       this.metrics.push(metrics);
-
-      // Check for alerts
       this.checkForAlerts(metrics);
-
-      // Clean up old request times
       this.cleanupRequestTimes();
-
     } catch (error) {
-      console.error('[CachePerformanceMonitor] Error collecting metrics:', error);
+      console.error('[CachePerformanceMonitor] Error collecting metrics:', error); // eslint-disable-line
     }
   }
 
-  /**
-   * Check metrics against thresholds and generate alerts
-   */
   private checkForAlerts(metrics: CacheMetrics): void {
     const alerts: PerformanceAlert[] = [];
 
@@ -332,7 +289,8 @@ export class CachePerformanceMonitor {
     if (metrics.averageResponseTime > this.thresholds.slowResponseTime) {
       alerts.push({
         type: 'performance_degradation',
-        severity: metrics.averageResponseTime > this.thresholds.slowResponseTime * 2 ? 'critical' : 'medium',
+        severity:
+          metrics.averageResponseTime > this.thresholds.slowResponseTime * 2 ? 'critical' : 'medium',
         message: `Average response time is above threshold: ${metrics.averageResponseTime}ms`,
         metrics: { averageResponseTime: metrics.averageResponseTime },
         timestamp: new Date(),
@@ -341,61 +299,40 @@ export class CachePerformanceMonitor {
       });
     }
 
-    // Store and notify about new alerts
-    for (const alert of alerts) {
+    alerts.forEach((alert) => {
       this.alerts.push(alert);
-      this.alertCallbacks.forEach(callback => {
+      this.alertCallbacks.forEach((cb) => {
         try {
-          callback(alert);
-        } catch (error) {
-          console.error('[CachePerformanceMonitor] Error in alert callback:', error);
+          cb(alert);
+        } catch (e) {
+          console.error('[CachePerformanceMonitor] Error in alert callback:', e); // eslint-disable-line
         }
       });
-    }
+    });
   }
 
-  /**
-   * Calculate deduplication savings
-   */
   private calculateDeduplicationSavings(): number {
     const recent = this.deduplicationMetrics.slice(-10);
     if (recent.length === 0) return 0;
-
-    return recent.reduce((sum, metric) => sum + metric.duplicatesSaved, 0) / recent.length;
+    return recent.reduce((sum, m) => sum + m.duplicatesSaved, 0) / recent.length;
   }
 
-  /**
-   * Clean up old metrics to prevent memory leaks
-   */
   private cleanupOldMetrics(): void {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
-    
-    this.metrics = this.metrics.filter(metric => metric.timestamp >= cutoff);
-    this.alerts = this.alerts.filter(alert => alert.timestamp >= cutoff);
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    this.metrics = this.metrics.filter((m) => m.timestamp >= cutoff);
+    this.alerts = this.alerts.filter((a) => a.timestamp >= cutoff);
   }
 
-  /**
-   * Clean up old request times
-   */
   private cleanupRequestTimes(): void {
-    const cutoff = Date.now() - 60000; // 1 minute ago
-    const keysToDelete: string[] = [];
-
-    for (const [key] of this.requestTimes.entries()) {
-      const timestamp = parseInt(key.split('_')[1]);
-      if (timestamp < cutoff) {
-        keysToDelete.push(key);
-      }
+    const cutoff = Date.now() - 60000;
+    const toDelete: string[] = [];
+    for (const [key] of this.requestTimes) {
+      const ts = parseInt(key.split('_')[1]!); // non-null assertion
+      if (ts < cutoff) toDelete.push(key);
     }
-
-    for (const key of keysToDelete) {
-      this.requestTimes.delete(key);
-    }
+    toDelete.forEach((k) => this.requestTimes.delete(k));
   }
 
-  /**
-   * Get empty metrics template
-   */
   private getEmptyMetrics(): CacheMetrics {
     return {
       hitRate: 0,
@@ -412,5 +349,4 @@ export class CachePerformanceMonitor {
   }
 }
 
-// Export singleton instance
 export const cachePerformanceMonitor = CachePerformanceMonitor.getInstance();

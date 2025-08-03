@@ -5,8 +5,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@shared/components/ui/tooltip";
-import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { cn } from "@shared/lib/utils";
+import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
 
 interface VerificationBadgeProps {
   status: string | undefined;

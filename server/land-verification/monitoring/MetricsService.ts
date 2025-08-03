@@ -1,5 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
 import { performance } from 'perf_hooks';
+
+import { Request, Response, NextFunction } from 'express';
 
 interface MetricData {
   name: string;
@@ -186,7 +187,7 @@ export class MetricsService {
     res.on('finish', () => {
       const duration = performance.now() - startTime;
       const route = req.route?.path || req.path;
-      const method = req.method;
+      const {method} = req;
       const statusCode = res.statusCode.toString();
       
       this.incrementCounter('http_requests_total', {
@@ -300,7 +301,7 @@ export class MetricsService {
     
     for (const [key, value] of this.counters) {
       const [name, labels] = this.parseKey(key);
-      if (name === metricName && labels && labels[labelName]) {
+      if (name === metricName && labels?.[labelName]) {
         result[labels[labelName]] = (result[labels[labelName]] || 0) + value;
       }
     }
@@ -313,8 +314,8 @@ export class MetricsService {
     
     for (const [key, value] of this.counters) {
       const [name, labels] = this.parseKey(key);
-      if (name === 'external_api_calls_total' && labels && labels.api) {
-        const api = labels.api;
+      if (name === 'external_api_calls_total' && labels?.api) {
+        const {api} = labels;
         if (!result[api]) {
           result[api] = {
             totalCalls: 0,

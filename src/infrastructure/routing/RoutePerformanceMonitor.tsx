@@ -4,8 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useRoutePreloader, useRouteLoadingTracker } from './useRoutePreloader';
+
 import { routePreloader } from './route-preloader';
+import { useRoutePreloader, useRouteLoadingTracker } from './useRoutePreloader';
 
 interface RoutePerformanceMonitorProps {
   showInProduction?: boolean;

@@ -5,16 +5,22 @@
  * This is the main verification system that most users will use.
  */
 
-import type { Express, Request, Response } from "express";
-import { z } from "zod";
-import rateLimit from "express-rate-limit";
-import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, and, desc, count } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/neon-http";
+import type { Express, Request, Response } from "express";
+import rateLimit from "express-rate-limit";
+import { z } from "zod";
 
 // Import session type augmentation
 import "../types";
 
+import {
+  BehaviorAnalysisAI,
+  CommunityTrustAI,
+  ComprehensiveTrustCalculator,
+  PhysicalVerificationAI,
+} from "../ai/community-trust-ai-root";
 import {
   TrustScore,
   TrustLevel,
@@ -38,12 +44,6 @@ import {
   // getTrustLevelFromScore,
 } from "../shared/community-trust-schema";
 
-import {
-  BehaviorAnalysisAI,
-  CommunityTrustAI,
-  ComprehensiveTrustCalculator,
-  PhysicalVerificationAI,
-} from "../ai/community-trust-ai-root";
 
 // Initialize database
 const sql = neon(process.env.DATABASE_URL!);

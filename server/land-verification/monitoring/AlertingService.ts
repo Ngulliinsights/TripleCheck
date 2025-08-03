@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
-import { metricsService } from './MetricsService';
+
 import { healthCheckService } from '../health/HealthCheckService';
+
+import { metricsService } from './MetricsService';
 
 interface Alert {
   id: string;

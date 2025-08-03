@@ -1,7 +1,8 @@
 import { Property } from "@shared/schema";
-import { db } from '../infrastructure/database/connection';
-import { properties, landVerificationSessions, verificationLayers } from '../../src/shared/schema';
 import { eq, and, desc, asc, sql, like, gte, lte, inArray } from 'drizzle-orm';
+
+import { properties, landVerificationSessions, verificationLayers } from '../../src/shared/schema';
+import { getDatabase, isDatabaseAvailable } from '../infrastructure/database/init';
 // Create a simple query tracker as fallback
 const queryMonitor = {
   trackQuery: async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
@@ -42,6 +43,21 @@ export class PropertyRepository {
         sortOrder = 'desc'
       } = filters;
 
+      // Check if database is available
+      if (!isDatabaseAvailable()) {
+        console.log('Database not available, returning mock data');
+        return this.getMockPropertiesWithFilters(filters);
+      }
+
+      // First check if database has any properties
+      const db = getDatabase();
+      const hasProperties = await db.select().from(properties).limit(1);
+      
+      // If no properties in database, return mock data
+      if (hasProperties.length === 0) {
+        console.log('No properties found in database, returning mock data');
+        return this.getMockPropertiesWithFilters(filters);
+      }
       let queryBuilder = db.select({
         property: properties,
         landVerification: {
@@ -150,7 +166,7 @@ export class PropertyRepository {
 
       // Transform results to include land verification data
       const transformedData = await Promise.all(results.map(async (result) => {
-        const property = result.property;
+        const {property} = result;
         let landVerification = null;
 
         if (result.landVerification && result.landVerification.sessionId) {
@@ -207,6 +223,7 @@ export class PropertyRepository {
 
   async findById(id: string): Promise<Property | null> {
     try {
+      const db = getDatabase();
       const [result] = await db.select({
         property: properties,
         landVerification: {
@@ -268,6 +285,7 @@ export class PropertyRepository {
 
   async findByOwner(ownerId: string) {
     try {
+      const db = getDatabase();
       const results = await db.select({
         property: properties,
         landVerification: {
@@ -287,7 +305,7 @@ export class PropertyRepository {
       .where(eq(properties.ownerId, parseInt(ownerId)));
 
       // Transform results to include land verification data
-      const transformedData = await Promise.all(results.map(async (result) => {
+      return await Promise.all(results.map(async (result) => {
         let landVerification = null;
 
         if (result.landVerification && result.landVerification.sessionId) {
@@ -320,8 +338,6 @@ export class PropertyRepository {
           landVerification
         };
       }));
-
-      return transformedData;
     } catch (error) {
       console.error('Error in findByOwner:', error);
       return [];
@@ -393,6 +409,7 @@ export class PropertyRepository {
         conditions.push(eq(properties.isActive, true));
         
         // Optimized query with proper ordering for consistent results
+        const db = getDatabase();
         let queryBuilder = db.select({
           id: properties.id,
           title: properties.title,
@@ -436,6 +453,7 @@ export class PropertyRepository {
 
   async create(propertyData: any) {
     try {
+      const db = getDatabase();
       const [newProperty] = await db.insert(properties)
         .values({
           title: propertyData.title,
@@ -462,6 +480,7 @@ export class PropertyRepository {
 
   async update(id: string, updates: any) {
     try {
+      const db = getDatabase();
       const [updatedProperty] = await db.update(properties)
         .set({
           ...updates,
@@ -479,6 +498,7 @@ export class PropertyRepository {
 
   async delete(id: string) {
     try {
+      const db = getDatabase();
       await db.delete(properties)
         .where(eq(properties.id, parseInt(id)));
       return true;
@@ -504,6 +524,214 @@ export class PropertyRepository {
       default:
         return properties.createdAt;
     }
+  }
+
+  private getMockPropertiesWithFilters(filters: any) {
+    const mockProperties = [
+      {
+        id: 1,
+        title: "Modern 3-Bedroom Apartment in Westlands",
+        description: "Beautiful modern apartment with stunning city views and premium amenities. Features spacious rooms, modern kitchen, and excellent security.",
+        price: "15000000",
+        location: "Westlands, Nairobi",
+        address: "Westlands Road, Nairobi, Kenya",
+        coordinates: { lat: -1.2676, lng: 36.8108 },
+        imageUrls: [
+          "/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg",
+          "/assets/Residential/frames-for-your-heart-2d4lAQAlbDA-unsplash.jpg"
+        ],
+        verificationStatus: "verified",
+        features: {
+          propertyType: "Apartment",
+          bedrooms: 3,
+          bathrooms: 2,
+          squareFeet: 1200,
+          parkingSpaces: 1,
+          yearBuilt: 2020,
+          amenities: ["Swimming Pool", "Gym", "24/7 Security", "Elevator"],
+          petFriendly: false,
+          furnished: true,
+        },
+        ownerId: 1,
+        viewCount: 0,
+        favoriteCount: 0,
+        isActive: true,
+        isFeatured: true,
+        availableFrom: null,
+        availableUntil: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        landVerification: null
+      },
+      {
+        id: 2,
+        title: "Luxury Villa in Karen",
+        description: "Spacious family home with beautiful gardens and modern fixtures. Perfect for families seeking comfort and elegance.",
+        price: "45000000",
+        location: "Karen, Nairobi",
+        address: "Karen Road, Nairobi, Kenya",
+        coordinates: { lat: -1.3197, lng: 36.7076 },
+        imageUrls: [
+          "/assets/Residential/dillon-kydd-XGvwt544g8k-unsplash.jpg",
+          "/assets/Residential/etienne-beauregard-riverin-B0aCvAVSX8E-unsplash.jpg"
+        ],
+        verificationStatus: "verified",
+        features: {
+          propertyType: "House",
+          bedrooms: 5,
+          bathrooms: 4,
+          squareFeet: 3500,
+          parkingSpaces: 3,
+          yearBuilt: 2018,
+          amenities: ["Swimming Pool", "Garden", "Staff Quarters", "Generator"],
+          petFriendly: true,
+          furnished: false,
+        },
+        ownerId: 1,
+        viewCount: 0,
+        favoriteCount: 0,
+        isActive: true,
+        isFeatured: true,
+        availableFrom: null,
+        availableUntil: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        landVerification: null
+      },
+      {
+        id: 3,
+        title: "Elegant Penthouse in Kilimani",
+        description: "Stunning penthouse with panoramic city views and luxury finishes. Features premium amenities and modern design.",
+        price: "32000000",
+        location: "Kilimani, Nairobi",
+        address: "Argwings Kodhek Road, Kilimani, Nairobi, Kenya",
+        coordinates: { lat: -1.2921, lng: 36.7833 },
+        imageUrls: [
+          "/assets/Residential/joel-filipe-RFDP7_80v5A-unsplash.jpg",
+          "/assets/Residential/krzysztof-hepner-V7Q0Oh3Az-c-unsplash.jpg"
+        ],
+        verificationStatus: "verified",
+        features: {
+          propertyType: "Apartment",
+          bedrooms: 4,
+          bathrooms: 3,
+          squareFeet: 2800,
+          parkingSpaces: 2,
+          yearBuilt: 2019,
+          amenities: ["Rooftop Terrace", "Gym", "Concierge", "Wine Cellar"],
+          petFriendly: true,
+          furnished: true,
+        },
+        ownerId: 1,
+        viewCount: 0,
+        favoriteCount: 0,
+        isActive: true,
+        isFeatured: true,
+        availableFrom: null,
+        availableUntil: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        landVerification: null
+      },
+      {
+        id: 4,
+        title: "Cozy Family Home in Kileleshwa",
+        description: "Perfect family home with modern amenities and great location. Ideal for young families starting their journey.",
+        price: "18500000",
+        location: "Kileleshwa, Nairobi",
+        address: "Kileleshwa Road, Nairobi, Kenya",
+        coordinates: { lat: -1.2833, lng: 36.7833 },
+        imageUrls: [
+          "/assets/Residential/jason-briscoe-AQl-J19ocWE-unsplash.jpg",
+          "/assets/Residential/rebecca-chandler-z6Yn9hhlrJw-unsplash.jpg"
+        ],
+        verificationStatus: "verified",
+        features: {
+          propertyType: "House",
+          bedrooms: 3,
+          bathrooms: 2,
+          squareFeet: 1450,
+          parkingSpaces: 2,
+          yearBuilt: 2021,
+          amenities: ["Garden", "Security", "Backup Generator", "Modern Kitchen"],
+          petFriendly: true,
+          furnished: false,
+        },
+        ownerId: 1,
+        viewCount: 0,
+        favoriteCount: 0,
+        isActive: true,
+        isFeatured: false,
+        availableFrom: null,
+        availableUntil: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        landVerification: null
+      }
+    ];
+
+    // Apply filters to mock data
+    let filtered = mockProperties;
+
+    if (filters.query) {
+      const query = filters.query.toLowerCase();
+      filtered = filtered.filter(property =>
+        property.title.toLowerCase().includes(query) ||
+        property.description.toLowerCase().includes(query) ||
+        property.location.toLowerCase().includes(query)
+      );
+    }
+
+    if (filters.location) {
+      filtered = filtered.filter(property =>
+        property.location.toLowerCase().includes(filters.location.toLowerCase())
+      );
+    }
+
+    if (filters.propertyType) {
+      filtered = filtered.filter(property =>
+        property.features.propertyType.toLowerCase() === filters.propertyType.toLowerCase()
+      );
+    }
+
+    if (filters.bedrooms) {
+      filtered = filtered.filter(property =>
+        property.features.bedrooms >= filters.bedrooms
+      );
+    }
+
+    if (filters.bathrooms) {
+      filtered = filtered.filter(property =>
+        property.features.bathrooms >= filters.bathrooms
+      );
+    }
+
+    if (filters.priceMin) {
+      filtered = filtered.filter(property =>
+        parseInt(property.price) >= filters.priceMin
+      );
+    }
+
+    if (filters.priceMax) {
+      filtered = filtered.filter(property =>
+        parseInt(property.price) <= filters.priceMax
+      );
+    }
+
+    // Apply pagination
+    const page = filters.page || 1;
+    const limit = filters.limit || 10;
+    const offset = (page - 1) * limit;
+    const paginatedData = filtered.slice(offset, offset + limit);
+
+    return {
+      data: paginatedData,
+      total: filtered.length,
+      page,
+      limit,
+      hasNext: page * limit < filtered.length,
+      hasPrev: page > 1,
+    };
   }
 
   private generateLandVerificationBadge(status: string, riskLevel: string) {

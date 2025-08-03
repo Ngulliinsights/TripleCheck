@@ -59,7 +59,7 @@ export class PerformanceOptimizer {
    * Initialize performance observer
    */
   private initializePerformanceObserver(): void {
-    if (typeof window === 'undefined' || !window.PerformanceObserver) {
+    if (!window?.PerformanceObserver) {
       return;
     }
 

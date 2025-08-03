@@ -175,8 +175,7 @@ export function useFormValidation(config: FormConfig): UseFormValidationReturn {
       try {
         new URL(String(value));
       } catch {
-        const message = typeof rules.url === 'string' ? rules.url : 'Invalid URL format';
-        return message;
+        return typeof rules.url === 'string' ? rules.url : 'Invalid URL format';
       }
     }
 
