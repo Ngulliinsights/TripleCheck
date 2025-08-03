@@ -45,8 +45,8 @@ const VARIANT_STYLES: Record<WordmarkVariant, VariantStyle> = {
   },
   light: {
     triple: "text-white",
-    check: "text-white/90",
-    pulse: "bg-white",
+    check: "text-teal-400",
+    pulse: "bg-teal-400",
   },
   dark: {
     triple: "text-gray-900",
@@ -282,7 +282,7 @@ export function WordmarkCompact({
   // Apply variant-specific styling to the checkmark for consistency
   const VARIANT_CHECKMARK_CLASSES: Record<WordmarkVariant, string> = {
     default: SECONDARY_COLOR,
-    light: "text-white/90",
+    light: "text-teal-400",
     dark: SECONDARY_COLOR,
     gradient:
       "bg-gradient-to-r from-secondary to-secondary/80 bg-clip-text text-transparent",

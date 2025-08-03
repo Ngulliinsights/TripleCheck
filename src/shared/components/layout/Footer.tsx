@@ -114,10 +114,37 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="/services/reputation"
+                  href="/trust/reputation"
                   className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center justify-between group py-2 px-3 rounded-lg hover:bg-gray-800/30"
                 >
                   <span>Trust & Reputation</span>
+                  <ArrowRight className="ml-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/trust/points"
+                  className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center justify-between group py-2 px-3 rounded-lg hover:bg-gray-800/30"
+                >
+                  <span>Trust Points</span>
+                  <ArrowRight className="ml-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/trust/karma"
+                  className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center justify-between group py-2 px-3 rounded-lg hover:bg-gray-800/30"
+                >
+                  <span>Karma Score</span>
+                  <ArrowRight className="ml-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/trust/reports"
+                  className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center justify-between group py-2 px-3 rounded-lg hover:bg-gray-800/30"
+                >
+                  <span>Trust Reports</span>
                   <ArrowRight className="ml-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                 </a>
               </li>

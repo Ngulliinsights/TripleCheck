@@ -19,6 +19,7 @@ import {
   Clock,
   Star,
   Shield,
+  Users,
 } from "lucide-react";
 import { useState, useCallback, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
@@ -188,158 +189,216 @@ const CommunityTab = memo(() => {
   }, [shareExperienceMutation]);
 
   const ExperienceCard = ({ experience }: { experience: any }) => (
-    <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow p-6 mb-4">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">{experience.title}</h3>
-            {experience.resolved ? (
-              <CheckCircle className="w-5 h-5 text-green-500" />
-            ) : (
-              <XCircle className="w-5 h-5 text-red-500" />
-            )}
-          </div>
-          <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-            <div className="flex items-center gap-1">
-              <MapPin className="w-4 h-4" />
-              {experience.location}
+    <Card className="bg-white/80 backdrop-blur-sm border-slate-200 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 group mb-6">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <h3 className="text-xl font-semibold text-slate-900 group-hover:text-primary transition-colors duration-200">
+                {experience.title}
+              </h3>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                experience.resolved 
+                  ? "bg-green-100 text-green-600" 
+                  : "bg-red-100 text-red-600"
+              }`}>
+                {experience.resolved ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  <XCircle className="w-4 h-4" />
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              {experience.datePosted}
+            <div className="flex items-center gap-6 text-sm text-slate-500 mb-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span className="font-medium">{experience.location}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>{experience.datePosted}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                <span>{experience.author}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <User className="w-4 h-4" />
-              {experience.author}
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-red-600 mb-2">{experience.amount}</div>
+            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+              experience.resolved 
+                ? "bg-green-100 text-green-800 border border-green-200" 
+                : "bg-red-100 text-red-800 border border-red-200"
+            }`}>
+              {experience.resolved ? "Resolved" : "Unresolved"}
             </div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-lg font-bold text-red-600">{experience.amount}</div>
-          <div className={`text-sm px-2 py-1 rounded ${
-            experience.resolved ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-          }`}>
-            {experience.resolved ? "Resolved" : "Unresolved"}
+
+        <p className="text-slate-700 mb-6 leading-relaxed">{experience.preview}</p>
+
+        <div className="flex flex-wrap gap-2 mb-6">
+          {experience.tags.map((tag: string) => (
+            <span key={tag} className="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full font-medium border border-primary/20">
+              #{tag}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+          <div className="flex items-center gap-6 text-sm text-slate-500">
+            <div className="flex items-center gap-2 hover:text-slate-700 transition-colors">
+              <Eye className="w-4 h-4" />
+              <span className="font-medium">{experience.views}</span>
+            </div>
+            <div className="flex items-center gap-2 hover:text-slate-700 transition-colors">
+              <ThumbsUp className="w-4 h-4" />
+              <span className="font-medium">{experience.likes}</span>
+            </div>
+            <div className="flex items-center gap-2 hover:text-slate-700 transition-colors">
+              <MessageSquare className="w-4 h-4" />
+              <span className="font-medium">{experience.comments}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" className="text-slate-500 hover:text-primary">
+              <Share2 className="w-4 h-4 mr-1" />
+              Share
+            </Button>
+            <Button variant="ghost" size="sm" className="text-slate-500 hover:text-red-600">
+              <Flag className="w-4 h-4 mr-1" />
+              Report
+            </Button>
           </div>
         </div>
-      </div>
-
-      <p className="text-gray-700 mb-4">{experience.preview}</p>
-
-      <div className="flex flex-wrap gap-2 mb-4">
-        {experience.tags.map((tag: string) => (
-          <span key={tag} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-            #{tag}
-          </span>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between text-sm text-gray-500">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            <Eye className="w-4 h-4" />
-            {experience.views}
-          </div>
-          <div className="flex items-center gap-1">
-            <ThumbsUp className="w-4 h-4" />
-            {experience.likes}
-          </div>
-          <div className="flex items-center gap-1">
-            <MessageSquare className="w-4 h-4" />
-            {experience.comments}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button type="button" className="flex items-center gap-1 hover:text-blue-600">
-            <Share2 className="w-4 h-4" />
-            Share
-          </button>
-          <button type="button" className="flex items-center gap-1 hover:text-red-600">
-            <Flag className="w-4 h-4" />
-            Report
-          </button>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 
   return (
-    <div className="space-y-6">
-      {/* Stats */}
+    <div className="space-y-8">
+      {/* Enhanced Stats with TripleCheck styling */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
-          <div className="text-2xl font-bold">234</div>
-          <div className="text-blue-100">Stories Shared</div>
-        </div>
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
-          <div className="text-2xl font-bold">89</div>
-          <div className="text-green-100">Cases Resolved</div>
-        </div>
-        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-lg">
-          <div className="text-2xl font-bold">KES 45M+</div>
-          <div className="text-red-100">Total Reported Losses</div>
-        </div>
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg">
-          <div className="text-2xl font-bold">12</div>
-          <div className="text-purple-100">Countries Covered</div>
-        </div>
+        <Card className="bg-gradient-to-br from-blue-600 to-blue-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-bold mb-1">234</div>
+                <div className="text-blue-100 font-medium">Stories Shared</div>
+              </div>
+              <MessageSquare className="w-8 h-8 text-blue-200 group-hover:scale-110 transition-transform duration-300" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-green-600 to-green-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-bold mb-1">89</div>
+                <div className="text-green-100 font-medium">Cases Resolved</div>
+              </div>
+              <CheckCircle className="w-8 h-8 text-green-200 group-hover:scale-110 transition-transform duration-300" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-red-600 to-red-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-bold mb-1">KES 45M+</div>
+                <div className="text-red-100 font-medium">Total Reported Losses</div>
+              </div>
+              <AlertTriangle className="w-8 h-8 text-red-200 group-hover:scale-110 transition-transform duration-300" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-purple-600 to-purple-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-bold mb-1">12</div>
+                <div className="text-purple-100 font-medium">Countries Covered</div>
+              </div>
+              <Globe className="w-8 h-8 text-purple-200 group-hover:scale-110 transition-transform duration-300" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar */}
+        {/* Enhanced Sidebar */}
         <div className="lg:w-1/4">
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Search & Filter</h3>
-
-            <div className="mb-4">
+          <Card className="bg-white/80 backdrop-blur-sm border-slate-200 shadow-lg mb-6">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg text-slate-900 flex items-center gap-2">
+                <Search className="w-5 h-5 text-primary" />
+                Search & Filter
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search stories..."
                   aria-label="Search stories"
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 bg-white/50"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-            </div>
 
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Categories</h4>
-              <div className="space-y-2">
-                {categories.map((category: any) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-left rounded-md transition-colors ${
-                      selectedCategory === category.id
-                        ? "bg-blue-100 text-blue-700"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    <span>{category.name}</span>
-                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                      {category.count}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-start">
-              <AlertTriangle className="h-5 w-5 text-yellow-400 mr-3 mt-0.5" />
               <div>
-                <h4 className="text-sm font-medium text-yellow-800">Safety Reminder</h4>
-                <p className="text-xs text-yellow-700 mt-1">
-                  Always verify property documents, use licensed professionals, and never make large payments without proper verification.
-                </p>
+                <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <Filter className="w-4 h-4" />
+                  Categories
+                </h4>
+                <div className="space-y-1">
+                  {categories.map((category: any) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`w-full flex items-center justify-between px-4 py-3 text-left rounded-lg transition-all duration-200 ${
+                        selectedCategory === category.id
+                          ? "bg-primary text-white shadow-md"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <span className="font-medium">{category.name}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        selectedCategory === category.id
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-200 text-slate-600"
+                      }`}>
+                        {category.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Shield className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-amber-800 mb-2">Safety Reminder</h4>
+                  <p className="text-sm text-amber-700 leading-relaxed">
+                    Always verify property documents, use licensed professionals, and never make large payments without proper verification.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content */}
@@ -374,22 +433,27 @@ const CommunityTab = memo(() => {
               Load More Stories
             </button>
             
-            {/* Strategic CTA to full community page */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Ready to Share Your Experience?
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Join our full community platform to share detailed experiences, connect with others, and access advanced features.
-              </p>
-              <Link
-                to="/community"
-                className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
-              >
-                <MessageSquare className="w-5 h-5" />
-                Access Full Community Platform
-              </Link>
-            </div>
+            {/* Enhanced Strategic CTA to full community page */}
+            <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-blue-200 shadow-xl mt-8">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <MessageSquare className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                  Ready to Share Your Experience?
+                </h3>
+                <p className="text-slate-600 mb-6 max-w-2xl mx-auto leading-relaxed">
+                  Join our full community platform to share detailed experiences, connect with others, and access advanced features including expert consultations and personalized fraud prevention guidance.
+                </p>
+                <Link
+                  to="/community"
+                  className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  Access Full Community Platform
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -662,29 +726,31 @@ const FraudResourcesTab = memo(() => {
         </AccordionSection>
       </div>
 
-      {/* Strategic CTA to comprehensive fraud guide */}
-      <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-6 mt-8">
-        <div className="flex items-start gap-4">
-          <div className="bg-red-100 p-3 rounded-full">
-            <AlertTriangle className="w-6 h-6 text-red-600" />
+      {/* Enhanced Strategic CTA to comprehensive fraud guide */}
+      <Card className="bg-gradient-to-br from-red-50 via-orange-50 to-red-50 border-red-200 shadow-xl mt-8">
+        <CardContent className="p-8">
+          <div className="flex items-start gap-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-8 h-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                Need Immediate Help? Access Our Complete Fraud Response Guide
+              </h3>
+              <p className="text-slate-600 mb-6 leading-relaxed">
+                If you're currently dealing with fraud, access our comprehensive 48-hour emergency response guide with detailed procedures, complete agency contacts, and step-by-step recovery instructions developed by legal experts and fraud investigators.
+              </p>
+              <Link
+                to="/fraud-guide"
+                className="inline-flex items-center gap-3 bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                <Shield className="w-5 h-5" />
+                Access Complete Emergency Guide
+              </Link>
+            </div>
           </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Need Immediate Help? Access Our Complete Fraud Response Guide
-            </h3>
-            <p className="text-gray-600 mb-4">
-              If you're currently dealing with fraud, access our comprehensive 48-hour emergency response guide with detailed procedures, complete agency contacts, and step-by-step recovery instructions.
-            </p>
-            <Link
-              to="/fraud-guide"
-              className="bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition-colors inline-flex items-center gap-2"
-            >
-              <Shield className="w-5 h-5" />
-              Access Complete Emergency Guide
-            </Link>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 });
@@ -696,61 +762,87 @@ const CommunityAndResources = memo(() => {
   const [activeTab, setActiveTab] = useState("community");
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Community & Fraud Resources Hub
-        </h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Your gateway to community experiences and emergency fraud resources. 
-          Explore our overview below, then access specialized platforms for deeper engagement and comprehensive emergency guidance.
-        </p>
-        
-        {/* Strategic Navigation Hint */}
-        <div className="flex justify-center gap-4 mt-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-sm">
-            <MessageSquare className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-            <h3 className="font-semibold text-blue-900 mb-1">Community Platform</h3>
-            <p className="text-sm text-blue-700">Share detailed experiences and connect with others</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+      <div className="container mx-auto px-4 py-12">
+        {/* Enhanced Header with TripleCheck branding */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
+            <div className="text-left">
+              <h1 className="text-3xl md:text-4xl font-bold text-slate-900 leading-tight">
+                Community & Resources Hub
+              </h1>
+              <p className="text-primary font-medium">Powered by TripleCheck</p>
+            </div>
           </div>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-sm">
-            <Shield className="w-8 h-8 text-red-600 mx-auto mb-2" />
-            <h3 className="font-semibold text-red-900 mb-1">Emergency Guide</h3>
-            <p className="text-sm text-red-700">Comprehensive 48-hour fraud response procedures</p>
+          
+          <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
+            Your gateway to community experiences and emergency fraud resources. 
+            Explore our overview below, then access specialized platforms for deeper engagement and comprehensive emergency guidance.
+          </p>
+          
+          {/* Strategic Navigation Hint with enhanced design */}
+          <div className="grid md:grid-cols-2 gap-6 mt-10 max-w-4xl mx-auto">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200 hover:shadow-lg transition-all duration-300 group">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <MessageSquare className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-blue-900 mb-2">Community Platform</h3>
+                <p className="text-blue-700">Share detailed experiences and connect with others in our trusted network</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-red-50 to-red-100/50 border-red-200 hover:shadow-lg transition-all duration-300 group">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <AlertTriangle className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-red-900 mb-2">Emergency Guide</h3>
+                <p className="text-red-700">Comprehensive 48-hour fraud response procedures and expert guidance</p>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
-        <button
-          type="button"
-          onClick={() => setActiveTab("community")}
-          className={`px-6 py-3 rounded-md transition-colors ${
-            activeTab === "community"
-              ? "bg-white text-blue-600 shadow-sm"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Community Stories
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("resources")}
-          className={`px-6 py-3 rounded-md transition-colors ${
-            activeTab === "resources"
-              ? "bg-white text-blue-600 shadow-sm"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Fraud Resources
-        </button>
-      </div>
+        {/* Enhanced Navigation Tabs */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-xl shadow-lg border border-slate-200">
+            <div className="flex space-x-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab("community")}
+                className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
+                  activeTab === "community"
+                    ? "bg-primary text-white shadow-md transform scale-105"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                Community Stories
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("resources")}
+                className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
+                  activeTab === "resources"
+                    ? "bg-primary text-white shadow-md transform scale-105"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                Fraud Resources
+              </button>
+            </div>
+          </div>
+        </div>
 
-      {/* Tab Content */}
-      {activeTab === "community" && <CommunityTab />}
-      {activeTab === "resources" && <FraudResourcesTab />}
+        {/* Tab Content */}
+        <div className="max-w-7xl mx-auto">
+          {activeTab === "community" && <CommunityTab />}
+          {activeTab === "resources" && <FraudResourcesTab />}
+        </div>
+      </div>
     </div>
   );
 });

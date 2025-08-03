@@ -51,17 +51,17 @@ type NavigationItem =
   | NavigationItemWithDropdown
   | NavigationItemWithoutDropdown;
 
-// Enhanced style constants with better transitions and effects
+// Enhanced style constants with selective blur effects
 const STYLE_CONSTANTS = {
   BUTTON_HOVER:
     "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20",
   TRANSPARENT_HOVER:
-    "hover:bg-white/15 hover:backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30",
+    "hover:bg-white/10 hover:backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/30",
   BUTTON_DISABLED: "disabled:opacity-50 disabled:cursor-not-allowed",
   DROPDOWN_ITEM:
     "w-full text-left px-4 py-3 hover:bg-primary/5 hover:text-primary transition-all duration-200 mx-2 rounded-lg group",
   TRANSPARENT_LIGHT:
-    "text-white hover:bg-white/15 hover:text-white hover:backdrop-blur-sm",
+    "text-white drop-shadow-lg hover:bg-white/10 hover:text-white hover:backdrop-blur-md",
   DEFAULT_DARK: "text-gray-700 hover:text-primary hover:bg-primary/5",
   NAV_HEIGHTS: {
     expanded: "88px",
@@ -419,27 +419,28 @@ export function Navigation({ className }: NavigationProps) {
     };
   }, []);
 
-  // Enhanced class calculations with better transparency handling - no borders
+  // Enhanced class calculations with complete transparency and selective blur
   const navClasses = useMemo(
     () =>
       cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out",
-        shouldBeTransparent ? "bg-transparent" : "bg-white/90 backdrop-blur-xl",
+        // Always transparent background - no backdrop blur on the nav itself
+        "bg-transparent",
         navigationState.isScrolled ? "py-2" : "py-4",
         className
       ),
-    [shouldBeTransparent, navigationState.isScrolled, className]
+    [navigationState.isScrolled, className]
   );
 
   const buttonBaseClasses = useMemo(
     () => ({
       hover:
         shouldBeTransparent ?
-          STYLE_CONSTANTS.TRANSPARENT_HOVER
+          "hover:bg-white/10 hover:backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/30"
         : STYLE_CONSTANTS.BUTTON_HOVER,
       color:
         shouldBeTransparent ?
-          STYLE_CONSTANTS.TRANSPARENT_LIGHT
+          "text-white drop-shadow-lg"
         : STYLE_CONSTANTS.DEFAULT_DARK,
     }),
     [shouldBeTransparent]
@@ -456,7 +457,7 @@ export function Navigation({ className }: NavigationProps) {
               className={cn(
                 "flex items-center gap-2.5 cursor-pointer transition-all duration-200 bg-transparent border-none p-1 -m-1 rounded-md focus:outline-none focus:ring-2",
                 shouldBeTransparent ?
-                  "hover:bg-white/10 focus:ring-white/30"
+                  "hover:bg-white/10 hover:backdrop-blur-md focus:ring-white/30 drop-shadow-lg"
                 : "hover:bg-primary/5 focus:ring-primary/20"
               )}
               onClick={() => handleNavigation("/")}
@@ -493,7 +494,7 @@ export function Navigation({ className }: NavigationProps) {
                       (navigationState.activeDropdown === item.label ||
                         navigationState.hoveredDropdown === item.label) &&
                         (shouldBeTransparent ?
-                          "bg-white/15 backdrop-blur-sm"
+                          "bg-white/15 backdrop-blur-md"
                         : "bg-primary/10 text-primary")
                     )}
                     onClick={() => dropdownHandlers.toggle(item.label)}
@@ -630,7 +631,7 @@ export function Navigation({ className }: NavigationProps) {
                 <Search
                   className={cn(
                     "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors duration-200",
-                    shouldBeTransparent ? "text-white/80" : "text-gray-400"
+                    shouldBeTransparent ? "text-white/90 drop-shadow-lg" : "text-gray-400"
                   )}
                 />
                 <input
@@ -663,7 +664,7 @@ export function Navigation({ className }: NavigationProps) {
                   className={cn(
                     "w-44 pl-10 pr-4 py-2.5 rounded-lg border transition-all duration-200 text-sm",
                     shouldBeTransparent ?
-                      "bg-white/10 backdrop-blur-sm border-white/30 text-white placeholder-white/80 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/50 focus:bg-white/15"
+                      "bg-white/10 backdrop-blur-md border-white/30 text-white placeholder-white/80 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/50 focus:bg-white/15 focus:backdrop-blur-lg drop-shadow-lg"
                     : "bg-white/90 backdrop-blur-sm border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white",
                     STYLE_CONSTANTS.BUTTON_DISABLED
                   )}
@@ -723,7 +724,7 @@ export function Navigation({ className }: NavigationProps) {
               className={cn(
                 "items-center space-x-1.5 text-xs font-medium px-3 py-2 transition-all duration-200",
                 shouldBeTransparent ?
-                  "border-white/30 text-white hover:bg-white/10 hover:border-white/40 backdrop-blur-sm"
+                  "border-white/30 text-white hover:bg-white/10 hover:border-white/40 hover:backdrop-blur-md drop-shadow-lg"
                 : "border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/40"
               )}
             >
@@ -734,7 +735,7 @@ export function Navigation({ className }: NavigationProps) {
             <div
               className={cn(
                 "h-5 w-px transition-colors duration-200",
-                shouldBeTransparent ? "bg-white/30" : "bg-gray-300"
+                shouldBeTransparent ? "bg-white/40 drop-shadow-sm" : "bg-gray-300"
               )}
             />
 
@@ -747,7 +748,7 @@ export function Navigation({ className }: NavigationProps) {
               className={cn(
                 "text-sm font-medium px-4 py-2 transition-all duration-200",
                 shouldBeTransparent ?
-                  "border-white/30 text-white hover:bg-white/10 hover:border-white/40 backdrop-blur-sm"
+                  "border-white/30 text-white hover:bg-white/10 hover:border-white/40 hover:backdrop-blur-md drop-shadow-lg"
                 : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
               )}
             >
@@ -759,7 +760,7 @@ export function Navigation({ className }: NavigationProps) {
               onClick={() => handleNavigation("/auth/register")}
               className={cn(
                 "text-sm font-medium px-4 py-2 transition-all duration-200",
-                shouldBeTransparent && "backdrop-blur-sm"
+                shouldBeTransparent && "hover:backdrop-blur-md drop-shadow-lg"
               )}
             >
               {navigationState.isNavigating ? "Loading..." : "Get Started"}

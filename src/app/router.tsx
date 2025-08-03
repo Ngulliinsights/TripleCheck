@@ -133,6 +133,7 @@ export const AppRouter: React.FC = () => {
         <Route path="/services/basic-checks" element={<LazyRoutes.BasicChecks />} />
         <Route path="/services/fraud-detection" element={<LazyRoutes.FraudDetection />} />
         <Route path="/services/document-auth" element={<LazyRoutes.DocumentAuth />} />
+        <Route path="/services/reputation" element={<LazyRoutes.TrustReputation />} />
         <Route path="/services/list-property" element={<LazyRoutes.ListProperty />} />
         <Route path="/solutions" element={<LazyRoutes.Solutions />} />
         <Route path="/solutions/buyers" element={<LazyRoutes.SolutionsBuyers />} />

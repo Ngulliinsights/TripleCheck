@@ -13,6 +13,8 @@ import {
 import { useState, FC, ReactNode } from "react";
 import { Link } from "react-router-dom";
 
+import { Card, CardContent } from "../components/ui/card";
+
 // Constants
 const RESPONSE_TIME_WEEKS = "weeks";
 const CARD_BORDER_STYLES = "border border-slate-200 rounded p-4";
@@ -49,41 +51,61 @@ const AccordionSection: FC<AccordionSectionProps> = ({
   icon,
   priority = "medium",
 }) => {
-  const getPriorityClass = (
+  const getPriorityStyles = (
     priorityLevel: "high" | "medium" | "low"
-  ): string => {
+  ): { bg: string; border: string; hover: string } => {
     switch (priorityLevel) {
       case "high":
-        return "bg-red-50 border-red-200 hover:bg-red-100";
+        return {
+          bg: "bg-gradient-to-br from-red-50 to-red-100/50",
+          border: "border-red-200",
+          hover: "hover:from-red-100 hover:to-red-200/50"
+        };
       case "low":
-        return "bg-slate-50 border-slate-200 hover:bg-slate-100";
+        return {
+          bg: "bg-gradient-to-br from-slate-50 to-slate-100/50",
+          border: "border-slate-200",
+          hover: "hover:from-slate-100 hover:to-slate-200/50"
+        };
       default:
-        return "bg-blue-50 border-blue-200 hover:bg-blue-100";
+        return {
+          bg: "bg-gradient-to-br from-blue-50 to-blue-100/50",
+          border: "border-blue-200",
+          hover: "hover:from-blue-100 hover:to-blue-200/50"
+        };
     }
   };
 
-  const priorityClass = getPriorityClass(priority);
+  const styles = getPriorityStyles(priority);
 
   return (
-    <div className={`border rounded-lg ${priorityClass}`}>
-      <h2 className="m-0">
+    <Card className={`${styles.bg} ${styles.border} shadow-lg hover:shadow-xl transition-all duration-300`}>
+      <div className="m-0">
         <button
           type="button"
           onClick={onToggle}
-          className={`w-full flex justify-between items-center p-4 text-left font-semibold text-slate-800 transition-colors ${priorityClass}`}
+          className={`w-full flex justify-between items-center p-6 text-left font-semibold text-slate-800 transition-all duration-300 ${styles.bg} ${styles.hover} rounded-lg`}
           aria-expanded={isOpen}
         >
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-3 text-lg">
             {icon}
             {title}
           </span>
-          <span className="text-lg font-mono">{isOpen ? "−" : "+"}</span>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+            isOpen ? "bg-white/50 rotate-180" : "bg-white/30"
+          }`}>
+            <span className="text-lg font-mono">{isOpen ? "−" : "+"}</span>
+          </div>
         </button>
-      </h2>
+      </div>
       {isOpen && (
-        <div className="p-6 space-y-6 text-slate-700 bg-white">{children}</div>
+        <CardContent className="pt-0 pb-6 px-6">
+          <div className="space-y-6 text-slate-700 bg-white/80 backdrop-blur-sm rounded-lg p-6 border border-white/50">
+            {children}
+          </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 };
 
@@ -974,72 +996,92 @@ const KenyaRealEstateFraudGuide: FC = () => {
     setOpenSection(openSection === key ? null : key);
 
   return (
-    <div className="max-w-6xl mx-auto p-4 space-y-4">
-      {/* Strategic Breadcrumb */}
-      <div className="mb-6">
-        <Link
-          to="/community-resources"
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Community & Resources Hub
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50/20 to-slate-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Enhanced Strategic Breadcrumb */}
+        <div className="mb-8">
+          <Link
+            to="/community-resources"
+            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium bg-white/80 backdrop-blur-sm px-4 py-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Community & Resources Hub
+          </Link>
+        </div>
 
-      {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          Complete Emergency Fraud Response Guide
-        </h1>
-        <p className="text-slate-600 max-w-2xl mx-auto">
-          Comprehensive 48-hour emergency response guide for real estate fraud
-          victims. This detailed resource includes immediate action steps,
-          complete agency contacts, legal procedures, and recovery strategies.
-          Updated July 2025.
-        </p>
-
-        {/* Emergency Alert */}
-        <div className="bg-red-100 border border-red-300 p-4 rounded-lg mt-4 max-w-lg mx-auto">
-          <div className="flex items-center gap-2 justify-center">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
-            <span className="font-semibold text-red-800">
-              Emergency Resource
-            </span>
+        {/* Enhanced Header with TripleCheck branding */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-4 mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <AlertTriangle className="w-8 h-8 text-white" />
+            </div>
+            <div className="text-left">
+              <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
+                Emergency Fraud Response
+              </h1>
+              <p className="text-red-600 font-semibold text-lg">Powered by TripleCheck</p>
+            </div>
           </div>
-          <p className="text-red-700 text-sm mt-1">
-            If you\u2019re currently experiencing fraud, act immediately using
-            this guide
+          
+          <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed mb-8">
+            Comprehensive 48-hour emergency response guide for real estate fraud
+            victims. This detailed resource includes immediate action steps,
+            complete agency contacts, legal procedures, and recovery strategies.
+            <span className="block mt-2 text-sm font-medium text-slate-500">Updated July 2025</span>
           </p>
-        </div>
-      </div>
 
-      {/* Emergency Banner */}
-      <div className="bg-red-100 border border-red-300 p-4 rounded-lg mb-6">
-        <div className="flex items-center gap-2 mb-2">
-          <AlertTriangle className="h-6 w-6 text-red-600" />
-          <h3 className="font-bold text-red-800">Fraud Emergency Hotlines</h3>
+          {/* Enhanced Emergency Alert */}
+          <Card className="bg-gradient-to-br from-red-100 to-orange-100 border-red-300 shadow-xl max-w-2xl mx-auto">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 justify-center mb-3">
+                <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-xl font-bold text-red-800">
+                  Emergency Resource
+                </span>
+              </div>
+              <p className="text-red-700 font-medium">
+                If you're currently experiencing fraud, act immediately using this guide
+              </p>
+            </CardContent>
+          </Card>
         </div>
-        <div className="grid sm:grid-cols-3 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-red-600" />
-            <span>
-              <strong>DCI:</strong> 0800 722 203
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-red-600" />
-            <span>
-              <strong>Police:</strong> 999 / 112
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Globe className="h-4 w-4 text-red-600" />
-            <span>
-              <strong>Online:</strong> dci.go.ke
-            </span>
-          </div>
-        </div>
-      </div>
+
+        {/* Enhanced Emergency Banner */}
+        <Card className="bg-gradient-to-r from-red-600 to-red-700 text-white border-0 shadow-2xl mb-8">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <Phone className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold">Fraud Emergency Hotlines</h3>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-6">
+              <div className="flex items-center gap-3 bg-white/10 rounded-lg p-4">
+                <Phone className="h-5 w-5 text-red-200" />
+                <div>
+                  <div className="font-semibold">DCI</div>
+                  <div className="text-red-100">0800 722 203</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 bg-white/10 rounded-lg p-4">
+                <Phone className="h-5 w-5 text-red-200" />
+                <div>
+                  <div className="font-semibold">Police</div>
+                  <div className="text-red-100">999 / 112</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 bg-white/10 rounded-lg p-4">
+                <Globe className="h-5 w-5 text-red-200" />
+                <div>
+                  <div className="font-semibold">Online</div>
+                  <div className="text-red-100">dci.go.ke</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
       {/* Accordion Sections */}
       <div className="space-y-4">
@@ -1104,22 +1146,27 @@ const KenyaRealEstateFraudGuide: FC = () => {
         </AccordionSection>
       </div>
 
-      {/* Footer */}
-      <div className="mt-8 pt-6 border-t border-slate-200">
-        <div className="bg-slate-50 p-4 rounded text-center text-sm text-slate-600">
-          <p className="font-medium mb-2">
-            Remember: Quick action saves money and increases recovery chances
-          </p>
-          <p>
-            This guide synthesizes information from Kenya Government agencies,
-            legal practitioners, and recent court cases. Always consult with
-            qualified legal professionals for your specific situation.
-          </p>
-          <p className="mt-2 text-xs">
-            Last updated: July 2025 | Sources: DCI, EACC, Ministry of Lands,
-            Legal Practitioners
-          </p>
-        </div>
+        {/* Enhanced Footer */}
+        <Card className="mt-12 bg-gradient-to-br from-slate-100 to-slate-200/50 border-slate-300 shadow-lg">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-4">
+              Remember: Quick action saves money and increases recovery chances
+            </h3>
+            <p className="text-slate-600 leading-relaxed mb-4 max-w-3xl mx-auto">
+              This guide synthesizes information from Kenya Government agencies,
+              legal practitioners, and recent court cases. Always consult with
+              qualified legal professionals for your specific situation.
+            </p>
+            <div className="text-sm text-slate-500 bg-white/50 rounded-lg p-4 border border-slate-200">
+              <p className="font-medium">
+                Last updated: July 2025 | Sources: DCI, EACC, Ministry of Lands, Legal Practitioners
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

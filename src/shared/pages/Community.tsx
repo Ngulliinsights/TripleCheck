@@ -14,6 +14,7 @@ import {
   Calendar,
   User,
   ArrowLeft,
+  Users,
 } from "lucide-react";
 import React, { useState, useCallback, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
@@ -573,72 +574,117 @@ const RealEstateFraudCommunity = memo(() => {
   });
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Strategic Breadcrumb */}
-      <div className="mb-6">
-        <Link
-          to="/community-resources"
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Community & Resources Hub
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Enhanced Strategic Breadcrumb */}
+        <div className="mb-8">
+          <Link
+            to="/community-resources"
+            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium bg-white/80 backdrop-blur-sm px-4 py-2 rounded-lg border border-slate-200 shadow-sm hover:shadow-md"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Community & Resources Hub
+          </Link>
+        </div>
 
-      {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Full Community Platform
-        </h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Share detailed experiences, connect with other victims and professionals, and access advanced community features. 
-          This is your dedicated space for in-depth community engagement and support.
-        </p>
-      </div>
+        {/* Enhanced Header with TripleCheck branding */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-4 mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-700 rounded-2xl flex items-center justify-center shadow-lg">
+              <MessageSquare className="w-8 h-8 text-white" />
+            </div>
+            <div className="text-left">
+              <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
+                Community Platform
+              </h1>
+              <p className="text-primary font-semibold text-lg">Powered by TripleCheck</p>
+            </div>
+          </div>
+          
+          <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
+            Share detailed experiences, connect with other victims and professionals, and access advanced community features. 
+            This is your dedicated space for in-depth community engagement and expert support.
+          </p>
+        </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
-          <div className="text-2xl font-bold">234</div>
-          <div className="text-blue-100">Stories Shared</div>
+        {/* Enhanced Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <Card className="bg-gradient-to-br from-blue-600 to-blue-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-3xl font-bold mb-1">234</div>
+                  <div className="text-blue-100 font-medium">Stories Shared</div>
+                </div>
+                <MessageSquare className="w-8 h-8 text-blue-200 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-green-600 to-green-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-3xl font-bold mb-1">89</div>
+                  <div className="text-green-100 font-medium">Cases Resolved</div>
+                </div>
+                <CheckCircle className="w-8 h-8 text-green-200 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-red-600 to-red-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-3xl font-bold mb-1">KES 45M+</div>
+                  <div className="text-red-100 font-medium">Total Reported Losses</div>
+                </div>
+                <AlertTriangle className="w-8 h-8 text-red-200 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-purple-600 to-purple-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-3xl font-bold mb-1">12</div>
+                  <div className="text-purple-100 font-medium">Countries Covered</div>
+                </div>
+                <Users className="w-8 h-8 text-purple-200 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
-          <div className="text-2xl font-bold">89</div>
-          <div className="text-green-100">Cases Resolved</div>
-        </div>
-        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-lg">
-          <div className="text-2xl font-bold">KES 45M+</div>
-          <div className="text-red-100">Total Reported Losses</div>
-        </div>
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg">
-          <div className="text-2xl font-bold">12</div>
-          <div className="text-purple-100">Countries Covered</div>
-        </div>
-      </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
-        <button
-          onClick={() => setActiveTab("browse")}
-          className={`px-6 py-3 rounded-md transition-colors ${
-            activeTab === "browse" ?
-              "bg-white text-blue-600 shadow-sm"
-            : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Browse Stories
-        </button>
-        <button
-          onClick={() => setActiveTab("share")}
-          className={`px-6 py-3 rounded-md transition-colors ${
-            activeTab === "share" ?
-              "bg-white text-blue-600 shadow-sm"
-            : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Share Experience
-        </button>
-      </div>
+        {/* Enhanced Navigation Tabs */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-xl shadow-lg border border-slate-200">
+            <div className="flex space-x-1">
+              <button
+                onClick={() => setActiveTab("browse")}
+                className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
+                  activeTab === "browse"
+                    ? "bg-primary text-white shadow-md transform scale-105"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                Browse Stories
+              </button>
+              <button
+                onClick={() => setActiveTab("share")}
+                className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
+                  activeTab === "share"
+                    ? "bg-primary text-white shadow-md transform scale-105"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                Share Experience
+              </button>
+            </div>
+          </div>
+        </div>
 
       {activeTab === "browse" && (
         <div className="flex flex-col lg:flex-row gap-6">
