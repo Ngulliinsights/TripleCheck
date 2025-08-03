@@ -362,3 +362,9 @@ nul
 reports/
 load-test-validation-report.json
 api-analysis-report.json
+# Executable files and attachments
+*.exe
+*.msi
+*.dmg
+*.app
+attached_assets/

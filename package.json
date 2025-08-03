@@ -92,6 +92,8 @@
     "deploy:land-verification:prod": "npm run deploy:land-verification production",
     "deploy:vercel": "vercel --prod",
     "deploy:preview": "vercel",
+    "deploy:render": "node scripts/deploy-render.js",
+    "deploy:render:test": "node scripts/deploy-render.js --test-build",
     "postinstall": "npm run build",
     "test": "vitest",
     "test:integration": "node scripts/test-integration.js",
