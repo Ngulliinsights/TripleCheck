@@ -1,11 +1,7 @@
-import React, { Suspense, lazy } from "react";
-
 import { useAuth } from "../../auth/hooks/useAuth";
-import { LoadingSkeleton } from "../../shared/components/ui/loading-skeleton";
+import FraudDetectionDashboard from "../components/FraudDetectionDashboard";
 
-// Lazy load components to prevent import issues
-const FraudProtectionInfo = lazy(() => import("./FraudProtectionInfo"));
-const FraudDetectionDashboard = lazy(() => import("../components/FraudDetectionDashboard"));
+import FraudProtectionInfo from "./FraudProtectionInfo";
 
 function FraudDetection(): JSX.Element {
   const { user, isAuthenticated } = useAuth();
@@ -13,17 +9,12 @@ function FraudDetection(): JSX.Element {
   // Always render the same structure, but conditionally show content
   return (
     <div className="min-h-screen bg-background">
-      {!isAuthenticated ? (
-        <Suspense fallback={<LoadingSkeleton variant="page" />}>
-          <FraudProtectionInfo />
-        </Suspense>
-      ) : (
-        <div className="container mx-auto px-4 py-8">
-          <Suspense fallback={<LoadingSkeleton variant="page" />}>
-            <FraudDetectionDashboard userId={user?.id} />
-          </Suspense>
+      {!isAuthenticated ?
+        <FraudProtectionInfo />
+      : <div className="container mx-auto px-4 py-8">
+          <FraudDetectionDashboard userId={user?.id} />
         </div>
-      )}
+      }
     </div>
   );
 }

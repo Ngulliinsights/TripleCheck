@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback, memo, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import ListingCard from "../../property/components/ListingCard";
+import { CompareBar } from "../../property/components/CompareBar";
+import { CompareModal } from "../../property/components/CompareModal";
 import { CompareProvider } from "../../property/contexts/CompareContext";
 import FraudIntelligence from "../components/CommunityInsights";
 import { EnhancedHero } from "../components/hero/EnhancedHero";
@@ -16,6 +18,7 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Skeleton } from "../components/ui/skeleton";
+import { VideoModal } from "../components/VideoModal";
 import { usePageSpacing } from "../hooks/useNavigationSpacing";
 import { useSafePropertiesQuery } from "../hooks/useSafeQuery";
 import { ServiceCategories, Testimonials } from "../index";
@@ -402,6 +405,12 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { pageClassName } = usePageSpacing();
 
+  // Video modal state
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  
+  // Compare modal state
+  const [showCompareModal, setShowCompareModal] = useState(false);
+
   // Memoize search query parsing to prevent infinite loops
   const parseSearchQueryMemo = useCallback((searchString: string) => {
     return parseSearchQuery(searchString);
@@ -472,16 +481,34 @@ export default function HomePage() {
 
   /**
    * Handles call-to-action clicks from hero component
-   * Provides smooth navigation and external link handling
+   * Provides smooth navigation and video modal handling
    */
   const handleHeroCta = useCallback((_searchTerm: string, action: string) => {
     switch (action) {
       case "primary_cta":
       case "start_verification":
-        navigate("/verify-property");
+        navigate("/land-verification");
         break;
       case "watch_demo":
-        openExternalUrl(DEMO_VIDEO_URL);
+        setIsVideoModalOpen(true);
+        break;
+      case "premium_access":
+        navigate("/pricing");
+        break;
+      case "market_insights":
+        navigate("/analytics");
+        break;
+      case "search_properties":
+        navigate("/properties");
+        break;
+      case "personalized_search":
+        navigate("/advanced-search");
+        break;
+      case "check_fraud":
+        navigate("/trust/fraud-detection");
+        break;
+      case "find_expert":
+        navigate("/find-professionals");
         break;
       default:
         // In production, this would be logged to an error tracking service
@@ -505,6 +532,20 @@ export default function HomePage() {
     },
     [navigate]
   );
+
+  /**
+   * Handles showing the compare modal
+   */
+  const handleShowCompareModal = useCallback(() => {
+    setShowCompareModal(true);
+  }, []);
+
+  /**
+   * Handles closing the compare modal
+   */
+  const handleCloseCompareModal = useCallback(() => {
+    setShowCompareModal(false);
+  }, []);
 
   /* ---------------------------------------------------------------- */
   /*  Memoized Values                                                 */
@@ -699,6 +740,23 @@ export default function HomePage() {
         </div>
       </section>
       </div>
+
+      {/* Floating Compare Bar */}
+      <CompareBar onQuickCompare={handleShowCompareModal} />
+
+      {/* Compare Modal */}
+      <CompareModal
+        isOpen={showCompareModal}
+        onClose={handleCloseCompareModal}
+      />
+
+      {/* Video Modal */}
+      <VideoModal
+        isOpen={isVideoModalOpen}
+        onClose={() => setIsVideoModalOpen(false)}
+        videoUrl={DEMO_VIDEO_URL}
+        title="TripleCheck Demo - How It Works"
+      />
     </CompareProvider>
   );
 }

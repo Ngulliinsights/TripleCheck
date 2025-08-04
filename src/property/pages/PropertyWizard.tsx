@@ -530,7 +530,7 @@ export default function PropertyWizard() {
   const getCurrentStepData = (): Step => {
     const stepData = STEPS.find(step => step.id === currentStep);
     // This ensures we always return a valid Step object, preventing undefined access
-    return stepData || STEPS[0];
+    return stepData || STEPS[0]!;
   };
 
   const currentStepData = getCurrentStepData();

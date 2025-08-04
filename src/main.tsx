@@ -54,33 +54,77 @@ if (typeof window !== 'undefined') {
   // The ThemeProvider default is already set to 'dark' in ThemeContext.tsx
 }
 
-try {
-  ReactDOM.createRoot(rootElement).render(
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AppProviders>
-            <App />
-          </AppProviders>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </React.StrictMode>
-  );
-  
-  if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
-    console.log("Full TripleCheck app rendered successfully");
-  }
-} catch (error) {
-  // eslint-disable-next-line no-console
-  console.error("Failed to render TripleCheck app:", error);
-  // Fallback error display
-  rootElement.innerHTML = `
+// Simple React availability check
+if (!React || !ReactDOM) {
+  console.error("React or ReactDOM not loaded");
+  document.body.innerHTML = `
     <div style="padding: 20px; color: red; font-family: monospace;">
-      <h2>TripleCheck Failed to Load</h2>
-      <p>Error: ${error instanceof Error ? error.message : 'Unknown error'}</p>
-      <p>Check console for details</p>
-      <p>Stack: ${error instanceof Error ? error.stack : 'No stack trace'}</p>
+      <h2>Application Loading Error</h2>
+      <p>Failed to load React libraries. Please refresh the page.</p>
     </div>
   `;
+  throw new Error("React or ReactDOM not available");
 }
+
+
+
+// Render with better error handling for production builds
+const renderApp = () => {
+  try {
+    const root = ReactDOM.createRoot(rootElement);
+    
+    root.render(
+      <React.StrictMode>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <AppProviders>
+              <App />
+            </AppProviders>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </React.StrictMode>
+    );
+    
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.log("Full TripleCheck app rendered successfully");
+    }
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error("Failed to render TripleCheck app:", error);
+    
+    // More robust fallback error display
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'padding: 20px; color: red; font-family: monospace; background: white; margin: 20px; border: 1px solid red;';
+    errorDiv.innerHTML = `
+      <h2>TripleCheck Failed to Load</h2>
+      <p><strong>Error:</strong> ${error instanceof Error ? error.message : 'Unknown error'}</p>
+      <p><strong>Environment:</strong> ${import.meta.env.MODE}</p>
+      <p><strong>Suggestion:</strong> Try refreshing the page or clearing your browser cache</p>
+      <details>
+        <summary>Technical Details</summary>
+        <pre>${error instanceof Error ? error.stack : 'No stack trace available'}</pre>
+      </details>
+    `;
+    
+    rootElement.appendChild(errorDiv);
+    
+    // Also try to render a minimal fallback
+    setTimeout(() => {
+      try {
+        const fallbackRoot = ReactDOM.createRoot(rootElement);
+        fallbackRoot.render(
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            <h1>Loading...</h1>
+            <p>If this message persists, please refresh the page.</p>
+          </div>
+        );
+      } catch (fallbackError) {
+        // eslint-disable-next-line no-console
+        console.error("Even fallback render failed:", fallbackError);
+      }
+    }, 1000);
+  }
+};
+
+renderApp();

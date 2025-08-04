@@ -20,41 +20,25 @@ import React, { useState, useCallback, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
 
 import FormField from "../components/forms/FormField";
-import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-// Removed useInfiniteScroll import since we're using regular useQuery
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Textarea } from "../components/ui/textarea";
 import { useToast } from "../hooks/use-toast";
 import { useDebounce } from "../hooks/useDebounce";
 import { useForm } from "../hooks/useForm";
 import { ValidationRule } from "../utils/form-validation";
 
+// Constants
+const QUERY_DELAY = 500;
+const MUTATION_DELAY = 1000;
+const AMOUNT_REGEX = /^[A-Z]{3}\s*[\d,]+$/;
+const COMMUNITY_EXPERIENCES_KEY = 'community-experiences';
+const COMMUNITY_CATEGORIES_KEY = 'community-categories';
+const FRAUD_TYPE_LAND = 'Land Purchase';
+const FRAUD_TYPE_PROPERTY_DEV = 'Property Development';
+const FRAUD_TYPE_RENTAL = 'Rental Fraud';
+
 // Types for better TypeScript support
-interface Experience {
-  id: number;
-  title: string;
-  location: string;
-  type: string;
-  resolved: boolean;
-  amount: string;
-  datePosted: string;
-  author: string;
-  preview: string;
-  likes: number;
-  comments: number;
-  views: number;
-  tags: string[];
-}
-
-interface Category {
-  id: string;
-  name: string;
-  count: number;
-}
-
 interface ShareExperienceData {
   title: string;
   location: string;
@@ -67,6 +51,20 @@ interface ShareExperienceData {
   resolutionStatus: 'resolved' | 'partial' | 'unresolved';
   resolutionDetails: string;
   anonymous: boolean;
+}
+
+interface ExperienceDisplayData extends ShareExperienceData {
+  id: number;
+  type: string;
+  resolved: boolean;
+  amount: string;
+  datePosted: string;
+  author: string;
+  preview: string;
+  likes: number;
+  comments: number;
+  views: number;
+  tags: string[];
 }
 
 const RealEstateFraudCommunity = memo(() => {
@@ -82,11 +80,9 @@ const RealEstateFraudCommunity = memo(() => {
   // Fetch experiences with React Query
   const {
     data: experiencesData,
-    isLoading: experiencesLoading,
-    error: experiencesError,
   } = useQuery({
-    queryKey: ['community-experiences', selectedCategory, debouncedSearchTerm],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryKey: [COMMUNITY_EXPERIENCES_KEY, selectedCategory, debouncedSearchTerm],
+    queryFn: async ({ pageParam: _pageParam = 0 }) => {
       // In a real app, this would be an API call
       const mockData = {
         experiences: [
@@ -94,7 +90,7 @@ const RealEstateFraudCommunity = memo(() => {
             id: 1,
             title: "Land Purchase Scam in Kiambu County",
             location: "Kiambu, Kenya",
-            type: "Land Purchase",
+            type: FRAUD_TYPE_LAND,
             resolved: false,
             amount: "KES 2,500,000",
             datePosted: "2024-07-15",
@@ -110,7 +106,7 @@ const RealEstateFraudCommunity = memo(() => {
             id: 2,
             title: "Fake Developer Project in Lagos",
             location: "Lagos, Nigeria",
-            type: "Property Development",
+            type: FRAUD_TYPE_PROPERTY_DEV,
             resolved: true,
             amount: "₦15,000,000",
             datePosted: "2024-07-10",
@@ -126,7 +122,7 @@ const RealEstateFraudCommunity = memo(() => {
             id: 3,
             title: "Rental Deposit Scam in Nairobi",
             location: "Nairobi, Kenya",
-            type: "Rental Fraud",
+            type: FRAUD_TYPE_RENTAL,
             resolved: false,
             amount: "KES 180,000",
             datePosted: "2024-07-08",
@@ -138,13 +134,13 @@ const RealEstateFraudCommunity = memo(() => {
             views: 201,
             tags: ["rental-scam", "nairobi", "fake-landlord"],
           },
-        ],
+        ] as ExperienceDisplayData[],
         hasMore: false,
         total: 3,
       };
       
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, QUERY_DELAY));
       return mockData;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -153,14 +149,14 @@ const RealEstateFraudCommunity = memo(() => {
 
   // Fetch categories
   const { data: categoriesData } = useQuery({
-    queryKey: ['community-categories'],
+    queryKey: [COMMUNITY_CATEGORIES_KEY],
     queryFn: async () => {
       // In a real app, this would be an API call
       return [
         { id: "all", name: "All Stories", count: 234 },
-        { id: "land", name: "Land Purchase", count: 89 },
-        { id: "rental", name: "Rental Fraud", count: 67 },
-        { id: "development", name: "Property Development", count: 45 },
+        { id: "land", name: FRAUD_TYPE_LAND, count: 89 },
+        { id: "rental", name: FRAUD_TYPE_RENTAL, count: 67 },
+        { id: "development", name: FRAUD_TYPE_PROPERTY_DEV, count: 45 },
         { id: "investment", name: "Investment Scams", count: 33 },
       ];
     },
@@ -169,9 +165,9 @@ const RealEstateFraudCommunity = memo(() => {
 
   // Share experience mutation
   const shareExperienceMutation = useMutation({
-    mutationFn: async (data: ShareExperienceData) => {
+    mutationFn: async (_data: ShareExperienceData) => {
       // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, MUTATION_DELAY));
       return { success: true, id: Date.now() };
     },
     onSuccess: () => {
@@ -179,7 +175,7 @@ const RealEstateFraudCommunity = memo(() => {
         title: "Experience Shared",
         description: "Thank you for sharing your experience. It will help others stay safe.",
       });
-      queryClient.invalidateQueries({ queryKey: ['community-experiences'] });
+      queryClient.invalidateQueries({ queryKey: [COMMUNITY_EXPERIENCES_KEY] });
       setActiveTab('browse');
     },
     onError: () => {
@@ -204,23 +200,12 @@ const RealEstateFraudCommunity = memo(() => {
   }, [categoriesData]);
 
   // Handlers
-  const handleTabChange = useCallback((tab: string) => {
-    setActiveTab(tab);
-  }, []);
-
-  const handleCategoryChange = useCallback((categoryId: string) => {
-    setSelectedCategory(categoryId);
-  }, []);
-
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchTerm(value);
-  }, []);
 
   const handleShareExperience = useCallback((data: ShareExperienceData) => {
     shareExperienceMutation.mutate(data);
   }, [shareExperienceMutation]);
 
-  const ExperienceCard = ({ experience }: { experience: any }) => (
+  const ExperienceCard = ({ experience }: { experience: ExperienceDisplayData }) => (
     <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow p-6 mb-4">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
@@ -318,7 +303,7 @@ const RealEstateFraudCommunity = memo(() => {
         required: true
       },
       amountLost: {
-        pattern: /^[A-Z]{3}\s*[\d,]+(\.\d{2})?$|^\$[\d,]+(\.\d{2})?$/,
+        pattern: AMOUNT_REGEX,
         custom: (value) => {
           if (value && typeof value === 'string' && value.trim() !== '') {
             const cleanValue = value.replace(/[^\d.]/g, '');
@@ -349,7 +334,7 @@ const RealEstateFraudCommunity = memo(() => {
       },
       resolutionDetails: {
         custom: (value, formValues) => {
-          const resolutionStatus = (formValues as any)?.resolutionStatus;
+          const resolutionStatus = (formValues as ShareExperienceData)?.resolutionStatus;
           if (resolutionStatus && resolutionStatus !== 'unresolved' && (!value || value.toString().trim().length < 10)) {
             return 'Please describe how the issue was resolved (minimum 10 characters)';
           }
@@ -361,13 +346,9 @@ const RealEstateFraudCommunity = memo(() => {
 
     const {
       values: formData,
-      errors,
       touched,
-      isValid,
-      isSubmitting,
       getFieldProps,
       getFieldError,
-      hasFieldError,
       handleSubmit: formHandleSubmit,
       setValue
     } = useForm({
@@ -393,7 +374,7 @@ const RealEstateFraudCommunity = memo(() => {
     });
 
     // Helper function for handling input changes
-    const handleInputChange = useCallback((field: string, value: any) => {
+    const handleInputChange = useCallback((field: string, value: string | boolean) => {
       setValue(field, value);
     }, [setValue]);
 
@@ -431,9 +412,9 @@ const RealEstateFraudCommunity = memo(() => {
                 type="select"
                 required
                 options={[
-                  { value: 'land', label: 'Land Purchase' },
-                  { value: 'rental', label: 'Rental Fraud' },
-                  { value: 'development', label: 'Property Development' },
+                  { value: 'land', label: FRAUD_TYPE_LAND },
+                  { value: 'rental', label: FRAUD_TYPE_RENTAL },
+                  { value: 'development', label: FRAUD_TYPE_PROPERTY_DEV },
                   { value: 'investment', label: 'Investment Scam' },
                   { value: 'other', label: 'Other' }
                 ]}
@@ -572,6 +553,8 @@ const RealEstateFraudCommunity = memo(() => {
       </Card>
     );
   });
+
+  ShareExperienceForm.displayName = "ShareExperienceForm";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
@@ -789,7 +772,10 @@ const RealEstateFraudCommunity = memo(() => {
         </div>
       )}
     </div>
+  </div>
   );
 });
+
+RealEstateFraudCommunity.displayName = "RealEstateFraudCommunity";
 
 export default RealEstateFraudCommunity;

@@ -64,15 +64,17 @@ export interface Property {
 }
 
 export interface PropertyFeatures {
-  bedrooms?: number;
-  bathrooms?: number;
-  squareFeet?: number;
-  parkingSpaces?: number;
-  yearBuilt?: number;
-  propertyType?: string;
-  petFriendly?: boolean;
-  furnished?: boolean;
-  amenities?: string[];
+  bedrooms?: number | undefined;
+  bathrooms?: number | undefined;
+  squareFeet?: number | undefined;
+  parkingSpaces?: number | undefined;
+  yearBuilt?: number | undefined;
+  propertyType?: string | undefined;
+  petFriendly?: boolean | undefined;
+  furnished?: boolean | undefined;
+  amenities?: string[] | undefined;
+  // Allow additional dynamic properties from API
+  [key: string]: unknown;
 }
 
 export interface LandVerificationData {
@@ -92,21 +94,21 @@ export interface LandVerificationData {
 }
 
 export interface PropertySearchParams {
-  query?: string;
-  location?: string;
-  priceMin?: number;
-  priceMax?: number;
-  propertyType?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  areaMin?: number;
-  areaMax?: number;
-  landVerified?: boolean;
-  landRiskLevel?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  query: string;
+  location?: string | undefined;
+  priceMin?: number | undefined;
+  priceMax?: number | undefined;
+  propertyType?: string | undefined;
+  bedrooms?: number | undefined;
+  bathrooms?: number | undefined;
+  areaMin?: number | undefined;
+  areaMax?: number | undefined;
+  landVerified?: boolean | undefined;
+  landRiskLevel?: 'low' | 'medium' | 'high' | 'critical' | undefined;
+  page: number;
+  limit: number;
+  sortBy: 'date' | 'trustScore' | 'price' | 'relevance' | 'landVerification';
+  sortOrder: 'asc' | 'desc';
 }
 
 // Error response types

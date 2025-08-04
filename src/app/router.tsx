@@ -1,4 +1,4 @@
-import { LoadingSpinner } from '@shared/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '../shared/components/ui/LoadingSpinner';
 import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
@@ -141,7 +141,8 @@ export const AppRouter: React.FC = () => {
         <Route path="/solutions/agents" element={<LazyRoutes.SolutionsAgents />} />
         <Route path="/solutions/developers" element={<LazyRoutes.SolutionsDevelopers />} />
         <Route path="/solutions/legal-experts" element={<LazyRoutes.SolutionsLegalExperts />} />
-        <Route path="/demo" element={<LazyRoutes.MVPDemo />} />
+        <Route path="/demo" element={<LazyRoutes.Demo />} />
+        <Route path="/mvp-demo" element={<LazyRoutes.MVPDemo />} />
         <Route path="/nav-test" element={<LazyRoutes.NavigationTest />} />
         <Route path="/api-demo" element={<LazyRoutes.ApiDemo />} />
         <Route path="/contact-sales" element={<LazyRoutes.ContactSales />} />

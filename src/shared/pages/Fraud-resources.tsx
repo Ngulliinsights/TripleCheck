@@ -59,19 +59,19 @@ const AccordionSection: FC<AccordionSectionProps> = ({
         return {
           bg: "bg-gradient-to-br from-red-50 to-red-100/50",
           border: "border-red-200",
-          hover: "hover:from-red-100 hover:to-red-200/50"
+          hover: "hover:from-red-100 hover:to-red-200/50",
         };
       case "low":
         return {
           bg: "bg-gradient-to-br from-slate-50 to-slate-100/50",
           border: "border-slate-200",
-          hover: "hover:from-slate-100 hover:to-slate-200/50"
+          hover: "hover:from-slate-100 hover:to-slate-200/50",
         };
       default:
         return {
           bg: "bg-gradient-to-br from-blue-50 to-blue-100/50",
           border: "border-blue-200",
-          hover: "hover:from-blue-100 hover:to-blue-200/50"
+          hover: "hover:from-blue-100 hover:to-blue-200/50",
         };
     }
   };
@@ -79,7 +79,9 @@ const AccordionSection: FC<AccordionSectionProps> = ({
   const styles = getPriorityStyles(priority);
 
   return (
-    <Card className={`${styles.bg} ${styles.border} shadow-lg hover:shadow-xl transition-all duration-300`}>
+    <Card
+      className={`${styles.bg} ${styles.border} shadow-lg hover:shadow-xl transition-all duration-300`}
+    >
       <div className="m-0">
         <button
           type="button"
@@ -91,9 +93,11 @@ const AccordionSection: FC<AccordionSectionProps> = ({
             {icon}
             {title}
           </span>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-            isOpen ? "bg-white/50 rotate-180" : "bg-white/30"
-          }`}>
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+              isOpen ? "bg-white/50 rotate-180" : "bg-white/30"
+            }`}
+          >
             <span className="text-lg font-mono">{isOpen ? "−" : "+"}</span>
           </div>
         </button>
@@ -1019,15 +1023,19 @@ const KenyaRealEstateFraudGuide: FC = () => {
               <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
                 Emergency Fraud Response
               </h1>
-              <p className="text-red-600 font-semibold text-lg">Powered by TripleCheck</p>
+              <p className="text-red-600 font-semibold text-lg">
+                Powered by TripleCheck
+              </p>
             </div>
           </div>
-          
+
           <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed mb-8">
             Comprehensive 48-hour emergency response guide for real estate fraud
             victims. This detailed resource includes immediate action steps,
             complete agency contacts, legal procedures, and recovery strategies.
-            <span className="block mt-2 text-sm font-medium text-slate-500">Updated July 2025</span>
+            <span className="block mt-2 text-sm font-medium text-slate-500">
+              Updated July 2025
+            </span>
           </p>
 
           {/* Enhanced Emergency Alert */}
@@ -1042,7 +1050,8 @@ const KenyaRealEstateFraudGuide: FC = () => {
                 </span>
               </div>
               <p className="text-red-700 font-medium">
-                If you're currently experiencing fraud, act immediately using this guide
+                If you're currently experiencing fraud, act immediately using
+                this guide
               </p>
             </CardContent>
           </Card>
@@ -1083,68 +1092,68 @@ const KenyaRealEstateFraudGuide: FC = () => {
           </CardContent>
         </Card>
 
-      {/* Accordion Sections */}
-      <div className="space-y-4">
-        <AccordionSection
-          title="🚨 Emergency Action Plan (First 48 Hours)"
-          isOpen={openSection === "emergency"}
-          onToggle={() => toggle("emergency")}
-          icon={<AlertTriangle className="h-5 w-5" />}
-          priority="high"
-        >
-          <EmergencySection />
-        </AccordionSection>
+        {/* Accordion Sections */}
+        <div className="space-y-4">
+          <AccordionSection
+            title="🚨 Emergency Action Plan (First 48 Hours)"
+            isOpen={openSection === "emergency"}
+            onToggle={() => toggle("emergency")}
+            icon={<AlertTriangle className="h-5 w-5" />}
+            priority="high"
+          >
+            <EmergencySection />
+          </AccordionSection>
 
-        <AccordionSection
-          title="📊 Reporting Channels (Ranked by Effectiveness)"
-          isOpen={openSection === "channels"}
-          onToggle={() => toggle("channels")}
-          icon={<Star className="h-5 w-5" />}
-          priority="high"
-        >
-          <ReportingChannelsSection />
-        </AccordionSection>
+          <AccordionSection
+            title="📊 Reporting Channels (Ranked by Effectiveness)"
+            isOpen={openSection === "channels"}
+            onToggle={() => toggle("channels")}
+            icon={<Star className="h-5 w-5" />}
+            priority="high"
+          >
+            <ReportingChannelsSection />
+          </AccordionSection>
 
-        <AccordionSection
-          title="🛡️ Prevention & Red Flag Recognition"
-          isOpen={openSection === "prevention"}
-          onToggle={() => toggle("prevention")}
-          icon={<Shield className="h-5 w-5" />}
-          priority="medium"
-        >
-          <PreventionSection />
-        </AccordionSection>
+          <AccordionSection
+            title="🛡️ Prevention & Red Flag Recognition"
+            isOpen={openSection === "prevention"}
+            onToggle={() => toggle("prevention")}
+            icon={<Shield className="h-5 w-5" />}
+            priority="medium"
+          >
+            <PreventionSection />
+          </AccordionSection>
 
-        <AccordionSection
-          title="📞 Complete Agency Directory"
-          isOpen={openSection === "directory"}
-          onToggle={() => toggle("directory")}
-          icon={<Phone className="h-5 w-5" />}
-          priority="medium"
-        >
-          <DirectorySection />
-        </AccordionSection>
+          <AccordionSection
+            title="📞 Complete Agency Directory"
+            isOpen={openSection === "directory"}
+            onToggle={() => toggle("directory")}
+            icon={<Phone className="h-5 w-5" />}
+            priority="medium"
+          >
+            <DirectorySection />
+          </AccordionSection>
 
-        <AccordionSection
-          title="⚖️ Legal Redress Options (Ranked)"
-          isOpen={openSection === "legal"}
-          onToggle={() => toggle("legal")}
-          icon={<CheckCircle className="h-5 w-5" />}
-          priority="medium"
-        >
-          <LegalRedressSection />
-        </AccordionSection>
+          <AccordionSection
+            title="⚖️ Legal Redress Options (Ranked)"
+            isOpen={openSection === "legal"}
+            onToggle={() => toggle("legal")}
+            icon={<CheckCircle className="h-5 w-5" />}
+            priority="medium"
+          >
+            <LegalRedressSection />
+          </AccordionSection>
 
-        <AccordionSection
-          title="💻 Digital Reporting Tools & Documentation"
-          isOpen={openSection === "digital"}
-          onToggle={() => toggle("digital")}
-          icon={<Globe className="h-5 w-5" />}
-          priority="low"
-        >
-          <DigitalToolsSection />
-        </AccordionSection>
-      </div>
+          <AccordionSection
+            title="💻 Digital Reporting Tools & Documentation"
+            isOpen={openSection === "digital"}
+            onToggle={() => toggle("digital")}
+            icon={<Globe className="h-5 w-5" />}
+            priority="low"
+          >
+            <DigitalToolsSection />
+          </AccordionSection>
+        </div>
 
         {/* Enhanced Footer */}
         <Card className="mt-12 bg-gradient-to-br from-slate-100 to-slate-200/50 border-slate-300 shadow-lg">
@@ -1162,7 +1171,8 @@ const KenyaRealEstateFraudGuide: FC = () => {
             </p>
             <div className="text-sm text-slate-500 bg-white/50 rounded-lg p-4 border border-slate-200">
               <p className="font-medium">
-                Last updated: July 2025 | Sources: DCI, EACC, Ministry of Lands, Legal Practitioners
+                Last updated: July 2025 | Sources: DCI, EACC, Ministry of Lands,
+                Legal Practitioners
               </p>
             </div>
           </CardContent>

@@ -434,6 +434,12 @@ export const LazyRoutes = {
     { routePath: "/search", preloadPriority: "normal" }
   ),
 
+  /* --- Analytics --- */
+  Analytics: createLazyRoute(
+    () => import("../analytics/pages/Analytics"),
+    { routePath: "/analytics", preloadPriority: "normal" }
+  ),
+
   /* --- Legal & Support --- */
   Help: createLazyRoute(() => import("../shared/pages/Help"), {
     routePath: "/help",
@@ -480,6 +486,10 @@ export const LazyRoutes = {
 
   /* --- Demo & Utility --- */
   MVPDemo: createLazyRoute(() => import("../shared/pages/MVP-Demo"), {
+    routePath: "/mvp-demo",
+    preloadPriority: "high",
+  }),
+  Demo: createLazyRoute(() => import("../shared/pages/Demo"), {
     routePath: "/demo",
     preloadPriority: "high",
   }),
@@ -530,9 +540,9 @@ export const LazyRoutes = {
   ),
 
   /* --- Coming-Soon Placeholders --- */
-  AdvancedSearch: createComingSoonRoute(
-    "Advanced Search",
-    "Powerful search tools with AI-powered recommendations."
+  AdvancedSearch: createLazyRoute(
+    () => import("../search/pages/AdvancedSearch"),
+    { routePath: "/advanced-search", preloadPriority: "normal" }
   ),
   Notifications: createComingSoonRoute(
     "Notifications Center",

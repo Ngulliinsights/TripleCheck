@@ -356,8 +356,9 @@ export function EnhancedHero({
           navigate("/land-verification");
           break;
         case "watch_demo":
-          navigate("/demo");
-          break;
+          // Let the parent component handle the video modal
+          onCtaClick?.(currentSlideData.id, action);
+          return; // Don't navigate, let parent handle
         case "premium_access":
           navigate("/pricing");
           break;
@@ -368,7 +369,7 @@ export function EnhancedHero({
           navigate("/properties");
           break;
         case "personalized_search":
-          navigate("/advanced-search");
+          navigate("/search");
           break;
         case "check_fraud":
           navigate("/trust/fraud-detection");

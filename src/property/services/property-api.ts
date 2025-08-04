@@ -1,10 +1,37 @@
 import { apiRequest } from "../../infrastructure/api/queryClient";
 import { requestManager } from "../../infrastructure/api/request-manager";
-import { ApiResponse, PaginatedResponse, Property, PropertySearchParams } from "../../shared/types/api.types";
+import { ApiResponse, PaginatedResponse } from "../../shared/types/api.types";
+import { PropertySearchParams, PropertySearchInput } from "../types/property.types";
+import { Property } from "../../shared/types/property";
 
 import { PropertyBusinessLogic } from "./property-validation";
 
 const API_BASE = "/api/properties";
+
+// Helper function to build search parameters
+function buildSearchParams(params: PropertySearchParams): URLSearchParams {
+  const searchParams = new URLSearchParams();
+  
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      if (Array.isArray(value)) {
+        value.forEach(item => searchParams.append(key, String(item)));
+      } else {
+        searchParams.append(key, String(value));
+      }
+    }
+  });
+  
+  return searchParams;
+}
+
+// Helper function to build request headers
+function buildHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+}
 
 // Enhanced property type with computed fields
 type EnhancedProperty = Property & {
@@ -42,49 +69,12 @@ const handleApiResponse = async <T>(response: Response): Promise<T> => {
   return response.json();
 };
 
-// Helper function to build headers with optional auth token
-const buildHeaders = (includeAuth = true): Record<string, string> => {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  if (includeAuth) {
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-  }
-
-  return headers;
-};
-
-// Helper function to build URL search parameters efficiently
-const buildSearchParams = (
-  params: Record<string, unknown> | PropertySearchParams
-): URLSearchParams => {
-  const searchParams = new URLSearchParams();
-
-  // Convert the params object to entries and handle each key-value pair
-  Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      if (Array.isArray(value)) {
-        // Handle array values by appending each item
-        value.forEach((item) => searchParams.append(key, String(item)));
-      } else {
-        searchParams.append(key, String(value));
-      }
-    }
-  });
-
-  return searchParams;
-};
-
 // Helper function to enhance property with business logic calculations
 const enhanceProperty = (property: Property): EnhancedProperty => ({
   ...property,
-  calculatedScore: PropertyBusinessLogic.calculatePropertyScore(property),
-  isFeatured: PropertyBusinessLogic.isFeaturedProperty(property),
-  listingUrl: PropertyBusinessLogic.generateListingUrl(property),
+  calculatedScore: PropertyBusinessLogic.calculatePropertyScore(property as any),
+  isFeatured: PropertyBusinessLogic.isFeaturedProperty(property as any),
+  listingUrl: PropertyBusinessLogic.generateListingUrl(property as any),
 });
 
 // Type guard to ensure API response data exists and is valid
@@ -128,7 +118,7 @@ const createEmptyPaginatedResponse = <T>(): PaginatedResponse<T> => {
 export const propertyApi = {
   // Get all properties with search and filters - optimized parameter handling
   getProperties: async (
-    params: PropertySearchParams = {}
+    params: PropertySearchInput = {}
   ): Promise<PaginatedResponse<EnhancedProperty>> => {
     try {
       // Validate search parameters using business logic
@@ -360,7 +350,7 @@ export const propertyApi = {
       }
 
       // Check if property can be deleted based on status
-      if (property.status === "sold") {
+      if ((property as any).status === "sold") {
         throw new PropertyApiError("Sold properties cannot be deleted", 400);
       }
 
@@ -422,7 +412,11 @@ export const propertyApi = {
   // Get similar properties with batching and caching
   getSimilarProperties: async (property: Property): Promise<Property[]> => {
     try {
-      const cacheKey = `${property.propertyType}-${property.location?.city || property.location}-${Math.floor(property.price * 0.7)}-${Math.floor(property.price * 1.3)}`;
+      const propertyType = (property as any).propertyType || 'unknown';
+      const location = typeof property.location === 'string' ? property.location : (property.location as any)?.city || 'unknown';
+      const price = typeof property.price === 'number' ? property.price : parseFloat(property.price as string) || 0;
+      
+      const cacheKey = `${propertyType}-${location}-${Math.floor(price * 0.7)}-${Math.floor(price * 1.3)}`;
       
       // Check if we already have a pending request for similar criteria
       if (propertyApi._similarPropertiesBatch.has(cacheKey)) {
@@ -430,10 +424,10 @@ export const propertyApi = {
       }
 
       const params = {
-        propertyType: property.propertyType,
-        city: property.location?.city || property.location,
-        minPrice: Math.floor(property.price * 0.7).toString(),
-        maxPrice: Math.floor(property.price * 1.3).toString(),
+        propertyType: propertyType,
+        city: location,
+        minPrice: Math.floor(price * 0.7).toString(),
+        maxPrice: Math.floor(price * 1.3).toString(),
         limit: "10",
       };
 
@@ -449,9 +443,7 @@ export const propertyApi = {
             key: `similar-properties:${cacheKey}`,
             cancelPrevious: false, // Don't cancel batched requests
             priority: 'low',
-            timeout: 5000,
-
-            cacheTtl: 5 * 60 * 1000 // Cache for 5 minutes
+            timeout: 5000
           }
         }
       ).then(data => {
@@ -478,7 +470,7 @@ export const propertyApi = {
   // Get property recommendations with improved type safety
   getRecommendations: async (userPreferences: {
     priceRange: { min: number; max: number };
-    preferredTypes: Property["propertyType"][];
+    preferredTypes: string[];
     minBedrooms: number;
     preferredAmenities: string[];
     location?: string;

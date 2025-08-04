@@ -2,9 +2,23 @@ import type { User } from '@shared/schema';
 import { Request, Response, NextFunction } from 'express';
 
 import type { UserRole, AuthorizationContext, PermissionCheckResult, SessionConfig } from '../types/auth.types';
-import { HTTP_STATUS, AUTH_CONSTANTS, ROLE_HIERARCHY, ROLE_PERMISSIONS, TRUST_SCORE_THRESHOLDS } from '../utils/constants';
+import { HTTP_STATUS, AUTH_CONSTANTS, ROLE_HIERARCHY } from '../utils/constants';
 import { AUTH_ERROR_MESSAGES } from '../utils/error-messages';
 import { ResponseHelper } from '../utils/response-helpers';
+
+// Constants
+const AUTHORIZATION_ERROR_MESSAGE = 'Authorization error';
+
+// Logger utility for middleware
+const logger = {
+  error: (message: string, error?: unknown) => {
+    // In production, this would use a proper logging service
+    if (process.env.NODE_ENV !== 'test') {
+      // eslint-disable-next-line no-console
+      console.error(`[AUTH_MIDDLEWARE] ${message}`, error);
+    }
+  }
+};
 
 // Storage interface for dependency injection
 interface IStorage {
@@ -19,7 +33,7 @@ let storageInstance: IStorage;
 export interface CustomSession {
   userId?: number;
   lastActivity?: string;
-  destroy: (callback: (err?: any) => void) => void;
+  destroy: (callback: (err?: Error) => void) => void;
 }
 
 // Type-safe authenticated request interface
@@ -59,7 +73,7 @@ export class SessionManager {
   static clearUserSession(req: AuthenticatedRequest): Promise<void> {
     return new Promise((resolve, reject) => {
       if (req.session) {
-        req.session.destroy((err: any) => {
+        req.session.destroy((err?: Error) => {
           if (err) {
             reject(err);
           } else {
@@ -120,12 +134,13 @@ export class UserContext {
       const user = await storageInstance.getUser(userId);
       if (user) {
         // Remove password from user context for security
-        const { password: _, ...userWithoutPassword } = user;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password, ...userWithoutPassword } = user;
         req.user = userWithoutPassword;
         return true;
       }
     } catch (error) {
-      console.error('Error loading user context:', error);
+      logger.error('Error loading user context:', error);
     }
 
     return false;
@@ -237,7 +252,7 @@ export const requireAuth = async (
     
     next();
   } catch (error) {
-    console.error('Authentication middleware error:', error);
+    logger.error('Authentication middleware error:', error);
     ResponseHelper.error(res, 'Authentication error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };
@@ -259,7 +274,7 @@ export const optionalAuth = async (
     
     next();
   } catch (error) {
-    console.error('Optional authentication middleware error:', error);
+    logger.error('Optional authentication middleware error:', error);
     // Don't block request on error, just continue without user context
     next();
   }
@@ -295,8 +310,8 @@ export const requireRole = (roles: UserRole | UserRole[]) => {
 
       next();
     } catch (error) {
-      console.error('Role authorization middleware error:', error);
-      ResponseHelper.error(res, 'Authorization error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      logger.error('Role authorization middleware error:', error);
+      ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   };
 };
@@ -332,8 +347,8 @@ export const requireVerifiedAgent = async (
 
     next();
   } catch (error) {
-    console.error('Verified agent middleware error:', error);
-    ResponseHelper.error(res, 'Authorization error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    logger.error('Verified agent middleware error:', error);
+    ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -366,8 +381,8 @@ export const requireMinTrustScore = (minScore: number) => {
 
       next();
     } catch (error) {
-      console.error('Trust score middleware error:', error);
-      ResponseHelper.error(res, 'Authorization error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      logger.error('Trust score middleware error:', error);
+      ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   };
 };
@@ -421,8 +436,12 @@ export class AuthorizationManager {
    * Check if user has permission based on role hierarchy
    */
   static hasPermission(userRole: UserRole, requiredRole: UserRole): boolean {
-    const userLevel = ROLE_HIERARCHY[userRole] || 0;
-    const requiredLevel = ROLE_HIERARCHY[requiredRole] || 0;
+    const userLevel = Object.prototype.hasOwnProperty.call(ROLE_HIERARCHY, userRole) 
+      ? ROLE_HIERARCHY[userRole as keyof typeof ROLE_HIERARCHY] 
+      : 0;
+    const requiredLevel = Object.prototype.hasOwnProperty.call(ROLE_HIERARCHY, requiredRole)
+      ? ROLE_HIERARCHY[requiredRole as keyof typeof ROLE_HIERARCHY]
+      : 0;
     return userLevel >= requiredLevel;
   }
 
@@ -474,7 +493,7 @@ export class AuthorizationManager {
         return {
           allowed: false,
           reason: 'Insufficient role permissions',
-          requiredRole: requirements.roles[0],
+          ...(requirements.roles[0] && { requiredRole: requirements.roles[0] }),
         };
       }
     }
@@ -579,8 +598,8 @@ export const requirePermissions = (requirements: {
 
       next();
     } catch (error) {
-      console.error('Permission authorization middleware error:', error);
-      ResponseHelper.error(res, 'Authorization error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      logger.error('Permission authorization middleware error:', error);
+      ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   };
 };
@@ -613,8 +632,8 @@ export const requireMinRole = (minRole: UserRole) => {
 
       next();
     } catch (error) {
-      console.error('Role hierarchy middleware error:', error);
-      ResponseHelper.error(res, 'Authorization error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      logger.error('Role hierarchy middleware error:', error);
+      ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   };
 };
@@ -648,7 +667,7 @@ export const enhancedSessionValidation = async (
     
     next();
   } catch (error) {
-    console.error('Enhanced session validation error:', error);
+    logger.error('Enhanced session validation error:', error);
     next(); // Don't block request on session validation errors
   }
 };
@@ -696,8 +715,8 @@ export const requireResourceOwnership = (getResourceOwnerId: (req: Authenticated
 
       next();
     } catch (error) {
-      console.error('Resource ownership middleware error:', error);
-      ResponseHelper.error(res, 'Authorization error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      logger.error('Resource ownership middleware error:', error);
+      ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   };
 };

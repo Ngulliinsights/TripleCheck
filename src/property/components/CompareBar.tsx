@@ -28,8 +28,13 @@ export function CompareBar({ onQuickCompare }: CompareBarProps = {}) {
   }
 
   const handleCompare = () => {
-    // Navigate to compare page - the PropertyCompare page will handle the selected properties
-    navigate("/compare");
+    if (selectedProperties.length < 2) {
+      return; // Don't navigate if less than 2 properties
+    }
+    
+    // Navigate to compare page with selected property IDs as URL params for better linking
+    const propertyIds = selectedProperties.map(p => p.id).join(',');
+    navigate(`/compare?properties=${propertyIds}`);
   };
 
   const formatPrice = (price?: number) => {

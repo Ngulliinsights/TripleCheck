@@ -81,8 +81,8 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
       const features = property.features as PropertyFeatures;
       setFormData({
         title: property.title,
-        description: property.description,
-        location: property.location,
+        description: String(property.description || ''),
+        location: typeof property.location === 'string' ? property.location : JSON.stringify(property.location),
         price: property.price.toString(),
         bedrooms: features?.bedrooms?.toString() || "",
         bathrooms: features?.bathrooms?.toString() || "",
@@ -93,7 +93,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
         petFriendly: features?.petFriendly || false,
         furnished: features?.furnished || false,
         amenities: features?.amenities || [],
-        imageUrls: property.imageUrls || []
+        imageUrls: Array.isArray(property.imageUrls) ? property.imageUrls : (Array.isArray(property.images) ? property.images : [])
       });
     }
   }, [property]);
@@ -224,7 +224,7 @@ export default function PropertyEditPage({ id }: PropertyEditPageProps) {
               Preview
             </Button>
             <Badge variant={property.verificationStatus === 'verified' ? 'default' : 'secondary'}>
-              {property.verificationStatus}
+              {String(property.verificationStatus || 'unverified')}
             </Badge>
           </div>
         </div>

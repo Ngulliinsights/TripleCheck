@@ -60,7 +60,7 @@ export const PropertySchema = z.object({
 });
 
 export const PropertySearchSchema = z.object({
-  query: z.string().optional(),
+  query: z.string().default(''),
   location: z.string().optional(),
   priceMin: z.number().positive().optional(),
   priceMax: z.number().positive().optional(),
@@ -118,20 +118,26 @@ export class PropertyBusinessLogic {
       apartment: 80,
       land: 70,
     };
-    score += typeScores[property.propertyType];
+    if (property.propertyType) {
+      score += typeScores[property.propertyType as keyof typeof typeScores] || 0;
+    }
 
     // Image quality score (more images = higher score)
-    score += Math.min(property.images.length * 5, 50);
+    if (property.images) {
+      score += Math.min(property.images.length * 5, 50);
+    }
 
     // Description quality score
-    if (property.description.length > 200) score += 20;
-    if (property.description.length > 500) score += 10;
+    if (property.description && property.description.length > 200) score += 20;
+    if (property.description && property.description.length > 500) score += 10;
 
     // Amenities score
-    score += Math.min(property.amenities.length * 2, 30);
+    if (property.amenities) {
+      score += Math.min(property.amenities.length * 2, 30);
+    }
 
     // Location score (if coordinates provided)
-    if (property.location.coordinates) score += 15;
+    if (typeof property.location === 'object' && property.location.coordinates) score += 15;
 
     // Verification bonus
     if (property.verificationStatus === 'verified') score += 50;
@@ -202,7 +208,7 @@ export class PropertyBusinessLogic {
   }
 
   // Generate land verification badge based on status
-  static generateLandVerificationBadge(landVerification: Property['landVerification']): Property['landVerification']['badge'] | undefined {
+  static generateLandVerificationBadge(landVerification: Property['landVerification']): any {
     if (!landVerification) return undefined;
 
     switch (landVerification.status) {

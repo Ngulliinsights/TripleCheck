@@ -1,22 +1,16 @@
 import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
-  Zap, 
   TrendingUp, 
   Eye, 
   Search, 
   Target,
-  CheckCircle,
-  AlertTriangle,
   Lightbulb,
   BarChart3,
   Edit,
   Wand2,
-  Star,
   MessageSquare,
   Clock,
-  DollarSign,
-  MapPin,
   Home,
   Users,
   Award,
@@ -246,9 +240,9 @@ export default function PropertyOptimizePage() {
                   >
                     <CardContent className="p-4">
                       <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                        {property.imageUrls?.[0] ? (
+                        {(Array.isArray(property.imageUrls) && property.imageUrls[0]) || (Array.isArray(property.images) && property.images[0]) ? (
                           <img 
-                            src={property.imageUrls?.[0]} 
+                            src={(Array.isArray(property.imageUrls) && property.imageUrls[0]) || (Array.isArray(property.images) && property.images[0]) || ''} 
                             alt={property.title}
                             className="w-full h-full object-cover"
                           />
@@ -259,7 +253,9 @@ export default function PropertyOptimizePage() {
                         )}
                       </div>
                       <h3 className="font-medium mb-1">{property.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">{property.location}</p>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {typeof property.location === 'string' ? property.location : (property.location as any)?.address || 'Location not specified'}
+                      </p>
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-primary">
                           KES {property.price.toLocaleString()}

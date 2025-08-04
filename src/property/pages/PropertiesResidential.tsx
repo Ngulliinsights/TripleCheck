@@ -31,6 +31,7 @@ import { useComponentPerformance } from "../../shared/hooks/useComponentPerforma
 import { useDebounce } from "../../shared/hooks/useDebounce";
 import { Property } from "../../shared/types/property";
 import { CompareBar } from "../components/CompareBar";
+import { CompareModal } from "../components/CompareModal";
 import ListingCard from "../components/ListingCard";
 import { CompareProvider } from "../contexts/CompareContext";
 
@@ -588,6 +589,7 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [showCompareModal, setShowCompareModal] = useState<boolean>(false);
 
   // Use the enhanced debounce hook to prevent race conditions
   const debouncedFilters = useDebounce(filters, 300);
@@ -676,6 +678,15 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
   // View mode toggle function
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
+  }, []);
+
+  // Compare modal handlers
+  const handleShowCompareModal = useCallback(() => {
+    setShowCompareModal(true);
+  }, []);
+
+  const handleCloseCompareModal = useCallback(() => {
+    setShowCompareModal(false);
   }, []);
 
   // Property click handler - navigate to property details
@@ -1109,7 +1120,13 @@ const ResidentialProperties: React.FC<ResidentialPropertiesProps> = ({
         </div>
 
         {/* Compare Bar */}
-        <CompareBar />
+        <CompareBar onQuickCompare={handleShowCompareModal} />
+
+        {/* Compare Modal */}
+        <CompareModal
+          isOpen={showCompareModal}
+          onClose={handleCloseCompareModal}
+        />
       </div>
     </CompareProvider>
   );

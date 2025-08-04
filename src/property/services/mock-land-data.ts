@@ -145,7 +145,7 @@ const mockLandProperties: Record<string, MockLandProperty> = {
       roadAccess: true,
       electricity: true,
       landUse: "residential",
-      topography: "gently sloping",
+      topography: "hilly",
       drainage: "good",
       vegetation: "Scattered acacia trees and grass",
       nearbyAmenities: ["Shopping Center", "Hospital", "Schools", "Banks", "Restaurants"],

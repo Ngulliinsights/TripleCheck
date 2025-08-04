@@ -4,52 +4,52 @@ export interface Property {
   title: string;
   description: string;
   location: string | LocationData;
-  address?: string | null; // Optional since not always present in API
+  address?: string | null | undefined; // Optional since not always present in API
   price: string | number; // Allow both for API compatibility
-  coordinates?: Coordinates | null; // Optional since not always present in API
-  imageUrls?: string[]; // Optional, API uses 'images'
-  images?: string[]; // API field name
-  verificationStatus?: 'verified' | 'pending' | 'unverified' | 'draft';
-  features: PropertyFeatures | null;
-  ownerId?: string;
-  aiVerificationResults?: AIVerificationResults | null;
-  viewCount?: number;
-  favoriteCount?: number;
-  isActive?: boolean;
-  isFeatured?: boolean;
-  availableFrom?: Date | string | null;
-  availableUntil?: Date | string | null;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
+  coordinates?: Coordinates | null | undefined; // Optional since not always present in API
+  imageUrls?: string[] | undefined; // Optional, API uses 'images'
+  images?: string[] | undefined; // API field name
+  verificationStatus?: 'verified' | 'pending' | 'unverified' | 'draft' | undefined;
+  features?: PropertyFeatures | null | undefined;
+  ownerId?: string | undefined;
+  aiVerificationResults?: AIVerificationResults | null | undefined;
+  viewCount?: number | undefined;
+  favoriteCount?: number | undefined;
+  isActive?: boolean | undefined;
+  isFeatured?: boolean | undefined;
+  availableFrom?: Date | string | null | undefined;
+  availableUntil?: Date | string | null | undefined;
+  createdAt?: Date | string | undefined;
+  updatedAt?: Date | string | undefined;
   // Extended properties for frontend use
-  landVerification?: LandVerificationStatus;
-  trustScore?: number;
+  landVerification?: LandVerificationStatus | undefined;
+  trustScore?: number | undefined;
   owner?: {
     id: string;
     username: string;
     email: string;
-    firstName?: string;
-    lastName?: string;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
     trustScore: number;
     isVerifiedAgent: boolean;
-  };
+  } | undefined;
   // Additional fields that might be present in API responses
-  bedrooms?: number;
-  bathrooms?: number;
-  size?: number;
-  area?: number;
-  type?: string;
-  propertyType?: string;
-  status?: string;
-  amenities?: string[];
+  bedrooms?: number | undefined;
+  bathrooms?: number | undefined;
+  size?: number | undefined;
+  area?: number | undefined;
+  type?: string | undefined;
+  propertyType?: string | undefined;
+  status?: string | undefined;
+  amenities?: string[] | undefined;
 }
 
 export interface LocationData {
   address: string;
-  city: string;
+  city?: string | undefined;
   state: string;
   country: string;
-  coordinates?: Coordinates;
+  coordinates?: Coordinates | undefined;
 }
 
 export interface Coordinates {
@@ -58,15 +58,15 @@ export interface Coordinates {
 }
 
 export interface PropertyFeatures {
-  bedrooms?: number;
-  bathrooms?: number;
-  squareFeet?: number;
-  parkingSpaces?: number;
-  yearBuilt?: number;
-  amenities?: string[];
-  propertyType?: string;
-  petFriendly?: boolean;
-  furnished?: boolean;
+  bedrooms?: number | undefined;
+  bathrooms?: number | undefined;
+  squareFeet?: number | undefined;
+  parkingSpaces?: number | undefined;
+  yearBuilt?: number | undefined;
+  amenities?: string[] | undefined;
+  propertyType?: string | undefined;
+  petFriendly?: boolean | undefined;
+  furnished?: boolean | undefined;
   // Allow additional dynamic properties from API
   [key: string]: unknown;
 }
@@ -93,14 +93,14 @@ export interface AIVerificationResults {
 }
 
 export interface LandVerificationStatus {
-  sessionId?: string;
+  sessionId?: string | undefined;
   status: 'not_started' | 'in_progress' | 'completed' | 'suspended' | 'failed';
   overallRiskScore: number;
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
   confidence: number;
   completedLayers: string[];
   lastUpdated: Date;
-  badge?: LandVerificationBadge;
+  badge?: LandVerificationBadge | undefined;
 }
 
 export interface LandVerificationBadge {

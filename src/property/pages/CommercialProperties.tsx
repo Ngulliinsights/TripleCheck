@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Property } from "../../shared/types/property";
 import { CompareBar } from "../components/CompareBar";
+import { CompareModal } from "../components/CompareModal";
 import ListingCard from "../components/ListingCard";
 import { CompareProvider } from "../contexts/CompareContext";
 
@@ -80,6 +81,7 @@ export default function CommercialProperties() {
   const [filterType, setFilterType] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortOption>("price-desc");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCompareModal, setShowCompareModal] = useState<boolean>(false);
 
   const commercialProperties: CommercialProperty[] = useMemo(
     () => [
@@ -353,6 +355,15 @@ export default function CommercialProperties() {
     setViewMode(mode);
   }, []);
 
+  // Compare modal handlers
+  const handleShowCompareModal = useCallback(() => {
+    setShowCompareModal(true);
+  }, []);
+
+  const handleCloseCompareModal = useCallback(() => {
+    setShowCompareModal(false);
+  }, []);
+
   const handlePropertyClick = useCallback(
     (property: CommercialProperty) => {
       // Check if this is a land property and navigate to the appropriate route
@@ -476,7 +487,7 @@ export default function CommercialProperties() {
                     onClick={() => handleViewModeChange("grid")}
                     className={`p-2 rounded ${viewMode === "grid" ? "bg-background shadow-sm" : ""}`}
                     aria-label="Grid view"
-                    aria-pressed={viewMode === "grid" ? "true" : "false"}
+                    aria-pressed={viewMode === "grid"}
                   >
                     <Grid className="w-4 h-4" />
                   </button>
@@ -485,7 +496,7 @@ export default function CommercialProperties() {
                     onClick={() => handleViewModeChange("list")}
                     className={`p-2 rounded ${viewMode === "list" ? "bg-background shadow-sm" : ""}`}
                     aria-label="List view"
-                    aria-pressed={viewMode === "list" ? "true" : "false"}
+                    aria-pressed={viewMode === "list"}
                   >
                     <List className="w-4 h-4" />
                   </button>
@@ -540,7 +551,13 @@ export default function CommercialProperties() {
         </div>
 
         {/* Compare Bar */}
-        <CompareBar />
+        <CompareBar onQuickCompare={handleShowCompareModal} />
+
+        {/* Compare Modal */}
+        <CompareModal
+          isOpen={showCompareModal}
+          onClose={handleCloseCompareModal}
+        />
       </div>
     </CompareProvider>
   );
