@@ -28,7 +28,7 @@ import { Progress } from "../../shared/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../shared/components/ui/tabs";
 import { Textarea } from "../../shared/components/ui/textarea";
 import { useToast } from "../../shared/hooks/use-toast";
-import { Property } from "../../shared/schema";
+import type { Property } from "../../shared/schema";
 
 
 interface OptimizationSuggestion {

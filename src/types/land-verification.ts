@@ -12,7 +12,7 @@ import type {
   expertAssignments,
   propertyMonitoring,
   monitoringAlerts,
-} from '@/shared/schema';
+} from '../shared/schema';
 
 // Create proper types from the table schemas
 export type LandVerificationSession = typeof landVerificationSessions.$inferSelect;

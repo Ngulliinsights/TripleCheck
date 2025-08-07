@@ -1,0 +1,51 @@
+/* Logo Component Styles */
+
+.logoImage {
+  /* Optimize for SVG and vector graphics */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  
+  /* Prevent text selection and dragging */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  
+  /* Prevent dragging */
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  
+  /* Ensure pointer events work for interactive logos */
+  pointer-events: auto;
+  
+  /* Optimize rendering performance */
+  will-change: transform;
+  backface-visibility: hidden;
+  
+  /* Ensure proper aspect ratio maintenance */
+  object-fit: contain;
+  object-position: center;
+}
+
+/* Fallback for browsers that don't support modern image-rendering */
+@supports not (image-rendering: -webkit-optimize-contrast) {
+  .logoImage {
+    image-rendering: auto;
+  }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .logoImage {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .logoImage {
+    will-change: auto;
+  }
+}

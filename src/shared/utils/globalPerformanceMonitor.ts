@@ -38,7 +38,7 @@ export class GlobalPerformanceMonitor {
     
     // Throttle API call tracking to prevent overwhelming the monitor
     if (timestamp - stats.lastApiCallTime < 50) {
-      if (import.meta.env.MODE === "development") {
+      if (process.env.NODE_ENV === "development") {
         console.warn(`[${componentName}] API call tracking throttled (${timestamp - stats.lastApiCallTime}ms since last)`);
       }
       return;
@@ -51,7 +51,7 @@ export class GlobalPerformanceMonitor {
     if (lastCall && 
         lastCall.data === dataString && 
         timestamp - lastCall.timestamp < 200) {
-      if (import.meta.env.MODE === "development") {
+      if (process.env.NODE_ENV === "development") {
         console.warn(`[${componentName}] Duplicate API call detected within 200ms - skipping track`);
       }
       return;
@@ -65,7 +65,7 @@ export class GlobalPerformanceMonitor {
       stats.apiCallHistory = stats.apiCallHistory.slice(-50);
     }
 
-    if (import.meta.env.MODE === "development") {
+    if (process.env.NODE_ENV === "development") {
       console.log(`[${componentName}] API Call #${stats.apiCallCount} (${timestamp - (lastCall?.timestamp || timestamp)}ms since last):`, data);
     }
 
@@ -81,14 +81,14 @@ export class GlobalPerformanceMonitor {
     
     // Check for excessive re-renders
     if (stats.lastRenderTime && timestamp - stats.lastRenderTime < 5) {
-      if (import.meta.env.MODE === "development") {
+      if (process.env.NODE_ENV === "development") {
         console.warn(`[${componentName}] Potential excessive re-render detected. Time since last render: ${timestamp - stats.lastRenderTime}ms`);
       }
     }
     
     stats.lastRenderTime = timestamp;
 
-    if (import.meta.env.MODE === "development") {
+    if (process.env.NODE_ENV === "development") {
       console.log(`[${componentName}] Render #${stats.renderCount}`);
     }
 

@@ -1,20 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Upload,
-  Camera,
-  Image as ImageIcon,
-  Trash2,
-  Edit,
-  Star,
-  CheckCircle,
-  AlertTriangle,
-  Plus,
-  Maximize,
-  Palette,
-  Zap,
-} from "lucide-react";
-import { useState, useCallback, useMemo } from "react";
+import { Camera, Image as ImageIcon, AlertTriangle, Zap } from "lucide-react";
+import { useState, useCallback } from "react";
 
+import PropertyImageVault from "../../shared/components/images/PropertyImageVault";
 import { Badge } from "../../shared/components/ui/badge";
 import { Button } from "../../shared/components/ui/button";
 import {
@@ -23,33 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "../../shared/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../../shared/components/ui/dialog";
-import { Label } from "../../shared/components/ui/label";
-import { Progress } from "../../shared/components/ui/progress";
-import { Textarea } from "../../shared/components/ui/textarea";
 import { useToast } from "../../shared/hooks/use-toast";
 import { useSafePropertiesQuery } from "../../shared/hooks/useSafeQuery";
+import type { PropertyImage as VaultImage } from "../../shared/types/images";
 
-// Enhanced type definitions with better constraints
-interface PhotoUpload {
-  readonly id: string;
-  readonly file: File;
-  readonly preview: string;
-  status: "uploading" | "uploaded" | "error";
-  progress: number;
-  description?: string | undefined;
-  isPrimary?: boolean | undefined;
-}
-
-// Type for upload mutation parameters
+// Simplified upload mutation parameters
 interface UploadMutationParams {
   readonly propertyId: string;
-  readonly photos: ReadonlyArray<PhotoUpload>;
+  readonly images: ReadonlyArray<VaultImage>;
 }
 
 // Enhanced Property interface to match expected structure
@@ -66,134 +35,59 @@ interface PropertyWithImages {
   imageUrls?: string[];
 }
 
-// Constants moved outside component to prevent recreation on each render
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const UPLOAD_PROGRESS_INTERVAL = 200;
-const UPLOAD_SIMULATION_DURATION = 3000;
-
-// Photography tips constant to prevent recreation
+// Photography tips for user guidance
 const PHOTO_TIPS = [
   {
     icon: <Camera className="w-5 h-5 text-blue-500" />,
     title: "Use Natural Light",
-    description:
-      "Take photos during the day with plenty of natural light for the best results",
+    description: "Take photos during the day with plenty of natural light for the best results",
   },
   {
-    icon: <Maximize className="w-5 h-5 text-green-500" />,
-    title: "Show Space",
-    description:
-      "Capture wide angles to show the full room and make spaces appear larger",
+    icon: <Camera className="w-5 h-5 text-green-500" />,
+    title: "Show Space", 
+    description: "Capture wide angles to show the full room and make spaces appear larger",
   },
   {
-    icon: <Star className="w-5 h-5 text-yellow-500" />,
+    icon: <Camera className="w-5 h-5 text-yellow-500" />,
     title: "Highlight Features",
-    description:
-      "Focus on unique selling points like views, fixtures, or architectural details",
+    description: "Focus on unique selling points like views, fixtures, or architectural details",
   },
   {
-    icon: <Palette className="w-5 h-5 text-purple-500" />,
+    icon: <Camera className="w-5 h-5 text-purple-500" />,
     title: "Stage the Space",
-    description:
-      "Clean, declutter, and arrange furniture to make rooms look inviting",
+    description: "Clean, declutter, and arrange furniture to make rooms look inviting",
   },
 ] as const;
 
 export default function PropertyPhotosPage() {
   const [selectedProperty, setSelectedProperty] = useState<string>("");
-  const [photos, setPhotos] = useState<PhotoUpload[]>([]);
-  const [dragActive, setDragActive] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editingPhoto, setEditingPhoto] = useState<PhotoUpload | null>(null);
+  const [images, setImages] = useState<VaultImage[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Memoized file validation function to prevent recreation
-  const validateFile = useCallback(
-    (file: File): { isValid: boolean; error?: string } => {
-      if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
-        return {
-          isValid: false,
-          error: `${file.name} is not a supported image format. Please use JPG, PNG, or WebP.`,
-        };
-      }
-
-      if (file.size > MAX_FILE_SIZE) {
-        return {
-          isValid: false,
-          error: `${file.name} is larger than 10MB. Please compress the image and try again.`,
-        };
-      }
-
-      return { isValid: true };
-    },
-    []
-  );
-
-  // Fetch user's properties with enhanced safety and validation
+  // Fetch user's properties
   const {
     data: properties,
     isLoading,
     error,
   } = useSafePropertiesQuery(undefined, {
     context: "property-photos",
-    staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
-  // Generate more secure unique ID using crypto API when available
-  const generateUniqueId = useCallback((): string => {
-    const timestamp = Date.now().toString(36);
-    const randomPart =
-      window.crypto?.getRandomValues ?
-        (window.crypto.getRandomValues(new Uint32Array(1))[0]?.toString(36) ??
-        Math.random().toString(36).substring(2)) // eslint-disable-line sonarjs/pseudo-random
-      : Math.random().toString(36).substring(2); // eslint-disable-line sonarjs/pseudo-random
-    return `${timestamp}-${randomPart}`;
-  }, []);
-
-  // Calculate upload progress increment more realistically
-  const calculateProgressIncrement = useCallback(
-    (currentProgress: number): number => {
-      const randomValue =
-        window.crypto?.getRandomValues ?
-          (window.crypto.getRandomValues(new Uint32Array(1))[0] ?? 0) /
-          (0xffffffff + 1)
-        : Math.random(); // eslint-disable-line sonarjs/pseudo-random
-      if (currentProgress < 20) {
-        return randomValue * 10; // Slower at start
-      } else if (currentProgress > 80) {
-        return randomValue * 5; // Slower at end
-      } else {
-        return randomValue * 15; // Faster in middle
-      }
-    },
-    []
-  );
-
-  // Optimized upload mutation with better error handling
+  // Upload mutation for final submission
   const uploadMutation = useMutation({
-    mutationFn: async ({ photos }: UploadMutationParams) => {
-      // Enhanced mock API call with better error simulation
-      return new Promise<{ success: boolean; uploadedPhotos: PhotoUpload[] }>(
+    mutationFn: async ({ propertyId, images }: UploadMutationParams) => {
+      // Mock API call - replace with actual implementation
+      return new Promise<{ success: boolean; uploadedImages: VaultImage[] }>(
         (resolve, reject) => {
-          // Simulate occasional failures for better UX testing
-          const randomValue =
-            window.crypto?.getRandomValues ?
-              (window.crypto.getRandomValues(new Uint32Array(1))[0] ?? 0) /
-              (0xffffffff + 1)
-            : Math.random(); // eslint-disable-line sonarjs/pseudo-random
-          const shouldFail = randomValue < 0.1; // 10% failure rate in development
-
+          const shouldFail = Math.random() < 0.1; // 10% failure rate for testing
           setTimeout(() => {
             if (shouldFail) {
               reject(new Error("Upload failed due to network error"));
             } else {
-              resolve({
-                success: true,
-                uploadedPhotos: photos as PhotoUpload[],
-              });
+              resolve({ success: true, uploadedImages: images as VaultImage[] });
             }
           }, 2000);
         }
@@ -202,221 +96,21 @@ export default function PropertyPhotosPage() {
     onSuccess: (data) => {
       toast({
         title: "Photos uploaded successfully",
-        description: `${data.uploadedPhotos.length} photos have been uploaded to your property`,
+        description: `${data.uploadedImages.length} photos have been uploaded to your property`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
-      // Clear photos after successful upload
-      setPhotos([]);
+      setImages([]);
     },
     onError: (error) => {
       toast({
         title: "Upload failed",
-        description:
-          error.message || "Failed to upload photos. Please try again.",
+        description: error.message || "Failed to upload photos. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  // Helper function to check if cursor is outside element bounds
-  const isOutsideElement = useCallback(
-    (e: React.DragEvent, element: Element): boolean => {
-      const rect = element.getBoundingClientRect();
-      return (
-        e.clientX < rect.left ||
-        e.clientX > rect.right ||
-        e.clientY < rect.top ||
-        e.clientY > rect.bottom
-      );
-    },
-    []
-  );
-
-  // Optimized drag handlers with better event handling
-  const handleDrag = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const isEnteringOrOver = e.type === "dragenter" || e.type === "dragover";
-      const isLeaving = e.type === "dragleave";
-
-      if (isEnteringOrOver) {
-        setDragActive(true);
-      } else if (isLeaving && isOutsideElement(e, e.currentTarget)) {
-        setDragActive(false);
-      }
-    },
-    [isOutsideElement]
-  );
-
-  // Helper function to update photo progress
-  const updatePhotoProgress = useCallback(
-    (photoId: string, progress: number, status: PhotoUpload["status"]) => {
-      setPhotos((prev) =>
-        prev.map((p) => (p.id === photoId ? { ...p, progress, status } : p))
-      );
-    },
-    []
-  );
-
-  // Helper function to finalize photo upload
-  const finalizePhotoUpload = useCallback((photoId: string) => {
-    setPhotos((prev) =>
-      prev.map((p) =>
-        p.id === photoId ?
-          { ...p, progress: 100, status: "uploaded" as const }
-        : p
-      )
-    );
-  }, []);
-
-  // Simulate photo upload progress
-  const simulatePhotoUpload = useCallback(
-    (photoId: string) => {
-      let currentProgress = 0;
-      const interval = setInterval(() => {
-        const increment = calculateProgressIncrement(currentProgress);
-        currentProgress = Math.min(currentProgress + increment, 100);
-        const status =
-          currentProgress === 100 ?
-            ("uploaded" as const)
-          : ("uploading" as const);
-        updatePhotoProgress(photoId, currentProgress, status);
-      }, UPLOAD_PROGRESS_INTERVAL);
-
-      setTimeout(() => {
-        clearInterval(interval);
-        finalizePhotoUpload(photoId);
-      }, UPLOAD_SIMULATION_DURATION);
-    },
-    [calculateProgressIncrement, updatePhotoProgress, finalizePhotoUpload]
-  );
-
-  // Enhanced file handling with better validation and error reporting
-  const handleFiles = useCallback(
-    (files: File[]) => {
-      const validatedFiles: {
-        file: File;
-        validation: ReturnType<typeof validateFile>;
-      }[] = files.map((file) => ({ file, validation: validateFile(file) }));
-
-      // Separate valid and invalid files
-      const validFiles = validatedFiles
-        .filter(({ validation }) => validation.isValid)
-        .map(({ file }) => file);
-
-      const invalidFiles = validatedFiles.filter(
-        ({ validation }) => !validation.isValid
-      );
-
-      // Show errors for invalid files
-      invalidFiles.forEach(({ validation }) => {
-        if (validation.error) {
-          toast({
-            title: "Invalid file",
-            description: validation.error,
-            variant: "destructive",
-          });
-        }
-      });
-
-      // Process valid files
-      if (validFiles.length > 0) {
-        const newPhotos: PhotoUpload[] = validFiles.map((file, index) => ({
-          id: generateUniqueId(),
-          file,
-          preview: URL.createObjectURL(file),
-          status: "uploading" as const,
-          progress: 0,
-          description: undefined,
-          isPrimary: photos.length === 0 && index === 0, // Only first photo of first batch is primary
-        }));
-
-        setPhotos((prev) => [...prev, ...newPhotos]);
-
-        // Enhanced upload progress simulation with more realistic behavior
-        newPhotos.forEach((photo) => {
-          simulatePhotoUpload(photo.id);
-        });
-      }
-    },
-    [photos.length, toast, validateFile, generateUniqueId, simulatePhotoUpload]
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setDragActive(false);
-
-      const files = Array.from(e.dataTransfer.files);
-      if (files.length > 0) {
-        handleFiles(files);
-      }
-    },
-    [handleFiles]
-  );
-
-  const handleFileInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files) {
-        handleFiles(Array.from(e.target.files));
-        // Reset input value to allow selecting same files again
-        e.target.value = "";
-      }
-    },
-    [handleFiles]
-  );
-
-  // Optimized photo removal with cleanup
-  const removePhoto = useCallback((photoId: string) => {
-    setPhotos((prev) => {
-      const photoToRemove = prev.find((p) => p.id === photoId);
-
-      // Clean up object URL to prevent memory leaks
-      if (photoToRemove?.preview) {
-        URL.revokeObjectURL(photoToRemove.preview);
-      }
-
-      const updated = prev.filter((p) => p.id !== photoId);
-
-      // If we removed the primary photo, make the first remaining photo primary
-      if (updated.length > 0 && !updated.some((p) => p.isPrimary)) {
-        const [firstPhoto] = updated;
-        if (firstPhoto) {
-          updated[0] = { ...firstPhoto, isPrimary: true };
-        }
-      }
-
-      return updated;
-    });
-  }, []);
-
-  const setPrimaryPhoto = useCallback((photoId: string) => {
-    setPhotos((prev) =>
-      prev.map((p) => ({
-        ...p,
-        isPrimary: p.id === photoId,
-      }))
-    );
-  }, []);
-
-  const handleEditPhoto = useCallback((photo: PhotoUpload) => {
-    setEditingPhoto(photo);
-    setShowEditDialog(true);
-  }, []);
-
-  const updatePhotoDescription = useCallback(
-    (photoId: string, description: string) => {
-      setPhotos((prev) =>
-        prev.map((p) => (p.id === photoId ? { ...p, description } : p))
-      );
-    },
-    []
-  );
-
-  // Enhanced upload handler with better validation
+  // Handle final upload to property
   const handleUpload = useCallback(() => {
     if (!selectedProperty) {
       toast({
@@ -427,13 +121,11 @@ export default function PropertyPhotosPage() {
       return;
     }
 
-    const uploadablePhotos = photos.filter((p) => p.status === "uploaded");
-
-    if (uploadablePhotos.length === 0) {
+    const uploadableImages = images.filter((img) => img.status === "uploaded");
+    if (uploadableImages.length === 0) {
       toast({
         title: "No photos ready",
-        description:
-          "Please wait for photos to finish uploading or add new photos",
+        description: "Please wait for photos to finish uploading or add new photos",
         variant: "destructive",
       });
       return;
@@ -441,25 +133,9 @@ export default function PropertyPhotosPage() {
 
     uploadMutation.mutate({
       propertyId: selectedProperty,
-      photos: uploadablePhotos,
+      images: uploadableImages,
     });
-  }, [selectedProperty, photos, uploadMutation, toast]);
-
-  // Memoized computed values to prevent unnecessary recalculations
-  const uploadStats = useMemo(() => {
-    const total = photos.length;
-    const uploaded = photos.filter((p) => p.status === "uploaded").length;
-    const uploading = photos.filter((p) => p.status === "uploading").length;
-    const failed = photos.filter((p) => p.status === "error").length;
-
-    return { total, uploaded, uploading, failed };
-  }, [photos]);
-
-  const canUpload = useMemo(() => {
-    return (
-      selectedProperty && uploadStats.uploaded > 0 && !uploadMutation.isPending
-    );
-  }, [selectedProperty, uploadStats.uploaded, uploadMutation.isPending]);
+  }, [selectedProperty, images, uploadMutation, toast]);
 
   // Format location string helper
   const formatLocation = useCallback(
@@ -469,131 +145,7 @@ export default function PropertyPhotosPage() {
     []
   );
 
-  // Enhanced photo grid rendering with better performance
-  const renderPhotoGrid = useCallback((): React.ReactNode => {
-    if (photos.length === 0) return null;
-
-    return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>
-            Photo Preview ({uploadStats.total})
-            {uploadStats.uploading > 0 && (
-              <span className="text-sm font-normal text-muted-foreground ml-2">
-                {uploadStats.uploading} uploading...
-              </span>
-            )}
-          </CardTitle>
-          <Button onClick={handleUpload} disabled={!canUpload}>
-            {uploadMutation.isPending ?
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Uploading...
-              </>
-            : <>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload {uploadStats.uploaded} Photos
-              </>
-            }
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {photos.map((photo) => (
-              <div key={photo.id} className="relative group">
-                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src={photo.preview}
-                    alt={photo.description || "Property photo preview"}
-                    className="w-full h-full object-cover"
-                    loading="lazy" // Add lazy loading for better performance
-                  />
-                  {photo.isPrimary && (
-                    <div className="absolute top-2 left-2">
-                      <Badge className="bg-yellow-500">Primary</Badge>
-                    </div>
-                  )}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleEditPhoto(photo)}
-                        title="Edit photo"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => removePhoto(photo.id)}
-                        title="Remove photo"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {photo.status === "uploading" && (
-                  <div className="mt-2">
-                    <Progress value={photo.progress} className="h-2" />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Processing... {Math.round(photo.progress)}%
-                    </p>
-                  </div>
-                )}
-
-                {photo.status === "uploaded" && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="text-xs text-green-600">
-                      Ready to upload
-                    </span>
-                  </div>
-                )}
-
-                {photo.status === "error" && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-red-500" />
-                    <span className="text-xs text-red-600">
-                      Processing failed
-                    </span>
-                  </div>
-                )}
-
-                <div className="mt-2 flex gap-2">
-                  {!photo.isPrimary && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setPrimaryPhoto(photo.id)}
-                      className="text-xs"
-                      title="Set as primary photo"
-                    >
-                      <Star className="w-3 h-3 mr-1" />
-                      Set Primary
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }, [
-    photos,
-    uploadStats,
-    canUpload,
-    handleUpload,
-    uploadMutation.isPending,
-    handleEditPhoto,
-    removePhoto,
-    setPrimaryPhoto,
-  ]);
-
-  // Render property selection with proper type safety
+  // Render property selection
   const renderPropertySelection = useCallback((): React.ReactNode => {
     if (isLoading) {
       return (
@@ -608,12 +160,8 @@ export default function PropertyPhotosPage() {
       return (
         <div className="col-span-full text-center py-8">
           <AlertTriangle className="w-16 h-16 mx-auto text-red-500 mb-4" />
-          <h3 className="text-lg font-medium mb-2">
-            Failed to load properties
-          </h3>
-          <p className="text-muted-foreground">
-            There was an error loading your properties. Please try again.
-          </p>
+          <h3 className="text-lg font-medium mb-2">Failed to load properties</h3>
+          <p className="text-muted-foreground">There was an error loading your properties. Please try again.</p>
         </div>
       );
     }
@@ -623,9 +171,7 @@ export default function PropertyPhotosPage() {
         <div className="col-span-full text-center py-8">
           <ImageIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">No properties found</h3>
-          <p className="text-muted-foreground">
-            You need to list a property before you can upload photos.
-          </p>
+          <p className="text-muted-foreground">You need to list a property before you can upload photos.</p>
         </div>
       );
     }
@@ -640,17 +186,20 @@ export default function PropertyPhotosPage() {
       >
         <CardContent className="p-4">
           <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
-            {property.imageUrls && property.imageUrls.length > 0 ?
+            {property.imageUrls && property.imageUrls.length > 0 ? (
               <img
                 src={property.imageUrls[0]}
                 alt={property.title}
                 className="w-full h-full object-cover"
                 loading="lazy"
+                width={300}
+                height={200}
               />
-            : <div className="w-full h-full flex items-center justify-center">
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
                 <ImageIcon className="w-8 h-8 text-gray-400" />
               </div>
-            }
+            )}
           </div>
           <h3 className="font-medium mb-1">{property.title}</h3>
           <p className="text-sm text-muted-foreground mb-2">
@@ -660,11 +209,7 @@ export default function PropertyPhotosPage() {
             <span className="font-semibold text-primary">
               KES {property.price.toLocaleString()}
             </span>
-            <Badge
-              variant={
-                (property.imageUrls?.length || 0) > 0 ? "default" : "secondary"
-              }
-            >
+            <Badge variant={(property.imageUrls?.length || 0) > 0 ? "default" : "secondary"}>
               {property.imageUrls?.length || 0} photos
             </Badge>
           </div>
@@ -699,52 +244,49 @@ export default function PropertyPhotosPage() {
         </Card>
 
         {selectedProperty && (
-          <>
-            {/* Photo Upload Area */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload Photos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                    dragActive ?
-                      "border-primary bg-primary/5"
-                    : "border-gray-300"
-                  }`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Upload Photos</CardTitle>
+              {images.length > 0 && (
+                <Button 
+                  onClick={handleUpload} 
+                  disabled={!images.some(img => img.status === "uploaded") || uploadMutation.isPending}
                 >
-                  <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">
-                    Drag and drop photos here, or click to select
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    Support for JPG, PNG, WebP. Max file size: 10MB each.
-                  </p>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleFileInput}
-                    className="hidden"
-                    id="photo-upload"
-                  />
-                  <label htmlFor="photo-upload">
-                    <Button variant="outline" className="cursor-pointer">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Select Photos
-                    </Button>
-                  </label>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Photo Preview Grid */}
-            {renderPhotoGrid()}
-          </>
+                  {uploadMutation.isPending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      Upload to Property
+                    </>
+                  )}
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              <PropertyImageVault
+                maxFileSize={10 * 1024 * 1024} // 10MB
+                acceptedFormats={["image/jpeg", "image/png", "image/webp"]}
+                maxFiles={20}
+                allowReorder={true}
+                allowAnnotation={true}
+                allowPrimaryFlag={true}
+                onChange={setImages}
+                onError={(error) => {
+                  toast({
+                    title: "Upload Error",
+                    description: error,
+                    variant: "destructive",
+                  });
+                }}
+                defaultDocumentType="property_photo"
+                showWorkflowProgress={true}
+              />
+            </CardContent>
+          </Card>
         )}
 
         {/* Photography Tips */}
@@ -772,48 +314,7 @@ export default function PropertyPhotosPage() {
           </CardContent>
         </Card>
 
-        {/* Photo Edit Dialog */}
-        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Photo</DialogTitle>
-            </DialogHeader>
-            {editingPhoto && (
-              <div className="space-y-4">
-                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src={editingPhoto.preview}
-                    alt="Edit preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">Photo Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Add a description for this photo..."
-                    value={editingPhoto.description || ""}
-                    onChange={(e) =>
-                      updatePhotoDescription(editingPhoto.id, e.target.value)
-                    }
-                    rows={3}
-                  />
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowEditDialog(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={() => setShowEditDialog(false)}>
-                    Save Changes
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+
       </div>
     </div>
   );

@@ -1,20 +1,14 @@
-import { relations } from "drizzle-orm";
-import {
-  pgTable,
-  serial,
-  varchar,
-  text,
-  integer,
-  boolean,
-  timestamp,
-  json,
-  pgEnum,
-  decimal,
-  index,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { z } from "zod";
+/**
+ * DEPRECATED: This file is deprecated and will be removed in a future version.
+ * Please import from the consolidated database schemas instead:
+ * 
+ * import { users, properties, reviews } from '@server/infrastructure/database/schemas/core';
+ * 
+ * This file now re-exports from the new consolidated location for backward compatibility.
+ */
+
+// Re-export everything from the consolidated schemas
+export * from './schema-compat';
 
 // Define enums for better type safety and consistency
 export const verificationStatusEnum = pgEnum("verification_status", [
@@ -1946,6 +1940,86 @@ export const contentReports = pgTable(
   })
 );
 
+// Analytics tables for event tracking and metrics collection
+export const analyticsEvents = pgTable(
+  "analytics_events",
+  {
+    id: serial("id").primaryKey(),
+    eventType: varchar("event_type", { length: 100 }).notNull(),
+    eventName: varchar("event_name", { length: 200 }).notNull(),
+    userId: integer("user_id"),
+    sessionId: varchar("session_id", { length: 100 }),
+    propertyId: integer("property_id"),
+    professionalId: integer("professional_id"),
+    eventData: json("event_data"),
+    metadata: json("metadata"),
+    userAgent: text("user_agent"),
+    ipAddress: varchar("ip_address", { length: 45 }),
+    referrer: text("referrer"),
+    timestamp: timestamp("timestamp").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    eventTypeIdx: index("analytics_events_event_type_idx").on(table.eventType),
+    userIdx: index("analytics_events_user_idx").on(table.userId),
+    sessionIdx: index("analytics_events_session_idx").on(table.sessionId),
+    propertyIdx: index("analytics_events_property_idx").on(table.propertyId),
+    timestampIdx: index("analytics_events_timestamp_idx").on(table.timestamp),
+    eventNameIdx: index("analytics_events_event_name_idx").on(table.eventName),
+  })
+);
+
+export const analyticsMetrics = pgTable(
+  "analytics_metrics",
+  {
+    id: serial("id").primaryKey(),
+    metricName: varchar("metric_name", { length: 200 }).notNull(),
+    metricType: varchar("metric_type", { length: 50 }).notNull(), // counter, gauge, histogram
+    value: decimal("value", { precision: 15, scale: 4 }).notNull(),
+    dimensions: json("dimensions"), // key-value pairs for grouping
+    tags: json("tags"), // additional metadata
+    aggregationPeriod: varchar("aggregation_period", { length: 20 }), // hourly, daily, weekly, monthly
+    periodStart: timestamp("period_start").notNull(),
+    periodEnd: timestamp("period_end").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    metricNameIdx: index("analytics_metrics_metric_name_idx").on(table.metricName),
+    metricTypeIdx: index("analytics_metrics_metric_type_idx").on(table.metricType),
+    periodIdx: index("analytics_metrics_period_idx").on(table.periodStart, table.periodEnd),
+    aggregationIdx: index("analytics_metrics_aggregation_idx").on(table.aggregationPeriod),
+    dimensionsIdx: index("analytics_metrics_dimensions_idx").using("gin", table.dimensions),
+  })
+);
+
+export const performanceMetrics = pgTable(
+  "performance_metrics",
+  {
+    id: serial("id").primaryKey(),
+    metricType: varchar("metric_type", { length: 50 }).notNull(), // page_load, api_response, bundle_size
+    metricName: varchar("metric_name", { length: 200 }).notNull(),
+    value: decimal("value", { precision: 10, scale: 3 }).notNull(),
+    unit: varchar("unit", { length: 20 }).notNull(), // ms, bytes, score
+    url: text("url"),
+    userAgent: text("user_agent"),
+    userId: integer("user_id"),
+    sessionId: varchar("session_id", { length: 100 }),
+    deviceType: varchar("device_type", { length: 20 }), // desktop, mobile, tablet
+    connectionType: varchar("connection_type", { length: 20 }), // 4g, wifi, slow-2g
+    additionalData: json("additional_data"),
+    timestamp: timestamp("timestamp").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    metricTypeIdx: index("performance_metrics_metric_type_idx").on(table.metricType),
+    metricNameIdx: index("performance_metrics_metric_name_idx").on(table.metricName),
+    userIdx: index("performance_metrics_user_idx").on(table.userId),
+    timestampIdx: index("performance_metrics_timestamp_idx").on(table.timestamp),
+    urlIdx: index("performance_metrics_url_idx").on(table.url),
+  })
+);
+
 // Relations for new tables
 export const fraudAlertsRelations = relations(fraudAlerts, ({ many }) => ({
   subscriptions: many(fraudSubscriptions),
@@ -2035,3 +2109,298 @@ export const professionalCertificationsRelations = relations(professionalCertifi
     references: [professionals.id],
   }),
 }));
+
+// Analytics relations
+export const analyticsEventsRelations = relations(analyticsEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [analyticsEvents.userId],
+    references: [users.id],
+  }),
+  property: one(properties, {
+    fields: [analyticsEvents.propertyId],
+    references: [properties.id],
+  }),
+  professional: one(professionals, {
+    fields: [analyticsEvents.professionalId],
+    references: [professionals.id],
+  }),
+}));
+
+export const performanceMetricsRelations = relations(performanceMetrics, ({ one }) => ({
+  user: one(users, {
+    fields: [performanceMetrics.userId],
+    references: [users.id],
+  }),
+}));
+
+// Communication and Messaging System Tables
+
+// Message threads table - manages conversation threads between users
+export const messageThreads = pgTable(
+  "message_threads",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title", { length: 200 }),
+    participants: json("participants").$type<number[]>().notNull(), // Array of user IDs
+    threadType: varchar("thread_type", { length: 50 }).default("direct").notNull(), // direct, group, support
+    isActive: boolean("is_active").default(true).notNull(),
+    lastMessageAt: timestamp("last_message_at"),
+    lastMessageId: integer("last_message_id"),
+    metadata: json("metadata").$type<{
+      propertyId?: number;
+      professionalId?: number;
+      verificationSessionId?: string;
+      tags?: string[];
+    }>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    participantsIdx: index("message_threads_participants_idx").using("gin", table.participants),
+    threadTypeIdx: index("message_threads_thread_type_idx").on(table.threadType),
+    isActiveIdx: index("message_threads_is_active_idx").on(table.isActive),
+    lastMessageIdx: index("message_threads_last_message_idx").on(table.lastMessageAt),
+    metadataIdx: index("message_threads_metadata_idx").using("gin", table.metadata),
+  })
+);
+
+// Messages table - stores individual messages within threads
+export const messages = pgTable(
+  "messages",
+  {
+    id: serial("id").primaryKey(),
+    threadId: integer("thread_id").notNull().references(() => messageThreads.id, { onDelete: "cascade" }),
+    senderId: integer("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    messageType: varchar("message_type", { length: 50 }).default("text").notNull(), // text, image, file, system
+    attachments: json("attachments").$type<{
+      id: string;
+      name: string;
+      type: string;
+      size: number;
+      url: string;
+    }[]>(),
+    replyToId: integer("reply_to_id").references(() => messages.id),
+    isEdited: boolean("is_edited").default(false).notNull(),
+    editedAt: timestamp("edited_at"),
+    deliveryStatus: varchar("delivery_status", { length: 20 }).default("sent").notNull(), // sent, delivered, read
+    readBy: json("read_by").$type<{
+      userId: number;
+      readAt: string;
+    }[]>().default([]),
+    metadata: json("metadata").$type<{
+      mentions?: number[];
+      reactions?: { emoji: string; users: number[] }[];
+      priority?: "low" | "normal" | "high" | "urgent";
+    }>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    threadIdx: index("messages_thread_idx").on(table.threadId),
+    senderIdx: index("messages_sender_idx").on(table.senderId),
+    messageTypeIdx: index("messages_message_type_idx").on(table.messageType),
+    deliveryStatusIdx: index("messages_delivery_status_idx").on(table.deliveryStatus),
+    createdAtIdx: index("messages_created_at_idx").on(table.createdAt),
+    replyToIdx: index("messages_reply_to_idx").on(table.replyToId),
+    readByIdx: index("messages_read_by_idx").using("gin", table.readBy),
+    // Composite indexes for common queries
+    threadCreatedIdx: index("messages_thread_created_idx").on(table.threadId, table.createdAt),
+    senderThreadIdx: index("messages_sender_thread_idx").on(table.senderId, table.threadId),
+  })
+);
+
+// Notifications table - manages all types of notifications
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 50 }).notNull(), // message, property_update, verification_complete, etc.
+    title: varchar("title", { length: 200 }).notNull(),
+    content: text("content").notNull(),
+    actionUrl: varchar("action_url", { length: 500 }),
+    channels: json("channels").$type<{
+      email?: boolean;
+      sms?: boolean;
+      push?: boolean;
+      inApp?: boolean;
+    }>().default({ inApp: true }),
+    priority: varchar("priority", { length: 20 }).default("normal").notNull(), // low, normal, high, urgent
+    isRead: boolean("is_read").default(false).notNull(),
+    readAt: timestamp("read_at"),
+    deliveryStatus: json("delivery_status").$type<{
+      email?: "pending" | "sent" | "delivered" | "failed";
+      sms?: "pending" | "sent" | "delivered" | "failed";
+      push?: "pending" | "sent" | "delivered" | "failed";
+      inApp?: "pending" | "sent" | "delivered" | "failed";
+    }>(),
+    metadata: json("metadata").$type<{
+      messageId?: number;
+      propertyId?: number;
+      professionalId?: number;
+      verificationSessionId?: string;
+      relatedUserId?: number;
+    }>(),
+    expiresAt: timestamp("expires_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("notifications_user_idx").on(table.userId),
+    typeIdx: index("notifications_type_idx").on(table.type),
+    priorityIdx: index("notifications_priority_idx").on(table.priority),
+    isReadIdx: index("notifications_is_read_idx").on(table.isRead),
+    createdAtIdx: index("notifications_created_at_idx").on(table.createdAt),
+    expiresAtIdx: index("notifications_expires_at_idx").on(table.expiresAt),
+    channelsIdx: index("notifications_channels_idx").using("gin", table.channels),
+    metadataIdx: index("notifications_metadata_idx").using("gin", table.metadata),
+    // Composite indexes for common queries
+    userUnreadIdx: index("notifications_user_unread_idx").on(table.userId, table.isRead),
+    userTypeIdx: index("notifications_user_type_idx").on(table.userId, table.type),
+    priorityCreatedIdx: index("notifications_priority_created_idx").on(table.priority, table.createdAt),
+  })
+);
+
+// User notification preferences table
+export const notificationPreferences = pgTable(
+  "notification_preferences",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    notificationType: varchar("notification_type", { length: 50 }).notNull(),
+    channels: json("channels").$type<{
+      email?: boolean;
+      sms?: boolean;
+      push?: boolean;
+      inApp?: boolean;
+    }>().default({ inApp: true }),
+    frequency: varchar("frequency", { length: 20 }).default("immediate").notNull(), // immediate, hourly, daily, weekly, never
+    quietHours: json("quiet_hours").$type<{
+      enabled: boolean;
+      startTime: string; // HH:MM format
+      endTime: string; // HH:MM format
+      timezone: string;
+    }>(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("notification_preferences_user_idx").on(table.userId),
+    typeIdx: index("notification_preferences_type_idx").on(table.notificationType),
+    isActiveIdx: index("notification_preferences_is_active_idx").on(table.isActive),
+    // Unique constraint to prevent duplicate preferences
+    userTypeUnique: uniqueIndex("notification_preferences_user_type_unique").on(
+      table.userId,
+      table.notificationType
+    ),
+  })
+);
+
+// Communication Relations
+export const messageThreadsRelations = relations(messageThreads, ({ many, one }) => ({
+  messages: many(messages),
+  lastMessage: one(messages, {
+    fields: [messageThreads.lastMessageId],
+    references: [messages.id],
+  }),
+}));
+
+export const messagesRelations = relations(messages, ({ one, many }) => ({
+  thread: one(messageThreads, {
+    fields: [messages.threadId],
+    references: [messageThreads.id],
+  }),
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
+  }),
+  replyTo: one(messages, {
+    fields: [messages.replyToId],
+    references: [messages.id],
+  }),
+  replies: many(messages),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
+// Communication TypeScript types
+export type MessageThread = typeof messageThreads.$inferSelect;
+export type InsertMessageThread = typeof messageThreads.$inferInsert;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = typeof messages.$inferInsert;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreference = typeof notificationPreferences.$inferInsert;
+
+// Communication validation schemas
+export const insertMessageThreadSchema = createInsertSchema(messageThreads, {
+  title: z.string().min(1).max(200).optional(),
+  participants: z.array(z.number().positive()).min(2).max(50),
+  threadType: z.enum(["direct", "group", "support"]).default("direct"),
+});
+
+export const insertMessageSchema = createInsertSchema(messages, {
+  content: z.string().min(1).max(10000),
+  messageType: z.enum(["text", "image", "file", "system"]).default("text"),
+  deliveryStatus: z.enum(["sent", "delivered", "read"]).default("sent"),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications, {
+  title: z.string().min(1).max(200),
+  content: z.string().min(1).max(2000),
+  type: z.string().min(1).max(50),
+  priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
+});
+
+export const insertNotificationPreferenceSchema = createInsertSchema(notificationPreferences, {
+  notificationType: z.string().min(1).max(50),
+  frequency: z.enum(["immediate", "hourly", "daily", "weekly", "never"]).default("immediate"),
+});
+
+// Communication constants
+export const COMMUNICATION_CONSTANTS = {
+  MAX_MESSAGE_LENGTH: 10000,
+  MAX_THREAD_PARTICIPANTS: 50,
+  MAX_ATTACHMENTS_PER_MESSAGE: 10,
+  MAX_ATTACHMENT_SIZE: 50 * 1024 * 1024, // 50MB
+  SUPPORTED_ATTACHMENT_TYPES: [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'application/pdf', 'text/plain', 'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ],
+  NOTIFICATION_TYPES: {
+    MESSAGE: 'message',
+    PROPERTY_UPDATE: 'property_update',
+    VERIFICATION_COMPLETE: 'verification_complete',
+    REVIEW_RECEIVED: 'review_received',
+    PROFESSIONAL_ASSIGNED: 'professional_assigned',
+    FRAUD_ALERT: 'fraud_alert',
+    SYSTEM_ANNOUNCEMENT: 'system_announcement',
+  },
+  MESSAGE_DELIVERY_STATUS: {
+    SENT: 'sent',
+    DELIVERED: 'delivered',
+    READ: 'read',
+  },
+  NOTIFICATION_PRIORITIES: {
+    LOW: 'low',
+    NORMAL: 'normal',
+    HIGH: 'high',
+    URGENT: 'urgent',
+  },
+} as const;

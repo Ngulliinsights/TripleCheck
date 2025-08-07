@@ -1,6 +1,7 @@
-import { MapPin, Bed, Bath, Square, Camera, Plus, Check } from 'lucide-react';
-import React from 'react';
+import { MapPin, Bed, Bath, Square, Camera, Plus, Check, Eye } from 'lucide-react';
+import React, { useState } from 'react';
 
+import ImageGallery from '../../shared/components/images/ImageGallery';
 import { Badge } from '../../shared/components/ui/badge';
 import { Button } from '../../shared/components/ui/button';
 import { Card, CardContent } from '../../shared/components/ui/card';
@@ -35,38 +36,34 @@ const ListingCard = React.memo<ListingCardProps>(({
 }) => {
   // Compare functionality
   const { addToCompare, removeFromCompare, isSelected, canAddMore } = useCompare();
-  const isInCompare = isSelected(property.id);
+  const propertyId = String(property.id);
+  const isInCompare = isSelected(propertyId);
   
   // Extract features once to avoid repeated property access
   const { bedrooms, bathrooms, squareFeet, propertyType } = property.features || {};
   
   // Enhanced price formatting with safety from deleted component
-  const formattedPrice = React.useMemo(
-    () => formatPriceWithFallback(property.price),
-    [property.price]
-  );
+  const formattedPrice = React.useMemo(() => {
+    const price = typeof property.price === 'string' ? parseFloat(property.price) : property.price;
+    return formatPriceWithFallback(price);
+  }, [property.price]);
 
-  // Enhanced image source handling with loading state and stable references
-  const [imageLoaded, setImageLoaded] = React.useState(false);
-  
-  // Stable image source to prevent unnecessary re-renders
+  // Simplified image source using basic img tag
   const imageSrc = React.useMemo(() => {
     const imageUrls = property.images;
-    const primaryImage = imageUrls?.[0];
-    
-    // Return the primary image if it exists, otherwise use inline SVG placeholder
-    if (primaryImage) {
-      return primaryImage;
-    }
-    
-    // Inline SVG placeholder to avoid any network requests
-    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='225' viewBox='0 0 400 225'%3E%3Crect width='400' height='225' fill='%23f3f4f6'/%3E%3Ctext x='200' y='112.5' text-anchor='middle' dy='.3em' fill='%23374151' font-family='Arial, sans-serif' font-size='16'%3EProperty%3C/text%3E%3C/svg%3E";
+    return imageUrls?.[0] || '/placeholder-property.jpg';
   }, [property.images]);
   
-  // Reset image loaded state when property ID changes (not just image src)
-  React.useEffect(() => {
-    setImageLoaded(false);
-  }, [property.id]);
+  // Determine land type for proper placeholder
+  const landType = React.useMemo(() => {
+    const type = property.features?.propertyType?.toLowerCase();
+    if (type === 'land' || property.title?.toLowerCase().includes('land')) {
+      return 'agricultural' as const;
+    }
+    if (type === 'commercial') return 'commercial' as const;
+    if (type === 'industrial') return 'industrial' as const;
+    return 'residential' as const;
+  }, [property.features?.propertyType, property.title]);
 
   // Flexible onClick handler that supports both callback patterns
   const handleCardClick = React.useCallback(
@@ -90,12 +87,28 @@ const ListingCard = React.memo<ListingCardProps>(({
     (event: React.MouseEvent) => {
       event.stopPropagation(); // Prevent card click
       if (isInCompare) {
-        removeFromCompare(property.id);
+        removeFromCompare(propertyId);
       } else if (canAddMore) {
-        addToCompare(property);
+        // Convert Property to CompareProperty for comparison
+        const compareProperty = {
+          id: propertyId,
+          title: property.title,
+          price: typeof property.price === 'string' ? parseFloat(property.price) : (property.price || 0),
+          location: typeof property.location === 'string' 
+            ? property.location 
+            : property.location?.address || 'Location not specified',
+          description: property.description,
+          images: property.images || [],
+          features: property.features,
+          verificationStatus: property.verificationStatus,
+          trustScore: property.trustScore,
+          type: property.type === 'commercial' ? 'commercial' as const : 'residential' as const,
+          aiVerificationResults: property.aiVerificationResults
+        };
+        addToCompare(compareProperty);
       }
     },
-    [isInCompare, canAddMore, addToCompare, removeFromCompare, property]
+    [isInCompare, canAddMore, addToCompare, removeFromCompare, property, propertyId]
   );
 
   // Enhanced keyboard handler for accessibility
@@ -112,42 +125,6 @@ const ListingCard = React.memo<ListingCardProps>(({
     },
     [onClick, property]
   );
-
-  // Enhanced image error handling - prevents cascade failures
-  const handleImageError = React.useCallback(
-    (event: React.SyntheticEvent<HTMLImageElement>) => {
-      const target = event.currentTarget;
-      const fallbackSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='225' viewBox='0 0 400 225'%3E%3Crect width='400' height='225' fill='%23f3f4f6'/%3E%3Ctext x='200' y='112.5' text-anchor='middle' dy='.3em' fill='%23374151' font-family='Arial, sans-serif' font-size='16'%3EProperty%3C/text%3E%3C/svg%3E";
-      
-      // Only set fallback if we're not already using an SVG
-      if (!target.src.includes('data:image/svg+xml')) {
-        target.src = fallbackSvg;
-      }
-      
-      setImageLoaded(true); // Consider error state as "loaded" to prevent flickering
-    },
-    []
-  );
-  
-  // Handle successful image load
-  const handleImageLoad = React.useCallback(() => {
-    setImageLoaded(true);
-  }, []);
-  
-  // Preload image to reduce flickering - using standard Image constructor
-  React.useEffect(() => {
-    if (imageSrc && !imageSrc.includes('data:image/svg+xml')) {
-      const img = new Image(); // Use Image constructor instead of HTMLImageElement
-      img.onload = () => setImageLoaded(true);
-      img.onerror = () => {
-        setImageLoaded(true);
-      };
-      img.src = imageSrc;
-    } else {
-      // SVG images load immediately
-      setImageLoaded(true);
-    }
-  }, [imageSrc]);
 
   // Determine if card should be interactive
   const isInteractive = Boolean(onClick);
@@ -172,33 +149,20 @@ const ListingCard = React.memo<ListingCardProps>(({
       // Enhanced accessibility label
       aria-label={isInteractive ? `View property ${property.title}` : undefined}
     >
-      {/* Image container with improved accessibility and loading states */}
-      <div className="relative aspect-video overflow-hidden bg-gray-100">
-        {/* Loading placeholder */}
-        {!imageLoaded && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-            <div className="w-12 h-12 bg-gray-300 rounded-full animate-pulse"></div>
-          </div>
-        )}
-        
+      {/* Image container using basic img tag */}
+      <div className="relative aspect-video overflow-hidden">
         <img
           src={imageSrc}
-          alt={`${property.title} property`} // Simplified alt text to avoid redundancy
+          alt={`${property.title} property`}
+          width={400}
+          height={225}
           className={`
             w-full h-full object-cover transition-all duration-300
             ${isInteractive ? 'group-hover:scale-110' : ''}
-            ${imageLoaded ? 'opacity-100' : 'opacity-0'}
           `}
           loading="lazy"
-          onError={handleImageError}
-          onLoad={handleImageLoad}
-          // Add image dimensions for better performance
-          width={400}
-          height={225}
-          // Prevent dragging to reduce flickering
-          draggable={false}
-          // Stable key based on property ID to prevent unnecessary re-renders
-          key={`${property.id}-${imageSrc}`}
+          landType={landType}
+          priority={false}
         />
         
         {/* Multi-photo indicator - adds valuable UX info */}
@@ -250,7 +214,12 @@ const ListingCard = React.memo<ListingCardProps>(({
         {/* Location with improved layout */}
         <div className="flex items-start text-gray-600">
           <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 text-gray-500" />
-          <span className="text-sm leading-relaxed">{property.location}</span>
+          <span className="text-sm leading-relaxed">
+            {typeof property.location === 'string' 
+              ? property.location 
+              : property.location?.address || 'Location not specified'
+            }
+          </span>
         </div>
 
         {/* Property features with conditional rendering */}

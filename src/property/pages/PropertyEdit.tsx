@@ -31,7 +31,7 @@ import { useToast } from "../../shared/hooks/use-toast";
 import { useComponentTracking, useInteractionTracking } from "../../shared/hooks/useOperationTracking";
 import { useOptimisticMutation } from "../../shared/hooks/useOptimisticMutation";
 import { useSafePropertyQuery } from "../../shared/hooks/useSafeQuery";
-import { Property, PropertyFeatures } from "../../shared/schema";
+import type { Property, PropertyFeatures } from "../../shared/schema";
 
 
 interface PropertyEditPageProps {

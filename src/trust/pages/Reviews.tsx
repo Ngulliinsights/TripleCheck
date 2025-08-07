@@ -1,17 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { Star, User, ThumbsUp, Flag, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { Star, User, ThumbsUp, Flag } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
 
+import { EnterpriseVirtualizedList } from "../../shared/components";
 import FormField from "../../shared/components/forms/FormField";
 import { Button } from "../../shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
 import { Label } from "../../shared/components/ui/label";
 import { Progress } from "../../shared/components/ui/progress";
-import { Textarea } from "../../shared/components/ui/textarea";
 import { useToast } from "../../shared/hooks/use-toast";
 import { useForm } from "../../shared/hooks/useForm";
+import { useReviewListVirtualization } from "../../shared/hooks/useVirtualizationHelpers";
 import { formatDate } from "../../shared/utils/date-utils";
-import { ValidationRule } from "../../shared/utils/form-validation";
 
 interface Review {
   id: number;
@@ -23,6 +23,87 @@ interface Review {
   createdAt: string;
   helpful: number;
 }
+
+// Virtualized Reviews List Component
+const VirtualizedReviewsList: React.FC<{ reviews: Review[] }> = ({ reviews }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(500);
+
+  React.useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const availableHeight = window.innerHeight - rect.top - 100;
+        setContainerHeight(Math.max(400, Math.min(700, availableHeight)));
+      }
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+
+  const listProps = useReviewListVirtualization(
+    reviews,
+    containerHeight,
+    (review) => 150 + (review.comment.length / 4) // Dynamic height based on comment length
+  );
+
+  const renderReviewItem = useCallback((review: Review, index: number, style: React.CSSProperties) => {
+    return (
+      <div style={style} className="p-2">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="shrink-0">
+                <div className="h-10 w-10 rounded-full bg-[#2C5282] flex items-center justify-center">
+                  <User className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">{review.userName}</h3>
+                  <span className="text-sm text-muted-foreground">
+                    {formatDate(review.createdAt)}
+                  </span>
+                </div>
+                <div className="flex gap-1 my-2">
+                  {Array(5).fill(0).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${i < review.rating ? "text-yellow-400" : "text-gray-300"}`}
+                      fill={i < review.rating ? "currentColor" : "none"}
+                    />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-3">{review.comment}</p>
+                <div className="flex items-center gap-4">
+                  <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+                    <ThumbsUp className="h-4 w-4 mr-1" />
+                    Helpful ({review.helpful})
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+                    <Flag className="h-4 w-4 mr-1" />
+                    Report
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }, []);
+
+  return (
+    <div ref={containerRef} className="w-full">
+      <EnterpriseVirtualizedList
+        {...listProps}
+        renderItem={renderReviewItem}
+      />
+    </div>
+  );
+};
 
 export default function ReviewsPage() {
   const { toast } = useToast();
@@ -66,7 +147,6 @@ export default function ReviewsPage() {
 
   const {
     values,
-    errors,
     touched,
     isValid,
     isSubmitting,
@@ -97,7 +177,7 @@ export default function ReviewsPage() {
         maxLength: 500
       }
     },
-    onSubmit: async (formData) => {
+    onSubmit: async (_formData) => {
       try {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -266,41 +346,7 @@ export default function ReviewsPage() {
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Recent Reviews</h2>
           {reviews && reviews.length > 0 ? (
-            reviews.map((review) => (
-              <Card key={review.id}>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-[#2C5282] flex items-center justify-center">
-                        <User className="h-6 w-6 text-white" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold">{review.userName}</h3>
-                        <span className="text-sm text-muted-foreground">
-                          {formatDate(review.createdAt)}
-                        </span>
-                      </div>
-                      <div className="flex gap-1 my-2">
-                        {renderStars(review.rating)}
-                      </div>
-                      <p className="text-muted-foreground">{review.comment}</p>
-                      <div className="flex items-center gap-4 mt-4">
-                        <Button variant="outline" size="sm" className="gap-2">
-                          <ThumbsUp className="h-4 w-4" />
-                          Helpful ({review.helpful})
-                        </Button>
-                        <Button variant="outline" size="sm" className="gap-2">
-                          <Flag className="h-4 w-4" />
-                          Report
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+            <VirtualizedReviewsList reviews={reviews} />
           ) : (
             <Card>
               <CardContent className="pt-6 text-center">

@@ -502,7 +502,7 @@ describe('Component Performance Tests', () => {
         'ImageGallery',
         () => render(
           <TestWrapper>
-            <ImageGallery images={imageUrls} />
+            <ImageGallery images={imageUrls} enableSearch={false} />
           </TestWrapper>
         )
       );

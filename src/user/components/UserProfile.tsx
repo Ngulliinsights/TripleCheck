@@ -1,9 +1,11 @@
+import PropertyImageVault from '@shared/components/images/PropertyImageVault';
 import { Avatar, AvatarFallback, AvatarImage } from '@shared/components/ui/avatar';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { User, Edit, Mail, Phone, MapPin, Calendar } from 'lucide-react';
-import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/components/ui/dialog';
+import { User, Edit, Mail, Phone, MapPin, Calendar, Camera } from 'lucide-react';
+import React, { useState } from 'react';
 
 import { formatDate } from '../../shared/utils/date-utils';
 
@@ -14,9 +16,11 @@ interface UserProfileProps {
   user: UserType;
   onEdit?: () => void;
   isEditable?: boolean;
+  onAvatarUpdate?: (avatarUrl: string) => void;
 }
 
-export function UserProfile({ user, onEdit, isEditable = false }: UserProfileProps) {
+export function UserProfile({ user, onEdit, isEditable = false, onAvatarUpdate }: UserProfileProps) {
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
@@ -28,6 +32,16 @@ export function UserProfile({ user, onEdit, isEditable = false }: UserProfilePro
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
+  const handleAvatarUpload = (files: File[]) => {
+    if (files.length > 0) {
+      // In a real implementation, you would upload the file to your server
+      // and get back the URL. For now, we'll create a local URL for demo
+      const avatarUrl = URL.createObjectURL(files[0]);
+      onAvatarUpdate?.(avatarUrl);
+      setShowAvatarUpload(false);
+    }
   };
 
   return (
@@ -44,12 +58,24 @@ export function UserProfile({ user, onEdit, isEditable = false }: UserProfilePro
       <CardContent className="space-y-6">
         {/* Avatar and Basic Info */}
         <div className="flex items-center space-x-4">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
-            <AvatarFallback className="text-lg">
-              {getInitials(user.firstName, user.lastName)}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className="h-20 w-20">
+              <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
+              <AvatarFallback className="text-lg">
+                {getInitials(user.firstName, user.lastName)}
+              </AvatarFallback>
+            </Avatar>
+            {isEditable && (
+              <Button
+                size="sm"
+                className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                onClick={() => setShowAvatarUpload(true)}
+                title="Update profile picture"
+              >
+                <Camera className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
           <div className="space-y-2">
             <h3 className="text-xl font-semibold">
               {user.firstName} {user.lastName}
@@ -149,6 +175,32 @@ export function UserProfile({ user, onEdit, isEditable = false }: UserProfilePro
           </div>
         </div>
       </CardContent>
+
+      {/* Avatar Upload Dialog */}
+      <Dialog open={showAvatarUpload} onOpenChange={setShowAvatarUpload}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="w-5 h-5" />
+              Update Profile Picture
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <PropertyImageVault
+              maxFiles={1}
+              maxFileSize={5 * 1024 * 1024} // 5MB
+              acceptedFormats={['image/jpeg', 'image/png', 'image/webp']}
+              allowAnnotation={false}
+              allowReorder={false}
+              onChange={handleAvatarUpload}
+              className="min-h-[200px]"
+            />
+            <p className="text-sm text-muted-foreground">
+              Upload a profile picture (JPEG, PNG, or WebP, max 5MB)
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

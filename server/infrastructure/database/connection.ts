@@ -8,8 +8,9 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
-import * as schema from "../../../src/shared/schema";
-import * as communitySchema from "../../shared/community-trust-schema";
+import * as schema from "@server/infrastructure/database/schemas/core";
+import * as landVerificationSchema from "@server/infrastructure/database/schemas/land-verification";
+import * as communitySchema from "@server/shared/community-trust-schema";
 import { cleanupManager } from '../../utils/cleanup-manager';
 import { logger } from "../monitoring/logger";
 
@@ -76,7 +77,7 @@ export async function initializeDatabase() {
 
     sql = postgres(DATABASE_URL, connectionConfig);
     db = drizzle(sql, {
-      schema: { ...schema, ...communitySchema },
+      schema: { ...schema, ...landVerificationSchema, ...communitySchema },
       logger:
         process.env.NODE_ENV === "development" ?
           {

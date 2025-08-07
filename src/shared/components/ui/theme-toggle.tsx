@@ -1,11 +1,6 @@
 import { useTheme } from "@shared/contexts/ThemeContext";
-import {
-  Moon,
-  Sun,
-  Monitor,
-  Palette,
-  Check,
-} from "lucide-react";
+type Theme = "light" | "dark" | "system";
+import { Moon, Sun, Monitor, Palette, Check } from "lucide-react";
 import { useMemo, useCallback, useState, useEffect } from "react";
 
 import { Button } from "./button";
@@ -24,62 +19,81 @@ import {
   TooltipTrigger,
 } from "./tooltip";
 
-// Define theme options with enhanced metadata
-const THEME_OPTIONS = {
+// Enhanced theme configuration with improved type safety
+const THEME_CONFIG = {
   light: {
     icon: Sun,
     label: "Light",
     description: "Clean, bright interface",
     shortcut: "⌘+L",
+    key: "l",
   },
   dark: {
     icon: Moon,
     label: "Dark",
     description: "Easy on the eyes",
     shortcut: "⌘+D",
+    key: "d",
   },
   system: {
     icon: Monitor,
     label: "System",
     description: "Follows system preference",
     shortcut: "⌘+S",
+    key: "s",
   },
 } as const;
 
-// Extract theme type from the options for better type safety
-type ThemeOption = keyof typeof THEME_OPTIONS;
+// Improved type extraction with better naming
+type ThemeKey = keyof typeof THEME_CONFIG;
+type ThemeConfigItem = (typeof THEME_CONFIG)[ThemeKey];
 
-
-
-// Animation variants for smooth transitions
-const ANIMATION_CLASSES = {
-  enter: "animate-in fade-in-0 zoom-in-95 duration-200",
-  exit: "animate-out fade-out-0 zoom-out-95 duration-200",
+// Consolidated CSS classes with semantic naming
+const STYLES = {
+  button: {
+    base: "h-9 w-9 transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+    active: "bg-accent text-accent-foreground",
+  },
+  menuItem: {
+    base: "flex items-center justify-between gap-3 cursor-pointer px-3 py-2 rounded-sm transition-colors",
+    hover: "hover:bg-accent/50",
+    selected: "bg-accent text-accent-foreground",
+  },
+  dropdown: {
+    container: "min-w-[280px] p-2 animate-in fade-in-0 zoom-in-95 duration-200",
+  },
+  icon: {
+    base: "h-4 w-4 transition-transform duration-200",
+    animated: "scale-110",
+    static: "scale-100",
+  },
 } as const;
+
+// Animation duration constant for consistency
+const ANIMATION_DURATION = 200;
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Keyboard shortcuts for theme switching
+  // Optimized keyboard shortcut handler with improved key mapping
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey) {
-        switch (event.key.toLowerCase()) {
-          case "l":
-            event.preventDefault();
-            setTheme("light");
-            break;
-          case "d":
-            event.preventDefault();
-            setTheme("dark");
-            break;
-          case "s":
-            event.preventDefault();
-            setTheme("system");
-            break;
-        }
+      // Only proceed if meta/ctrl key is pressed
+      if (!(event.metaKey || event.ctrlKey)) return;
+
+      const pressedKey = event.key.toLowerCase();
+
+      // Find matching theme configuration by key
+      const matchingTheme = Object.entries(THEME_CONFIG).find(
+        ([, config]) => config.key === pressedKey
+      );
+
+      if (matchingTheme) {
+        event.preventDefault();
+        const [themeKey] = matchingTheme;
+        setTheme(themeKey as ThemeKey);
       }
     };
 
@@ -87,59 +101,108 @@ export function ThemeToggle() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [setTheme]);
 
-  // Memoize the current theme configuration based on resolved theme
-  const currentThemeConfig = useMemo(() => {
-    return THEME_OPTIONS[resolvedTheme as ThemeOption] ?? THEME_OPTIONS.system;
-  }, [resolvedTheme]);
+  // Memoized theme configuration getter with better error handling
+  const getThemeConfig = useCallback((themeKey: string): ThemeConfigItem => {
+    // Type guard to ensure we have a valid theme key
+    if (themeKey in THEME_CONFIG) {
+      return THEME_CONFIG[themeKey as ThemeKey];
+    }
 
-  // Memoize the current theme icon with animation support
-  const currentThemeIcon = useMemo(() => {
-    const { icon: ThemeIcon } = currentThemeConfig;
-    return (
-      <ThemeIcon
-        className={`h-4 w-4 transition-transform duration-200 ${
-          isAnimating ? "scale-110" : "scale-100"
-        }`}
-      />
+    // Fallback to light theme if invalid key provided
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.warn(`Invalid theme key: ${themeKey}, falling back to light`);
+    }
+    return THEME_CONFIG.light;
+  }, []);
+
+  // Animation handler with consistent timing
+  const triggerAnimation = useCallback(() => {
+    setIsAnimating(true);
+    // Use the same duration constant for consistency
+    const timeoutId = setTimeout(
+      () => setIsAnimating(false),
+      ANIMATION_DURATION
     );
-  }, [currentThemeConfig, isAnimating]);
 
-  // Enhanced theme change handler with animation
-  const handleThemeChange = useCallback(
-    (selectedTheme: ThemeOption) => {
-      return () => {
-        if (selectedTheme !== theme) {
-          setIsAnimating(true);
-          setTheme(selectedTheme);
-          setIsOpen(false);
+    // Return cleanup function for potential cancellation
+    return () => clearTimeout(timeoutId);
+  }, []);
 
-          // Reset animation state
-          setTimeout(() => setIsAnimating(false), 200);
-
-          // Store user preference
-          localStorage.setItem("theme-preference", selectedTheme);
-        }
-      };
-    },
-    [setTheme, theme]
+  // Current theme configuration (memoized for performance)
+  const currentThemeConfig = useMemo(
+    () => getThemeConfig(theme),
+    [theme, getThemeConfig]
   );
 
-  // Generate enhanced theme menu items
+  // Toggle button icon with improved animation logic
+  const toggleButtonIcon = useMemo(() => {
+    // Determine which theme icon to show based on current state
+    const displayTheme = theme === "system" ? resolvedTheme : theme;
+    const themeConfig = getThemeConfig(displayTheme);
+    const IconComponent = themeConfig.icon;
+
+    const iconStyles = `${STYLES.icon.base} ${
+      isAnimating ? STYLES.icon.animated : STYLES.icon.static
+    }`;
+
+    return <IconComponent className={iconStyles} />;
+  }, [theme, resolvedTheme, isAnimating, getThemeConfig]);
+
+  // Enhanced theme change handler with proper cleanup
+  const handleThemeChange = useCallback(
+    (selectedTheme: ThemeKey) => () => {
+      // Prevent unnecessary state changes
+      if (selectedTheme === theme) return;
+
+      // Trigger animation and update theme
+      const cleanup = triggerAnimation();
+      setTheme(selectedTheme);
+      setIsOpen(false);
+
+      // Return cleanup function if needed
+      return cleanup;
+    },
+    [setTheme, theme, triggerAnimation]
+  );
+
+  // Cycle theme function - implements the cycling logic directly
+  const cycleTheme = useCallback(() => {
+    let nextTheme: Theme;
+    if (theme === "light") {
+      nextTheme = "dark";
+    } else if (theme === "dark") {
+      nextTheme = "system";
+    } else {
+      nextTheme = "light";
+    }
+    setTheme(nextTheme);
+  }, [theme, setTheme]);
+
+  // Quick toggle handler for direct button clicks
+  const handleQuickToggle = useCallback(() => {
+    triggerAnimation();
+    cycleTheme();
+  }, [cycleTheme, triggerAnimation]);
+
+  // Optimized menu items generation with better accessibility
   const themeMenuItems = useMemo(() => {
-    return Object.entries(THEME_OPTIONS).map(([themeKey, config]) => {
+    return Object.entries(THEME_CONFIG).map(([themeKey, config]) => {
+      const typedThemeKey = themeKey as ThemeKey;
+      const isSelected = theme === typedThemeKey;
       const { icon: IconComponent, label, description, shortcut } = config;
-      const themeOption = themeKey as ThemeOption;
-      const isSelected = theme === themeOption;
+
+      // Build className dynamically for better performance
+      const itemClassName = [
+        STYLES.menuItem.base,
+        isSelected ? STYLES.menuItem.selected : STYLES.menuItem.hover,
+      ].join(" ");
 
       return (
         <DropdownMenuItem
           key={themeKey}
-          onClick={handleThemeChange(themeOption)}
-          className={`flex items-center justify-between gap-3 cursor-pointer px-3 py-2 rounded-sm transition-colors ${
-            isSelected ?
-              "bg-accent text-accent-foreground"
-            : "hover:bg-accent/50"
-          }`}
+          onClick={handleThemeChange(typedThemeKey)}
+          className={itemClassName}
           role="menuitemradio"
           aria-checked={isSelected}
         >
@@ -152,16 +215,25 @@ export function ThemeToggle() {
               </span>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-mono">
               {shortcut}
             </span>
-            {isSelected && <Check className="h-3 w-3 text-primary" />}
+            {isSelected && (
+              <Check className="h-3 w-3 text-primary" aria-hidden="true" />
+            )}
           </div>
         </DropdownMenuItem>
       );
     });
   }, [theme, handleThemeChange]);
+
+  // Build button className for better maintainability
+  const buttonClassName = [
+    STYLES.button.base,
+    isOpen ? STYLES.button.active : "",
+  ].join(" ");
 
   return (
     <TooltipProvider>
@@ -172,14 +244,13 @@ export function ThemeToggle() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-9 w-9 transition-all duration-200 hover:bg-accent hover:text-accent-foreground ${
-                  isOpen ? "bg-accent text-accent-foreground" : ""
-                }`}
+                className={buttonClassName}
+                onClick={isOpen ? undefined : handleQuickToggle}
                 aria-label={`Toggle theme (current: ${currentThemeConfig.label})`}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
               >
-                {currentThemeIcon}
+                {toggleButtonIcon}
                 <span className="sr-only">
                   Toggle theme - Current: {currentThemeConfig.label}
                 </span>
@@ -189,12 +260,14 @@ export function ThemeToggle() {
 
           <TooltipContent side="bottom" className="text-xs">
             <p>Theme: {currentThemeConfig.label}</p>
-            <p className="text-muted-foreground">Click to change</p>
+            <p className="text-muted-foreground">
+              Click to cycle, or open menu
+            </p>
           </TooltipContent>
 
           <DropdownMenuContent
             align="end"
-            className={`min-w-[280px] p-2 ${ANIMATION_CLASSES.enter}`}
+            className={STYLES.dropdown.container}
             role="menu"
             aria-label="Theme selection menu"
             sideOffset={8}

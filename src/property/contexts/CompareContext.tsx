@@ -1,73 +1,13 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode, useEffect } from 'react';
 
-import { Property } from '../../shared/types/property';
+import { useCompareError } from '../../shared/hooks/useCompareError';
+import type { CompareProperty, CompareContextType, ComparisonResult, ComparisonStats } from '../../shared/types/compare';
+import { 
+  normalizePropertyForComparison,
+  getCompareUrlParams 
+} from '../../shared/utils/compare-utils';
 
-// Enhanced interface with much more functionality
-interface CompareContextType {
-  // Core state management
-  selectedProperties: Property[];
-  addToCompare: (property: Property) => void;
-  removeFromCompare: (propertyId: string) => void;
-  clearCompare: () => void;
-  isSelected: (propertyId: string) => boolean;
-  canAddMore: boolean;
-  maxProperties: number;
-  
-  // Enhanced functionality
-  toggleProperty: (property: Property) => void;
-  replaceProperty: (oldPropertyId: string, newProperty: Property) => void;
-  reorderProperties: (fromIndex: number, toIndex: number) => void;
-  getPropertyIndex: (propertyId: string) => number;
-  
-  // Bulk operations
-  addMultiple: (properties: Property[]) => void;
-  removeMultiple: (propertyIds: string[]) => void;
-  replaceAll: (properties: Property[]) => void;
-  
-  // Comparison utilities
-  getCommonFeatures: () => string[];
-  getDifferentFeatures: () => string[];
-  getPropertyComparison: () => PropertyComparisonResult[];
-  
-  // Persistence and sharing
-  exportComparison: () => string;
-  importComparison: (data: string) => boolean;
-  getShareableUrl: () => string;
-  
-  // Statistics and insights
-  getStats: () => ComparisonStats;
-  getPriceRange: () => { min: number; max: number; average: number } | null;
-  
-  // History and undo
-  history: Property[][];
-  canUndo: boolean;
-  canRedo: boolean;
-  undo: () => void;
-  redo: () => void;
-  
-  // Event callbacks - Made optional to match usage
-  onSelectionChange?: (properties: Property[]) => void;
-  onMaxReached?: () => void;
-  onEmptyState?: () => void;
-}
-
-// Enhanced type definitions for comparison results
-interface PropertyComparisonResult {
-  feature: string;
-  values: { propertyId: string; value: unknown; propertyName: string }[];
-  allSame: boolean;
-  uniqueValues: unknown[];
-}
-
-interface ComparisonStats {
-  totalProperties: number;
-  averagePrice: number;
-  priceRange: { min: number; max: number };
-  commonFeatures: number;
-  uniqueFeatures: number;
-  mostExpensive: Property | null;
-  leastExpensive: Property | null;
-}
+// Using unified types from shared/types/compare.ts
 
 const CompareContext = createContext<CompareContextType | undefined>(undefined);
 
@@ -76,7 +16,7 @@ interface CompareProviderProps {
   readonly children: ReactNode;
   readonly maxProperties?: number;
   readonly persistKey?: string; // For localStorage persistence
-  readonly onSelectionChange?: (properties: Property[]) => void;
+  readonly onSelectionChange?: (properties: CompareProperty[]) => void;
   readonly onMaxReached?: () => void;
   readonly onEmptyState?: () => void;
 }
@@ -89,10 +29,16 @@ export function CompareProvider({
   onMaxReached,
   onEmptyState
 }: CompareProviderProps) {
-  // Core state with history tracking for undo/redo
-  const [selectedProperties, setSelectedProperties] = useState<Property[]>([]);
-  const [history, setHistory] = useState<Property[][]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  // Core state
+  const [selectedProperties, setSelectedProperties] = useState<CompareProperty[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Simplified history for basic undo/redo (disabled to prevent infinite loops)
+  const history: CompareProperty[][] = [];
+  const historyIndex = -1;
+  
+  // Use unified error handling
+  const { error, setError, clearError, handleError } = useCompareError();
 
   // Load from localStorage on mount if persistKey is provided
   useEffect(() => {
@@ -100,21 +46,22 @@ export function CompareProvider({
       const saved = localStorage.getItem(`compare-${persistKey}`);
       if (saved) {
         try {
-          const parsed = JSON.parse(saved) as Property[];
+          const parsed = JSON.parse(saved) as unknown[];
           if (Array.isArray(parsed)) {
-            setSelectedProperties(parsed);
-            setHistory([parsed]);
-            setHistoryIndex(0);
+            const normalizedProperties = parsed
+              .map(normalizePropertyForComparison)
+              .filter((p): p is CompareProperty => p !== null);
+            
+            if (normalizedProperties.length > 0) {
+              setSelectedProperties(normalizedProperties);
+            }
           }
         } catch (error) {
-          // Using a more specific error message and avoiding console.warn in production
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('Failed to load saved comparison:', error);
-          }
+          handleError(error, 'localStorage load');
         }
       }
     }
-  }, [persistKey]);
+  }, [persistKey, handleError]);
 
   // Save to localStorage whenever selection changes
   useEffect(() => {
@@ -122,6 +69,8 @@ export function CompareProvider({
       localStorage.setItem(`compare-${persistKey}`, JSON.stringify(selectedProperties));
     }
   }, [selectedProperties, persistKey]);
+
+
 
   // Trigger callbacks when selection changes
   useEffect(() => {
@@ -132,101 +81,134 @@ export function CompareProvider({
     }
   }, [selectedProperties, onSelectionChange, onEmptyState]);
 
-  // Helper function to update history for undo/redo functionality
-  const updateWithHistory = useCallback((newProperties: Property[]) => {
-    setSelectedProperties(newProperties);
-    setHistory(prev => {
-      // Remove any future history if we're not at the end
-      const newHistory = prev.slice(0, historyIndex + 1);
-      newHistory.push(newProperties);
-      // Keep only last 20 states to prevent memory issues
-      return newHistory.slice(-20);
-    });
-    setHistoryIndex(prev => Math.min(prev + 1, 19));
-  }, [historyIndex]);
+
 
   // Core functionality with enhanced features
-  const addToCompare = useCallback((property: Property) => {
-    setSelectedProperties(prev => {
-      if (prev.find(p => String(p.id) === String(property.id))) return prev;
-      
-      if (prev.length >= maxProperties) {
-        onMaxReached?.();
-        return prev;
+  const addToCompare = useCallback((property: CompareProperty) => {
+    try {
+      const normalizedProperty = normalizePropertyForComparison(property);
+      if (!normalizedProperty) {
+        handleError('Invalid property data', 'addToCompare');
+        return;
       }
-      
-      const newProperties = [...prev, property];
-      updateWithHistory(newProperties);
-      return newProperties;
-    });
-  }, [maxProperties, onMaxReached, updateWithHistory]);
+
+      setSelectedProperties(prev => {
+        if (prev.find(p => String(p.id) === String(normalizedProperty.id))) return prev;
+        
+        if (prev.length >= maxProperties) {
+          onMaxReached?.();
+          return prev;
+        }
+        
+        // Don't call updateWithHistory inside setState - it causes infinite loops
+        return [...prev, normalizedProperty];
+      });
+    } catch (error) {
+      handleError(error, 'addToCompare');
+    }
+  }, [maxProperties, onMaxReached, handleError]);
 
   const removeFromCompare = useCallback((propertyId: string) => {
-    const newProperties = selectedProperties.filter(p => String(p.id) !== propertyId);
-    updateWithHistory(newProperties);
-  }, [selectedProperties, updateWithHistory]);
+    setSelectedProperties(prev => prev.filter(p => String(p.id) !== propertyId));
+  }, []);
 
   const clearCompare = useCallback(() => {
-    updateWithHistory([]);
-  }, [updateWithHistory]);
+    setSelectedProperties([]);
+  }, []);
 
   // New toggle functionality - adds if not present, removes if present
-  const toggleProperty = useCallback((property: Property) => {
-    if (selectedProperties.find(p => String(p.id) === String(property.id))) {
-      removeFromCompare(String(property.id));
-    } else {
-      addToCompare(property);
+  const toggleProperty = useCallback((property: CompareProperty) => {
+    try {
+      const normalizedProperty = normalizePropertyForComparison(property);
+      if (!normalizedProperty) {
+        handleError('Invalid property data', 'toggleProperty');
+        return;
+      }
+
+      if (selectedProperties.find(p => String(p.id) === String(normalizedProperty.id))) {
+        removeFromCompare(String(normalizedProperty.id));
+      } else {
+        addToCompare(normalizedProperty);
+      }
+    } catch (error) {
+      handleError(error, 'toggleProperty');
     }
-  }, [selectedProperties, addToCompare, removeFromCompare]);
+  }, [selectedProperties, addToCompare, removeFromCompare, handleError]);
 
   // Replace one property with another while maintaining position
-  const replaceProperty = useCallback((oldPropertyId: string, newProperty: Property) => {
-    const newProperties = selectedProperties.map(p => 
-      String(p.id) === oldPropertyId ? newProperty : p
-    );
-    updateWithHistory(newProperties);
-  }, [selectedProperties, updateWithHistory]);
+  const replaceProperty = useCallback((oldPropertyId: string, newProperty: CompareProperty) => {
+    try {
+      const normalizedProperty = normalizePropertyForComparison(newProperty);
+      if (!normalizedProperty) {
+        handleError('Invalid property data', 'replaceProperty');
+        return;
+      }
+
+      setSelectedProperties(prev => prev.map(p => 
+        String(p.id) === oldPropertyId ? normalizedProperty : p
+      ));
+    } catch (error) {
+      handleError(error, 'replaceProperty');
+    }
+  }, [handleError]);
 
   // Reorder properties for custom comparison layouts
   const reorderProperties = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
-    if (fromIndex < 0 || fromIndex >= selectedProperties.length) return;
-    if (toIndex < 0 || toIndex >= selectedProperties.length) return;
     
-    const newProperties = [...selectedProperties];
-    const [movedProperty] = newProperties.splice(fromIndex, 1);
-    if (movedProperty) {
-      newProperties.splice(toIndex, 0, movedProperty);
-      updateWithHistory(newProperties);
-    }
-  }, [selectedProperties, updateWithHistory]);
+    setSelectedProperties(prev => {
+      if (fromIndex < 0 || fromIndex >= prev.length) return prev;
+      if (toIndex < 0 || toIndex >= prev.length) return prev;
+      
+      const newProperties = [...prev];
+      const [movedProperty] = newProperties.splice(fromIndex, 1);
+      if (movedProperty) {
+        newProperties.splice(toIndex, 0, movedProperty);
+      }
+      return newProperties;
+    });
+  }, []);
 
   // Bulk operations for power users
-  const addMultiple = useCallback((properties: Property[]) => {
-    const availableSlots = maxProperties - selectedProperties.length;
-    const toAdd = properties
-      .filter(p => !selectedProperties.find(existing => String(existing.id) === String(p.id)))
-      .slice(0, availableSlots);
-    
-    if (toAdd.length > 0) {
-      const newProperties = [...selectedProperties, ...toAdd];
-      updateWithHistory(newProperties);
+  const addMultiple = useCallback((properties: CompareProperty[]) => {
+    try {
+      const normalizedProperties = properties
+        .map(normalizePropertyForComparison)
+        .filter((p): p is CompareProperty => p !== null);
+
+      setSelectedProperties(prev => {
+        const availableSlots = maxProperties - prev.length;
+        const toAdd = normalizedProperties
+          .filter(p => !prev.find(existing => String(existing.id) === String(p.id)))
+          .slice(0, availableSlots);
+        
+        if (normalizedProperties.length > availableSlots) {
+          onMaxReached?.();
+        }
+        
+        return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+      });
+    } catch (error) {
+      handleError(error, 'addMultiple');
     }
-    
-    if (properties.length > availableSlots) {
-      onMaxReached?.();
-    }
-  }, [selectedProperties, maxProperties, updateWithHistory, onMaxReached]);
+  }, [maxProperties, onMaxReached, handleError]);
 
   const removeMultiple = useCallback((propertyIds: string[]) => {
-    const newProperties = selectedProperties.filter(p => !propertyIds.includes(String(p.id)));
-    updateWithHistory(newProperties);
-  }, [selectedProperties, updateWithHistory]);
+    setSelectedProperties(prev => prev.filter(p => !propertyIds.includes(String(p.id))));
+  }, []);
 
-  const replaceAll = useCallback((properties: Property[]) => {
-    const limitedProperties = properties.slice(0, maxProperties);
-    updateWithHistory(limitedProperties);
-  }, [maxProperties, updateWithHistory]);
+  const replaceAll = useCallback((properties: CompareProperty[]) => {
+    try {
+      const normalizedProperties = properties
+        .map(normalizePropertyForComparison)
+        .filter((p): p is CompareProperty => p !== null)
+        .slice(0, maxProperties);
+      
+      setSelectedProperties(normalizedProperties);
+    } catch (error) {
+      handleError(error, 'replaceAll');
+    }
+  }, [maxProperties, handleError]);
 
   // Advanced comparison analysis
   const getCommonFeatures = useCallback((): string[] => {
@@ -258,22 +240,18 @@ export function CompareProvider({
     return Array.from(allUniqueFeatures);
   }, [selectedProperties, getCommonFeatures]);
 
-  const getPropertyComparison = useCallback((): PropertyComparisonResult[] => {
+  const getPropertyComparison = useCallback((): ComparisonResult[] => {
     if (selectedProperties.length === 0) return [];
     
     const commonFeatures = getCommonFeatures();
     
     return commonFeatures.map(feature => {
       const values = selectedProperties.map(property => ({
-        propertyId: String(property.id), // Ensure propertyId is always a string
+        propertyId: String(property.id),
         value: Object.prototype.hasOwnProperty.call(property, feature) 
           ? (property as unknown as Record<string, unknown>)[feature] 
           : undefined,
-        propertyName: String(
-          (property as unknown as Record<string, unknown>).name || 
-          (property as unknown as Record<string, unknown>).title || 
-          `Property ${property.id}`
-        )
+        propertyName: property.title || `Property ${property.id}`
       }));
       
       const uniqueValues = [...new Set(values.map(v => v.value))];
@@ -299,16 +277,23 @@ export function CompareProvider({
 
   const importComparison = useCallback((data: string): boolean => {
     try {
-      const parsed = JSON.parse(data) as { properties?: Property[] };
+      const parsed = JSON.parse(data) as { properties?: unknown[] };
       if (parsed.properties && Array.isArray(parsed.properties)) {
-        replaceAll(parsed.properties);
-        return true;
+        const normalizedProperties = parsed.properties
+          .map(normalizePropertyForComparison)
+          .filter((p): p is CompareProperty => p !== null);
+        
+        if (normalizedProperties.length > 0) {
+          setSelectedProperties(normalizedProperties);
+          return true;
+        }
       }
       return false;
-    } catch {
+    } catch (error) {
+      handleError(error, 'importComparison');
       return false;
     }
-  }, [replaceAll]);
+  }, [handleError]);
 
   const getShareableUrl = useCallback((): string => {
     const propertyIds = selectedProperties.map(p => String(p.id)).join(',');
@@ -330,19 +315,19 @@ export function CompareProvider({
       };
     }
 
-    // Type-safe price extraction with proper type conversion
+    // Type-safe price extraction
     const prices = selectedProperties
-      .map(p => (p as unknown as Record<string, unknown>).price)
-      .filter((price): price is number => typeof price === 'number');
+      .map(p => p.price)
+      .filter((price): price is number => typeof price === 'number' && !isNaN(price));
     
     const averagePrice = prices.length > 0 ? prices.reduce((sum, price) => sum + price, 0) / prices.length : 0;
     const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
     const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
     
     const mostExpensive = prices.length > 0 ? 
-      selectedProperties.find(p => (p as unknown as Record<string, unknown>).price === maxPrice) ?? null : null;
+      selectedProperties.find(p => p.price === maxPrice) ?? null : null;
     const leastExpensive = prices.length > 0 ? 
-      selectedProperties.find(p => (p as unknown as Record<string, unknown>).price === minPrice) ?? null : null;
+      selectedProperties.find(p => p.price === minPrice) ?? null : null;
 
     return {
       totalProperties: selectedProperties.length,
@@ -357,8 +342,8 @@ export function CompareProvider({
 
   const getPriceRange = useCallback(() => {
     const prices = selectedProperties
-      .map(p => (p as unknown as Record<string, unknown>).price)
-      .filter((price): price is number => typeof price === 'number');
+      .map(p => p.price)
+      .filter((price): price is number => typeof price === 'number' && !isNaN(price));
     
     if (prices.length === 0) return null;
     
@@ -369,32 +354,16 @@ export function CompareProvider({
     return { min, max, average };
   }, [selectedProperties]);
 
-  // History management for undo/redo
+  // History management for undo/redo (simplified - no actual functionality to prevent loops)
   const undo = useCallback(() => {
-    if (historyIndex > 0 && historyIndex <= history.length) {
-      const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      if (newIndex >= 0 && newIndex < history.length) {
-        const previousState = history[newIndex];
-        if (previousState) {
-          setSelectedProperties(previousState);
-        }
-      }
-    }
-  }, [history, historyIndex]);
+    // Disabled to prevent infinite loops
+    console.warn('Undo functionality temporarily disabled');
+  }, []);
 
   const redo = useCallback(() => {
-    if (historyIndex < history.length - 1 && historyIndex >= 0) {
-      const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      if (newIndex >= 0 && newIndex < history.length) {
-        const nextState = history[newIndex];
-        if (nextState) {
-          setSelectedProperties(nextState);
-        }
-      }
-    }
-  }, [history, historyIndex]);
+    // Disabled to prevent infinite loops
+    console.warn('Redo functionality temporarily disabled');
+  }, []);
 
   // Derived state calculations
   const isSelected = useCallback((propertyId: string) => {
@@ -406,8 +375,8 @@ export function CompareProvider({
   }, [selectedProperties]);
 
   const canAddMore = selectedProperties.length < maxProperties;
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
+  const canUndo = false; // Disabled to prevent infinite loops
+  const canRedo = false; // Disabled to prevent infinite loops
 
   // Compose the complete context value with all functionality
   const value: CompareContextType = useMemo(() => ({
@@ -452,10 +421,14 @@ export function CompareProvider({
     undo,
     redo,
     
+    // State flags
+    isLoading,
+    error: error?.message || null,
+    
     // Event callbacks (now properly typed as optional)
-    onSelectionChange: onSelectionChange || undefined,
-    onMaxReached: onMaxReached || undefined,
-    onEmptyState: onEmptyState || undefined
+    ...(onSelectionChange && { onSelectionChange }),
+    ...(onMaxReached && { onMaxReached }),
+    ...(onEmptyState && { onEmptyState })
   }), [
     selectedProperties, addToCompare, removeFromCompare, clearCompare, isSelected, canAddMore, maxProperties,
     toggleProperty, replaceProperty, reorderProperties, getPropertyIndex,
@@ -464,6 +437,7 @@ export function CompareProvider({
     exportComparison, importComparison, getShareableUrl,
     getStats, getPriceRange,
     history, canUndo, canRedo, undo, redo,
+    isLoading, error,
     onSelectionChange, onMaxReached, onEmptyState
   ]);
 

@@ -1,393 +1,537 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@shared/components/ui/avatar';
-import { Badge } from '@shared/components/ui/badge';
-import { Button } from '@shared/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@shared/components/ui/dialog';
-import { Input } from '@shared/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
-import { cn } from '@shared/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  UserCheck, 
-  Star, 
+  User, 
   MapPin, 
-  Phone, 
-  Mail, 
+  Gavel, 
+  TrendingUp,
+  Phone,
+  Mail,
   Calendar,
   Clock,
   DollarSign,
+  Star,
   Award,
-  Search,
-  Filter,
-  Plus
+  CheckCircle,
+  AlertCircle,
+  FileText,
+  MessageSquare,
+  ExternalLink
 } from 'lucide-react';
 import React, { useState } from 'react';
 
-import type { 
-  ExpertProfile,
-  ExpertAssignment,
-  ExpertSearchRequest 
-} from '@/types/land-verification';
+import { Avatar, AvatarFallback, AvatarImage } from '../../shared/components/ui/avatar';
+import { Badge } from '../../shared/components/ui/badge';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../shared/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shared/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs';
+import { Textarea } from '../../shared/components/ui/textarea';
+import { useToast } from '../../shared/hooks/use-toast';
+import { useLandVerification, ExpertAssignment } from '../hooks/useLandVerification';
 
 interface ExpertCoordinationInterfaceProps {
-  sessionId: number;
-  assignments: ExpertAssignment[];
-  onSearchExperts: (criteria: ExpertSearchRequest) => Promise<ExpertProfile[]>;
-  onAssignExpert: (expertId: string, layerId?: number) => void;
-  onViewExpertDetails: (expertId: string) => void;
-  className?: string;
+  sessionId: string;
+  onExpertAssigned?: (assignment: ExpertAssignment) => void;
+  showAssignmentControls?: boolean;
 }
 
-export default function ExpertCoordinationInterface({
-  sessionId,
-  assignments,
-  onSearchExperts,
-  onAssignExpert,
-  onViewExpertDetails,
-  className
+const EXPERT_TYPES = {
+  surveyor: {
+    name: 'Professional Surveyor',
+    icon: MapPin,
+    description: 'Licensed land surveyor for boundary verification and mapping',
+    averageCost: 2500,
+    averageTime: 8,
+    specializations: ['Boundary Survey', 'Topographic Survey', 'Construction Survey', 'GPS Survey']
+  },
+  lawyer: {
+    name: 'Legal Expert',
+    icon: Gavel,
+    description: 'Legal professional specializing in property law and transactions',
+    averageCost: 3500,
+    averageTime: 12,
+    specializations: ['Property Law', 'Contract Review', 'Title Examination', 'Dispute Resolution']
+  },
+  appraiser: {
+    name: 'Property Appraiser',
+    icon: TrendingUp,
+    description: 'Certified property appraiser for market value assessment',
+    averageCost: 1800,
+    averageTime: 6,
+    specializations: ['Residential Appraisal', 'Commercial Appraisal', 'Land Valuation', 'Market Analysis']
+  }
+};
+
+// Mock expert data - in real implementation, this would come from API
+const MOCK_EXPERTS = {
+  surveyor: [
+    {
+      id: 'surv-001',
+      name: 'John Kamau',
+      credentials: 'Licensed Surveyor (LSK)',
+      rating: 4.8,
+      completedJobs: 156,
+      specialization: 'Boundary Survey',
+      location: 'Nairobi',
+      availability: 'Available',
+      hourlyRate: 300,
+      avatar: null,
+      bio: 'Experienced land surveyor with 12+ years in Kenya. Specialized in complex boundary disputes and GPS surveying.',
+      certifications: ['Licensed Surveyor of Kenya', 'GPS Certified', 'Drone Survey Certified']
+    },
+    {
+      id: 'surv-002',
+      name: 'Mary Wanjiku',
+      credentials: 'Senior Surveyor (LSK)',
+      rating: 4.9,
+      completedJobs: 203,
+      specialization: 'Topographic Survey',
+      location: 'Kiambu',
+      availability: 'Busy until next week',
+      hourlyRate: 350,
+      avatar: null,
+      bio: 'Senior surveyor with expertise in topographic and construction surveys. Known for precision and reliability.',
+      certifications: ['Licensed Surveyor of Kenya', 'Topographic Specialist', 'Construction Survey Expert']
+    }
+  ],
+  lawyer: [
+    {
+      id: 'law-001',
+      name: 'David Mwangi',
+      credentials: 'Advocate of High Court',
+      rating: 4.7,
+      completedJobs: 89,
+      specialization: 'Property Law',
+      location: 'Nairobi',
+      availability: 'Available',
+      hourlyRate: 450,
+      avatar: null,
+      bio: 'Property law specialist with extensive experience in land transactions and title disputes.',
+      certifications: ['Advocate of High Court of Kenya', 'Property Law Specialist', 'Conveyancing Expert']
+    }
+  ],
+  appraiser: [
+    {
+      id: 'app-001',
+      name: 'Grace Njeri',
+      credentials: 'Certified Property Appraiser',
+      rating: 4.6,
+      completedJobs: 134,
+      specialization: 'Land Valuation',
+      location: 'Nakuru',
+      availability: 'Available',
+      hourlyRate: 280,
+      avatar: null,
+      bio: 'Certified appraiser specializing in agricultural and residential land valuation across Kenya.',
+      certifications: ['Certified Property Appraiser', 'Land Valuation Expert', 'Market Analysis Certified']
+    }
+  ]
+};
+
+export function ExpertCoordinationInterface({ 
+  sessionId, 
+  onExpertAssigned,
+  showAssignmentControls = true 
 }: ExpertCoordinationInterfaceProps) {
-  const [selectedTab, setSelectedTab] = useState('assignments');
-  const [searchResults, setSearchResults] = useState<ExpertProfile[]>([]);
-  const [searchCriteria, setSearchCriteria] = useState<ExpertSearchRequest>({
-    expertType: 'surveyor',
-    location: '',
-    specialization: '',
-    budget: { min: 0, max: 100000 }
-  });
-  const [isSearching, setIsSearching] = useState(false);
+  const { toast } = useToast();
+  const [selectedExpertType, setSelectedExpertType] = useState<keyof typeof EXPERT_TYPES>('surveyor');
+  const [selectedExpert, setSelectedExpert] = useState<any>(null);
+  const [assignmentNotes, setAssignmentNotes] = useState('');
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
-  const handleSearch = async () => {
-    setIsSearching(true);
+  const {
+    useExpertAssignments,
+    assignExpert,
+    isAssigningExpert
+  } = useLandVerification();
+
+  const { data: assignments, isLoading } = useExpertAssignments(sessionId);
+
+  const handleAssignExpert = async () => {
+    if (!selectedExpert) return;
+
     try {
-      const results = await onSearchExperts(searchCriteria);
-      setSearchResults(results);
+      const assignment = await assignExpert(sessionId, selectedExpertType);
+      
+      if (onExpertAssigned) {
+        onExpertAssigned(assignment);
+      }
+
+      toast({
+        title: "Expert Assigned",
+        description: `${selectedExpert.name} has been assigned to your verification.`,
+      });
+
+      setIsAssignDialogOpen(false);
+      setSelectedExpert(null);
+      setAssignmentNotes('');
     } catch (error) {
-      console.error('Expert search failed:', error);
-    } finally {
-      setIsSearching(false);
+      toast({
+        title: "Assignment Failed",
+        description: error instanceof Error ? error.message : "Failed to assign expert",
+        variant: "destructive"
+      });
     }
   };
 
-  const getExpertTypeColor = (type: string): string => {
-    switch (type) {
-      case 'surveyor':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'lawyer':
-        return 'text-purple-600 bg-purple-50 border-purple-200';
-      case 'appraiser':
-        return 'text-green-600 bg-green-50 border-green-200';
-      case 'environmental':
-        return 'text-emerald-600 bg-emerald-50 border-emerald-200';
-      case 'valuer':
-        return 'text-orange-600 bg-orange-50 border-orange-200';
-      default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
-
-  const getStatusColor = (status: string): string => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'assigned':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'in_progress':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
       case 'completed':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'bg-green-100 text-green-800';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'assigned':
+        return 'bg-yellow-100 text-yellow-800';
       case 'cancelled':
-        return 'text-red-600 bg-red-50 border-red-200';
+        return 'bg-red-100 text-red-800';
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const ExpertCard = ({ expert, showAssignButton = false }: { 
-    expert: ExpertProfile; 
-    showAssignButton?: boolean;
-  }) => (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <Avatar className="h-12 w-12">
-            <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${expert.name}`} />
-            <AvatarFallback>{expert.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
-              <h4 className="font-medium">{expert.name}</h4>
-              <Badge className={cn('text-xs', getExpertTypeColor(expert.expertType))}>
-                {expert.expertType}
-              </Badge>
-            </div>
+  const renderExpertCard = (expert: any, expertType: keyof typeof EXPERT_TYPES) => {
+    const ExpertIcon = EXPERT_TYPES[expertType].icon;
+    
+    return (
+      <Card 
+        key={expert.id}
+        className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+          selectedExpert?.id === expert.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+        }`}
+        onClick={() => setSelectedExpert(expert)}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start space-x-4">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={expert.avatar} />
+              <AvatarFallback>
+                {expert.name.split(' ').map((n: string) => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
             
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {expert.location}
-              </div>
-              <div className="flex items-center gap-1">
-                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                {expert.experience.successRate}%
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-              <span>{expert.experience.yearsOfExperience} years experience</span>
-              <span>{expert.experience.relevantCases} cases</span>
-            </div>
-            
-            <div className="flex flex-wrap gap-1 mb-3">
-              {expert.specializations.slice(0, 3).map((spec, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {spec}
-                </Badge>
-              ))}
-              {expert.specializations.length > 3 && (
-                <Badge variant="outline" className="text-xs">
-                  +{expert.specializations.length - 3}
-                </Badge>
-              )}
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3" />
-                  {expert.pricing.hourlyRate ? 
-                    `KES ${expert.pricing.hourlyRate}/hr` : 
-                    `KES ${expert.pricing.fixedFee} fixed`
-                  }
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <h4 className="font-semibold text-gray-900">{expert.name}</h4>
+                <div className="flex items-center space-x-1">
+                  <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                  <span className="text-sm font-medium">{expert.rating}</span>
                 </div>
-                {expert.availability.available && (
-                  <div className="flex items-center gap-1 text-green-600">
-                    <Clock className="h-3 w-3" />
-                    Available
-                  </div>
-                )}
               </div>
               
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => onViewExpertDetails(expert.id)}
+              <p className="text-sm text-gray-600 mb-2">{expert.credentials}</p>
+              
+              <div className="flex items-center space-x-4 text-xs text-gray-500 mb-2">
+                <span className="flex items-center space-x-1">
+                  <ExpertIcon className="h-3 w-3" />
+                  <span>{expert.specialization}</span>
+                </span>
+                <span className="flex items-center space-x-1">
+                  <MapPin className="h-3 w-3" />
+                  <span>{expert.location}</span>
+                </span>
+                <span className="flex items-center space-x-1">
+                  <Award className="h-3 w-3" />
+                  <span>{expert.completedJobs} jobs</span>
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Badge 
+                  variant={expert.availability === 'Available' ? 'default' : 'secondary'}
+                  className="text-xs"
                 >
-                  View
-                </Button>
-                {showAssignButton && (
-                  <Button 
-                    size="sm"
-                    onClick={() => onAssignExpert(expert.id)}
-                  >
-                    Assign
-                  </Button>
-                )}
+                  {expert.availability}
+                </Badge>
+                <span className="text-sm font-medium text-gray-900">
+                  KSh {expert.hourlyRate}/hour
+                </span>
               </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const AssignmentCard = ({ assignment }: { assignment: ExpertAssignment }) => (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <UserCheck className="h-4 w-4" />
-            <span className="font-medium">Expert Assignment</span>
-          </div>
-          <Badge className={cn('text-xs', getStatusColor(assignment.status))}>
-            {assignment.status.toUpperCase()}
-          </Badge>
-        </div>
-        
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Expert:</span>
-            <span className="font-medium">{assignment.expertName}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Type:</span>
-            <Badge className={cn('text-xs', getExpertTypeColor(assignment.expertType))}>
-              {assignment.expertType}
-            </Badge>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Assigned:</span>
-            <span>{new Date(assignment.assignedAt).toLocaleDateString()}</span>
-          </div>
-          {assignment.expectedCompletionDate && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Due:</span>
-              <span>{new Date(assignment.expectedCompletionDate).toLocaleDateString()}</span>
-            </div>
+          
+          {selectedExpert?.id === expert.id && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              transition={{ duration: 0.2 }}
+              className="mt-4 pt-4 border-t border-gray-200"
+            >
+              <p className="text-sm text-gray-600 mb-3">{expert.bio}</p>
+              
+              <div className="space-y-2">
+                <h5 className="font-medium text-gray-900 text-sm">Certifications</h5>
+                <div className="flex flex-wrap gap-1">
+                  {expert.certifications.map((cert: string, index: number) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {cert}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           )}
-          {assignment.budget && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Budget:</span>
-              <span>KES {assignment.budget.toLocaleString()}</span>
-            </div>
-          )}
-        </div>
-        
-        {assignment.specialInstructions && (
-          <div className="mt-3 p-2 bg-muted/50 rounded text-sm">
-            <span className="text-muted-foreground">Instructions: </span>
-            {assignment.specialInstructions}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Expert Coordination</CardTitle>
-            <CardDescription>
-              Manage professional experts for verification tasks
-            </CardDescription>
-          </div>
-          <Dialog>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Expert Coordination</h2>
+          <p className="text-gray-600">
+            Coordinate with professional experts for comprehensive land verification
+          </p>
+        </div>
+        
+        {showAssignmentControls && (
+          <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Find Expert
+              <Button>
+                <User className="h-4 w-4 mr-2" />
+                Assign Expert
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Find Expert</DialogTitle>
+                <DialogTitle>Assign Professional Expert</DialogTitle>
                 <DialogDescription>
-                  Search for qualified experts based on your requirements
+                  Select and assign a professional expert to assist with your land verification
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Expert Type</label>
-                    <Select 
-                      value={searchCriteria.expertType} 
-                      onValueChange={(value) => setSearchCriteria(prev => ({ ...prev, expertType: value as any }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="surveyor">Surveyor</SelectItem>
-                        <SelectItem value="lawyer">Lawyer</SelectItem>
-                        <SelectItem value="appraiser">Appraiser</SelectItem>
-                        <SelectItem value="environmental">Environmental Expert</SelectItem>
-                        <SelectItem value="valuer">Valuer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">Location</label>
-                    <Input 
-                      placeholder="Enter location"
-                      value={searchCriteria.location}
-                      onChange={(e) => setSearchCriteria(prev => ({ ...prev, location: e.target.value }))}
-                    />
+              <div className="space-y-6">
+                {/* Expert Type Selection */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Expert Type
+                  </label>
+                  <Select 
+                    value={selectedExpertType} 
+                    onValueChange={(value) => {
+                      setSelectedExpertType(value as keyof typeof EXPERT_TYPES);
+                      setSelectedExpert(null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(EXPERT_TYPES).map(([key, type]) => (
+                        <SelectItem key={key} value={key}>
+                          <div className="flex items-center space-x-2">
+                            <type.icon className="h-4 w-4" />
+                            <span>{type.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Expert Type Info */}
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        {React.createElement(EXPERT_TYPES[selectedExpertType].icon, {
+                          className: "h-5 w-5 text-blue-600"
+                        })}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-blue-900 mb-1">
+                          {EXPERT_TYPES[selectedExpertType].name}
+                        </h4>
+                        <p className="text-sm text-blue-700 mb-2">
+                          {EXPERT_TYPES[selectedExpertType].description}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-blue-600">
+                          <span className="flex items-center space-x-1">
+                            <DollarSign className="h-3 w-3" />
+                            <span>Avg: KSh {EXPERT_TYPES[selectedExpertType].averageCost}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <Clock className="h-3 w-3" />
+                            <span>Avg: {EXPERT_TYPES[selectedExpertType].averageTime} hours</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Available Experts */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-3 block">
+                    Available {EXPERT_TYPES[selectedExpertType].name}s
+                  </label>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {MOCK_EXPERTS[selectedExpertType]?.map((expert) => 
+                      renderExpertCard(expert, selectedExpertType)
+                    )}
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4">
+
+                {/* Assignment Notes */}
+                {selectedExpert && (
                   <div>
-                    <label className="text-sm font-medium">Specialization</label>
-                    <Input 
-                      placeholder="Enter specialization"
-                      value={searchCriteria.specialization}
-                      onChange={(e) => setSearchCriteria(prev => ({ ...prev, specialization: e.target.value }))}
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Assignment Notes (Optional)
+                    </label>
+                    <Textarea
+                      placeholder="Add any specific requirements or notes for the expert..."
+                      value={assignmentNotes}
+                      onChange={(e) => setAssignmentNotes(e.target.value)}
+                      rows={3}
                     />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">Max Budget (KES)</label>
-                    <Input 
-                      type="number"
-                      placeholder="Enter max budget"
-                      value={searchCriteria.budget?.max}
-                      onChange={(e) => setSearchCriteria(prev => ({ 
-                        ...prev, 
-                        budget: { ...prev.budget!, max: parseInt(e.target.value) || 0 }
-                      }))}
-                    />
-                  </div>
-                </div>
-                
-                <Button onClick={handleSearch} disabled={isSearching} className="w-full">
-                  <Search className="h-4 w-4 mr-2" />
-                  {isSearching ? 'Searching...' : 'Search Experts'}
-                </Button>
-                
-                {searchResults.length > 0 && (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {searchResults.map((expert) => (
-                      <ExpertCard key={expert.id} expert={expert} showAssignButton />
-                    ))}
                   </div>
                 )}
+
+                {/* Assignment Summary */}
+                {selectedExpert && (
+                  <Card className="bg-green-50 border-green-200">
+                    <CardContent className="p-4">
+                      <h4 className="font-semibold text-green-900 mb-2">Assignment Summary</h4>
+                      <div className="space-y-1 text-sm text-green-700">
+                        <p><strong>Expert:</strong> {selectedExpert.name}</p>
+                        <p><strong>Type:</strong> {EXPERT_TYPES[selectedExpertType].name}</p>
+                        <p><strong>Estimated Cost:</strong> KSh {selectedExpert.hourlyRate * EXPERT_TYPES[selectedExpertType].averageTime}</p>
+                        <p><strong>Estimated Time:</strong> {EXPERT_TYPES[selectedExpertType].averageTime} hours</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsAssignDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleAssignExpert}
+                    disabled={!selectedExpert || isAssigningExpert}
+                  >
+                    {isAssigningExpert ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        Assigning...
+                      </>
+                    ) : (
+                      'Assign Expert'
+                    )}
+                  </Button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
-        </div>
-      </CardHeader>
+        )}
+      </div>
 
-      <CardContent>
-        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="assignments">Current Assignments</TabsTrigger>
-            <TabsTrigger value="history">Assignment History</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="assignments" className="space-y-4">
-            {assignments.filter(a => a.status !== 'completed' && a.status !== 'cancelled').length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {assignments
-                  .filter(a => a.status !== 'completed' && a.status !== 'cancelled')
-                  .map((assignment) => (
-                    <AssignmentCard key={assignment.id} assignment={assignment} />
-                  ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <UserCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">No Active Assignments</h3>
-                <p className="mb-4">Find and assign experts to help with verification tasks</p>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button>Find Expert</Button>
-                  </DialogTrigger>
-                </Dialog>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="history" className="space-y-4">
-            {assignments.filter(a => a.status === 'completed' || a.status === 'cancelled').length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {assignments
-                  .filter(a => a.status === 'completed' || a.status === 'cancelled')
-                  .map((assignment) => (
-                    <AssignmentCard key={assignment.id} assignment={assignment} />
-                  ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No assignment history available</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+      {/* Current Assignments */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Expert Assignments</CardTitle>
+          <CardDescription>
+            Track the progress of assigned experts for this verification session
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Clock className="h-5 w-5 animate-spin mr-2" />
+              <span>Loading assignments...</span>
+            </div>
+          ) : assignments && assignments.length > 0 ? (
+            <div className="space-y-4">
+              {assignments.map((assignment) => {
+                const expertType = assignment.expertType as keyof typeof EXPERT_TYPES;
+                const ExpertIcon = EXPERT_TYPES[expertType].icon;
+                
+                return (
+                  <Card key={assignment.id} className="border-l-4 border-l-blue-500">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-4">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <ExpertIcon className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <h4 className="font-semibold text-gray-900">
+                                {assignment.expertName}
+                              </h4>
+                              <Badge className={getStatusColor(assignment.status)}>
+                                {assignment.status.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">
+                              {EXPERT_TYPES[expertType].name}
+                              {assignment.specialization && ` • ${assignment.specialization}`}
+                            </p>
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <span className="flex items-center space-x-1">
+                                <Calendar className="h-3 w-3" />
+                                <span>Assigned: {new Date(assignment.assignedAt).toLocaleDateString()}</span>
+                              </span>
+                              {assignment.expectedCompletionDate && (
+                                <span className="flex items-center space-x-1">
+                                  <Clock className="h-3 w-3" />
+                                  <span>Due: {new Date(assignment.expectedCompletionDate).toLocaleDateString()}</span>
+                                </span>
+                              )}
+                              {assignment.cost && (
+                                <span className="flex items-center space-x-1">
+                                  <DollarSign className="h-3 w-3" />
+                                  <span>KSh {assignment.cost.toLocaleString()}</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          {assignment.contactInfo && (
+                            <Button variant="outline" size="sm">
+                              <MessageSquare className="h-4 w-4 mr-1" />
+                              Contact
+                            </Button>
+                          )}
+                          {assignment.reportUrl && (
+                            <Button variant="outline" size="sm">
+                              <FileText className="h-4 w-4 mr-1" />
+                              Report
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {assignment.notes && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-sm text-gray-600">{assignment.notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <User className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p>No experts assigned yet</p>
+              <p className="text-sm">Assign professional experts to enhance your verification process</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+
+export default ExpertCoordinationInterface;

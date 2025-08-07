@@ -13,5 +13,6 @@
   ],
   "files.associations": {
     "*.css": "tailwindcss"
-  }
+  },
+  "liveServer.settings.port": 5501
 }

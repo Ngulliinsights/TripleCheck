@@ -2,7 +2,10 @@ import { Badge } from "@shared/components/ui/badge";
 import { Button } from "@shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
 import { Bell, Check, X, AlertCircle, Info, CheckCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
+
+import { EnterpriseVirtualizedList } from "@shared/components";
+import { useNotificationListVirtualization } from "@shared/hooks/useVirtualizationHelpers";
 
 interface Notification {
   id: string;
@@ -44,6 +47,83 @@ const getNotificationColor = (type: Notification['type']) => {
     default:
       return 'text-blue-600';
   }
+};
+
+// Virtualized Notifications List Component
+const VirtualizedNotificationsList: React.FC<{
+  notifications: Notification[];
+  onMarkAsRead: (id: string) => void;
+}> = ({ notifications, onMarkAsRead }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(400);
+
+  React.useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const availableHeight = window.innerHeight - rect.top - 100;
+        setContainerHeight(Math.max(300, Math.min(500, availableHeight)));
+      }
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+
+  const listProps = useNotificationListVirtualization(
+    notifications,
+    containerHeight,
+    90 // notification item height
+  );
+
+  const renderNotificationItem = useCallback((notification: Notification, index: number, style: React.CSSProperties) => {
+    const Icon = getNotificationIcon(notification.type);
+    const iconColor = getNotificationColor(notification.type);
+    
+    return (
+      <div style={style} className="p-1">
+        <div
+          className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+            notification.read ? 'bg-muted/30' : 'bg-background border-primary/20'
+          }`}
+        >
+          <Icon className={`h-5 w-5 mt-0.5 ${iconColor}`} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <h4 className="font-medium text-sm">{notification.title}</h4>
+                <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                <span className="text-xs text-muted-foreground">{notification.timestamp}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                {!notification.read && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onMarkAsRead(notification.id)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                )}
+                <div className="w-2 h-2 rounded-full bg-primary" style={{ opacity: notification.read ? 0 : 1 }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }, [onMarkAsRead]);
+
+  return (
+    <div ref={containerRef} className="w-full">
+      <EnterpriseVirtualizedList
+        {...listProps}
+        renderItem={renderNotificationItem}
+      />
+    </div>
+  );
 };
 
 export function UserNotifications({ 
@@ -102,62 +182,10 @@ export function UserNotifications({
             <p>No notifications</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {localNotifications.map((notification) => {
-              const Icon = getNotificationIcon(notification.type);
-              const iconColor = getNotificationColor(notification.type);
-              
-              return (
-                <div
-                  key={notification.id}
-                  className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                    notification.read ? 'bg-muted/30' : 'bg-background border-primary/20'
-                  }`}
-                >
-                  <Icon className={`h-5 w-5 mt-0.5 ${iconColor}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h4 className={`font-medium text-sm ${
-                          notification.read ? 'text-muted-foreground' : 'text-foreground'
-                        }`}>
-                          {notification.title}
-                        </h4>
-                        <p className={`text-sm mt-1 ${
-                          notification.read ? 'text-muted-foreground' : 'text-muted-foreground'
-                        }`}>
-                          {notification.message}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {notification.timestamp}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {!notification.read && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleMarkAsRead(notification.id)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDismiss(notification.id)}
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <VirtualizedNotificationsList 
+            notifications={localNotifications}
+            onMarkAsRead={handleMarkAsRead}
+          />
         )}
       </CardContent>
     </Card>

@@ -14,9 +14,11 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { GridVirtualizedList } from "../../shared/components";
+// Using basic img tag for simple image display
 import { Badge } from "../../shared/components/ui/badge";
 import { Button } from "../../shared/components/ui/button";
 import {
@@ -24,8 +26,8 @@ import {
   CardContent,
 } from "../../shared/components/ui/card";
 import { Input } from "../../shared/components/ui/input";
-import { LandImage } from "../../shared/components/ui/land-image";
 import { Skeleton } from "../../shared/components/ui/skeleton";
+import { usePropertyGridVirtualization } from "../../shared/hooks/useVirtualizationHelpers";
 import { Property } from "../../shared/types/property";
 
 // Types for land listings extending the base Property interface
@@ -253,7 +255,7 @@ const LandCard: React.FC<{
   const StatusIcon = statusConfig.icon;
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border">
+    <Card className="group hover:shadow-lg transition-all duration-300 md:hover:scale-[1.02] border-border w-full max-w-xs sm:max-w-sm mx-auto h-full flex flex-col">
       <div 
         className="relative overflow-hidden cursor-pointer"
         onClick={(e) => {
@@ -270,20 +272,25 @@ const LandCard: React.FC<{
         }}
         aria-label={`View details for ${land.title}`}
       >
-        <LandImage
-          src={land.images[0] || '/placeholder-land.jpg'}
-          alt={land.title}
-          landType={land.landType}
-          className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-        />
-        <div className="absolute top-3 left-3">
-          <Badge className={statusConfig.color}>
+        <div className="aspect-[4/3] overflow-hidden">
+          <img
+            src={land.images[0] || '/placeholder-land.jpg'}
+            alt={land.title}
+            landType={land.landType}
+            useLandPlaceholder={true}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+          />
+        </div>
+        <div className="absolute top-2 left-2">
+          <Badge className={`${statusConfig.color} text-xs`}>
             <StatusIcon className="w-3 h-3 mr-1" />
-            {statusConfig.label}
+            <span className="hidden sm:inline">{statusConfig.label}</span>
+            <span className="sm:hidden">{statusConfig.label.split(' ')[0]}</span>
           </Badge>
         </div>
-        <div className="absolute top-3 right-3">
-          <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm">
+        <div className="absolute top-2 right-2">
+          <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm text-xs">
             Trust: {land.trustScore}%
           </Badge>
         </div>
@@ -295,10 +302,10 @@ const LandCard: React.FC<{
         </div>
       </div>
 
-      <CardContent className="p-4">
+      <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-2">
           <h3 
-            className="text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-pointer hover:text-primary transition-colors"
+            className="text-base sm:text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-pointer hover:text-primary transition-colors"
             onClick={(e) => {
               e.preventDefault();
               onViewDetails(land.id);
@@ -314,8 +321,11 @@ const LandCard: React.FC<{
           >
             {land.title}
           </h3>
-          <span className={`text-xs font-medium ml-2 ${riskConfig.color}`}>
+          <span className={`text-xs font-medium ml-2 ${riskConfig.color} hidden sm:inline`}>
             {riskConfig.label}
+          </span>
+          <span className={`text-xs font-medium ml-2 ${riskConfig.color} sm:hidden`}>
+            {riskConfig.label.split(' ')[0]}
           </span>
         </div>
 
@@ -339,8 +349,8 @@ const LandCard: React.FC<{
           </div>
         </div>
 
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-xl font-bold text-primary">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
+          <div className="text-lg sm:text-xl font-bold text-primary">
             KSh {land.price.toLocaleString()}
           </div>
           <div className="text-xs text-muted-foreground">
@@ -351,29 +361,34 @@ const LandCard: React.FC<{
           </div>
         </div>
 
+        {/* Spacer to push buttons to bottom */}
+        <div className="flex-1"></div>
+
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="flex-1"
+            className="flex-1 text-xs sm:text-sm"
             onClick={(e) => {
               e.stopPropagation();
               onVerify(land.id);
             }}
           >
-            <Shield className="w-4 h-4 mr-1" />
-            Verify
+            <Shield className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+            <span className="hidden sm:inline">Verify</span>
+            <span className="sm:hidden">✓</span>
           </Button>
           <Button 
             size="sm" 
-            className="flex-1"
+            className="flex-1 text-xs sm:text-sm"
             onClick={(e) => {
               e.stopPropagation();
               onViewDetails(land.id);
             }}
           >
-            Details
-            <ArrowRight className="w-4 h-4 ml-1" />
+            <span className="hidden sm:inline">Details</span>
+            <span className="sm:hidden">View</span>
+            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
           </Button>
         </div>
 
@@ -384,6 +399,31 @@ const LandCard: React.FC<{
         )}
       </CardContent>
     </Card>
+  );
+};
+
+// Simple responsive grid without virtualization for better mobile experience
+const ResponsiveLandGrid: React.FC<{
+  lands: LandListing[];
+  onVerify: (id: string) => void;
+  onViewDetails: (id: string) => void;
+}> = ({ lands, onVerify, onViewDetails }) => {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 px-2 sm:px-0 auto-rows-fr">
+      {lands.map((land, index) => (
+        <div
+          key={land.id}
+          className="animate-fadeInUp flex justify-center h-full"
+          style={{ animationDelay: `${index * 75}ms` }}
+        >
+          <LandCard
+            land={land}
+            onVerify={onVerify}
+            onViewDetails={onViewDetails}
+          />
+        </div>
+      ))}
+    </div>
   );
 };
 
@@ -500,21 +540,11 @@ export default function Lands(): JSX.Element {
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {landListings?.map((land, idx) => (
-          <div
-            key={land.id}
-            className="animate-fadeInUp"
-            style={{ animationDelay: `${idx * 75}ms` }}
-          >
-            <LandCard
-              land={land}
-              onVerify={handleVerifyLand}
-              onViewDetails={handleViewLandDetails}
-            />
-          </div>
-        ))}
-      </div>
+      <ResponsiveLandGrid
+        lands={landListings}
+        onVerify={handleVerifyLand}
+        onViewDetails={handleViewLandDetails}
+      />
     );
   };
 
@@ -556,7 +586,7 @@ export default function Lands(): JSX.Element {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Verification Stats */}
         <Card className="mb-6">
           <CardContent className="p-6">

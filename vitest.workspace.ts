@@ -12,7 +12,10 @@ export default defineWorkspace([
         'src/**/*.e2e.{test,spec}.{js,ts,jsx,tsx}'
       ],
       environment: 'jsdom',
-      setupFiles: ['src/shared/test-utils/setup.ts'],
+      setupFiles: [
+        'src/shared/test-utils/setup.ts',
+        'src/shared/components/images/__tests__/setup.ts'
+      ],
       globals: true,
       testTimeout: 30000,
       hookTimeout: 10000,

@@ -2,6 +2,8 @@ import React from "react";
 
 import { cn } from "../../lib/utils";
 
+import styles from "./logo.module.css";
+
 interface LogoProps {
   readonly className?: string;
   readonly size?: "sm" | "md" | "lg" | "xl";
@@ -10,6 +12,8 @@ interface LogoProps {
   readonly priority?: boolean;
   readonly onClick?: () => void;
   readonly href?: string;
+  readonly logoSrc?: string; // Allow custom logo source
+  readonly alt?: string; // Allow custom alt text
 }
 
 // Using const assertions for better TypeScript inference and immutability
@@ -53,6 +57,8 @@ export function Logo({
   priority = false,
   onClick,
   href = "/",
+  logoSrc = "/assets/Artmark.svg",
+  alt = "Artmark Logo",
 }: LogoProps) {
   // Optimized click handler with dependency array refinement
   // Only recreates when actual dependencies change, not on every render
@@ -62,25 +68,17 @@ export function Logo({
       return;
     }
 
-    // Enhanced navigation with better error handling and modern approach
+    // Simple navigation - let React Router handle SPA navigation if present
     if (interactive && href) {
       try {
-        // Prefer pushState for SPA-like behavior when possible
-        if (window.history?.pushState && href.startsWith("/")) {
-          window.history.pushState(null, "", href);
-          // Dispatch popstate event to notify router systems
-          window.dispatchEvent(new PopStateEvent("popstate"));
+        // For external links or when no router is present, use standard navigation
+        if (href.startsWith("http") || href.startsWith("mailto:") || href.startsWith("tel:")) {
+          window.location.href = href;
         } else {
+          // For internal links, use standard navigation and let React Router intercept if present
           window.location.href = href;
         }
       } catch (error) {
-        // Handle navigation error by logging and falling back to standard navigation
-        if (error instanceof Error) {
-          // Log error details for debugging while maintaining fallback behavior
-          const errorMessage = `Navigation error: ${error.message}`;
-          // Store error for potential debugging without console output
-          window.sessionStorage?.setItem("logo-nav-error", errorMessage);
-        }
         // Fallback to standard navigation
         window.location.href = href;
       }
@@ -165,20 +163,24 @@ export function Logo({
   return (
     <>
       <img
-        src="/assets/Artmark.svg"
-        alt="Artmark Logo"
-        className={computedClassName}
-        // Performance optimizations with enhanced loading strategy
+        src={logoSrc}
+        alt={alt}
+        className={cn(computedClassName, styles.logoImage)}
         loading={priority ? "eager" : "lazy"}
-        decoding="async"
-        fetchPriority={priority ? "high" : "auto"}
         // Enhanced accessibility and interaction handling
         {...interactiveProps}
-        // Additional performance hints for modern browsers
-        {...(priority && {
-          // Preload hint for critical logos - load handler for performance tracking
-          onLoad: () => void 0,
-        })}
+        // Prevent dragging for better UX
+        draggable={false}
+        // Add error handling for missing images
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          // Simple fallback - hide the broken image
+          target.style.display = "none";
+          // Log error in development
+          if (process.env.NODE_ENV === "development") {
+            console.warn(`Logo image failed to load: ${logoSrc}`);
+          }
+        }}
       />
 
       {/* Hidden accessibility helper for screen readers when interactive */}

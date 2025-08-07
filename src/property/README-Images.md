@@ -98,11 +98,11 @@ const residentialImages = getImagesByPropertyType('apartment');
 const randomCommercialImages = getRandomImages('commercial', 3);
 ```
 
-### Using the Image Selector
+### Using the Image Vault (Upload Component)
 ```typescript
-import { ImageSelector } from '../components/ImageSelector';
+import { ImageVault } from '../../shared/components/images/ImageVault';
 
-<ImageSelector
+<ImageVault
   propertyType="apartment"
   selectedImages={selectedImages}
   onImagesChange={handleImagesChange}

@@ -4,6 +4,7 @@ import { Check, Home, Upload, Building, Map, Info } from "lucide-react";
 import { useState, useCallback } from "react";
 
 import { apiRequest } from "../../infrastructure/api/queryClient";
+import PropertyImageVault from "../../shared/components/images/PropertyImageVault";
 import { Button } from "../../shared/components/ui/button";
 import {
   Card,
@@ -28,7 +29,6 @@ import {
 } from "../../shared/components/ui/tabs";
 import { Textarea } from "../../shared/components/ui/textarea";
 import { useToast } from "../../shared/hooks/use-toast";
-import { ImageSelector } from "../components/ImageSelector";
 import { PropertyImage, imagesToUrls } from "../utils/propertyImages";
 
 /* =========================================================================
@@ -995,11 +995,22 @@ export default function ListPropertyPage() {
                               Add high-quality photos to showcase your property
                             </p>
                           </div>
-                          <ImageSelector
-                            propertyType={propertyData.type}
-                            selectedImages={propertyData.selectedImages}
-                            onImagesChange={handleImagesChange}
-                            maxImages={10}
+                          <PropertyImageVault
+                            images={propertyData.selectedImages.map(img => ({
+                              id: img.id,
+                              src: img.url,
+                              alt: img.alt,
+                              file: new File([], img.alt) // Mock file for compatibility
+                            }))}
+                            onImagesChange={(images) => {
+                              const propertyImages = images.map(img => ({
+                                id: img.id,
+                                url: img.src,
+                                alt: img.alt
+                              }));
+                              handleImagesChange(propertyImages);
+                            }}
+                            maxFiles={10}
                           />
                         </div>
                       </div>

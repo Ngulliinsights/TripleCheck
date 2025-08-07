@@ -51,6 +51,7 @@
     "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
+    "moduleDetection": "force",
     
     // Performance & Compatibility
     "skipLibCheck": true,

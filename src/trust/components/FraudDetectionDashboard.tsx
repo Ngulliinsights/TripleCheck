@@ -1,430 +1,563 @@
-import {
-  Shield,
-  CheckCircle,
-  Clock,
-  Activity,
-  AlertTriangle,
-  Download,
-  Eye,
-  RefreshCw,
-} from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
-
-import { Badge } from "../../shared/components/ui/badge";
-import { Button } from "../../shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  fraudDetectionApi, 
-  type BackgroundScan, 
-  type FraudReport, 
-  type UserStats 
-} from "../services/fraudDetectionApi";
+  Shield, 
+  AlertTriangle, 
+  TrendingUp, 
+  TrendingDown,
+  Eye,
+  Clock,
+  DollarSign,
+  Users,
+  FileText,
+  Network,
+  Brain,
+  Zap,
+  Filter,
+  Download,
+  RefreshCw,
+  Search,
+  Bell
+} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
+import { Alert, AlertDescription, AlertTitle } from '../../shared/components/ui/alert';
+import { Badge } from '../../shared/components/ui/badge';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Input } from '../../shared/components/ui/input';
+import { Progress } from '../../shared/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shared/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs';
+import { useToast } from '../../shared/hooks/use-toast';
+import { useFraudDetection } from '../hooks/useFraudDetection';
+
+import { FraudAlertsList } from './FraudAlertsList';
+import { MLAnalyticsDisplay } from './MLAnalyticsDisplay';
+import { NetworkAnalysisVisualization } from './NetworkAnalysisVisualization';
 
 interface FraudDetectionDashboardProps {
-  readonly userId?: string | undefined;
+  userId?: string;
+  showControls?: boolean;
 }
 
-export default function FraudDetectionDashboard({ userId }: FraudDetectionDashboardProps): JSX.Element {
-  const [backgroundScans, setBackgroundScans] = useState<BackgroundScan[]>([]);
-  const [reports, setReports] = useState<FraudReport[]>([]);
-  const [userStats, setUserStats] = useState<UserStats>({ propertiesScanned: 0, averageScanTime: 0, cleanRate: 0 });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const FRAUD_CATEGORIES = [
+  { id: 'property_flipping', name: 'Property Flipping', color: 'bg-red-100 text-red-800' },
+  { id: 'mortgage_fraud', name: 'Mortgage Fraud', color: 'bg-orange-100 text-orange-800' },
+  { id: 'title_fraud', name: 'Title Fraud', color: 'bg-yellow-100 text-yellow-800' },
+  { id: 'money_laundering', name: 'Money Laundering', color: 'bg-purple-100 text-purple-800' },
+  { id: 'synthetic_identity', name: 'Synthetic Identity', color: 'bg-blue-100 text-blue-800' },
+  { id: 'document_forgery', name: 'Document Forgery', color: 'bg-green-100 text-green-800' }
+];
 
-  // Load initial data
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+const SEVERITY_CONFIG = {
+  critical: { color: 'text-red-600', bgColor: 'bg-red-50', icon: AlertTriangle },
+  high: { color: 'text-orange-600', bgColor: 'bg-orange-50', icon: TrendingUp },
+  medium: { color: 'text-yellow-600', bgColor: 'bg-yellow-50', icon: Eye },
+  low: { color: 'text-blue-600', bgColor: 'bg-blue-50', icon: Shield }
+};
 
-  // Auto-refresh active scans every 30 seconds
+export function FraudDetectionDashboard({ userId, showControls = true }: FraudDetectionDashboardProps) {
+  const { toast } = useToast();
+  const [selectedTab, setSelectedTab] = useState('overview');
+  const [timeRange, setTimeRange] = useState('7d');
+  const [severityFilter, setSeverityFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
+
+  const {
+    useFraudDashboard,
+    useFraudAlerts,
+    useSystemStatus,
+    processTransaction,
+    isProcessing
+  } = useFraudDetection();
+
+  const { 
+    data: dashboardData, 
+    isLoading: dashboardLoading,
+    refetch: refetchDashboard 
+  } = useFraudDashboard(userId, { timeRange });
+
+  const { 
+    data: alerts, 
+    isLoading: alertsLoading 
+  } = useFraudAlerts({
+    severity: severityFilter !== 'all' ? severityFilter : undefined,
+    category: categoryFilter !== 'all' ? categoryFilter : undefined,
+    search: searchQuery || undefined,
+    limit: 50
+  });
+
+  const { 
+    data: systemStatus,
+    isLoading: statusLoading 
+  } = useSystemStatus();
+
+  // Real-time updates
   useEffect(() => {
+    if (!isRealTimeEnabled) return;
+
     const interval = setInterval(() => {
-      // Use a ref to check current state without causing re-renders
-      if (backgroundScans.some(scan => scan.status === "scanning")) {
-        refreshActiveScans();
-      }
-    }, 30000);
+      refetchDashboard();
+    }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
-  }, []); // Remove backgroundScans dependency to prevent infinite loop
+  }, [isRealTimeEnabled, refetchDashboard]);
 
-  const loadDashboardData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const [scansData, reportsData, statsData] = await Promise.all([
-        fraudDetectionApi.getActiveScans(),
-        fraudDetectionApi.getRecentReports(),
-        fraudDetectionApi.getUserStats(),
-      ]);
-
-      setBackgroundScans(scansData);
-      setReports(reportsData);
-      setUserStats(statsData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-      console.error('Dashboard data loading error:', err);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleExportReport = () => {
+    toast({
+      title: "Export Started",
+      description: "Fraud detection report is being generated.",
+    });
   };
 
-  const refreshActiveScans = async () => {
+  const handleTestTransaction = async () => {
     try {
-      const scansData = await fraudDetectionApi.getActiveScans();
-      setBackgroundScans(scansData);
-    } catch (err) {
-      console.error('Failed to refresh scans:', err);
-    }
-  };
-
-  const getStatusColor = useCallback(
-    (status: FraudReport["status"]): string => {
-      const colorMap: Record<FraudReport["status"], string> = {
-        safe: "text-green-700 bg-green-50 border-green-200",
-        caution: "text-yellow-700 bg-yellow-50 border-yellow-200",
-        warning: "text-orange-700 bg-orange-50 border-orange-200",
-        blocked: "text-red-700 bg-red-50 border-red-200",
-      };
-      return colorMap[status];
-    },
-    []
-  );
-
-  const getStatusIcon = useCallback(
-    (status: FraudReport["status"]): JSX.Element => {
-      const iconMap: Record<
-        FraudReport["status"],
-        React.ComponentType<{ className?: string | undefined }>
-      > = {
-        safe: CheckCircle as React.ComponentType<{ className?: string | undefined }>,
-        caution: AlertTriangle as React.ComponentType<{ className?: string | undefined }>,
-        warning: AlertTriangle as React.ComponentType<{ className?: string | undefined }>,
-        blocked: AlertTriangle as React.ComponentType<{ className?: string | undefined }>,
-      };
-      const IconComponent = iconMap[status];
-      return <IconComponent className="w-5 h-5" />;
-    },
-    []
-  );
-
-  const getRiskColor = useCallback(
-    (riskLevel: BackgroundScan["riskLevel"]): string => {
-      const colorMap: Record<BackgroundScan["riskLevel"], string> = {
-        low: "bg-green-500",
-        medium: "bg-yellow-500",
-        high: "bg-orange-500",
-        critical: "bg-red-500",
-      };
-      return colorMap[riskLevel];
-    },
-    []
-  );
-
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      await fraudDetectionApi.refreshScans();
-      await loadDashboardData();
-    } catch (err) {
-      console.error('Failed to refresh:', err);
-      setError(err instanceof Error ? err.message : 'Failed to refresh data');
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, []);
-
-  const handleViewReport = useCallback(async (reportId: string) => {
-    try {
-      const reportDetails = await fraudDetectionApi.getReportDetails(reportId);
-      // For now, just log the details. In a real app, you'd navigate to a detailed view
-      console.log("Report details:", reportDetails);
-      // TODO: Navigate to detailed report page or open modal
-    } catch (err) {
-      console.error('Failed to view report:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load report details');
-    }
-  }, []);
-
-  const handleDownloadReport = useCallback(async (reportId: string) => {
-    try {
-      const blob = await fraudDetectionApi.downloadReport(reportId);
+      await processTransaction({
+        id: `test_${Date.now()}`,
+        amount: 1000000,
+        propertyId: 'test-property',
+        userId: userId || 'test-user',
+        paymentMethod: 'cash',
+        timestamp: new Date().toISOString()
+      });
       
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `fraud-report-${reportId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Failed to download report:', err);
-      setError(err instanceof Error ? err.message : 'Failed to download report');
+      toast({
+        title: "Test Transaction Processed",
+        description: "Test transaction has been analyzed for fraud patterns.",
+      });
+    } catch (error) {
+      toast({
+        title: "Test Failed",
+        description: error instanceof Error ? error.message : "Failed to process test transaction",
+        variant: "destructive"
+      });
     }
-  }, []);
+  };
 
-  // Show loading state
-  if (isLoading) {
+  if (dashboardLoading || statusLoading) {
     return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Fraud Detection Dashboard</h1>
-            <p className="text-muted-foreground">Loading your security data...</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-3">
-            <RefreshCw className="w-6 h-6 animate-spin text-primary" />
-            <span className="text-lg text-muted-foreground">Loading dashboard...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Fraud Detection Dashboard</h1>
-            <p className="text-muted-foreground">Monitor your property scans and security reports</p>
-          </div>
-          <Button onClick={loadDashboardData} className="flex items-center gap-2">
-            <RefreshCw className="w-4 h-4" />
-            Retry
-          </Button>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <AlertTriangle className="w-8 h-8 text-red-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-red-800 mb-2">Failed to Load Dashboard</h3>
-          <p className="text-red-700 mb-4">{error}</p>
-          <Button onClick={loadDashboardData} variant="destructive">
-            Try Again
-          </Button>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Dashboard Header */}
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Fraud Detection Dashboard</h1>
-          <p className="text-muted-foreground">Monitor your property scans and security reports</p>
+          <h1 className="text-3xl font-bold text-gray-900">Fraud Detection</h1>
+          <p className="text-gray-600">
+            Real-time fraud monitoring and analysis system
+          </p>
         </div>
-        <Button
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        
+        {showControls && (
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRealTimeEnabled(!isRealTimeEnabled)}
+            >
+              {isRealTimeEnabled ? (
+                <>
+                  <Zap className="h-4 w-4 mr-1 text-green-500" />
+                  Live
+                </>
+              ) : (
+                <>
+                  <Clock className="h-4 w-4 mr-1" />
+                  Paused
+                </>
+              )}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleTestTransaction} disabled={isProcessing}>
+              {isProcessing ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Test Transaction'
+              )}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportReport}>
+              <Download className="h-4 w-4 mr-1" />
+              Export Report
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Background Scanning Status */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-foreground">
-            Active Scans
-          </h2>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Activity className="w-4 h-4 animate-pulse text-primary" />
-            <span>Continuously monitoring properties</span>
-          </div>
-        </div>
+      {/* System Status Alert */}
+      {systemStatus && systemStatus.status !== 'operational' && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>System Status: {systemStatus.status}</AlertTitle>
+          <AlertDescription>
+            Fraud detection system is experiencing issues. Some features may be limited.
+          </AlertDescription>
+        </Alert>
+      )}
 
-        <div className="grid gap-4">
-          {backgroundScans.map((scan) => (
-            <Card key={scan.id}>
-              <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-foreground">
-                    Property {scan.propertyId}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Started {scan.startTime}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-3 h-3 rounded-full ${getRiskColor(scan.riskLevel)}`}
-                  />
-                  <span className="text-sm font-medium capitalize">
-                    {scan.riskLevel} Risk
-                  </span>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Scanning Progress</span>
-                  <span>{scan.progress}%</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div
-                    className="bg-primary h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${scan.progress}%` }}
-                  />
-                </div>
-              </div>
-
-              {scan.status === "scanning" && scan.estimatedCompletion && (
-                <p className="text-sm text-muted-foreground">
-                  Estimated completion: {scan.estimatedCompletion}
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Alerts</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboardData?.totalAlerts || 0}
                 </p>
-              )}
+                <p className="text-xs text-gray-500">
+                  {dashboardData?.alertsChange > 0 ? '+' : ''}{dashboardData?.alertsChange || 0}% from last period
+                </p>
+              </div>
+              <div className="p-3 bg-red-100 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              {scan.status === "complete" && (
-                <div className="flex items-center gap-2 text-sm text-trust-verified">
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Scan complete - Report available</span>
-                </div>
-              )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Critical Alerts</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboardData?.criticalAlerts || 0}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Require immediate attention
+                </p>
+              </div>
+              <div className="p-3 bg-orange-100 rounded-full">
+                <Shield className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Recent Reports */}
-      <section>
-        <h2 className="text-xl font-semibold text-foreground mb-6">
-          Recent Property Reports
-        </h2>
-        <div className="grid gap-6">
-          {reports.map((report) => (
-            <Card key={report.id} className={getStatusColor(report.status)}>
-              <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  {getStatusIcon(report.status)}
-                  <div>
-                    <h3 className="text-lg font-semibold">{report.title}</h3>
-                    <p className="text-sm opacity-75">
-                      Property {report.propertyId} • {report.completedAt}
-                    </p>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Transactions Analyzed</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboardData?.transactionsAnalyzed || 0}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {dashboardData?.analysisRate || 0}% fraud detection rate
+                </p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-full">
+                <Brain className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Potential Losses Prevented</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  KSh {(dashboardData?.lossesPrevented || 0).toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Estimated savings this period
+                </p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-full">
+                <DollarSign className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search alerts, transactions, or patterns..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1d">Last 24h</SelectItem>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={severityFilter} onValueChange={setSeverityFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Severity</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {FRAUD_CATEGORIES.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Main Content Tabs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Fraud Analysis Dashboard</CardTitle>
+          <CardDescription>
+            Comprehensive fraud detection and analysis tools
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="alerts">
+                Alerts
+                {alerts && alerts.length > 0 && (
+                  <Badge variant="destructive" className="ml-2 text-xs">
+                    {alerts.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="network">Network Analysis</TabsTrigger>
+              <TabsTrigger value="ml">ML Analytics</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6">
+              {/* Fraud Categories Breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Fraud Categories</CardTitle>
+                    <CardDescription>
+                      Distribution of fraud types detected
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {FRAUD_CATEGORIES.map((category) => {
+                        const count = dashboardData?.categoryBreakdown?.[category.id] || 0;
+                        const percentage = dashboardData?.totalAlerts ? 
+                          (count / dashboardData.totalAlerts) * 100 : 0;
+                        
+                        return (
+                          <div key={category.id} className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Badge className={category.color}>
+                                {category.name}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-20">
+                                <Progress value={percentage} className="h-2" />
+                              </div>
+                              <span className="text-sm font-medium w-8 text-right">
+                                {count}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Detection Trends</CardTitle>
+                    <CardDescription>
+                      Fraud detection patterns over time
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Detection Rate</span>
+                        <div className="flex items-center space-x-2">
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                          <span className="text-sm font-medium">
+                            {dashboardData?.detectionRate || 0}%
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">False Positive Rate</span>
+                        <div className="flex items-center space-x-2">
+                          <TrendingDown className="h-4 w-4 text-red-500" />
+                          <span className="text-sm font-medium">
+                            {dashboardData?.falsePositiveRate || 0}%
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Average Response Time</span>
+                        <span className="text-sm font-medium">
+                          {dashboardData?.avgResponseTime || 0}ms
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">System Uptime</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-sm font-medium">
+                            {systemStatus?.uptime || 0}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Activity */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Recent Activity</CardTitle>
+                  <CardDescription>
+                    Latest fraud detection events and system activities
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {dashboardData?.recentActivity?.map((activity: any, index: number) => (
+                      <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className={`p-2 rounded-full ${SEVERITY_CONFIG[activity.severity as keyof typeof SEVERITY_CONFIG]?.bgColor}`}>
+                          {React.createElement(SEVERITY_CONFIG[activity.severity as keyof typeof SEVERITY_CONFIG]?.icon || AlertTriangle, {
+                            className: `h-4 w-4 ${SEVERITY_CONFIG[activity.severity as keyof typeof SEVERITY_CONFIG]?.color}`
+                          })}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {activity.description}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(activity.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {activity.category}
+                        </Badge>
+                      </div>
+                    )) || (
+                      <div className="text-center py-8 text-gray-500">
+                        <Shield className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>No recent fraud activity detected</p>
+                        <p className="text-sm">System is monitoring transactions</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold mb-1">
-                    {report.riskScore}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="alerts">
+              <FraudAlertsList 
+                alerts={alerts}
+                isLoading={alertsLoading}
+                onAlertAction={(action, alert) => {
+                  toast({
+                    title: "Alert Action",
+                    description: `${action} action taken for alert ${alert.id}`,
+                  });
+                }}
+              />
+            </TabsContent>
+
+            <TabsContent value="network">
+              <NetworkAnalysisVisualization 
+                userId={userId}
+                timeRange={timeRange}
+              />
+            </TabsContent>
+
+            <TabsContent value="ml">
+              <MLAnalyticsDisplay 
+                userId={userId}
+                timeRange={timeRange}
+              />
+            </TabsContent>
+
+            <TabsContent value="reports">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Fraud Detection Reports</CardTitle>
+                  <CardDescription>
+                    Generate and download comprehensive fraud analysis reports
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p className="text-gray-500 mb-4">Report generation coming soon</p>
+                    <Button variant="outline" onClick={handleExportReport}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Generate Report
+                    </Button>
                   </div>
-                  <p className="text-xs opacity-75">Risk Score</p>
-                </div>
-              </div>
-
-              <p className="text-base mb-6">{report.summary}</p>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-3">Key Findings</h4>
-                  <ul className="space-y-2">
-                    {report.keyFindings.map((finding, index) => (
-                      <li
-                        key={index}
-                        className="flex items-start gap-2 text-sm"
-                      >
-                        <div className="w-1.5 h-1.5 rounded-full bg-current mt-2 flex-shrink-0" />
-                        <span>{finding}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">Recommendations</h4>
-                  <ul className="space-y-2">
-                    {report.recommendations.map((recommendation, index) => (
-                      <li
-                        key={index}
-                        className="flex items-start gap-2 text-sm"
-                      >
-                        <div className="w-1.5 h-1.5 rounded-full bg-current mt-2 flex-shrink-0" />
-                        <span>{recommendation}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleViewReport(report.id)}
-                  className="flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  View Full Report
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownloadReport(report.id)}
-                  className="flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download PDF
-                </Button>
-              </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Quick Stats */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent className="p-6 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-green-100 rounded-full">
-              <Shield className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-foreground mb-1">{userStats.propertiesScanned}</div>
-          <h3 className="font-medium text-foreground mb-1">Properties Scanned</h3>
-          <p className="text-sm text-muted-foreground">This month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-blue-100 rounded-full">
-              <Clock className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-foreground mb-1">{userStats.averageScanTime} min</div>
-          <h3 className="font-medium text-foreground mb-1">Avg Scan Time</h3>
-          <p className="text-sm text-muted-foreground">Your properties</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-green-100 rounded-full">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-foreground mb-1">{userStats.cleanRate}%</div>
-          <h3 className="font-medium text-foreground mb-1">Clean Rate</h3>
-          <p className="text-sm text-muted-foreground">Your portfolio</p>
-          </CardContent>
-        </Card>
-      </section>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+export default FraudDetectionDashboard;

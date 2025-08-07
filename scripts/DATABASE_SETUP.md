@@ -22,7 +22,7 @@ The database setup process involves:
 Run the complete database deployment script:
 
 ```bash
-tsx scripts/deploy-database.ts
+tsx database/scripts/deploy.ts
 ```
 
 This single command will:

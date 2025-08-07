@@ -1,344 +1,1105 @@
-// Removed Framer Motion for better performance and stability
 import { B2BContextualPrompt } from "@shared/components/b2b";
+// Using basic img tag for simple image display
 import { Badge } from "@shared/components/ui/badge";
 import { Button } from "@shared/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@shared/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@shared/components/ui/tooltip";
 import { cn } from "@shared/lib/utils";
-import { Heart, Share2, Star, MapPin, Maximize2, Bed, Bath, Square } from "lucide-react";
-import { useState, useCallback, useMemo } from "react";
+import {
+  Heart,
+  Share2,
+  Star,
+  MapPin,
+  Maximize2,
+  Bed,
+  Bath,
+  Square,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Calendar,
+  AlertCircle,
+} from "lucide-react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+  memo,
+  createContext,
+  useContext,
+} from "react";
 
-// More precise type definitions for better type safety
+/* ------------------------------------------------------------------ */
+/* Configuration and Constants                                        */
+/* ------------------------------------------------------------------ */
+
+// Centralized configuration that can be easily modified or moved to context
+const CONFIG = {
+  EXCHANGE_RATE: 130, // KES to USD - should come from API in production
+  HIGH_VALUE_THRESHOLD: 5_000_000, // KES threshold for B2B prompts
+  IMAGE_PRELOAD_COUNT: 2, // Number of images to preload ahead
+  MAX_VISIBLE_FEATURES: 3, // Maximum feature tags to show
+  PLACEHOLDER_IMAGE: "/assets/placeholder-property.jpg",
+} as const;
+
+// Error boundary context for better error handling
+const ErrorContext = createContext<{
+  reportError: (error: Error, context: string) => void;
+} | null>(null);
+
+/* ------------------------------------------------------------------ */
+/* Enhanced Types with Branded IDs                                   */
+/* ------------------------------------------------------------------ */
+
+// Branded types prevent accidentally passing wrong string types
+type PropertyId = string & { readonly __brand: unique symbol };
+type ImageUrl = string & { readonly __brand: unique symbol };
+
 type PropertyType = "residential" | "commercial";
 type VerificationStatus = "verified" | "pending" | "warning";
+type PriceType = "sale" | "rent" | "lease";
 
-// Enhanced property interface with better type constraints
 interface Property {
-  readonly id: string;
+  readonly id: PropertyId;
   readonly title: string;
   readonly type: PropertyType;
+  readonly priceType?: PriceType;
   readonly price: number;
+  readonly originalPrice?: number;
   readonly location: string;
-  readonly images: readonly string[]; // readonly array for immutability
+  readonly images: readonly ImageUrl[];
   readonly bedrooms?: number;
   readonly bathrooms?: number;
   readonly area: number;
-  readonly trustScore: number; // Consider adding range validation (0-100)
+  readonly trustScore: number;
   readonly verificationStatus: VerificationStatus;
   readonly features: readonly string[];
+  readonly dateAdded?: Date;
+  readonly viewCount?: number;
+  readonly isNew?: boolean;
+  readonly isFeatured?: boolean;
 }
 
 interface PropertyCardProps {
   readonly property: Property;
   readonly className?: string;
-  readonly onSave?: (propertyId: string) => void; // Added callback for save action
-  readonly onShare?: (propertyId: string) => void; // Added callback for share action
-  readonly onViewDetails?: (propertyId: string) => void; // Added callback for view details
+  readonly showQuickActions?: boolean;
+  readonly isInWishlist?: boolean;
+  readonly viewMode?: "grid" | "list";
+  readonly onSave?: (id: PropertyId) => void;
+  readonly onShare?: (id: PropertyId) => void;
+  readonly onViewDetails?: (id: PropertyId) => void;
+  readonly priority?: boolean; // For above-the-fold images
 }
 
-export function PropertyCard({ 
-  property, 
-  className,
-  onSave,
-  onShare,
-  onViewDetails
-}: PropertyCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+/* ------------------------------------------------------------------ */
+/* Custom Hooks for Business Logic Separation                        */
+/* ------------------------------------------------------------------ */
 
-  // Removed complex animation variants for better performance
+/**
+ * Hook for managing image gallery state and navigation
+ * Separates complex image logic from the main component
+ */
+function useImageGallery(images: readonly ImageUrl[], priority = false) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loadStates, setLoadStates] = useState<
+    Record<number, "loading" | "loaded" | "error">
+  >({});
+  const preloadedImages = useRef(new Set<string>());
 
-  // Validate required data before rendering - show placeholder if no images
-  const hasImages = property.images && property.images.length > 0;
-  const displayImages = useMemo(() => {
-    return hasImages ? property.images : ['/assets/apartment-luxury-1.jpg'];
-  }, [hasImages, property.images]);
-  
-  if (!hasImages) {
-    console.warn(`Property ${property.id} has no images, using placeholder`);
+  // Memoized processed images with validation
+  const processedImages = useMemo(() => {
+    const validImages = images.filter(
+      (img): img is ImageUrl => typeof img === "string" && img.trim() !== ""
+    );
+    return validImages.length > 0 ? validImages : [CONFIG.PLACEHOLDER_IMAGE as ImageUrl];
+  }, [images]);
+
+  // Smart preloading strategy - only preload when needed
+  useEffect(() => {
+    if (processedImages.length <= 1) return;
+
+    const handleImageLoad = (index: number) => {
+      setLoadStates((prev) => ({ ...prev, [index]: "loaded" }));
+    };
+
+    const handleImageError = (index: number) => {
+      setLoadStates((prev) => ({ ...prev, [index]: "error" }));
+    };
+
+    const preloadImage = (src: string, index: number) => {
+      if (preloadedImages.current.has(src)) return;
+
+      const img = new window.Image();
+      img.onload = () => {
+        handleImageLoad(index);
+        preloadedImages.current.add(src);
+      };
+      img.onerror = () => handleImageError(index);
+
+      // Priority loading for above-the-fold images
+      if (priority && index === 0) {
+        img.loading = "eager";
+      }
+
+      img.src = src;
+      setLoadStates((prev) => ({ ...prev, [index]: "loading" }));
+    };
+
+    // Preload current image and next few images
+    const indicesToPreload = [
+      currentIndex,
+      (currentIndex + 1) % processedImages.length,
+      (currentIndex + 2) % processedImages.length,
+    ].slice(0, CONFIG.IMAGE_PRELOAD_COUNT);
+
+    indicesToPreload.forEach((index) => {
+      const src = processedImages.at(index);
+      if (src) preloadImage(src, index);
+    });
+
+    // Cleanup function to cancel ongoing loads
+    return () => {
+      // In a real app, you'd want to track and cancel ongoing requests
+    };
+  }, [currentIndex, processedImages, priority]);
+
+  const navigateToImage = useCallback(
+    (index: number) => {
+      if (
+        index >= 0 &&
+        index < processedImages.length &&
+        index !== currentIndex
+      ) {
+        setCurrentIndex(index);
+      }
+    },
+    [processedImages.length, currentIndex]
+  );
+
+  const navigateNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % processedImages.length);
+  }, [processedImages.length]);
+
+  const navigatePrev = useCallback(() => {
+    setCurrentIndex((prev) =>
+      prev === 0 ? processedImages.length - 1 : prev - 1
+    );
+  }, [processedImages.length]);
+
+  // Handle keyboard navigation including number keys
+  const handleKeyNavigation = useCallback(
+    (event: React.KeyboardEvent) => {
+      switch (event.key) {
+        case "ArrowLeft":
+          event.preventDefault();
+          navigatePrev();
+          break;
+        case "ArrowRight":
+          event.preventDefault();
+          navigateNext();
+          break;
+        default: {
+          // Handle number keys for direct navigation (1-9)
+          const num = parseInt(event.key);
+          if (num >= 1 && num <= 9 && num <= processedImages.length) {
+            event.preventDefault();
+            navigateToImage(num - 1);
+          }
+          break;
+        }
+      }
+    },
+    [navigateNext, navigatePrev, navigateToImage, processedImages.length]
+  );
+
+  const currentImage = useMemo((): ImageUrl => {
+    const imageState = loadStates[currentIndex as keyof typeof loadStates];
+    const imageAtIndex = processedImages.at(currentIndex);
+    return imageState === "error" ? (CONFIG.PLACEHOLDER_IMAGE as ImageUrl) : (imageAtIndex ?? CONFIG.PLACEHOLDER_IMAGE as ImageUrl);
+  }, [processedImages, currentIndex, loadStates]);
+
+  return {
+    currentIndex,
+    currentImage,
+    processedImages,
+    loadStates,
+    hasMultipleImages: processedImages.length > 1,
+    hasValidImages: processedImages.at(0) != CONFIG.PLACEHOLDER_IMAGE,
+    navigateToImage,
+    navigateNext,
+    navigatePrev,
+    handleKeyNavigation,
+  };
+}
+
+/**
+ * Hook for managing property actions with enhanced error handling
+ * Centralizes all user interaction logic
+ */
+function usePropertyActions(
+  property: Property,
+  callbacks: {
+    onSave?: (id: PropertyId) => void;
+    onShare?: (id: PropertyId) => void;
+    onViewDetails?: (id: PropertyId) => void;
   }
+) {
+  const errorContext = useContext(ErrorContext);
 
-  // Memoized event handlers to prevent unnecessary re-renders
-  const handleHoverStart = useCallback(() => {
-    setIsHovered(true);
-  }, []);
+  const handleAction = useCallback(
+    async (
+      event: React.MouseEvent | undefined,
+      action: () => Promise<void> | void,
+      actionName: string
+    ) => {
+      event?.stopPropagation();
 
-  const handleHoverEnd = useCallback(() => {
-    setIsHovered(false);
-  }, []);
+      try {
+        await action();
+      } catch (error) {
+        const errorObj =
+          error instanceof Error ? error : new Error(`${actionName} failed`);
+        errorContext?.reportError(errorObj, `PropertyCard.${actionName}`);
 
-  const handleImageNavigation = useCallback((index: number) => {
-    // Add bounds checking for extra safety
-    if (index >= 0 && index < displayImages.length) {
-      setCurrentImageIndex(index);
-    }
-  }, [displayImages.length]);
+        // User-facing error notification could go here
+        // Note: Console usage for development debugging only
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('PropertyCard error:', errorContext);
+        }
+      }
+    },
+    [errorContext]
+  );
 
-  const handleSave = useCallback(() => {
-    onSave?.(property.id);
-  }, [onSave, property.id]);
+  const handleSave = useCallback(
+    (event: React.MouseEvent) => {
+      handleAction(event, () => callbacks.onSave?.(property.id), "Save");
+    },
+    [handleAction, callbacks, property.id]
+  );
 
-  const handleShare = useCallback(() => {
-    onShare?.(property.id);
-  }, [onShare, property.id]);
+  const handleShare = useCallback(
+    (event: React.MouseEvent) => {
+      handleAction(
+        event,
+        async () => {
+          // Enhanced sharing with Web Share API and fallback
+          if (navigator.share) {
+            await navigator.share({
+              title: property.title,
+              text: `Check out this property: ${property.title}`,
+              url: `${window.location.origin}/property/${property.id}`,
+            });
+          } else if (navigator.clipboard) {
+            // Fallback to clipboard
+            await navigator.clipboard.writeText(
+              `${window.location.origin}/property/${property.id}`
+            );
+            // Show toast notification here in real app
+          } else {
+            callbacks.onShare?.(property.id);
+          }
+        },
+        "Share"
+      );
+    },
+    [handleAction, callbacks, property.id, property.title]
+  );
 
-  const handleViewDetails = useCallback(() => {
-    onViewDetails?.(property.id);
-  }, [onViewDetails, property.id]);
+  const handleViewDetails = useCallback(
+    (event?: React.MouseEvent) => {
+      handleAction(
+        event,
+        () => callbacks.onViewDetails?.(property.id),
+        "ViewDetails"
+      );
+    },
+    [handleAction, callbacks, property.id]
+  );
 
-  // Enhanced keyboard navigation for image gallery
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'ArrowLeft' && currentImageIndex > 0) {
-      setCurrentImageIndex(prev => prev - 1);
-    } else if (event.key === 'ArrowRight' && currentImageIndex < displayImages.length - 1) {
-      setCurrentImageIndex(prev => prev + 1);
-    }
-  }, [currentImageIndex, displayImages.length]);
+  return { handleSave, handleShare, handleViewDetails };
+}
 
-  // Fixed badge variant calculation to match actual Badge component variants
-  const badgeVariant = useMemo(() => {
-    switch (property.verificationStatus) {
-      case "verified":
-        return "default"; // Using "default" instead of "success" since it's not available
-      case "pending":
-        return "outline"; // Using "outline" instead of "warning" since it's not available
-      case "warning":
-        return "destructive";
-      default:
-        // Type-safe exhaustive check
-        const _exhaustiveCheck: never = property.verificationStatus;
-        return "destructive";
-    }
-  }, [property.verificationStatus]);
+/**
+ * Hook for intersection observer-based visibility detection
+ * Optimizes rendering for cards not in viewport
+ */
+function useIntersectionObserver(threshold = 0.1) {
+  const [isVisible, setIsVisible] = useState(false);
+  const [hasBeenVisible, setHasBeenVisible] = useState(false);
+  const elementRef = useRef<HTMLDivElement>(null);
 
-  // Enhanced badge styling based on verification status
-  const badgeClassName = useMemo(() => {
-    const baseClasses = "flex items-center space-x-1";
-    switch (property.verificationStatus) {
-      case "verified":
-        return cn(baseClasses, "bg-green-100 text-green-800 border-green-300");
-      case "pending":
-        return cn(baseClasses, "bg-yellow-100 text-yellow-800 border-yellow-300");
-      case "warning":
-        return cn(baseClasses, "bg-red-100 text-red-800 border-red-300");
-      default:
-        return baseClasses;
-    }
-  }, [property.verificationStatus]);
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
 
-  // Memoized property features to prevent unnecessary re-renders
-  const propertyFeatures = useMemo(() => (
-    <div className="flex items-center justify-between text-sm">
-      {property.bedrooms && (
-        <div className="flex items-center">
-          <Bed className="w-4 h-4 mr-1" aria-hidden="true" />
-          <span>{property.bedrooms} bed{property.bedrooms !== 1 ? 's' : ''}</span>
-        </div>
-      )}
-      {property.bathrooms && (
-        <div className="flex items-center">
-          <Bath className="w-4 h-4 mr-1" aria-hidden="true" />
-          <span>{property.bathrooms} bath{property.bathrooms !== 1 ? 's' : ''}</span>
-        </div>
-      )}
-      <div className="flex items-center">
-        <Square className="w-4 h-4 mr-1" aria-hidden="true" />
-        <span>{property.area} m²</span>
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (!entry) return;
+        
+        const visible = entry.isIntersecting;
+        setIsVisible(visible);
+
+        // Once visible, stay rendered for better UX
+        if (visible && !hasBeenVisible) {
+          setHasBeenVisible(true);
+        }
+      },
+      { threshold }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [threshold, hasBeenVisible]);
+
+  return { elementRef, isVisible, hasBeenVisible };
+}
+
+/* ------------------------------------------------------------------ */
+/* Utility Functions with Enhanced Logic                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Enhanced price formatting with proper currency handling
+ * Now supports multiple currencies and proper localization
+ */
+const formatPropertyPrice = (
+  price: number,
+  originalPrice?: number,
+  priceType?: PriceType
+) => {
+  // Use proper number formatting for locale
+  const kenyanPrice = new Intl.NumberFormat("en-KE", {
+    style: "currency",
+    currency: "KES",
+    minimumFractionDigits: 0,
+  }).format(price);
+
+  const usdPrice = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+  }).format(Math.round(price / CONFIG.EXCHANGE_RATE));
+
+  // More readable price type labels
+  const priceLabels: Record<PriceType, string> = {
+    rent: "/month",
+    lease: "/year",
+    sale: "",
+  };
+
+  return {
+    primary: kenyanPrice,
+    secondary: `~${usdPrice}`,
+    label: priceType ? (priceLabels[priceType as keyof typeof priceLabels] ?? "") : "",
+    hasDiscount: Boolean(originalPrice && originalPrice > price),
+    discountPercentage:
+      originalPrice && originalPrice > price ?
+        Math.round(((originalPrice - price) / originalPrice) * 100)
+      : 0,
+  };
+};
+
+/**
+ * Enhanced badge variant logic with better type safety
+ */
+const getVerificationBadgeConfig = (status: VerificationStatus) => {
+  const configs = {
+    verified: {
+      variant: "default" as const,
+      className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      icon: "✓",
+      label: "Verified",
+    },
+    pending: {
+      variant: "outline" as const,
+      className: "bg-amber-50 text-amber-700 border-amber-200",
+      icon: "⏳",
+      label: "Pending",
+    },
+    warning: {
+      variant: "destructive" as const,
+      className: "bg-red-50 text-red-700 border-red-200",
+      icon: "⚠️",
+      label: "Warning",
+    },
+  } as const;
+
+  return configs[status as keyof typeof configs] ?? configs.pending;
+};
+
+/* ------------------------------------------------------------------ */
+/* Sub-components for Better Organization                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Skeleton loader component for better loading states
+ */
+const PropertyCardSkeleton = memo(() => (
+  <div className="group relative bg-card rounded-xl overflow-hidden shadow-sm border border-gray-100 animate-pulse">
+    <div className="aspect-[4/3] bg-gray-200" />
+    <div className="p-6 space-y-4">
+      <div className="space-y-2">
+        <div className="h-6 bg-gray-200 rounded w-3/4" />
+        <div className="h-4 bg-gray-200 rounded w-1/2" />
+      </div>
+      <div className="flex justify-between">
+        <div className="h-4 bg-gray-200 rounded w-16" />
+        <div className="h-4 bg-gray-200 rounded w-16" />
+        <div className="h-4 bg-gray-200 rounded w-16" />
+      </div>
+      <div className="flex justify-between items-center">
+        <div className="h-8 bg-gray-200 rounded w-32" />
+        <div className="h-10 bg-gray-200 rounded w-24" />
       </div>
     </div>
-  ), [property.bedrooms, property.bathrooms, property.area]);
+  </div>
+));
 
-  return (
-    <div
-      className={cn(
-        "group relative bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1",
-        className
-      )}
-      onMouseEnter={handleHoverStart}
-      onMouseLeave={handleHoverEnd}
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-      role="article"
-      aria-label={`Property: ${property.title}`}
-    >
-      {/* Enhanced Property Images with Gallery */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
-        {/* Image with enhanced hover effects */}
-        <img
-          src={displayImages[currentImageIndex]}
-          alt={`${property.title} - Image ${currentImageIndex + 1} of ${displayImages.length}`}
-          className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"
-          loading="lazy"
-          onError={(e) => {
-            // Fallback to placeholder if image fails to load
-            e.currentTarget.src = '/placeholder-property.jpg';
-          }}
-        />
-        
-        {/* Subtle overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        {/* Property type indicator */}
-        <div className="absolute top-2 left-2 z-10">
-          <Badge 
-            variant="secondary" 
-            className="bg-black/20 text-white border-white/20 backdrop-blur-sm font-medium"
-          >
-            {property.type === 'commercial' ? '🏢 Commercial' : '🏠 Residential'}
-          </Badge>
-        </div>
-        
-        {/* Enhanced Image Navigation with better styling */}
-        {displayImages.length > 1 && hasImages && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-2 bg-black/20 backdrop-blur-sm rounded-full px-3 py-1">
-            {displayImages.map((_, index) => {
-              const isSelected = currentImageIndex === index;
-              return (
-                <button
-                  key={index}
-                  className={cn(
-                    "w-2 h-2 rounded-full transition-all duration-200",
-                    isSelected 
-                      ? "bg-white scale-125" 
-                      : "bg-white/60 hover:bg-white/80 hover:scale-110"
-                  )}
-                  onClick={() => handleImageNavigation(index)}
-                  aria-label={`View image ${index + 1}`}
-                />
-              );
-            })}
-          </div>
-        )}
-        
-        {/* Image count indicator */}
-        {displayImages.length > 1 && hasImages && (
-          <div className="absolute bottom-3 right-3 bg-black/40 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
-            {currentImageIndex + 1}/{displayImages.length}
-          </div>
-        )}
+PropertyCardSkeleton.displayName = "PropertyCardSkeleton";
 
-        {/* Enhanced Trust Badge with better positioning */}
-        <div className="absolute top-12 left-2 z-10">
-          <Badge
-            variant={badgeVariant}
+/**
+ * Image gallery component with enhanced accessibility
+ */
+const ImageGallery = memo(
+  ({
+    gallery,
+    property,
+    isHovered,
+    onViewDetails,
+  }: {
+    gallery: ReturnType<typeof useImageGallery>;
+    property: Property;
+    isHovered: boolean;
+    onViewDetails: () => void;
+  }) => {
+    const {
+      currentIndex,
+      currentImage,
+      processedImages,
+      hasMultipleImages,
+      navigateToImage,
+      navigateNext,
+      navigatePrev,
+      handleKeyNavigation,
+    } = gallery;
+
+    return (
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 aspect-[4/3]">
+        {/* Main Image with Enhanced Loading State */}
+        <button
+          className="relative w-full h-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
+          onClick={onViewDetails}
+          onKeyDown={handleKeyNavigation}
+          aria-label={`View details for ${property.title}. Image ${currentIndex + 1} of ${processedImages.length}. Use arrow keys or number keys 1-${Math.min(9, processedImages.length)} to navigate images.`}
+          type="button"
+        >
+          <img
+            src={currentImage}
+            alt={`${property.title} - View ${currentIndex + 1} of ${processedImages.length}`}
+            width={400}
+            height={300}
             className={cn(
-              badgeClassName,
-              "bg-white/90 backdrop-blur-sm shadow-sm border-0 font-medium"
+              "w-full h-full object-cover transition-all duration-500",
+              "group-hover:scale-110 group-hover:brightness-105"
             )}
-            role="img"
-            aria-label={`Trust score: ${property.trustScore}, Status: ${property.verificationStatus}`}
+            loading="lazy"
+            landType={property.type === 'commercial' ? 'commercial' : 'residential'}
+            priority={false}
+          />
+        </button>
+
+        {/* Enhanced Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+        {/* Property Badges with Enhanced Design */}
+        <div className="absolute top-3 left-3 z-10 space-y-2">
+          <Badge
+            variant="secondary"
+            className="bg-black/40 text-white border-white/20 backdrop-blur-md font-medium"
           >
-            <Star className="w-3 h-3 fill-current" aria-hidden="true" />
-            <span>{property.trustScore}% Trusted</span>
+            {property.type === "commercial" ?
+              "🏢 Commercial"
+            : "🏠 Residential"}
           </Badge>
+
+          {(() => {
+            const badgeConfig = getVerificationBadgeConfig(
+              property.verificationStatus
+            );
+            return (
+              <Badge
+                variant={badgeConfig.variant}
+                className={cn(
+                  "flex items-center space-x-1 font-medium bg-white/95 backdrop-blur-md shadow-sm border-0",
+                  badgeConfig.className
+                )}
+                role="img"
+                aria-label={`Trust score: ${property.trustScore}%, Status: ${badgeConfig.label}`}
+              >
+                <Star className="w-3 h-3 fill-current" aria-hidden="true" />
+                <span>{property.trustScore}%</span>
+              </Badge>
+            );
+          })()}
         </div>
 
-        {/* Enhanced Quick Actions with better styling */}
-        <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  size="icon" 
-                  variant="secondary"
-                  onClick={handleSave}
-                  aria-label="Save property"
-                  className="bg-white/90 hover:bg-white text-gray-700 hover:text-red-500 backdrop-blur-sm shadow-sm border-0 transition-all duration-200"
-                >
-                  <Heart className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Save to favorites</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  size="icon" 
-                  variant="secondary"
-                  onClick={handleShare}
-                  aria-label="Share property"
-                  className="bg-white/90 hover:bg-white text-gray-700 hover:text-blue-500 backdrop-blur-sm shadow-sm border-0 transition-all duration-200"
-                >
-                  <Share2 className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Share property</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        {/* Enhanced Navigation Controls */}
+        {hasMultipleImages && isHovered && (
+          <>
+            <button
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition-all duration-200 backdrop-blur-sm z-10 focus:outline-none focus:ring-2 focus:ring-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigatePrev();
+              }}
+              aria-label="Previous image"
+              type="button"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition-all duration-200 backdrop-blur-sm z-10 focus:outline-none focus:ring-2 focus:ring-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigateNext();
+              }}
+              aria-label="Next image"
+              type="button"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </>
+        )}
+
+        {/* Enhanced Image Indicators */}
+        {hasMultipleImages && (
+          <>
+            <div
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-2"
+              role="tablist"
+              aria-label="Image navigation"
+            >
+              {processedImages.map((_, index) => {
+                const isSelected = currentIndex === index;
+                return (
+                  <button
+                    key={index}
+                    className={cn(
+                      "w-2 h-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-white",
+                      isSelected ? "bg-white scale-125" : (
+                        "bg-white/60 hover:bg-white/80 hover:scale-110"
+                      )
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigateToImage(index);
+                    }}
+                    aria-label={`View image ${index + 1} of ${processedImages.length}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={isSelected}
+                  />
+                );
+              })}
+            </div>
+
+            <div className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full font-medium">
+              {currentIndex + 1}/{processedImages.length}
+            </div>
+          </>
+        )}
+
+        {/* Accessibility Announcement for Screen Readers */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          Viewing image {currentIndex + 1} of {processedImages.length}
         </div>
       </div>
+    );
+  }
+);
 
-      {/* Enhanced Property Details */}
-      <div className="p-5 space-y-4">
-        <div className="space-y-3">
-          <h3 className="font-bold text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-            {property.title}
-          </h3>
-          <div className="flex items-center text-muted-foreground">
-            <MapPin className="w-4 h-4 mr-2 text-primary" aria-hidden="true" />
-            <span className="text-sm line-clamp-1 font-medium">{property.location}</span>
+ImageGallery.displayName = "ImageGallery";
+
+/* ------------------------------------------------------------------ */
+/* Main Component with Enhanced Architecture                          */
+/* ------------------------------------------------------------------ */
+
+export const PropertyCard = memo<PropertyCardProps>(
+  ({
+    property,
+    className,
+    showQuickActions = true,
+    isInWishlist = false,
+    viewMode = "grid",
+    onSave,
+    onShare,
+    onViewDetails,
+    priority = false,
+  }) => {
+    // Intersection observer for performance optimization
+    const { elementRef, hasBeenVisible } = useIntersectionObserver(0.1);
+
+    // Custom hooks for separated concerns
+    const gallery = useImageGallery(property.images, priority);
+    const actions = usePropertyActions(property, {
+      ...(onSave && { onSave }),
+      ...(onShare && { onShare }),
+      ...(onViewDetails && { onViewDetails }),
+    });
+
+    // Local state for interactions
+    const [isHovered, setIsHovered] = useState(false);
+
+    // Memoized computed values for better performance
+    const formattedPrice = useMemo(
+      () =>
+        formatPropertyPrice(
+          property.price,
+          property.originalPrice,
+          property.priceType
+        ),
+      [property.price, property.originalPrice, property.priceType]
+    );
+
+    const propertyFeatures = useMemo(
+      () => (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          {property.bedrooms && (
+            <div
+              className="flex items-center"
+              title={`${property.bedrooms} bedroom${property.bedrooms !== 1 ? "s" : ""}`}
+            >
+              <Bed className="w-4 h-4 mr-1" aria-hidden="true" />
+              <span>{property.bedrooms}</span>
+            </div>
+          )}
+          {property.bathrooms && (
+            <div
+              className="flex items-center"
+              title={`${property.bathrooms} bathroom${property.bathrooms !== 1 ? "s" : ""}`}
+            >
+              <Bath className="w-4 h-4 mr-1" aria-hidden="true" />
+              <span>{property.bathrooms}</span>
+            </div>
+          )}
+          <div
+            className="flex items-center"
+            title={`${property.area} square meters`}
+          >
+            <Square className="w-4 h-4 mr-1" aria-hidden="true" />
+            <span>{property.area} m²</span>
           </div>
+          {property.viewCount && (
+            <div
+              className="flex items-center text-xs"
+              title={`Viewed ${property.viewCount} times`}
+            >
+              <Eye className="w-3 h-3 mr-1" aria-hidden="true" />
+              <span>{property.viewCount}</span>
+            </div>
+          )}
         </div>
+      ),
+      [property.bedrooms, property.bathrooms, property.area, property.viewCount]
+    );
 
-        {/* Property Features - now memoized */}
-        {propertyFeatures}
+    // Enhanced keyboard navigation for the entire card
+    const handleCardKeyDown = useCallback(
+      (event: React.KeyboardEvent) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          actions.handleViewDetails();
+        } else {
+          gallery.handleKeyNavigation(event);
+        }
+      },
+      [actions, gallery]
+    );
 
-        {/* Fixed Property Tags with proper list structure to address ARIA requirements */}
-        {property.features && property.features.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {property.features.map((feature, index) => (
-              <Badge 
-                key={index} 
-                variant="outline" 
-                className="text-xs"
+    // Return skeleton if not yet visible (performance optimization)
+    if (!hasBeenVisible && !priority) {
+      return (
+        <div ref={elementRef}>
+          <PropertyCardSkeleton />
+        </div>
+      );
+    }
+
+    return (
+      <div
+        ref={elementRef}
+        className={cn(
+          "group relative bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-2 border border-gray-100 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
+          viewMode === "list" && "flex flex-row max-w-4xl",
+          className
+        )}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onKeyDown={handleCardKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label={`Property: ${property.title} in ${property.location}. Press Enter to view details.`}
+      >
+        {/* Enhanced Status Indicators */}
+        {(property.isNew || property.isFeatured) && (
+          <div className="absolute top-0 left-0 z-20">
+            {property.isNew && (
+              <div className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-br-lg shadow-md">
+                NEW
+              </div>
+            )}
+            {property.isFeatured && (
+              <div
+                className={cn(
+                  "bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-br-lg shadow-md",
+                  property.isNew && "mt-8"
+                )}
               >
-                {feature}
-              </Badge>
-            ))}
+                FEATURED
+              </div>
+            )}
           </div>
         )}
 
-        {/* Enhanced Price and CTA */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div className="space-y-1">
-            <div className="flex items-baseline space-x-1">
-              <span className="text-2xl font-bold text-primary">
-                KES {property.price.toLocaleString()}
-              </span>
-              {property.type === "commercial" && (
-                <span className="text-sm text-muted-foreground font-medium">/month</span>
+        {/* Image Gallery Section */}
+        <div
+          className={cn(
+            "relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200",
+            viewMode === "grid" ? "aspect-[4/3]" : "w-80 h-60"
+          )}
+        >
+          <ImageGallery
+            gallery={gallery}
+            property={property}
+            isHovered={isHovered}
+            onViewDetails={actions.handleViewDetails}
+          />
+
+          {/* Enhanced Quick Action Buttons */}
+          {showQuickActions && (
+            <div className="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      onClick={actions.handleSave}
+                      aria-label={
+                        isInWishlist ?
+                          "Remove from wishlist"
+                        : "Add to wishlist"
+                      }
+                      className={cn(
+                        "bg-white/95 backdrop-blur-md shadow-sm border-0 transition-all duration-200 hover:scale-110",
+                        isInWishlist ?
+                          "text-red-500 hover:text-red-600"
+                        : "text-gray-600 hover:text-red-500"
+                      )}
+                      type="button"
+                    >
+                      <Heart
+                        className={cn(
+                          "w-4 h-4",
+                          isInWishlist && "fill-current"
+                        )}
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {isInWishlist ?
+                        "Remove from wishlist"
+                      : "Add to wishlist"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      onClick={actions.handleShare}
+                      aria-label="Share property"
+                      className="bg-white/95 hover:bg-white text-gray-600 hover:text-blue-500 backdrop-blur-md shadow-sm border-0 transition-all duration-200 hover:scale-110"
+                      type="button"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Share property (supports Web Share API)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          )}
+        </div>
+
+        {/* Enhanced Property Details Section */}
+        <div className="p-6 space-y-4 flex-1">
+          {/* Title and Date with Better Typography */}
+          <div className="space-y-3">
+            <div className="flex items-start justify-between">
+              <h3 className="font-bold text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors flex-1 mr-2">
+                {property.title}
+              </h3>
+              {property.dateAdded && (
+                <div className="flex items-center text-xs text-muted-foreground bg-gray-50 px-2 py-1 rounded-full">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  <time dateTime={property.dateAdded.toISOString()}>
+                    {property.dateAdded.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </time>
+                </div>
               )}
             </div>
-            <div className="text-xs text-muted-foreground">
-              ~${Math.round(property.price / 130).toLocaleString()} USD
+
+            <div className="flex items-center text-muted-foreground">
+              <MapPin
+                className="w-4 h-4 mr-2 text-primary flex-shrink-0"
+                aria-hidden="true"
+              />
+              <span className="text-sm line-clamp-1 font-medium">
+                {property.location}
+              </span>
             </div>
           </div>
-          <Button 
-            className="bg-primary hover:bg-primary/90 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105"
-            onClick={handleViewDetails}
-            aria-label={`View details for ${property.title}`}
-          >
-            View Details
-            <Maximize2 className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
 
-        {/* B2B Contextual Prompt for High-Value Properties */}
-        {property.price > 5000000 && (
-          <div className="mt-4">
-            <B2BContextualPrompt
-              context="high_value_property"
-              propertyValue={property.price}
-              className="text-xs"
-            />
+          {/* Enhanced Property Features */}
+          {propertyFeatures}
+
+          {/* Enhanced Feature Tags with Better UX */}
+          {property.features && property.features.length > 0 && (
+            <div className="space-y-2">
+              <ul
+                className="flex flex-wrap gap-2"
+                aria-label="Property features"
+              >
+                {property.features
+                  .slice(0, CONFIG.MAX_VISIBLE_FEATURES)
+                  .map((feature, index) => (
+                    <li key={index}>
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-gray-50 hover:bg-gray-100 transition-colors"
+                      >
+                        {feature}
+                      </Badge>
+                    </li>
+                  ))}
+                {property.features.length > CONFIG.MAX_VISIBLE_FEATURES && (
+                  <li>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-gray-50 hover:bg-gray-100 transition-colors cursor-help"
+                          >
+                            +
+                            {property.features.length -
+                              CONFIG.MAX_VISIBLE_FEATURES}{" "}
+                            more
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="max-w-xs">
+                            <p className="font-medium mb-2">
+                              Additional features:
+                            </p>
+                            <ul className="text-sm space-y-1">
+                              {property.features
+                                .slice(CONFIG.MAX_VISIBLE_FEATURES)
+                                .map((feature, index) => (
+                                  <li key={index}>• {feature}</li>
+                                ))}
+                            </ul>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {/* Enhanced Price and Action Section */}
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+            <div className="space-y-1">
+              <div className="flex items-baseline space-x-2 flex-wrap">
+                {formattedPrice.hasDiscount && property.originalPrice && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground line-through">
+                      {new Intl.NumberFormat("en-KE", {
+                        style: "currency",
+                        currency: "KES",
+                        minimumFractionDigits: 0,
+                      }).format(property.originalPrice)}
+                    </span>
+                    <Badge variant="destructive" className="text-xs">
+                      -{formattedPrice.discountPercentage}%
+                    </Badge>
+                  </div>
+                )}
+                <div className="flex items-baseline space-x-1">
+                  <span className="text-2xl font-bold text-primary">
+                    {formattedPrice.primary}
+                  </span>
+                  {formattedPrice.label && (
+                    <span className="text-sm text-muted-foreground font-medium">
+                      {formattedPrice.label}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {formattedPrice.secondary}
+              </div>
+            </div>
+
+            <Button
+              className="bg-primary hover:bg-primary/90 text-white font-medium px-6 py-2 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105 focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              onClick={actions.handleViewDetails}
+              aria-label={`View details for ${property.title}`}
+              type="button"
+            >
+              View Details
+              <Maximize2 className="w-4 h-4 ml-2" />
+            </Button>
           </div>
-        )}
+
+          {/* Enhanced B2B Contextual Prompt */}
+          {property.price > CONFIG.HIGH_VALUE_THRESHOLD && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <B2BContextualPrompt
+                context="high_value_property"
+                propertyValue={property.price}
+                className="text-xs bg-blue-50 p-3 rounded-lg border border-blue-200"
+              />
+            </div>
+          )}
+
+          {/* Enhanced Accessibility Information */}
+          <div className="sr-only">
+            Property summary: {property.title} located in {property.location}.
+            {property.bedrooms && ` ${property.bedrooms} bedrooms,`}
+            {property.bathrooms && ` ${property.bathrooms} bathrooms,`}
+            {` ${property.area} square meters.`}
+            {` Price: ${formattedPrice.primary}${formattedPrice.label}.`}
+            {` Trust score: ${property.trustScore}%.`}
+            {` Status: ${property.verificationStatus}.`}
+            {gallery.hasMultipleImages &&
+              ` Has ${gallery.processedImages.length} images. Use arrow keys or number keys to navigate images.`}
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+);
+
+PropertyCard.displayName = "PropertyCard";
+
+/* ------------------------------------------------------------------ */
+/* Enhanced Error Boundary for Production Use                        */
+/* ------------------------------------------------------------------ */
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
 }
+
+export class PropertyCardErrorBoundary extends React.Component<
+  React.PropsWithChildren<Record<string, never>>,
+  ErrorBoundaryState
+> {
+  constructor(props: React.PropsWithChildren<Record<string, never>>) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  override componentDidCatch(_error: Error, _errorInfo: React.ErrorInfo) {
+    // Log error to monitoring service (Sentry, LogRocket, etc.)
+    if (process.env.NODE_ENV === 'development') {
+      
+    }
+    // In production, send to error monitoring service
+  }
+
+  override render(): React.ReactNode {
+    if (this.state.hasError) {
+      return (
+        <div className="group relative bg-card rounded-xl overflow-hidden shadow-sm border border-red-200 p-6">
+          <div className="text-center space-y-4">
+            <AlertCircle className="w-12 h-12 text-red-400 mx-auto" />
+            <div>
+              <h3 className="font-medium text-gray-900">
+                Unable to load property
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                There was an error displaying this property card.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => this.setState({ hasError: false })}
+              className="text-red-600 border-red-200 hover:bg-red-50"
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Usage Examples and Type Helpers                                   */
+/* ------------------------------------------------------------------ */
+
+// Helper function to create properly typed Property objects
+export const createProperty = (
+  data: Omit<Property, "id"> & { id: string }
+): Property => ({
+  ...data,
+  id: data.id as PropertyId,
+  images: data.images as ImageUrl[],
+});
+
+// Example usage with error boundary:
+/*
+<PropertyCardErrorBoundary>
+  <PropertyCard
+    property={propertyData}
+    onSave={(id) => console.log('Save:', id)}
+    onShare={(id) => console.log('Share:', id)}
+    onViewDetails={(id) => console.log('View:', id)}
+    priority={index < 3} // Mark first 3 cards as priority
+  />
+</PropertyCardErrorBoundary>
+*/
+
+export default PropertyCard;

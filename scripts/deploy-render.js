@@ -37,7 +37,7 @@ function checkFile(filePath, description) {
 function checkPackageScript(scriptName) {
   try {
     const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-    if (packageJson.scripts && packageJson.scripts[scriptName]) {
+    if (packageJson.scripts?.[scriptName]) {
       log(`✅ npm script "${scriptName}" exists`, colors.green);
       return true;
     } else {
@@ -237,7 +237,7 @@ async function main() {
   }
 
   // Results
-  log('\n' + '='.repeat(50), colors.bright);
+  log(`\n${  '='.repeat(50)}`, colors.bright);
   if (allChecks) {
     log('✅ All checks passed! Ready for Render deployment', colors.green);
   } else {

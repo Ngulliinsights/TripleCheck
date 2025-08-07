@@ -4,8 +4,8 @@
 .env.development
 .env.test
 
-# Source files (not needed for static deployment)
-src/
+# Source files needed for build
+# src/ - Keep for Vercel build
 server/
 scripts/
 tests/
@@ -46,6 +46,9 @@ playwright.config.ts
 # Development configs
 tsconfig.*.json
 !tsconfig.json
+!vite.config.ts
+!tailwind.config.ts
+!postcss.config.js
 eslint.config.js
 .snyk
 
@@ -61,7 +64,8 @@ __pycache__/
 # Large asset directories that aren't needed
 srclib/
 srcsharedtest-utils/
-config/
+# Keep src/shared/config but exclude root config/
+/config/
 
 # Keep only essential files for deployment
 !dist/

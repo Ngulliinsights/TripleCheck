@@ -29,3 +29,6 @@ export interface SearchFilters {
   bedrooms?: number;
   bathrooms?: number;
 }
+
+// Re-export Property types
+export type { Property, PropertyFeatures } from './property';

@@ -1,86 +1,83 @@
 /**
  * Enhanced Hooks Usage Example
- * 
+ *
  * This component demonstrates the proper usage of our enhanced hooks:
  * - useSafeQuery for robust data fetching
  * - useOptimisticMutation for instant UI feedback
  * - useOperationTracking for performance monitoring
  */
 
-import { Badge } from '@shared/components/ui/badge';
-import { Button } from '@shared/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Input } from '@shared/components/ui/input';
-import { 
-  useComponentTracking, 
-  useInteractionTracking, 
-  useOperationDebug 
-} from '@shared/hooks/useOperationTracking';
-import { useOptimisticMutation } from '@shared/hooks/useOptimisticMutation';
-import { 
-  useSafePropertiesQuery, 
-  useSafeUserQuery, 
-  useSafeTrustScoreQuery 
-} from '@shared/hooks/useSafeQuery';
-import { Loader2, CheckCircle, AlertCircle, Activity } from 'lucide-react';
+import { Badge } from "@shared/components/ui/badge";
+import { Button } from "@shared/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@shared/components/ui/card";
+import { Input } from "@shared/components/ui/input";
+import {
+  useComponentTracking,
+  useInteractionTracking,
+  useOperationDebug,
+} from "@shared/hooks/useOperationTracking";
+import { useOptimisticMutation } from "@shared/hooks/useOptimisticMutation";
+import {
+  useSafePropertiesQuery,
+  useSafeUserQuery,
+  useSafeTrustScoreQuery,
+} from "@shared/hooks/useSafeQuery";
+import { Loader2, CheckCircle, AlertCircle, Activity } from "lucide-react";
 
 // Import our enhanced hooks
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 export default function EnhancedHooksExample() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
 
   // 1. Component Performance Tracking
   const { renderCount, mountOperationId } = useComponentTracking(
-    'EnhancedHooksExample', 
+    "EnhancedHooksExample",
     [searchQuery, selectedPropertyId]
   );
-  const { trackInteraction } = useInteractionTracking('EnhancedHooksExample');
+  const { trackInteraction } = useInteractionTracking("EnhancedHooksExample");
 
   // 2. Safe Data Fetching with Fallbacks
-  const { 
-    data: properties, 
-    isLoading: propertiesLoading, 
+  const {
+    data: properties,
+    isLoading: propertiesLoading,
     hasValidData: hasProperties,
     error: propertiesError,
-    cancelRequest: cancelPropertiesRequest
+    cancelRequest: cancelPropertiesRequest,
   } = useSafePropertiesQuery(
     { search: searchQuery },
     {
-      context: 'hooks-example',
+      context: "hooks-example",
       staleTime: 5 * 60 * 1000,
       debounceMs: 300, // Debounce search queries
       validator: (data) => {
         // Custom validation for our specific needs
         if (!Array.isArray(data)) return [];
-        return data.filter(property => 
-          property?.id && 
-          property.title &&
-          property.price > 0
+        return data.filter(
+          (property) => property?.id && property.title && property.price > 0
         );
-      }
+      },
     }
   );
 
   // 3. User Authentication with Safe Handling
-  const { 
-    data: user, 
-    hasValidData: isAuthenticated 
-  } = useSafeUserQuery({
-    context: 'hooks-example',
-    retry: false // Don't retry auth failures
+  const { data: user, hasValidData: isAuthenticated } = useSafeUserQuery({
+    context: "hooks-example",
+    retry: false, // Don't retry auth failures
   });
 
   // 4. Trust Score with Conditional Loading
-  const { 
-    data: trustScore, 
-    isLoading: trustLoading 
-  } = useSafeTrustScoreQuery(
-    user?.id || '',
+  const { data: trustScore, isLoading: trustLoading } = useSafeTrustScoreQuery(
+    user?.id || "",
     {
       enabled: isAuthenticated && !!user?.id,
-      context: 'hooks-example'
+      context: "hooks-example",
     }
   );
 
@@ -88,61 +85,59 @@ export default function EnhancedHooksExample() {
   const updatePropertyMutation = useOptimisticMutation({
     mutationFn: async (data: { id: string; title: string }) => {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return { ...data, updatedAt: new Date().toISOString() };
     },
-    queryKey: ['/api/properties'],
+    queryKey: ["/api/properties"],
     optimisticUpdate: (oldData, variables) => {
       if (!Array.isArray(oldData)) return oldData;
-      return oldData.map(property => 
-        property.id === variables.id 
-          ? { ...property, ...variables, isOptimistic: true }
-          : property
+      return oldData.map((property) =>
+        property.id === variables.id ?
+          { ...property, ...variables, isOptimistic: true }
+        : property
       );
     },
     onError: (error, variables, context) => {
-      console.error('Property update failed:', error);
+      console.error("Property update failed:", error);
       // Error handling with context
     },
     onSettled: () => {
       // Always refetch to ensure consistency
-      console.log('Property update completed');
-    }
+      console.log("Property update completed");
+    },
   });
 
   // 6. Performance Debugging (Development Only)
-  const { 
-    debugInfo, 
-    logTimeline, 
-    logRaceConditions 
-  } = useOperationDebug('EnhancedHooksExample');
+  const { debugInfo, logTimeline, logRaceConditions } = useOperationDebug(
+    "EnhancedHooksExample"
+  );
 
   // Event Handlers with Interaction Tracking
   const handleSearch = (query: string) => {
-    trackInteraction('search', 'Property search performed', {
+    trackInteraction("search", "Property search performed", {
       query,
       resultCount: properties.length,
-      renderCount
+      renderCount,
     });
     setSearchQuery(query);
   };
 
   const handlePropertyUpdate = (propertyId: string, newTitle: string) => {
-    trackInteraction('update', 'Property title updated', {
+    trackInteraction("update", "Property title updated", {
       propertyId,
       newTitle,
-      isOptimistic: true
+      isOptimistic: true,
     });
 
     updatePropertyMutation.mutate({
       id: propertyId,
-      title: newTitle
+      title: newTitle,
     });
   };
 
   const handleCancelRequests = () => {
-    trackInteraction('cancel', 'Requests cancelled', {
-      activeRequests: debugInfo?.componentOperations?.length || 0
+    trackInteraction("cancel", "Requests cancelled", {
+      activeRequests: debugInfo?.componentOperations?.length || 0,
     });
     cancelPropertiesRequest();
   };
@@ -158,7 +153,6 @@ export default function EnhancedHooksExample() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          
           {/* Search Input with Debouncing */}
           <div className="space-y-2">
             <label htmlFor="search" className="text-sm font-medium">
@@ -175,24 +169,24 @@ export default function EnhancedHooksExample() {
 
           {/* User Authentication Status */}
           <div className="flex items-center gap-2">
-            {isAuthenticated ? (
+            {isAuthenticated ?
               <>
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Authenticated as {user?.firstName} {user?.lastName}</span>
-                {trustLoading ? (
+                <span>
+                  Authenticated as {user?.firstName} {user?.lastName}
+                </span>
+                {trustLoading ?
                   <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Badge variant="secondary">
+                : <Badge variant="secondary">
                     Trust Score: {trustScore?.score || 0}
                   </Badge>
-                )}
+                }
               </>
-            ) : (
-              <>
+            : <>
                 <AlertCircle className="w-4 h-4 text-yellow-500" />
                 <span>Not authenticated</span>
               </>
-            )}
+            }
           </div>
 
           {/* Properties List with Safe Loading */}
@@ -210,13 +204,9 @@ export default function EnhancedHooksExample() {
                 >
                   Cancel Requests
                 </Button>
-                {import.meta.env.MODE === 'development' && (
+                {import.meta.env.MODE === "development" && (
                   <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={logTimeline}
-                    >
+                    <Button variant="outline" size="sm" onClick={logTimeline}>
                       Log Timeline
                     </Button>
                     <Button
@@ -251,7 +241,9 @@ export default function EnhancedHooksExample() {
                   <div
                     key={property.id}
                     className={`p-3 border rounded-lg ${
-                      property.isOptimistic ? 'bg-blue-50 border-blue-200' : 'bg-white'
+                      property.isOptimistic ?
+                        "bg-blue-50 border-blue-200"
+                      : "bg-white"
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -270,17 +262,17 @@ export default function EnhancedHooksExample() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handlePropertyUpdate(
-                            property.id, 
-                            `${property.title} (Updated)`
-                          )}
+                          onClick={() =>
+                            handlePropertyUpdate(
+                              property.id,
+                              `${property.title} (Updated)`
+                            )
+                          }
                           disabled={updatePropertyMutation.isPending}
                         >
-                          {updatePropertyMutation.isPending ? (
+                          {updatePropertyMutation.isPending ?
                             <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            'Update'
-                          )}
+                          : "Update"}
                         </Button>
                       </div>
                     </div>
@@ -297,7 +289,7 @@ export default function EnhancedHooksExample() {
           </div>
 
           {/* Debug Information (Development Only) */}
-          {import.meta.env.MODE === 'development' && debugInfo && (
+          {import.meta.env.MODE === "development" && debugInfo && (
             <details className="text-xs">
               <summary className="cursor-pointer font-medium">
                 Debug Information

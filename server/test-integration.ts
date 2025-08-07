@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+
 import { getDatabase } from './infrastructure/database/init';
 
 const router = Router();

@@ -9,9 +9,15 @@ import { ArrowLeftRight, X, Eye } from "lucide-react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
+// Using basic img tag for simple image display
 import { Badge } from "../../shared/components/ui/badge";
 import { Button } from "../../shared/components/ui/button";
 import { Card } from "../../shared/components/ui/card";
+import { 
+  formatComparePrice,
+  safeGetPropertyImage,
+  getComparePropertyTitle
+} from "../../shared/utils/compare-utils";
 import { useCompare } from "../contexts/CompareContext";
 
 interface CompareBarProps {
@@ -37,14 +43,7 @@ export function CompareBar({ onQuickCompare }: CompareBarProps = {}) {
     navigate(`/compare?properties=${propertyIds}`);
   };
 
-  const formatPrice = (price?: number) => {
-    if (!price) return "Price on request";
-    return new Intl.NumberFormat("en-KE", {
-      style: "currency",
-      currency: "KES",
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  // Using unified price formatting from compare-utils
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 p-4">
@@ -68,11 +67,15 @@ export function CompareBar({ onQuickCompare }: CompareBarProps = {}) {
                     className="flex-shrink-0 relative group"
                   >
                     <div className="w-16 h-12 bg-muted rounded overflow-hidden border">
-                      {property.images?.[0] ? (
+                      {safeGetPropertyImage(property) ? (
                         <img
-                          src={property.images[0]}
-                          alt={property.title}
+                          src={safeGetPropertyImage(property)}
+                          alt={getComparePropertyTitle(property)}
+                          width={64}
+                          height={48}
                           className="w-full h-full object-cover"
+                          loading="lazy"
+                          useLandPlaceholder={false}
                         />
                       ) : (
                         <div className="w-full h-full bg-muted flex items-center justify-center">
@@ -85,7 +88,7 @@ export function CompareBar({ onQuickCompare }: CompareBarProps = {}) {
                     <button
                       onClick={() => removeFromCompare(property.id)}
                       className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label={`Remove ${property.title} from comparison`}
+                      aria-label={`Remove ${getComparePropertyTitle(property)} from comparison`}
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -98,9 +101,9 @@ export function CompareBar({ onQuickCompare }: CompareBarProps = {}) {
                 {selectedProperties.slice(0, 2).map((property, index) => (
                   <div key={property.id} className="flex flex-col">
                     <span className="font-medium text-foreground truncate max-w-32">
-                      {property.title}
+                      {getComparePropertyTitle(property)}
                     </span>
-                    <span>{formatPrice(property.price)}</span>
+                    <span>{formatComparePrice(property.price)}</span>
                   </div>
                 ))}
                 {selectedProperties.length > 2 && (

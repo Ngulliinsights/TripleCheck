@@ -1,641 +1,514 @@
-import { Alert, AlertDescription } from '@shared/components/ui/alert';
-import { Badge } from '@shared/components/ui/badge';
-import { Button } from '@shared/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Checkbox } from '@shared/components/ui/checkbox';
-import { Input } from '@shared/components/ui/input';
-import { Label } from '@shared/components/ui/label';
-import { Progress } from '@shared/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
-import { Textarea } from '@shared/components/ui/textarea';
-import { cn } from '@shared/lib/utils';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  MapPin, 
-  FileText, 
-  Users, 
-  Building,
-  Scale,
-  UserCheck,
-  Upload,
-  CheckCircle,
-  AlertTriangle,
-  Info
-} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle, AlertTriangle, Clock, MapPin, FileText, Users, Shield, Gavel } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import type { 
-  VerificationSessionRequest,
-  LayerType,
-  Property 
-} from '@/types/land-verification';
+import { Badge } from '../../shared/components/ui/badge';
+import { Button } from '../../shared/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import { Progress } from '../../shared/components/ui/progress';
+import { Separator } from '../../shared/components/ui/separator';
+import { useToast } from '../../shared/hooks/use-toast';
+import { useLandVerification } from '../hooks/useLandVerification';
+
+import { CommunityInterviewTemplate } from './CommunityInterviewTemplate';
+import { ExpertCoordinationInterface } from './ExpertCoordinationInterface';
+import { RiskAssessmentDisplay } from './RiskAssessmentDisplay';
+import { VerificationProgressTracker } from './VerificationProgressTracker';
 
 interface VerificationWizardProps {
-  property?: Property;
-  onComplete: (request: VerificationSessionRequest) => void;
-  onCancel: () => void;
-  className?: string;
+  propertyId: string;
+  userId: string;
+  onComplete?: (sessionId: string) => void;
+  onCancel?: () => void;
 }
 
-interface WizardStep {
+interface VerificationLayer {
   id: string;
-  title: string;
+  type: 'registry' | 'physical' | 'community' | 'government' | 'legal' | 'expert';
+  name: string;
   description: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
+  estimatedDuration: number;
   required: boolean;
+  status: 'not_started' | 'in_progress' | 'completed' | 'failed';
 }
 
-const WIZARD_STEPS: WizardStep[] = [
-  {
-    id: 'property',
-    title: 'Property Selection',
-    description: 'Select or confirm the property to verify',
-    icon: Building,
-    required: true
-  },
-  {
-    id: 'documents',
-    title: 'Document Upload',
-    description: 'Upload property documents for verification',
-    icon: FileText,
-    required: true
-  },
-  {
-    id: 'location',
-    title: 'Location Details',
-    description: 'Provide GPS coordinates and boundary information',
-    icon: MapPin,
-    required: true
-  },
-  {
-    id: 'layers',
-    title: 'Verification Layers',
-    description: 'Select verification methods to perform',
-    icon: CheckCircle,
-    required: true
-  },
-  {
-    id: 'community',
-    title: 'Community Intelligence',
-    description: 'Configure community feedback collection',
-    icon: Users,
-    required: false
-  },
-  {
-    id: 'experts',
-    title: 'Expert Assignment',
-    description: 'Request professional expert involvement',
-    icon: UserCheck,
-    required: false
-  },
-  {
-    id: 'review',
-    title: 'Review & Submit',
-    description: 'Review your verification request',
-    icon: Scale,
-    required: true
-  }
-];
-
-const VERIFICATION_LAYERS: { id: LayerType; name: string; description: string; estimatedTime: string; cost: string }[] = [
+const VERIFICATION_LAYERS: VerificationLayer[] = [
   {
     id: 'registry',
+    type: 'registry',
     name: 'Land Registry Verification',
     description: 'Verify ownership records and title deed authenticity',
-    estimatedTime: '2-3 days',
-    cost: 'KES 5,000'
+    icon: FileText,
+    estimatedDuration: 4,
+    required: true,
+    status: 'not_started'
   },
   {
     id: 'physical',
-    name: 'Physical Ground-Truthing',
-    description: 'On-site verification of property boundaries and features',
-    estimatedTime: '3-5 days',
-    cost: 'KES 15,000'
-  },
-  {
-    id: 'government',
-    name: 'Government Designations',
-    description: 'Check for government restrictions and designations',
-    estimatedTime: '1-2 days',
-    cost: 'KES 3,000'
-  },
-  {
-    id: 'legal',
-    name: 'Legal History Investigation',
-    description: 'Search court records and legal disputes',
-    estimatedTime: '2-4 days',
-    cost: 'KES 8,000'
+    type: 'physical',
+    name: 'Physical Verification',
+    description: 'On-ground verification of boundaries and property condition',
+    icon: MapPin,
+    estimatedDuration: 8,
+    required: true,
+    status: 'not_started'
   },
   {
     id: 'community',
+    type: 'community',
     name: 'Community Intelligence',
-    description: 'Gather feedback from local community members',
-    estimatedTime: '3-7 days',
-    cost: 'KES 10,000'
+    description: 'Gather local knowledge and community feedback',
+    icon: Users,
+    estimatedDuration: 6,
+    required: true,
+    status: 'not_started'
+  },
+  {
+    id: 'government',
+    type: 'government',
+    name: 'Government Compliance',
+    description: 'Verify compliance with government regulations',
+    icon: Shield,
+    estimatedDuration: 12,
+    required: true,
+    status: 'not_started'
+  },
+  {
+    id: 'legal',
+    type: 'legal',
+    name: 'Legal Assessment',
+    description: 'Legal review of documents and ownership chain',
+    icon: Gavel,
+    estimatedDuration: 16,
+    required: false,
+    status: 'not_started'
   },
   {
     id: 'expert',
-    name: 'Professional Expert Assessment',
-    description: 'Independent assessment by qualified professionals',
-    estimatedTime: '5-10 days',
-    cost: 'KES 25,000'
+    type: 'expert',
+    name: 'Expert Review',
+    description: 'Professional surveyor and legal expert assessment',
+    icon: CheckCircle,
+    estimatedDuration: 24,
+    required: false,
+    status: 'not_started'
   }
 ];
 
-export default function VerificationWizard({
-  property,
-  onComplete,
-  onCancel,
-  className
-}: VerificationWizardProps) {
+export function VerificationWizard({ propertyId, userId, onComplete, onCancel }: VerificationWizardProps) {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<any>({
-    propertyId: property?.id || null,
-    selectedLayers: ['registry', 'government'] as LayerType[],
-    documents: [],
-    coordinates: { lat: '', lng: '' },
-    boundaryPoints: [],
-    communityConfig: {
-      enabled: false,
-      targetAudiences: [],
-      confidentialityLevel: 'public'
-    },
-    expertConfig: {
-      enabled: false,
-      expertTypes: [],
-      budget: 50000
-    },
-    priority: 'medium',
-    notes: '',
-    estimatedCompletionDate: '',
-    monitoringEnabled: true
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
+  const [verificationSession, setVerificationSession] = useState<any>(null);
+  const [isInitiating, setIsInitiating] = useState(false);
+  const [layers, setLayers] = useState(VERIFICATION_LAYERS);
 
-  const currentStepData = WIZARD_STEPS[currentStep];
-  const progress = ((currentStep + 1) / WIZARD_STEPS.length) * 100;
+  const {
+    initiateVerification,
+    executeLayer,
+    getVerificationStatus,
+    generateRiskAssessment,
+    isLoading,
+    error
+  } = useLandVerification();
 
-  const validateStep = (stepId: string): boolean => {
-    const newErrors: Record<string, string> = {};
+  useEffect(() => {
+    // Pre-select required layers
+    const requiredLayers = layers.filter(layer => layer.required).map(layer => layer.id);
+    setSelectedLayers(requiredLayers);
+  }, [layers]);
 
-    switch (stepId) {
-      case 'property':
-        if (!formData.propertyId) {
-          newErrors.propertyId = 'Please select a property';
-        }
-        break;
-      case 'documents':
-        if (formData.documents.length === 0) {
-          newErrors.documents = 'Please upload at least one document';
-        }
-        break;
-      case 'location':
-        if (!formData.coordinates.lat || !formData.coordinates.lng) {
-          newErrors.coordinates = 'Please provide GPS coordinates';
-        }
-        break;
-      case 'layers':
-        if (formData.selectedLayers.length === 0) {
-          newErrors.selectedLayers = 'Please select at least one verification layer';
-        }
-        break;
+  const handleLayerToggle = (layerId: string) => {
+    const layer = layers.find(l => l.id === layerId);
+    if (layer?.required) return; // Can't deselect required layers
+
+    setSelectedLayers(prev => 
+      prev.includes(layerId) 
+        ? prev.filter(id => id !== layerId)
+        : [...prev, layerId]
+    );
+  };
+
+  const handleInitiateVerification = async () => {
+    if (selectedLayers.length === 0) {
+      toast({
+        title: "No Layers Selected",
+        description: "Please select at least one verification layer to proceed.",
+        variant: "destructive"
+      });
+      return;
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (validateStep(currentStepData.id)) {
-      setCurrentStep(prev => Math.min(prev + 1, WIZARD_STEPS.length - 1));
-    }
-  };
-
-  const handlePrevious = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 0));
-  };
-
-  const handleSubmit = async () => {
-    if (!validateStep('review')) return;
-
-    setIsSubmitting(true);
+    setIsInitiating(true);
     try {
-      const request: VerificationSessionRequest = {
-        propertyId: formData.propertyId,
-        userId: 1, // This would come from auth context
-        estimatedCompletionDate: formData.estimatedCompletionDate ? new Date(formData.estimatedCompletionDate) : undefined,
-        monitoringEnabled: formData.monitoringEnabled
-      };
+      const session = await initiateVerification({
+        propertyId,
+        userId,
+        requestedLayers: selectedLayers as any[],
+        priority: 'high',
+        notes: 'Initiated through verification wizard'
+      });
 
-      await onComplete(request);
+      setVerificationSession(session);
+      setCurrentStep(1);
+      
+      toast({
+        title: "Verification Initiated",
+        description: `Verification session ${session.id} has been created successfully.`,
+      });
     } catch (error) {
-      console.error('Error submitting verification request:', error);
+      toast({
+        title: "Initiation Failed",
+        description: error instanceof Error ? error.message : "Failed to initiate verification",
+        variant: "destructive"
+      });
     } finally {
-      setIsSubmitting(false);
+      setIsInitiating(false);
     }
   };
 
-  const updateFormData = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when field is updated
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+  const handleExecuteLayer = async (layerType: string) => {
+    if (!verificationSession) return;
+
+    try {
+      const results = await executeLayer(verificationSession.id, layerType as any);
+      
+      // Update layer status
+      setLayers(prev => prev.map(layer => 
+        layer.type === layerType 
+          ? { ...layer, status: 'completed' as const }
+          : layer
+      ));
+
+      toast({
+        title: "Layer Completed",
+        description: `${layerType} verification layer has been completed with ${results.length} results.`,
+      });
+    } catch (error) {
+      // Update layer status to failed
+      setLayers(prev => prev.map(layer => 
+        layer.type === layerType 
+          ? { ...layer, status: 'failed' as const }
+          : layer
+      ));
+
+      toast({
+        title: "Layer Failed",
+        description: error instanceof Error ? error.message : `Failed to execute ${layerType} layer`,
+        variant: "destructive"
+      });
     }
+  };
+
+  const handleGenerateRiskAssessment = async () => {
+    if (!verificationSession) return;
+
+    try {
+      const riskAssessment = await generateRiskAssessment(verificationSession.id);
+      setCurrentStep(3);
+      
+      toast({
+        title: "Risk Assessment Generated",
+        description: `Risk assessment completed with ${riskAssessment.riskLevel} risk level.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Assessment Failed",
+        description: error instanceof Error ? error.message : "Failed to generate risk assessment",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const calculateProgress = () => {
+    const completedLayers = layers.filter(layer => 
+      selectedLayers.includes(layer.id) && layer.status === 'completed'
+    ).length;
+    const totalLayers = selectedLayers.length;
+    return totalLayers > 0 ? (completedLayers / totalLayers) * 100 : 0;
+  };
+
+  const getTotalEstimatedTime = () => {
+    return layers
+      .filter(layer => selectedLayers.includes(layer.id))
+      .reduce((total, layer) => total + layer.estimatedDuration, 0);
   };
 
   const renderStepContent = () => {
-    switch (currentStepData.id) {
-      case 'property':
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="property">Property</Label>
-              {property ? (
-                <div className="mt-2 p-4 border rounded-lg bg-muted/50">
-                  <h4 className="font-medium">{property.title}</h4>
-                  <p className="text-sm text-muted-foreground">{property.location}</p>
-                  <p className="text-sm text-muted-foreground">KES {property.price.toLocaleString()}</p>
-                </div>
-              ) : (
-                <Select onValueChange={(value) => updateFormData('propertyId', parseInt(value))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a property" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Sample Property 1</SelectItem>
-                    <SelectItem value="2">Sample Property 2</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-              {errors.propertyId && (
-                <p className="text-sm text-red-600 mt-1">{errors.propertyId}</p>
-              )}
-            </div>
-          </div>
-        );
-
-      case 'documents':
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label>Required Documents</Label>
-              <div className="mt-2 space-y-2">
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                  <Upload className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Drag and drop files here, or click to browse
-                  </p>
-                  <Button variant="outline" size="sm">
-                    Choose Files
-                  </Button>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Supported formats: PDF, JPG, PNG. Max size: 10MB per file.
-                </div>
-              </div>
-              {errors.documents && (
-                <p className="text-sm text-red-600 mt-1">{errors.documents}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="font-medium">Document Checklist</h4>
-              <div className="space-y-2">
-                {[
-                  'Title Deed',
-                  'Survey Plan',
-                  'Land Control Board Consent',
-                  'Property Tax Records',
-                  'Previous Sale Agreements'
-                ].map((doc, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Checkbox id={`doc-${index}`} />
-                    <Label htmlFor={`doc-${index}`} className="text-sm">{doc}</Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'location':
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="lat">Latitude</Label>
-                <Input
-                  id="lat"
-                  type="number"
-                  step="any"
-                  placeholder="-1.2921"
-                  value={formData.coordinates.lat}
-                  onChange={(e) => updateFormData('coordinates', { ...formData.coordinates, lat: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="lng">Longitude</Label>
-                <Input
-                  id="lng"
-                  type="number"
-                  step="any"
-                  placeholder="36.8219"
-                  value={formData.coordinates.lng}
-                  onChange={(e) => updateFormData('coordinates', { ...formData.coordinates, lng: e.target.value })}
-                />
-              </div>
-            </div>
-            {errors.coordinates && (
-              <p className="text-sm text-red-600">{errors.coordinates}</p>
-            )}
-
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                GPS coordinates help verify the exact location of your property. 
-                You can find these using Google Maps or a GPS device.
-              </AlertDescription>
-            </Alert>
-
-            <div>
-              <Label>Boundary Information (Optional)</Label>
-              <Textarea
-                placeholder="Describe property boundaries, landmarks, or reference points..."
-                value={formData.boundaryDescription || ''}
-                onChange={(e) => updateFormData('boundaryDescription', e.target.value)}
-              />
-            </div>
-          </div>
-        );
-
-      case 'layers':
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label>Select Verification Methods</Label>
-              <div className="mt-2 space-y-3">
-                {VERIFICATION_LAYERS.map((layer) => (
-                  <div key={layer.id} className="border rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        id={layer.id}
-                        checked={formData.selectedLayers.includes(layer.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            updateFormData('selectedLayers', [...formData.selectedLayers, layer.id]);
-                          } else {
-                            updateFormData('selectedLayers', formData.selectedLayers.filter(l => l !== layer.id));
-                          }
-                        }}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <Label htmlFor={layer.id} className="font-medium">{layer.name}</Label>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">{layer.estimatedTime}</Badge>
-                            <Badge variant="outline" className="text-xs">{layer.cost}</Badge>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{layer.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {errors.selectedLayers && (
-                <p className="text-sm text-red-600 mt-1">{errors.selectedLayers}</p>
-              )}
-            </div>
-
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <h4 className="font-medium mb-2">Estimated Summary</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Total Cost:</span>
-                  <span className="font-medium ml-2">
-                    KES {VERIFICATION_LAYERS
-                      .filter(l => formData.selectedLayers.includes(l.id))
-                      .reduce((sum, l) => sum + parseInt(l.cost.replace(/[^\d]/g, '')), 0)
-                      .toLocaleString()}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Estimated Time:</span>
-                  <span className="font-medium ml-2">5-14 days</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'community':
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="community-enabled"
-                checked={formData.communityConfig.enabled}
-                onCheckedChange={(checked) => 
-                  updateFormData('communityConfig', { ...formData.communityConfig, enabled: checked })
-                }
-              />
-              <Label htmlFor="community-enabled" className="font-medium">
-                Enable Community Intelligence Collection
-              </Label>
-            </div>
-
-            {formData.communityConfig.enabled && (
-              <div className="space-y-4 pl-6">
-                <div>
-                  <Label>Target Audiences</Label>
-                  <div className="mt-2 space-y-2">
-                    {[
-                      { id: 'neighbors', label: 'Neighboring Property Owners' },
-                      { id: 'local_admin', label: 'Local Administration' },
-                      { id: 'community_leaders', label: 'Community Leaders' },
-                      { id: 'residents', label: 'Long-term Residents' }
-                    ].map((audience) => (
-                      <div key={audience.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={audience.id}
-                          checked={formData.communityConfig.targetAudiences.includes(audience.id)}
-                          onCheckedChange={(checked) => {
-                            const audiences = checked
-                              ? [...formData.communityConfig.targetAudiences, audience.id]
-                              : formData.communityConfig.targetAudiences.filter(a => a !== audience.id);
-                            updateFormData('communityConfig', { 
-                              ...formData.communityConfig, 
-                              targetAudiences: audiences 
-                            });
-                          }}
-                        />
-                        <Label htmlFor={audience.id} className="text-sm">{audience.label}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="confidentiality">Confidentiality Level</Label>
-                  <Select
-                    value={formData.communityConfig.confidentialityLevel}
-                    onValueChange={(value) => 
-                      updateFormData('communityConfig', { 
-                        ...formData.communityConfig, 
-                        confidentialityLevel: value 
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="public">Public - Names can be disclosed</SelectItem>
-                      <SelectItem value="restricted">Restricted - Limited disclosure</SelectItem>
-                      <SelectItem value="confidential">Confidential - Anonymous only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-
-      case 'experts':
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="experts-enabled"
-                checked={formData.expertConfig.enabled}
-                onCheckedChange={(checked) => 
-                  updateFormData('expertConfig', { ...formData.expertConfig, enabled: checked })
-                }
-              />
-              <Label htmlFor="experts-enabled" className="font-medium">
-                Request Professional Expert Involvement
-              </Label>
-            </div>
-
-            {formData.expertConfig.enabled && (
-              <div className="space-y-4 pl-6">
-                <div>
-                  <Label>Expert Types Needed</Label>
-                  <div className="mt-2 space-y-2">
-                    {[
-                      { id: 'surveyor', label: 'Licensed Surveyor' },
-                      { id: 'lawyer', label: 'Property Lawyer' },
-                      { id: 'appraiser', label: 'Property Appraiser' },
-                      { id: 'environmental', label: 'Environmental Expert' }
-                    ].map((expert) => (
-                      <div key={expert.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={expert.id}
-                          checked={formData.expertConfig.expertTypes.includes(expert.id)}
-                          onCheckedChange={(checked) => {
-                            const types = checked
-                              ? [...formData.expertConfig.expertTypes, expert.id]
-                              : formData.expertConfig.expertTypes.filter(t => t !== expert.id);
-                            updateFormData('expertConfig', { 
-                              ...formData.expertConfig, 
-                              expertTypes: types 
-                            });
-                          }}
-                        />
-                        <Label htmlFor={expert.id} className="text-sm">{expert.label}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="expert-budget">Expert Budget (KES)</Label>
-                  <Input
-                    id="expert-budget"
-                    type="number"
-                    value={formData.expertConfig.budget}
-                    onChange={(e) => 
-                      updateFormData('expertConfig', { 
-                        ...formData.expertConfig, 
-                        budget: parseInt(e.target.value) || 0 
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        );
-
-      case 'review':
+    switch (currentStep) {
+      case 0:
         return (
           <div className="space-y-6">
-            <div>
-              <h4 className="font-medium mb-3">Verification Request Summary</h4>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Property</Label>
-                    <p className="font-medium">{property?.title || 'Selected Property'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Priority</Label>
-                    <Badge variant="outline">{formData.priority.toUpperCase()}</Badge>
-                  </div>
-                </div>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Configure Land Verification
+              </h2>
+              <p className="text-gray-600">
+                Select the verification layers you want to include in your comprehensive land verification process.
+              </p>
+            </div>
 
-                <div>
-                  <Label className="text-sm text-muted-foreground">Selected Verification Layers</Label>
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    {formData.selectedLayers.map((layerId) => {
-                      const layer = VERIFICATION_LAYERS.find(l => l.id === layerId);
-                      return (
-                        <Badge key={layerId} variant="secondary">
-                          {layer?.name}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </div>
+            <div className="grid gap-4">
+              {layers.map((layer) => {
+                const Icon = layer.icon;
+                const isSelected = selectedLayers.includes(layer.id);
+                const isRequired = layer.required;
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Community Intelligence</Label>
-                    <p className="font-medium">
-                      {formData.communityConfig.enabled ? 'Enabled' : 'Disabled'}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Expert Involvement</Label>
-                    <p className="font-medium">
-                      {formData.expertConfig.enabled ? 'Requested' : 'Not Requested'}
-                    </p>
-                  </div>
-                </div>
+                return (
+                  <Card 
+                    key={layer.id}
+                    className={`cursor-pointer transition-all duration-200 ${
+                      isSelected 
+                        ? 'ring-2 ring-blue-500 bg-blue-50' 
+                        : 'hover:shadow-md'
+                    } ${isRequired ? 'border-orange-200' : ''}`}
+                    onClick={() => handleLayerToggle(layer.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start space-x-4">
+                        <div className={`p-2 rounded-lg ${
+                          isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="font-semibold text-gray-900">
+                              {layer.name}
+                            </h3>
+                            <div className="flex items-center space-x-2">
+                              {isRequired && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Required
+                                </Badge>
+                              )}
+                              <Badge variant="outline" className="text-xs">
+                                {layer.estimatedDuration}h
+                              </Badge>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {layer.description}
+                          </p>
+                        </div>
 
-                <div>
-                  <Label className="text-sm text-muted-foreground">Estimated Cost</Label>
-                  <p className="text-lg font-bold">
-                    KES {VERIFICATION_LAYERS
-                      .filter(l => formData.selectedLayers.includes(l.id))
-                      .reduce((sum, l) => sum + parseInt(l.cost.replace(/[^\d]/g, '')), 0)
-                      .toLocaleString()}
-                  </p>
-                </div>
+                        <div className="flex-shrink-0">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            isSelected 
+                              ? 'bg-blue-500 border-blue-500' 
+                              : 'border-gray-300'
+                          }`}>
+                            {isSelected && (
+                              <CheckCircle className="h-3 w-3 text-white" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-gray-700">
+                  Selected Layers: {selectedLayers.length}
+                </span>
+                <span className="font-medium text-gray-700">
+                  Estimated Time: {getTotalEstimatedTime()} hours
+                </span>
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="final-notes">Additional Notes (Optional)</Label>
-              <Textarea
-                id="final-notes"
-                placeholder="Any additional instructions or requirements..."
-                value={formData.notes}
-                onChange={(e) => updateFormData('notes', e.target.value)}
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleInitiateVerification}
+                disabled={selectedLayers.length === 0 || isInitiating}
+                className="min-w-[120px]"
+              >
+                {isInitiating ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Initiating...
+                  </>
+                ) : (
+                  'Start Verification'
+                )}
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 1:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Verification in Progress
+              </h2>
+              <p className="text-gray-600">
+                Your land verification is now running. Monitor the progress of each layer below.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-lg border p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Overall Progress</h3>
+                <span className="text-sm text-gray-600">
+                  {Math.round(calculateProgress())}% Complete
+                </span>
+              </div>
+              <Progress value={calculateProgress()} className="mb-2" />
+            </div>
+
+            {verificationSession && (
+              <VerificationProgressTracker 
+                sessionId={verificationSession.id}
+                onLayerComplete={(layerType) => {
+                  setLayers(prev => prev.map(layer => 
+                    layer.type === layerType 
+                      ? { ...layer, status: 'completed' as const }
+                      : layer
+                  ));
+                }}
               />
+            )}
+
+            <div className="grid gap-4">
+              {layers
+                .filter(layer => selectedLayers.includes(layer.id))
+                .map((layer) => {
+                  const Icon = layer.icon;
+                  
+                  return (
+                    <Card key={layer.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-lg ${
+                              layer.status === 'completed' ? 'bg-green-100 text-green-600' :
+                              layer.status === 'in_progress' ? 'bg-blue-100 text-blue-600' :
+                              layer.status === 'failed' ? 'bg-red-100 text-red-600' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              <Icon className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">
+                                {layer.name}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {layer.description}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Badge 
+                              variant={
+                                layer.status === 'completed' ? 'default' :
+                                layer.status === 'in_progress' ? 'secondary' :
+                                layer.status === 'failed' ? 'destructive' :
+                                'outline'
+                              }
+                            >
+                              {layer.status === 'not_started' ? 'Pending' :
+                               layer.status === 'in_progress' ? 'Running' :
+                               layer.status === 'completed' ? 'Complete' :
+                               'Failed'}
+                            </Badge>
+                            
+                            {layer.status === 'not_started' && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleExecuteLayer(layer.type)}
+                                disabled={isLoading}
+                              >
+                                Start
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
+
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={() => setCurrentStep(0)}>
+                Back to Configuration
+              </Button>
+              <Button 
+                onClick={handleGenerateRiskAssessment}
+                disabled={calculateProgress() < 100}
+              >
+                Generate Risk Assessment
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6">
+            <ExpertCoordinationInterface 
+              sessionId={verificationSession?.id}
+              onExpertAssigned={(assignment) => {
+                toast({
+                  title: "Expert Assigned",
+                  description: `${assignment.expertType} has been assigned to your verification.`,
+                });
+              }}
+            />
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Verification Complete
+              </h2>
+              <p className="text-gray-600">
+                Your land verification has been completed. Review the risk assessment below.
+              </p>
+            </div>
+
+            {verificationSession && (
+              <RiskAssessmentDisplay 
+                sessionId={verificationSession.id}
+                onRecommendationAction={(action) => {
+                  toast({
+                    title: "Action Taken",
+                    description: `${action} has been initiated.`,
+                  });
+                }}
+              />
+            )}
+
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                View Progress
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (onComplete && verificationSession) {
+                    onComplete(verificationSession.id);
+                  }
+                }}
+              >
+                Complete Verification
+              </Button>
             </div>
           </div>
         );
@@ -645,69 +518,40 @@ export default function VerificationWizard({
     }
   };
 
+  if (error) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-6 text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Verification Error
+          </h3>
+          <p className="text-gray-600 mb-4">
+            {error instanceof Error ? error.message : 'An unexpected error occurred'}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className={className}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Land Verification Wizard</CardTitle>
-            <CardDescription>
-              Step {currentStep + 1} of {WIZARD_STEPS.length}: {currentStepData.title}
-            </CardDescription>
-          </div>
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Step Navigation */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <currentStepData.icon className="h-5 w-5 text-primary" />
-            <span className="font-medium">{currentStepData.title}</span>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {currentStepData.required && (
-              <Badge variant="outline" className="text-xs">Required</Badge>
-            )}
-          </div>
-        </div>
-
-        <p className="text-muted-foreground">{currentStepData.description}</p>
-
-        {/* Step Content */}
-        <div className="min-h-[400px]">
+    <div className="max-w-4xl mx-auto p-6">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentStep}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
           {renderStepContent()}
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 0}
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Previous
-          </Button>
-
-          <div className="flex items-center gap-2">
-            {currentStep === WIZARD_STEPS.length - 1 ? (
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'Submit Request'}
-              </Button>
-            ) : (
-              <Button onClick={handleNext}>
-                Next
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }
+
+export default VerificationWizard;

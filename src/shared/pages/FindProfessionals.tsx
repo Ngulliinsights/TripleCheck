@@ -1,5 +1,5 @@
-import React from 'react';
 import { Search, MapPin, Star, Phone, Mail } from 'lucide-react';
+import React from 'react';
 
 interface Professional {
   id: string;

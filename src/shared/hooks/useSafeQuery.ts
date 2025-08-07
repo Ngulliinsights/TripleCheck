@@ -3,6 +3,7 @@ import { useRef, useMemo, useState, useCallback } from "react";
 
 import { useEnhancedCleanupManager } from "../../infrastructure/hooks/useCleanupManager";
 import { useSafeEffect } from "../../infrastructure/hooks/useSafeEffect";
+import { Property } from '../types/property';
 // Removed unused import: requestMonitor
 
 // Enhanced request coordinator with better error handling and metrics
@@ -475,14 +476,17 @@ export function useSafeQuery<T>({
     if (cacheKey) return cacheKey;
 
     // Create a stable cache key by normalizing the data
-    const normalizedBody = debouncedBody ? 
-      (typeof debouncedBody === 'object' ? 
-        JSON.stringify(debouncedBody, Object.keys(debouncedBody).sort()) : 
-        String(debouncedBody)
-      ) : '';
+    let normalizedBody = '';
+    if (debouncedBody) {
+      if (typeof debouncedBody === 'object') {
+        normalizedBody = JSON.stringify(debouncedBody, Object.keys(debouncedBody).sort((a, b) => a.localeCompare(b)));
+      } else {
+        normalizedBody = String(debouncedBody);
+      }
+    }
     
     const normalizedHeaders = headers ? 
-      JSON.stringify(headers, Object.keys(headers).sort()) : '';
+      JSON.stringify(headers, Object.keys(headers).sort((a, b) => a.localeCompare(b))) : '';
 
     const currentKey = `${method}:${endpoint}:${normalizedBody}:${normalizedHeaders}`;
 
@@ -679,20 +683,7 @@ export function useSafeQuery<T>({
   } as SafeQueryResult<T>;
 }
 
-// Property type definitions
-interface Property {
-  id: string;
-  title: string;
-  price: number;
-  images: string[];
-  location: {
-    address: string;
-    city: string;
-    state: string;
-    country: string;
-  };
-  [key: string]: unknown;
-}
+// Property type imported from shared types
 
 // Pre-configured specialized hooks with enhanced validators for the new domain structure
 export const useSafePropertiesQuery = (
@@ -736,7 +727,14 @@ export const useSafePropertiesQuery = (
       return data.filter((item): item is Property => {
         if (!item || typeof item !== "object") return false;
         const obj = item as Record<string, unknown>;
-        return typeof obj.id === "string" && obj.id.length > 0;
+        return (
+          (typeof obj.id === "string" || typeof obj.id === "number") && 
+          obj.id != null && 
+          typeof obj.title === "string" && 
+          obj.title.length > 0 &&
+          typeof obj.description === "string" && 
+          obj.description.length > 0
+        );
       });
     },
     context: "properties",
@@ -765,20 +763,11 @@ export const useSafePropertyQuery = (
         ...property,
         id: (property.id as string) || "",
         title: (property.title as string) || "Untitled Property",
+        description: (property.description as string) || "No description available",
         price: typeof property.price === "number" ? property.price : 0,
+        location: (property.location as string) || "",
         images: Array.isArray(property.images) ? property.images : [],
-        location: (property.location as {
-          address: string;
-          city: string;
-          state: string;
-          country: string;
-        }) || {
-          address: "",
-          city: "",
-          state: "",
-          country: "",
-        },
-      };
+      } as Property;
     },
     enabled: Boolean(id) && id.length > 0,
     context: "property",

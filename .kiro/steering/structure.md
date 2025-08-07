@@ -1,602 +1,1744 @@
-# TripleCheck - Project Structure
-
-## Root Directory Organization
+# Project Structure
 
 ```
-├── src/                    # Frontend React application (domain-driven)
-├── server/                 # Backend API services (domain-driven)
-├── scripts/                # Automation, deployment, and utility scripts
-├── tests/                  # E2E and integration tests
-├── docs/                   # Documentation and guides
-├── public/                 # Static assets and PWA files
-├── uploads/                # File upload storage (documents, images, processed)
-├── temp-files/             # Analysis reports and temporary files
-├── test-results/           # Test execution results and reports
-├── migrations/             # Database migration files
-├── reports/                # Generated analysis and performance reports
-├── playwright-report/      # Playwright test execution reports
-├── .kiro/                  # Kiro IDE configuration and steering files
-├── .cache/                 # Build and development cache
-├── .config/                # Tool configurations
-└── [Configuration files]   # package.json, tsconfig.json, vite.config.ts, etc.
-```
-
-## Frontend Structure (`src/`)
-
-### Domain-Driven Architecture
-Each business domain follows a consistent structure:
-
-```
-src/
-├── shared/                 # Cross-domain utilities and components
-│   ├── components/         # Reusable UI components (60+ design system components)
-│   │   ├── layout/         # Layout components (AppLayout, Navigation, Footer, MobileNav)
-│   │   ├── ui/             # Complete design system (40+ components: button, form, input, dialog, table, etc.)
-│   │   ├── navigation/     # Navigation components (BreadcrumbNavigation, ContextualSidebar, etc.)
-│   │   ├── forms/          # Form components (FileUpload, FormField)
-│   │   ├── hero/           # Hero section components (ConversionHero, EnhancedHero)
-│   │   ├── blog/           # Blog components (BlogPostCard, BlogPostSkeleton)
-│   │   ├── fallbacks/      # Error fallback components
-│   │   └── examples/       # Component examples and demos
-│   ├── hooks/              # Custom React hooks (useDebounce, useGeolocation, useSafeQuery, etc.)
-│   ├── pages/              # Marketing pages (Home, Features, Community, etc.)
-│   ├── services/           # API client and shared services
-│   ├── utils/              # Utility functions and validation (api-client, performance utils)
-│   ├── types/              # Shared TypeScript types
-│   ├── styles/             # Global styles and CSS
-│   ├── config/             # Configuration files
-│   ├── constants/          # Application constants
-│   ├── lib/                # Third-party library configurations
-│   ├── test-utils/         # Testing utilities
-│   └── schema.ts           # Database schema (Drizzle ORM)
-├── property/               # Property management domain
-│   ├── components/         # Property-specific components
-│   ├── contexts/           # Property contexts
-│   ├── hooks/              # Property hooks
-│   ├── pages/              # Property pages
-│   ├── services/           # Property services
-│   ├── types/              # Property types
-│   ├── utils/              # Property utilities
-│   └── tests/              # Property tests
-├── trust/                  # Trust scoring and fraud detection
-├── user/                   # User management and profiles
-├── auth/                   # Authentication and authorization
-├── search/                 # Search and filtering functionality
-├── communication/          # Messaging and notifications
-├── analytics/              # Analytics and reporting
-├── land-verification/      # Core Kenya land verification system
-├── infrastructure/         # Technical infrastructure
-│   ├── api/                # API client configuration and request management
-│   ├── routing/            # Route management and preloading
-│   ├── monitoring/         # Performance monitoring and web vitals
-│   ├── hooks/              # Infrastructure hooks (useSafeEffect, useCoordinatedState)
-│   ├── cache/              # Client-side caching
-│   ├── realtime/           # Real-time communication
-│   ├── security/           # Security utilities
-│   ├── service-worker/     # PWA service worker
-│   ├── services/           # Infrastructure services
-│   ├── storage/            # Storage utilities
-│   └── utils/              # Infrastructure utilities
-├── app/                    # Application root and routing
-│   ├── App.tsx             # Main application component
-│   ├── router.tsx          # Route configuration
-│   ├── providers.tsx       # Context providers setup
-│   ├── lazy-routes.tsx     # Code splitting implementation
-│   ├── error-boundary.tsx  # Global error handling
-│   └── __tests__/          # App-level tests
-├── types/                  # Global type definitions
-│   ├── google-maps.d.ts    # Google Maps type definitions
-│   ├── land-verification.ts # Land verification types
-│   └── react-window-infinite-loader.d.ts # Third-party type definitions
-├── utils/                  # Performance utilities
-│   ├── bundle-optimizer.ts # Bundle optimization
-│   └── performance-optimizer.ts # Performance optimization
-├── lib/                    # Empty directory for future library integrations
-└── main.tsx                # React application entry point
-```
-
-### Domain Structure Pattern
-Each domain follows this consistent pattern:
-
-```
-domain/
-├── components/             # Domain-specific React components
-├── hooks/                  # Domain-specific custom hooks
-├── pages/                  # Route components for this domain
-├── services/               # API services and business logic
-├── types/                  # TypeScript type definitions
-├── utils/                  # Domain-specific utilities
-├── tests/                  # Domain-specific tests
-└── index.ts                # Domain exports
-```
-
-## Backend Structure (`server/`)
-
-### Domain-Driven API Architecture
-Backend mirrors frontend domain organization with comprehensive service layers:
-
-```
-server/
-├── main.ts                 # Server entry point
-├── app.ts                  # Express application configuration
-├── index.ts                # Server bootstrap
-├── vite.ts                 # Vite integration for development
-├── test-db-connection.ts   # Database connection testing
-└── test-integration.ts     # Integration testing utilities
-│
-├── CORE SERVICES/
-│   ├── land-verification/  # Core land verification engine
-│   │   ├── LandVerificationService.ts # Main orchestration service
-│   │   ├── PhysicalVerificationService.ts # Physical verification coordination
-│   │   ├── RiskAssessmentService.ts # Comprehensive risk analysis
-│   │   ├── CommunityIntelligenceService.ts # Community intelligence
-│   │   ├── ExpertCoordinationService.ts # Expert network coordination
-│   │   ├── MonitoringService.ts # System monitoring
-│   │   ├── ReportingService.ts # Report generation
-│   │   ├── DocumentIntegration.ts # Document integration layer
-│   │   ├── ServiceFactory.ts # Service factory pattern
-│   │   ├── routes.ts       # Land verification routes
-│   │   ├── __tests__/      # Comprehensive test suite
-│   │   ├── performance/    # Performance optimization layer
-│   │   ├── security/       # Security and access control
-│   │   ├── error-handling/ # Error management
-│   │   ├── errors/         # Error definitions
-│   │   ├── monitoring/     # Metrics and alerting
-│   │   ├── middleware/     # Verification middleware
-│   │   ├── cache/          # Caching layer
-│   │   ├── audit/          # Audit logging
-│   │   ├── health/         # Health checks
-│   │   ├── resilience/     # Resilience patterns
-│   │   └── utils/          # Utility functions
-│   │
-│   ├── fraud-detection/    # Advanced fraud detection system
-│   │   ├── core/           # Fraud detection engine
-│   │   ├── analytics/      # ML analytics and network analysis
-│   │   ├── services/       # Case management and compliance
-│   │   ├── api/            # Fraud detection API
-│   │   ├── routes/         # Fraud detection routes
-│   │   ├── tests/          # Fraud detection tests
-│   │   ├── utils/          # Fraud detection utilities
-│   │   ├── integrate-real-data.ts # Real data integration
-│   │   ├── test-system.js  # System testing
-│   │   └── validate-backend.js # Backend validation
-│   │
-│   ├── document-auth/      # Document authentication system
-│   │   ├── core/           # Document authentication engine
-│   │   ├── analyzers/      # Document analysis (visual, signature, ML)
-│   │   ├── types/          # Document authentication types
-│   │   ├── DocumentAuthService.ts # Main service
-│   │   ├── routes.ts       # Document authentication routes
-│   │   └── test-document-auth.ts # Testing utilities
-│   │
-│   ├── ai/                 # AI and machine learning services
-│   │   ├── ai.controller.ts # AI API endpoints
-│   │   ├── ai.service.ts   # AI service coordination
-│   │   ├── community-trust-ai.ts # Community trust algorithms
-│   │   ├── community-trust-ai-root.ts # Root AI service
-│   │   ├── ml-training.ts  # Model training pipelines
-│   │   ├── ml-training-root.ts # Root ML training
-│   │   └── storage.ts      # AI model storage
-│   │
-│   └── blockchain/         # Blockchain integration
-│       └── blockchain-service.ts # Blockchain verification
-│
-├── BUSINESS DOMAINS/
-│   ├── property/           # Property management
-│   │   ├── property.controller.ts # API endpoints
-│   │   ├── property.service.ts # Business logic
-│   │   └── property.repository.ts # Data access
-│   │
-│   ├── auth/               # Authentication system
-│   │   ├── auth.controller.ts # Auth endpoints
-│   │   ├── auth.service.ts # Auth business logic
-│   │   └── AuthenticationService.ts # Auth implementation
-│   │
-│   ├── user/               # User management
-│   │   └── user.controller.ts # User endpoints
-│   │
-│   ├── trust/              # Trust and reputation system
-│   │   ├── trust.controller.ts # Trust endpoints
-│   │   ├── community-trust.service.ts # Community algorithms
-│   │   └── TrustScoringService.ts # Trust scoring
-│   │
-│   ├── communication/      # Communication services
-│   │   ├── communication.controller.ts # Communication endpoints
-│   │   └── notification.service.ts # Multi-channel notifications
-│   │
-│   ├── search/             # Search services
-│   │   └── search.controller.ts # Search endpoints
-│   │
-│   └── analytics/          # Analytics services
-│       └── analytics.controller.ts # Analytics endpoints
-│
-├── INFRASTRUCTURE/
-│   ├── infrastructure/     # Core infrastructure services
-│   │   ├── database/       # Comprehensive database infrastructure
-│   │   │   ├── connection.ts # Database connection management
-│   │   │   ├── config/     # Environment-based configuration
-│   │   │   ├── types/      # TypeScript definitions
-│   │   │   ├── utils/      # Common database operations
-│   │   │   ├── migrations/ # Migration management system
-│   │   │   ├── seeds/      # Master seeding orchestrator
-│   │   │   ├── init.ts     # Database initialization
-│   │   │   └── integration.ts # Service integration layer
-│   │   ├── email/          # Email service implementation
-│   │   ├── storage/        # File storage abstraction
-│   │   ├── monitoring/     # Logging and monitoring
-│   │   └── cache/          # Infrastructure caching
-│   │
-│   ├── cache/              # Redis caching layer
-│   │   └── CacheService.ts # Caching implementation
-│   │
-│   ├── security/           # Security hardening
-│   │   └── SecurityHardening.ts # Security policies
-│   │
-│   ├── monitoring/         # System monitoring
-│   │   ├── HealthMonitor.ts # Health monitoring
-│   │   └── StructuredLogger.ts # Structured logging
-│   │
-│   ├── config/             # Configuration management
-│   │   └── development.ts  # Development configuration
-│   │
-│   └── middleware/         # Express middleware
-│       ├── auth.middleware.ts # Authentication middleware
-│       ├── auth.ts         # Auth utilities
-│       ├── error.middleware.ts # Error handling
-│       ├── error-handler.ts # Error handler utilities
-│       ├── logging.middleware.ts # Request logging
-│       ├── validation.middleware.ts # Input validation
-│       ├── cache.middleware.ts # Cache middleware
-│       ├── data-validation.ts # Data validation
-│       ├── centralized-error-handler.ts # Global error handling
-│       └── __tests__/      # Middleware tests
-│
-├── ROUTING & API/
-│   ├── routes/             # API route definitions
-│   │   ├── index.ts        # Route registry
-│   │   ├── PropertyRoutes.ts # Property routes
-│   │   ├── AuthRoutes.ts   # Authentication routes
-│   │   ├── auth.ts         # Auth route utilities
-│   │   ├── verification.routes.ts # Land verification routes
-│   │   ├── reviews.routes.ts # Review system routes
-│   │   ├── ai-routes.ts    # AI service routes
-│   │   ├── ml-routes.ts    # Machine learning routes
-│   │   ├── community-trust-routes.ts # Community trust routes
-│   │   ├── community-intelligence.routes.ts # Community intelligence
-│   │   ├── community-resources.routes.ts # Community resources
-│   │   ├── document-verification.routes.ts # Document verification
-│   │   ├── fraud-intelligence.routes.ts # Fraud intelligence
-│   │   ├── secure-document-routes.ts # Secure document handling
-│   │   ├── email-routes.ts # Email service routes
-│   │   ├── payments.ts     # Payment processing routes
-│   │   ├── users.routes.ts # User management routes
-│   │   ├── seed.ts         # Database seeding routes
-│   │   ├── demo-auth-routes.ts # Demo authentication
-│   │   └── __tests__/      # Route tests
-│   │
-│   └── services/           # Business services
-│       ├── PropertyService.ts # Property management
-│       ├── AuthService.ts  # Authentication
-│       ├── VerificationService.ts # Verification orchestration
-│       ├── ReviewService.ts # Review system
-│       ├── UserService.ts  # User management
-│       ├── email-service.ts # Email communication
-│       ├── mpesa-service.ts # Kenyan payment integration
-│       ├── notification-service.ts # Multi-channel notifications
-│       ├── ai-service.ts   # AI service coordination
-│       ├── CommunityIntelligenceService.ts # Community intelligence
-│       ├── CommunityResourcesService.ts # Community resources
-│       ├── DocumentAuthenticationService.ts # Document authentication
-│       ├── FraudIntelligenceService.ts # Fraud intelligence
-│       └── __tests__/      # Service tests
-│
-├── SHARED RESOURCES/
-│   ├── types/              # TypeScript type definitions
-│   │   ├── api.types.ts    # API contract definitions
-│   │   ├── auth.types.ts   # Authentication types
-│   │   ├── property.types.ts # Property domain types
-│   │   ├── verification.types.ts # Verification types
-│   │   └── fraud.types.ts  # Fraud detection types
-│   │
-│   ├── utils/              # Utility functions
-│   │   ├── constants.ts    # Application constants
-│   │   ├── validators.ts   # Data validation
-│   │   ├── error-messages.ts # Standardized errors
-│   │   └── response-helpers.ts # API response utilities
-│   │
-│   └── shared/             # Cross-domain utilities
-│       ├── community-trust-schema.ts # Community trust schema
-│       └── email-types.ts  # Email type definitions
-│
-└── tests/                  # Comprehensive testing
-    ├── integration/        # Integration tests
-    ├── performance/        # Performance tests
-    ├── security/           # Security tests
-    ├── e2e/                # End-to-end tests
-    ├── auth/               # Authentication tests
-    ├── ai-integration-validation.test.ts # AI integration tests
-    ├── api-validation.test.ts # API validation tests
-    ├── application-validation.test.ts # Application tests
-    ├── backend-api-comprehensive.test.ts # Backend API tests
-    ├── backward-compatibility.test.ts # Compatibility tests
-    ├── compatibility-validation.test.ts # Validation tests
-    ├── comprehensive-validation.test.ts # Full system tests
-    ├── file-upload-validation.test.ts # File upload tests
-    ├── load-test-validation.ts # Load testing
-    ├── performance-validation.test.ts # Performance validation
-    ├── quick-validation.test.ts # Quick validation suite
-    ├── setup.ts            # Test setup utilities
-    ├── test-setup.ts       # Additional test setup
-    ├── validate-api-fixes.test.ts # API fix validation
-    ├── validate-system-integration.ts # System integration
-    └── [Various specialized test files] # Domain-specific test suites
-```
-
-## Configuration Files
-
-### Core Configuration
-- `package.json` - Dependencies and scripts (200+ npm scripts)
-- `tsconfig.json` - TypeScript configuration
-- `tsconfig.deploy.json` - Deployment-specific TypeScript config
-- `vite.config.ts` - Frontend build configuration
-- `drizzle.config.ts` - Database ORM configuration
-- `tailwind.config.ts` - CSS framework configuration
-- `postcss.config.js` - PostCSS configuration
-- `eslint.config.js` - Code linting rules
-
-### Testing Configuration
-- `playwright.config.ts` - E2E testing configuration
-- `vitest.config.ts` - Unit testing configuration
-- `vitest.workspace.ts` - Vitest workspace configuration
-- `vitest.chunk-[1-19].config.ts` - Chunked test configurations for parallel execution
-
-### Deployment Configuration
-- `vercel.json` - Vercel deployment configuration
-- `render.yaml` - Render deployment configuration
-- `railway.json` - Railway deployment configuration
-- `firebase.json` - Firebase deployment configuration
-
-### Environment Configuration
-- `.env` - Environment variables
-- `.env.example` - Environment variable template
-- `.gitignore` - Git ignore rules
-- `.vercelignore` - Vercel ignore rules
-- `.snyk` - Snyk security configuration
-
-### Development Configuration
-- `index.html` - HTML entry point
-- `theme.json` - Theme configuration
-- `desktop.ini` - Windows desktop configuration
-
-## Key Conventions
-
-### File Naming
-- Use kebab-case for files and directories (`property-card.tsx`, `user-service.ts`)
-- Use PascalCase for React components (`PropertyCard.tsx`, `UserProfile.tsx`)
-- Use camelCase for functions and variables (`getUserData`, `propertyList`)
-- Add `.test.ts` or `.spec.ts` suffix for tests (`property.test.ts`, `auth.spec.ts`)
-- Use descriptive names that reflect functionality (`LandVerificationService.ts`, `FraudDetectionEngine.ts`)
-
-### Import Organization
-- Use path aliases defined in `tsconfig.json` and `vite.config.ts`:
-  - `@/*` - General source imports
-  - `@shared/*` - Shared utilities and components
-  - `@property/*` - Property domain imports
-  - `@trust/*` - Trust and fraud detection imports
-  - `@auth/*` - Authentication imports
-  - `@user/*` - User management imports
-  - `@communication/*` - Communication imports
-  - `@analytics/*` - Analytics imports
-  - `@infrastructure/*` - Infrastructure imports
-  - `@server/*` - Server-side imports
-- Order imports: external libraries first, then internal imports
-- Group related imports together
-
-### Component Structure
-- One component per file with descriptive names
-- Co-locate related files (component, styles, tests) when applicable
-- Use TypeScript interfaces for props with clear naming
-- Export components as default, utilities as named exports
-- Follow React 18 patterns with hooks and functional components
-- Use proper TypeScript typing throughout
-
-### API Structure
-- RESTful endpoints organized by business domain
-- Consistent response formats using response helpers
-- Type-safe request/response with Zod validation schemas
-- Comprehensive error handling middleware
-- Domain-specific controllers and services
-- Clear separation between controllers, services, and repositories
-
-### Database Schema & ORM
-- Single schema file at `src/shared/schema.ts` using Drizzle ORM
-- PostgreSQL as primary database with proper indexing
-- Use pgEnum for consistent enumerated values
-- Proper foreign key relationships and constraints
-- Type-safe queries throughout the application
-- Migration management through Drizzle Kit
-
-### Service Architecture
-- Domain-driven service organization
-- Clear separation of concerns between layers
-- Dependency injection patterns where appropriate
-- Comprehensive error handling and logging
-- Performance monitoring and optimization
-- Security-first approach in all services
-
-### Land Verification Specific Conventions
-- Kenya-specific document types and validation
-- Multi-step verification workflows
-- Expert coordination patterns
-- Risk assessment scoring systems
-- Community intelligence integration
-- Blockchain integration for immutable records
-
-### Testing Conventions
-- Unit tests co-located with source files
-- Integration tests in dedicated test directories
-- E2E tests organized by user workflows
-- Performance tests for critical paths
-- Security tests for sensitive operations
-- Comprehensive test coverage for verification systems
-
-## Scripts & Automation Structure
-
-### Data Management Scripts (`scripts/`)
-```
+api/
+├── v1/
+│   ├── document-auth/
+│   │   ├── authenticate.js
+│   ├── fraud-detection/
+│   │   ├── analyze.js
+│   ├── land-verification/
+│   │   ├── status.js
+│   │   ├── verify.js
+│   │   ├── webhook.js
+COMPARE_CONSISTENCY_IMPLEMENTATION.md
+config/
+├── app.config.ts
+├── database.config.ts
+├── vitest/
+│   ├── chunk-generator.ts
+│   ├── index.ts
+│   ├── test-config-manager.ts
+│   ├── vitest.base.config.ts
+│   ├── vitest.document-auth.config.ts
+│   ├── vitest.e2e.config.ts
+│   ├── vitest.fraud-detection.config.ts
+│   ├── vitest.integration.config.ts
+│   ├── vitest.land-verification.config.ts
+│   ├── vitest.performance.config.ts
+│   ├── vitest.security.config.ts
+│   ├── vitest.server.config.ts
+│   ├── vitest.unit.config.ts
+database/
+├── __tests__/
+│   ├── config.test.ts
+│   ├── service.test.ts
+├── config/
+│   ├── database.config.ts
+│   ├── index.ts
+├── connection/
+│   ├── __tests__/
+│   │   ├── connection-pool.test.ts
+│   ├── index.ts
+├── docs/
+│   ├── kenya-land-verification.md
+├── examples/
+│   ├── production-setup.ts
+├── health/
+│   ├── index.ts
+├── index.ts
+├── MIGRATION_SUMMARY.md
+├── migration-plan.md
+├── migrations/
+│   ├── __tests__/
+│   │   ├── integration.test.ts
+│   │   ├── migration-manager.test.ts
+│   │   ├── migrations/
+│   │   │   ├── meta/
+│   ├── 0000_daffy_skrulls.sql
+│   ├── analytics/
+│   │   ├── index.ts
+│   ├── communication/
+│   │   ├── index.ts
+│   ├── core/
+│   │   ├── 0000_aberrant_rhino.sql
+│   │   ├── 0001_audit_events_table.sql
+│   │   ├── 001_add_land_verification_tables.sql
+│   │   ├── create-all-tables.ts
+│   │   ├── create-essential-tables.ts
+│   │   ├── create-fraud-intelligence-tables.sql
+│   │   ├── database-manager.ts
+│   │   ├── files/
+│   │   │   ├── 001_initial_schema.sql
+│   │   ├── fix-database.ts
+│   │   ├── generate-test-chunks.ts
+│   │   ├── index.ts
+│   │   ├── inspect-schema.ts
+│   │   ├── meta/
+│   │   │   ├── _journal.json
+│   │   │   ├── 0000_snapshot.json
+│   │   ├── migrate-existing-properties.ts
+│   │   ├── migrator.ts
+│   │   ├── quality-gates.ts
+│   │   ├── README.md
+│   │   ├── reset-and-create.ts
+│   │   ├── robust-batch-loader.ts
+│   │   ├── rollback-migration.ts
+│   │   ├── run-migration.ts
+│   │   ├── seed-kenya-properties.ts
+│   │   ├── test-migration.ts
+│   │   ├── test-scripts.test.ts
+│   │   ├── validate-migration.ts
+│   ├── fraud/
+│   │   ├── index.ts
+│   ├── index.ts
+│   ├── trust/
+│   │   ├── index.ts
+│   ├── verification/
+│   │   ├── index.ts
+├── OPTIMIZED_STRUCTURE.md
+├── README.md
+├── schemas/
+│   ├── __tests__/
+│   │   ├── schema-manager.test.ts
+│   │   ├── validation.test.ts
+│   ├── analytics/
+│   │   ├── index.ts
+│   ├── communication/
+│   │   ├── index.ts
+│   ├── core/
+│   │   ├── index.ts
+│   ├── fraud/
+│   │   ├── index.ts
+│   ├── index.ts
+│   ├── trust/
+│   │   ├── index.ts
+│   ├── validation.ts
+│   ├── verification/
+│   │   ├── index.ts
+├── scripts/
+│   ├── database-setup/
+│   │   ├── initialize-database.ts
+│   ├── data-pipeline.ts
+│   ├── deploy.ts
+│   ├── deploy-land-verification.ts
+│   ├── load-data.ts
+│   ├── reset.ts
+│   ├── seed-data.ts
+│   ├── setup-database.ts
+│   ├── status.ts
+│   ├── test-connection.ts
+│   ├── test-migration-system.ts
+│   ├── test-schema-management.ts
+│   ├── test-setup.ts
+│   ├── validate.ts
+├── scripts-evaluation.md
+├── seeds/
+│   ├── __tests__/
+│   │   ├── database-seeder.test.ts
+│   ├── database-seeder.ts
+│   ├── index.ts
+│   ├── land-verification.ts
+│   ├── land-verification-seed.ts
+│   ├── land-verification-system.ts
+│   ├── sample-ai-data.ts
+├── service.ts
+├── utils/
+│   ├── analyzers/
+│   │   ├── index.ts
+│   ├── database-utils.ts
+│   ├── generators/
+│   │   ├── __tests__/
+│   │   │   ├── data-generator.test.ts
+│   │   ├── data-generation/
+│   │   │   ├── checkpoint-manager.ts
+│   │   │   ├── community-insights-generator.py
+│   │   │   ├── fraud_analysis_report.json
+│   │   │   ├── fraud-reports-generator.py
+│   │   │   ├── fraud-simulator.py
+│   │   │   ├── fraudulent_property_dataset.json
+│   │   │   ├── fraudulent_transaction_dataset.json
+│   │   │   ├── fraudulent_user_dataset.json
+│   │   │   ├── integrate-data.ts
+│   │   │   ├── land-verification-generator.py
+│   │   │   ├── optimized_land_dataset.json
+│   │   │   ├── optimized_land_dataset_statistics.json
+│   │   │   ├── property_dataset.json
+│   │   │   ├── property_statistics.json
+│   │   │   ├── property-generator.py
+│   │   │   ├── README.md
+│   │   │   ├── transaction_dataset.json
+│   │   │   ├── user_dataset.json
+│   │   │   ├── user_statistics.json
+│   │   │   ├── user-generator.py
+│   │   ├── index.ts
+│   │   ├── README.md
+│   │   ├── unified-generator.ts
+│   ├── index.ts
+│   ├── validators/
+│   │   ├── index.ts
+DEPLOYMENT.md
+desktop.ini
+developer-portal.html
+docs/
+├── advanced_image_prompts.md
+├── Component Placement Rationale_ Modular Service Architecture.md
+├── comprehensive_code_analysis_framework.md
+├── improved-triplecheck-data-generation-prompts.md
+├── Kenya Land Verification Data Generation prompts.md
+├── kenya_land_verification_guide.md
+├── partnerships/
+│   ├── MTN_Partnership_Pitch.md
+│   ├── Safaricom_Partnership_Pitch.md
+├── project-structure.md
+├── prompt_engineering_analysis.md
+├── triplecheck_unified_plan.md
+├── unified_code_analysis_framework.md
+drizzle.config.ts
+eslint.config.js
+firebase.json
+generate-structure.sh
+generate-structure-to-file.sh
+index.html
+load-test-config.yml
+MEMORY_OPTIMIZATION_SUMMARY.md
+nul
+package.json
+package-lock.json
+playwright.config.ts
+playwright-report/
+├── index.html
+postcss.config.js
+public/
+├── assets/
+│   ├── alice-pasqual-Olki5QpHxts-unsplash.jpg
+│   ├── android-chrome-192x192.svg
+│   ├── android-chrome-192x192-temp.svg
+│   ├── android-chrome-512x512.svg
+│   ├── android-chrome-512x512-temp.svg
+│   ├── apartment-cozy-1.jpg
+│   ├── apartment-luxury-1.jpg
+│   ├── apple-touch-icon.svg
+│   ├── apple-touch-icon-temp.svg
+│   ├── Artmark.svg
+│   ├── blog1.jpg
+│   ├── blog1.webp
+│   ├── blog2.jpg
+│   ├── blog2.webp
+│   ├── blog3.jpg
+│   ├── blog3.webp
+│   ├── browserconfig.xml
+│   ├── Commercial/
+│   │   ├── ash-lab-ka4HDVIti78-unsplash.jpg
+│   │   ├── benjamin-cheng-wTZAqLPcTKk-unsplash (1).jpg
+│   │   ├── isai-sanchez-MLIUd81AX1o-unsplash.jpg
+│   │   ├── kc-shum-OKdd71f5Oq8-unsplash (1).jpg
+│   │   ├── nikita-pishchugin-y2lZI81BGk0-unsplash.jpg
+│   │   ├── nir-himi--i87qT8TJ34-unsplash.jpg
+│   │   ├── omar-elsharawy-lTqU2v0OKH4-unsplash.jpg
+│   │   ├── patrick-tomasso-gMes5dNykus-unsplash.jpg
+│   │   ├── pawel-czerwinski-3-Q4hnx60WM-unsplash.jpg
+│   │   ├── roman-fxTYHz1RG10-unsplash.jpg
+│   │   ├── the-prototype-45-GefVF-TA-unsplash.jpg
+│   │   ├── uran-wang-xsZ47_FLdpo-unsplash.jpg
+│   │   ├── willian-justen-de-vasconcellos-DY6g9FgXwbY-unsplash.jpg
+│   │   ├── zhiqiang-wang-9anoZ1zUr40-unsplash.jpg
+│   ├── confident-entrepreneur-looking-camera-with-arms-folded-smiling.jpg
+│   ├── customer1.png
+│   ├── customer2.png
+│   ├── customer3.jpg
+│   ├── customer3.png
+│   ├── depositphotos_68088663-stock-photo-portrait-of-a-young-african.jpg
+│   ├── diogo-brandao-cUXK9-kQfy4-unsplash.jpg
+│   ├── duplex-modern-1.jpg
+│   ├── e-fedorzyn-dS3qN-_VWuk-unsplash.jpg
+│   ├── elizeu-dias-2EGNqazbAMk-unsplash.jpg
+│   ├── etty-fidele-YYfzJhfNU14-unsplash.jpg
+│   ├── favicon.svg
+│   ├── favicon-144x144.svg
+│   ├── favicon-144x144-temp.svg
+│   ├── favicon-16x16.png
+│   ├── favicon-16x16.svg
+│   ├── favicon-16x16-temp.svg
+│   ├── favicon-32x32.svg
+│   ├── favicon-32x32-temp.svg
+│   ├── favicon-48x48.svg
+│   ├── favicon-48x48-temp.svg
+│   ├── favicon-72x72.svg
+│   ├── favicon-72x72-temp.svg
+│   ├── favicon-96x96.svg
+│   ├── favicon-96x96-temp.svg
+│   ├── fonts/
+│   │   ├── primary-font.woff2
+│   ├── fun.png
+│   ├── hero-bg.jpg
+│   ├── hero-bg.webp
+│   ├── house-executive-1.jpg
+│   ├── improved-triplecheck-data-generation-prompts_1751409334941.md
+│   ├── Land/
+│   │   ├── bogdan-pasca-XpyDh3PY2lA-unsplash.jpg
+│   │   ├── federico-respini-sYffw0LNr7s-unsplash.jpg
+│   │   ├── gautier-pfeiffer-WPapb9IqRKw-unsplash.jpg
+│   │   ├── jas-min-C1OaYNWprjc-unsplash.jpg
+│   │   ├── julian-ebert-zSflp4Mq_l0-unsplash.jpg
+│   │   ├── tomas-eidsvold-s2wjvuA_mFY-unsplash.jpg
+│   │   ├── yuriy-bogdanov-W51VK3Obcj0-unsplash.jpg
+│   ├── maria-fernanda-pissioli-6BOGBGy2-sU-unsplash.jpg
+│   ├── mstile-150x150.svg
+│   ├── mstile-150x150-temp.svg
+│   ├── penthouse-elegant-1.jpg
+│   ├── Residential/
+│   │   ├── alejandra-cifre-gonzalez-ylyn5r4vxcA-unsplash.jpg
+│   │   ├── alexander-andrews-A3DPhhAL6Zg-unsplash.jpg
+│   │   ├── billy-jo-catbagan-ysUyvjCocWo-unsplash.jpg
+│   │   ├── caroline-badran-aaONSK4BKxc-unsplash.jpg
+│   │   ├── caroline-badran-aH_EykwSvFk-unsplash.jpg
+│   │   ├── caroline-badran-ew0GEbhe-Ec-unsplash.jpg
+│   │   ├── caroline-badran-nf7iKpydFR4-unsplash.jpg
+│   │   ├── caroline-badran-OZIdKtn8pKs-unsplash.jpg
+│   │   ├── cytonn-photography-TVyhDpvL8MY-unsplash.jpg
+│   │   ├── dillon-kydd-XGvwt544g8k-unsplash.jpg
+│   │   ├── etienne-beauregard-riverin-B0aCvAVSX8E-unsplash.jpg
+│   │   ├── evan-wise-jZkFVycn3FQ-unsplash.jpg
+│   │   ├── evan-wise-lnSyq-qz2Ds-unsplash.jpg
+│   │   ├── evan-wise-u3aN79sbzYs-unsplash.jpg
+│   │   ├── frames-for-your-heart-2d4lAQAlbDA-unsplash.jpg
+│   │   ├── jason-briscoe-AQl-J19ocWE-unsplash.jpg
+│   │   ├── joel-filipe-RFDP7_80v5A-unsplash.jpg
+│   │   ├── krzysztof-hepner-V7Q0Oh3Az-c-unsplash.jpg
+│   │   ├── lennon-cheng-zoR9R1gOj0g-unsplash.jpg
+│   │   ├── luke-van-zyl-koH7IVuwRLw-unsplash.jpg
+│   │   ├── michael-oxendine-GHCVUtBECuY-unsplash (1).jpg
+│   │   ├── minh-pham-7pCFUybP_P8-unsplash.jpg
+│   │   ├── rebecca-chandler-z6Yn9hhlrJw-unsplash.jpg
+│   │   ├── sebastien-lavalaye-gNY6RsMIsPo-unsplash.jpg
+│   │   ├── terrah-holly-pmhdkgRCbtE-unsplash.jpg
+│   │   ├── thanos-pal-I3S-Oha_5k4-unsplash.jpg
+│   │   ├── webaliser-_TPTXZd9mOo-unsplash.jpg
+│   ├── site.webmanifest
+│   ├── studio-stylish-1.jpg
+│   ├── TripleCheck.ico
+├── debug.html
+├── favicon-preview.html
+├── placeholder-property.jpg
+├── sw.js
+railway.json
+reports/
+├── bug-analysis.json
+├── bug-detection-report.json
+├── bug-detection-report.md
+├── load-test-validation-report.json
+rest-express@1.0.0
 scripts/
-├── data-generation/        # Test data generation
-│   ├── fraud-simulator.py  # Realistic fraud scenarios
-│   ├── property-generator.py # Kenyan property data
-│   ├── user-generator.py   # User profile generation
-│   ├── land-verification-generator.py # Land verification test data
-│   ├── community-insights-generator.py # Community intelligence data
-│   ├── fraud-reports-generator.py # Fraud analysis reports
-│   ├── checkpoint-manager.ts # Data generation checkpoints
-│   ├── integrate-data.ts   # Data integration utilities
-│   └── [Generated datasets] # JSON datasets and statistics
-├── data-migration/         # Database migration utilities
-│   ├── migrate-existing-properties.ts # Legacy data migration
-│   ├── seed-kenya-properties.ts # Kenya-specific seeding
-│   ├── run-migration.ts    # Migration execution
-│   ├── validate-migration.ts # Migration validation
-│   ├── robust-batch-loader.ts # Robust data loading with error handling
-│   ├── database-manager.ts # Database management utilities
-│   ├── quality-gates.ts    # Data quality validation
-│   ├── rollback-migration.ts # Migration rollback utilities
-│   └── test-migration.ts   # Migration testing
-├── deployment/             # Deployment automation
-│   ├── docker-compose.land-verification.yml # Container orchestration
-│   ├── kubernetes/         # Kubernetes deployment configs
-│   ├── grafana/           # Monitoring dashboard setup
-│   ├── setup-monitoring.ts # Monitoring infrastructure
-│   ├── deployment-tests.ts # Deployment validation
-│   └── validate-deployment.ts # Deployment health checks
-├── debug/                  # Debugging utilities
-│   ├── stop-infinite-queries.ts # Query debugging
-│   └── test-server-start.ts # Server startup testing
-├── performance/            # Performance testing
-│   └── api-performance-test.ts # API performance validation
-├── security/               # Security utilities
-│   └── bug-categorization.ts # Security bug analysis
-└── [Various utility scripts] # Database setup, testing, maintenance
+├── add-b2b-messaging.js
+├── add-reviews.ts
+├── aggressive-optimization.js
+├── api-race-condition-detector.ts
+├── check-data.ts
+├── check-reviews-table.ts
+├── check-table-structure.ts
+├── convert-favicons.bat
+├── create-favicon-pngs.js
+├── create-minimal-pngs.js
+├── create-png-favicons.js
+├── DATABASE_SETUP.md
+├── debug/
+│   ├── stop-infinite-queries.ts
+│   ├── test-server-start.ts
+├── debug-blank-page.ts
+├── debug-vercel-deployment.ts
+├── deployment/
+│   ├── alert_rules.yml
+│   ├── deployment-tests.ts
+│   ├── deploy-production.ts
+│   ├── deploy-staging.ts
+│   ├── docker-compose.land-verification.yml
+│   ├── grafana/
+│   │   ├── provisioning/
+│   │   │   ├── dashboards/
+│   │   │   │   ├── dashboard.yml
+│   │   │   ├── datasources/
+│   │   │   │   ├── prometheus.yml
+│   ├── kubernetes/
+│   │   ├── land-verification-deployment.yaml
+│   ├── prometheus.yml
+│   ├── README.md
+│   ├── setup-monitoring.ts
+│   ├── validate-deployment.ts
+├── deploy-minimal.js
+├── deploy-render.js
+├── deploy-setup.ts
+├── deploy-staging-final.cjs
+├── deploy-staging-simple.cjs
+├── detect-bugs.ts
+├── disable-route-preloader.js
+├── emergency-stop.js
+├── extract-api-core.js
+├── fix-authentication-issues.ts
+├── fix-image-test-issues.ts
+├── fix-lazy-routes.patch
+├── fix-typescript-errors.ts
+├── generate-favicons.js
+├── generate-test-chunks.ts
+├── health-check.ts
+├── implement-optimizations.js
+├── load-data-corrected.ts
+├── load-data-fixed.ts
+├── load-data-simple.ts
+├── load-test.js
+├── load-test-simple.cjs
+├── load-test-suite.js
+├── logger.js
+├── memory-benchmark.js
+├── migrate-embedded-tests.ts
+├── migrate-optimized-components.sh
+├── MISSING_FEATURES_ANALYSIS.md
+├── MOBILE_AND_DATA_IMPROVEMENTS.md
+├── optimize-for-deployment.js
+├── performance/
+│   ├── api-performance-test.ts
+├── prepare-deployment.ts
+├── quick-recovery.ts
+├── README.md
+├── README-test-data.md
+├── real-optimization.js
+├── responsive-design-analyzer.js
+├── restart-dev-server.ts
+├── run-accessibility-tests.js
+├── run-chunked-tests.ts
+├── run-complete-load-test.cjs
+├── run-e2e-tests.js
+├── run-land-verification-migration.ts
+├── run-visual-tests.js
+├── security/
+│   ├── bug-categorization.ts
+├── self-monitoring-pipeline.ts
+├── setup-dev.js
+├── simple-server-test.cjs
+├── stop-infinite-queries.ts
+├── streaming-json-processor.ts
+├── test-build.ts
+├── test-deployment-readiness.cjs
+├── test-frontend-functionality.ts
+├── test-image-components.ts
+├── test-integration.js
+├── test-navigation.ts
+├── test-server-connection.cjs
+├── test-server-ports.js
+├── validate-authentication.ts
+├── validate-deployment.cjs
+├── validate-deployment-current.cjs
+├── validate-image-tests.ts
+├── validate-production.ts
+├── validate-staging-final.cjs
+server/
+├── ai/
+│   ├── ai.controller.ts
+│   ├── community-trust-ai.ts
+│   ├── community-trust-ai-root.ts
+│   ├── ml-training.test.ts
+│   ├── ml-training.ts
+│   ├── ml-training-root.ts
+│   ├── storage.ts
+├── analytics/
+│   ├── analytics.controller.ts
+│   ├── performance-analytics.ts
+├── app.ts
+├── app-optimized.ts
+├── auth/
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+│   ├── AuthenticationService.ts
+├── blockchain/
+│   ├── blockchain-service.ts
+├── cache/
+│   ├── CacheService.ts
+├── communication/
+│   ├── communication.controller.ts
+│   ├── notification.service.ts
+├── config/
+│   ├── development.ts
+│   ├── ports.ts
+├── controllers/
+│   ├── __tests__/
+│   │   ├── health.performance.test.ts
+│   │   ├── property-enhancements.controller.test.ts
+│   │   ├── property-enhancements.integration.test.ts
+│   │   ├── user-dashboard.controller.test.ts
+│   ├── analytics.controller.ts
+│   ├── fraud-alerts.controller.ts
+│   ├── health.controller.ts
+│   ├── monitoring.controller.ts
+│   ├── professionals.controller.ts
+│   ├── property-enhancements.controller.ts
+│   ├── trust-integration.controller.ts
+│   ├── user-dashboard.controller.ts
+├── document-auth/
+│   ├── analyzers/
+│   │   ├── ContentAnalyzer.ts
+│   │   ├── LandDocumentAnalyzer.test.ts
+│   │   ├── LandDocumentAnalyzer.ts
+│   │   ├── MetadataAnalyzer.ts
+│   │   ├── MLDocumentAnalyzer.ts
+│   │   ├── SignatureAnalyzer.ts
+│   │   ├── VisualAnalyzer.ts
+│   ├── core/
+│   │   ├── DocumentAuthEngine.ts
+│   ├── DocumentAuthService.land.test.ts
+│   ├── DocumentAuthService.ts
+│   ├── routes.ts
+│   ├── test-document-auth.ts
+│   ├── types/
+│   │   ├── exif-parser.d.ts
+├── fraud-detection/
+│   ├── analytics/
+│   │   ├── MLAnalyticsEngine.ts
+│   │   ├── NetworkAnalysisService.ts
+│   ├── api/
+│   │   ├── FraudDetectionAPI.ts
+│   ├── core/
+│   │   ├── FraudDetectionEngine.ts
+│   ├── index.ts
+│   ├── integrate-real-data.ts
+│   ├── jest.config.js
+│   ├── README.md
+│   ├── routes/
+│   │   ├── dashboard.ts
+│   ├── services/
+│   │   ├── CaseManagementService.ts
+│   │   ├── ComplianceReportingService.ts
+│   │   ├── DatabaseService.ts
+│   │   ├── DataIntegrationService.ts
+│   │   ├── ExternalAPIService.ts
+│   ├── tests/
+│   │   ├── dashboard.test.ts
+│   │   ├── engine.test.ts
+│   │   ├── global-setup.ts
+│   │   ├── global-teardown.ts
+│   │   ├── integration.test.ts
+│   │   ├── performance.test.ts
+│   │   ├── results-processor.js
+│   │   ├── run-tests.ts
+│   │   ├── setup.ts
+│   ├── test-system.js
+│   ├── utils/
+│   │   ├── Logger.ts
+│   ├── validate-backend.js
+├── index.ts
+├── infrastructure/
+│   ├── cache/
+│   │   ├── AnalyticsCache.ts
+│   │   ├── CacheService.ts
+│   │   ├── PropertyCacheService.ts
+│   ├── database/
+│   │   ├── config/
+│   │   │   ├── database.config.ts
+│   │   ├── connection.ts
+│   │   ├── index.ts
+│   │   ├── init.ts
+│   │   ├── integration.ts
+│   │   ├── migrations/
+│   │   │   ├── 0000_aberrant_rhino.sql
+│   │   │   ├── 0001_audit_events_table.sql
+│   │   │   ├── 001_add_land_verification_tables.sql
+│   │   │   ├── create-all-tables.ts
+│   │   │   ├── create-essential-tables.ts
+│   │   │   ├── create-fraud-intelligence-tables.sql
+│   │   │   ├── files/
+│   │   │   │   ├── 001_initial_schema.sql
+│   │   │   ├── meta/
+│   │   │   │   ├── _journal.json
+│   │   │   │   ├── 0000_snapshot.json
+│   │   │   ├── migrator.ts
+│   │   │   ├── reset-and-create.ts
+│   │   ├── QueryOptimizer.ts
+│   │   ├── README.md
+│   │   ├── schemas/
+│   │   │   ├── core/
+│   │   │   │   ├── index.ts
+│   │   │   ├── index.ts
+│   │   │   ├── land-verification/
+│   │   │   │   ├── index.ts
+│   │   ├── seeds/
+│   │   │   ├── database-seeder.ts
+│   │   │   ├── land-verification-seed.ts
+│   │   │   ├── sample-ai-data.ts
+│   │   ├── types/
+│   │   │   ├── database.types.ts
+│   │   ├── utils/
+│   │   │   ├── database-utils.ts
+│   ├── deduplication/
+│   │   ├── __tests__/
+│   │   │   ├── deduplication-middleware.integration.test.ts
+│   │   │   ├── performance.test.ts
+│   │   │   ├── redis-integration.test.ts
+│   │   │   ├── RequestDeduplicator.test.ts
+│   │   ├── examples/
+│   │   │   ├── usage-example.ts
+│   │   ├── index.ts
+│   │   ├── RequestDeduplicator.ts
+│   ├── email/
+│   │   ├── email.service.ts
+│   │   ├── email-config.ts
+│   │   ├── EmailService.ts
+│   │   ├── email-service-init.ts
+│   ├── error-handling/
+│   │   ├── StandardErrorHandler.ts
+│   ├── events/
+│   │   ├── EventBus.ts
+│   ├── monitoring/
+│   │   ├── __tests__/
+│   │   │   ├── PerformanceOptimizer.test.ts
+│   │   ├── CachePerformanceMonitor.ts
+│   │   ├── logger.ts
+│   │   ├── logging.service.ts
+│   │   ├── MonitoringDashboard.ts
+│   │   ├── PerformanceMonitor.ts
+│   │   ├── PerformanceOptimizer.ts
+│   │   ├── QueryPerformanceMonitor.ts
+│   ├── optimization/
+│   │   ├── PerformanceOptimizer.ts
+│   ├── rate-limiting/
+│   │   ├── __tests__/
+│   │   │   ├── ApiCallTracker.test.ts
+│   │   │   ├── ApiRateLimiter.test.ts
+│   │   │   ├── CircuitBreaker.test.ts
+│   │   ├── ApiCallTracker.ts
+│   │   ├── ApiRateLimiter.ts
+│   │   ├── CircuitBreaker.ts
+│   │   ├── examples/
+│   │   │   ├── usage-example.ts
+│   │   ├── index.ts
+│   ├── storage/
+│   │   ├── file.storage.ts
+│   │   ├── FileStorageService.ts
+│   │   ├── logger.ts
+│   │   ├── storage.ts
+│   ├── testing/
+│   │   ├── TestFramework.ts
+│   ├── versioning/
+│   │   ├── __tests__/
+│   │   │   ├── versioning.test.ts
+│   │   ├── ApiDocumentation.ts
+│   │   ├── ApiVersioning.ts
+│   │   ├── ApiVersioningMiddleware.ts
+│   │   ├── ApiVersionManager.ts
+│   │   ├── examples/
+│   │   │   ├── client-examples.ts
+│   │   ├── index.ts
+│   │   ├── README.md
+│   │   ├── VersionedRoutes.ts
+│   │   ├── versioning.middleware.ts
+├── land-verification/
+│   ├── __tests__/
+│   │   ├── acceptance/
+│   │   │   ├── realistic-scenarios.test.ts
+│   │   ├── basic-structure.test.ts
+│   │   ├── e2e/
+│   │   │   ├── verification-workflows.test.ts
+│   │   ├── integration/
+│   │   │   ├── government-services.test.ts
+│   │   │   ├── mocks/
+│   │   │   │   ├── MockGovernmentServices.ts
+│   │   │   ├── MonitoringServiceIntegration.test.ts
+│   │   │   ├── PhysicalVerificationIntegration.test.ts
+│   │   ├── load/
+│   │   │   ├── concurrent-verification.test.ts
+│   │   ├── MonitoringService.test.ts
+│   │   ├── PhysicalVerificationService.test.ts
+│   │   ├── README.md
+│   │   ├── ReportingIntegration.test.ts
+│   │   ├── ReportingService.test.ts
+│   │   ├── run-comprehensive-tests.ts
+│   │   ├── security/
+│   │   │   ├── api-security.test.ts
+│   │   │   ├── data-protection.test.ts
+│   ├── audit/
+│   │   ├── AuditLogger.ts
+│   ├── cache/
+│   │   ├── LandVerificationCache.ts
+│   ├── CommunityIntelligenceIntegration.test.ts
+│   ├── CommunityIntelligenceService.test.ts
+│   ├── CommunityIntelligenceService.ts
+│   ├── DocumentIntegration.ts
+│   ├── error-handling/
+│   │   ├── __tests__/
+│   │   │   ├── ErrorHandlingService.test.ts
+│   │   │   ├── FallbackManager.test.ts
+│   │   │   ├── GracefulDegradationManager.test.ts
+│   │   │   ├── RetryPolicyManager.test.ts
+│   │   ├── AuditLogger.ts
+│   │   ├── ErrorHandlingService.ts
+│   │   ├── examples/
+│   │   │   ├── GovernmentApiIntegration.ts
+│   │   ├── FallbackManager.ts
+│   │   ├── GracefulDegradationManager.ts
+│   │   ├── README.md
+│   │   ├── RetryPolicyManager.ts
+│   ├── errors/
+│   │   ├── LandVerificationErrors.ts
+│   ├── ExpertCoordinationService.test.ts
+│   ├── ExpertCoordinationService.ts
+│   ├── health/
+│   │   ├── HealthCheckService.ts
+│   │   ├── health-routes.ts
+│   ├── index.ts
+│   ├── integration.test.ts
+│   ├── LandVerificationService.test.ts
+│   ├── LandVerificationService.ts
+│   ├── middleware/
+│   │   ├── auth.middleware.ts
+│   │   ├── validation.middleware.ts
+│   ├── monitoring/
+│   │   ├── alerting-routes.ts
+│   │   ├── AlertingService.ts
+│   │   ├── metrics-routes.ts
+│   │   ├── MetricsService.ts
+│   ├── MonitoringService.ts
+│   ├── performance/
+│   │   ├── __tests__/
+│   │   │   ├── performance.test.ts
+│   │   ├── AsyncProcessor.ts
+│   │   ├── DatabaseOptimizer.ts
+│   │   ├── PaginationService.ts
+│   │   ├── PerformanceManager.ts
+│   │   ├── performance-routes.ts
+│   ├── PhysicalVerificationService.ts
+│   ├── README.md
+│   ├── ReportingService.ts
+│   ├── resilience/
+│   │   ├── FallbackMechanisms.ts
+│   │   ├── GracefulDegradation.ts
+│   │   ├── RetryPolicy.ts
+│   ├── RiskAssessmentService.test.ts
+│   ├── RiskAssessmentService.ts
+│   ├── routes.ts
+│   ├── security/
+│   │   ├── __tests__/
+│   │   │   ├── AccessControlService.test.ts
+│   │   │   ├── AuditLogger.test.ts
+│   │   │   ├── EncryptionService.test.ts
+│   │   │   ├── PrivacyProtectionService.test.ts
+│   │   ├── AccessControlService.ts
+│   │   ├── AuditLogger.ts
+│   │   ├── EncryptionService.ts
+│   │   ├── PrivacyProtectionService.ts
+│   │   ├── SecurityIntegration.ts
+│   ├── ServiceFactory.ts
+│   ├── utils/
+│   │   ├── gps-calculations.ts
+├── main.ts
+├── middleware/
+│   ├── __tests__/
+│   │   ├── auth.integration.test.ts
+│   │   ├── auth.middleware.basic.test.ts
+│   │   ├── auth.middleware.test.ts
+│   │   ├── centralized-error-handler.test.ts
+│   │   ├── deduplication.middleware.test.ts
+│   ├── auth.middleware.ts
+│   ├── auth.ts
+│   ├── cache.middleware.ts
+│   ├── centralized-error-handler.ts
+│   ├── data-validation.ts
+│   ├── deduplication.middleware.ts
+│   ├── enhanced-error-handler.ts
+│   ├── error.middleware.ts
+│   ├── error-handler.ts
+│   ├── error-handler-integration-example.ts
+│   ├── logging.middleware.ts
+│   ├── query-limiter.middleware.ts
+│   ├── rate-limiting.middleware.ts
+│   ├── README-auth-middleware.md
+│   ├── README-centralized-error-handler.md
+│   ├── validation.middleware.ts
+├── monitoring/
+│   ├── HealthMonitor.ts
+│   ├── StructuredLogger.ts
+├── property/
+│   ├── property.controller.ts
+│   ├── property.repository.ts
+│   ├── property.service.ts
+│   ├── property-controller-integration.test.ts
+│   ├── property-e2e-integration.test.ts
+│   ├── property-land-verification.test.ts
+│   ├── property-repository-integration.test.ts
+├── routes/
+│   ├── __tests__/
+│   │   ├── AuthRoutes.test.ts
+│   │   ├── basic-integration.test.ts
+│   │   ├── comprehensive-integration.test.ts
+│   │   ├── integration-test-runner.ts
+│   │   ├── integration-test-summary.md
+│   │   ├── PropertyRoutes.test.ts
+│   │   ├── ReviewRoutes.integration.test.ts
+│   │   ├── run-integration-tests.ts
+│   │   ├── test-setup.ts
+│   │   ├── UserRoutes.integration.test.ts
+│   │   ├── VerificationRoutes.integration.test.ts
+│   ├── ai-routes.ts
+│   ├── analytics.routes.ts
+│   ├── auth.ts
+│   ├── AuthRoutes.ts
+│   ├── community-intelligence.routes.ts
+│   ├── community-resources.routes.ts
+│   ├── community-trust-routes.ts
+│   ├── demo-auth-routes.ts
+│   ├── document-verification.routes.ts
+│   ├── email-routes.ts
+│   ├── fraud-intelligence.routes.ts
+│   ├── index.ts
+│   ├── ml-routes.ts
+│   ├── payments.ts
+│   ├── professionals.routes.ts
+│   ├── PropertyRoutes.ts
+│   ├── README.md
+│   ├── README-PropertyRoutes.md
+│   ├── reviews.routes.ts
+│   ├── secure-document-routes.ts
+│   ├── seed.ts
+│   ├── users.routes.ts
+│   ├── verification.routes.ts
+├── search/
+│   ├── search.controller.ts
+├── security/
+│   ├── SecurityHardening.ts
+├── services/
+│   ├── __tests__/
+│   │   ├── ai-ml-service.test.ts
+│   │   ├── AnalyticsService.test.ts
+│   │   ├── AuthService.test.ts
+│   │   ├── ProfessionalService.integration.test.ts
+│   │   ├── ProfessionalService.test.ts
+│   │   ├── PropertyService.integration.test.ts
+│   │   ├── PropertyService.test.ts
+│   │   ├── ReviewService.test.ts
+│   │   ├── UserService.test.ts
+│   │   ├── VerificationService.integration.test.ts
+│   │   ├── VerificationService.test.ts
+│   ├── ai-ml-service.ts
+│   ├── AnalyticsService.ts
+│   ├── AuthService.ts
+│   ├── CommunicationService.ts
+│   ├── CommunityIntelligenceService.ts
+│   ├── CommunityResourcesService.ts
+│   ├── DocumentAuthenticationService.ts
+│   ├── email-service.ts
+│   ├── file-storage-service.ts
+│   ├── FraudIntelligenceService.ts
+│   ├── mpesa-service.ts
+│   ├── mpesa-service-enhanced.ts
+│   ├── notification-service.ts
+│   ├── ProfessionalService.ts
+│   ├── PropertyService.ts
+│   ├── README-email-service.md
+│   ├── README-PropertyService.md
+│   ├── README-VerificationService.md
+│   ├── ReviewService.ts
+│   ├── TrustIntegrationService.ts
+│   ├── UserService.ts
+│   ├── VerificationService.ts
+├── shared/
+│   ├── community-trust-schema.ts
+│   ├── email-types.ts
+├── simple-dev-server.ts
+├── test-critical-services.ts
+├── test-db-connection.ts
+├── test-email-mock.ts
+├── test-email-service.ts
+├── test-integration.ts
+├── tests/
+│   ├── ai-integration.test.ts
+│   ├── ai-integration-validation.test.ts
+│   ├── API_BUG_FIXES_SUMMARY.md
+│   ├── api-bug-fixes.ts
+│   ├── api-validation.test.ts
+│   ├── application-validation.test.ts
+│   ├── auth/
+│   │   ├── AuthenticationService.test.ts
+│   ├── backend-api-comprehensive.test.ts
+│   ├── backward-compatibility.test.ts
+│   ├── basic-api.test.ts
+│   ├── compatibility-validation.test.ts
+│   ├── comprehensive-validation.test.ts
+│   ├── e2e/
+│   │   ├── land-verification-workflow.test.ts
+│   ├── file-upload.test.ts
+│   ├── file-upload-validation.test.ts
+│   ├── integration/
+│   │   ├── api.test.ts
+│   │   ├── land-verification-system.test.ts
+│   ├── load-test.ts
+│   ├── load-test-validation.ts
+│   ├── performance/
+│   ├── performance.test.ts
+│   │   ├── land-verification-load.test.ts
+│   │   ├── load.test.ts
+│   ├── performance-validation.test.ts
+│   ├── quick-validation.test.ts
+│   ├── run-api-tests.ts
+│   ├── run-compatibility-tests.ts
+│   ├── run-final-integration-tests.ts
+│   ├── run-validation-tests.ts
+│   ├── security/
+│   │   ├── land-verification-security.test.ts
+│   │   ├── SecurityHardening.test.ts
+│   ├── setup.ts
+│   ├── simple-api-validation.js
+│   ├── test-setup.ts
+│   ├── validate-api-fixes.test.ts
+│   ├── validate-system-integration.ts
+│   ├── validation-report.md
+├── trust/
+│   ├── community-trust.service.ts
+│   ├── trust.controller.ts
+│   ├── TrustScoringService.ts
+├── types/
+│   ├── api.types.ts
+│   ├── auth.types.ts
+│   ├── fraud.types.ts
+│   ├── index.ts
+│   ├── property.types.ts
+│   ├── review.types.ts
+│   ├── user.types.ts
+│   ├── verification.types.ts
+├── user/
+│   ├── user.controller.ts
+├── utils/
+│   ├── api-route-registry.ts
+│   ├── cleanup-manager.ts
+│   ├── constants.ts
+│   ├── error-messages.ts
+│   ├── index.ts
+│   ├── README.md
+│   ├── response-helpers.ts
+│   ├── validators.ts
+├── vite.ts
+src/
+├── analytics/
+│   ├── components/
+│   │   ├── AnalyticsDashboard.tsx
+│   ├── hooks/
+│   │   ├── useAnalytics.ts
+│   ├── index.ts
+│   ├── pages/
+│   │   ├── Analytics.tsx
+│   ├── services/
+│   ├── types/
+├── app/
+│   ├── __tests__/
+│   │   ├── lazy-loading.test.tsx
+│   │   ├── lazy-routes.test.tsx
+│   │   ├── navigation-routing.test.tsx
+│   │   ├── router.test.tsx
+│   ├── App.tsx
+│   ├── error-boundary.tsx
+│   ├── lazy-routes.tsx
+│   ├── providers.tsx
+│   ├── README.md
+│   ├── route-performance.ts
+│   ├── router.tsx
+│   ├── route-validation.tsx
+├── auth/
+│   ├── __tests__/
+│   │   ├── auth-integration.test.tsx
+│   ├── components/
+│   │   ├── __tests__/
+│   │   │   ├── LoginForm.test.tsx
+│   │   │   ├── PasswordReset.integration.test.tsx
+│   │   │   ├── PasswordReset.security.test.tsx
+│   │   │   ├── PasswordReset.test.tsx
+│   │   │   ├── ProtectedRoute.test.tsx
+│   │   │   ├── RegistrationWizard.test.tsx
+│   │   │   ├── setup.ts
+│   │   │   ├── TwoFactorAuth.test.tsx
+│   │   │   ├── UserProfile.test.tsx
+│   │   ├── LoginForm.tsx
+│   │   ├── PasswordReset.tsx
+│   │   ├── RegistrationWizard.tsx
+│   │   ├── TwoFactorAuth.tsx
+│   ├── contexts/
+│   │   ├── AuthContext.tsx
+│   ├── hooks/
+│   │   ├── __tests__/
+│   │   │   ├── useAuth.test.tsx
+│   │   ├── useAuth.ts
+│   ├── index.ts
+│   ├── pages/
+│   │   ├── __tests__/
+│   │   │   ├── Login.test.tsx
+│   │   │   ├── Register.test.tsx
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   ├── services/
+│   │   ├── auth-api.ts
+│   ├── types/
+│   │   ├── auth.types.ts
+├── communication/
+│   ├── components/
+│   │   ├── MessageComposer.tsx
+│   │   ├── MessageList.tsx
+│   │   ├── NotificationSystem.tsx
+│   │   ├── RealTimeNotifications.tsx
+│   ├── hooks/
+│   │   ├── useMessages.ts
+│   ├── index.ts
+│   ├── pages/
+│   │   ├── Inbox.tsx
+│   ├── services/
+│   │   ├── communication-business-logic.ts
+│   │   ├── DocumentCommunicationIntegration.ts
+│   ├── types/
+├── config/
+│   ├── external-dependencies.ts
+├── global.d.ts
+├── infrastructure/
+│   ├── ai/
+│   │   ├── AIModelManager.tsx
+│   ├── api/
+│   │   ├── data-validation.ts
+│   │   ├── queryClient.ts
+│   │   ├── request-manager.ts
+│   ├── cache/
+│   │   ├── query-cache.ts
+│   ├── hooks/
+│   │   ├── __tests__/
+│   │   │   ├── integration.test.ts
+│   │   │   ├── safe-hooks.test.ts
+│   │   │   ├── useCleanupManager.test.ts
+│   │   │   ├── useCoordinatedState.test.ts
+│   │   ├── examples/
+│   │   │   ├── race-condition-prevention.tsx
+│   │   ├── index.ts
+│   │   ├── README.md
+│   │   ├── useCleanupManager.ts
+│   │   ├── useCoordinatedState.ts
+│   │   ├── useIntersectionObserver.ts
+│   │   ├── useSafeEffect.ts
+│   │   ├── useSafeState.ts
+│   │   ├── useStableCallback.ts
+│   ├── monitoring/
+│   │   ├── bundle-analyzer.ts
+│   │   ├── core-web-vitals.ts
+│   │   ├── index.ts
+│   │   ├── operation-tracker.ts
+│   │   ├── performance-monitor.ts
+│   │   ├── PerformanceMonitoringProvider.tsx
+│   │   ├── query-monitor.ts
+│   │   ├── resource-hints.ts
+│   │   ├── system-health.ts
+│   │   ├── usePerformanceMonitoring.ts
+│   ├── payments/
+│   │   ├── PaymentSystemInterface.tsx
+│   ├── realtime/
+│   │   ├── websocket-client.ts
+│   ├── routing/
+│   │   ├── __tests__/
+│   │   │   ├── integration.test.ts
+│   │   │   ├── route-preloader.test.ts
+│   │   │   ├── useRoutePreloader.test.tsx
+│   │   ├── index.ts
+│   │   ├── README.md
+│   │   ├── ROUTE_PRELOADER_ANALYSIS.md
+│   │   ├── RoutePerformanceMonitor.tsx
+│   │   ├── route-preloader.ts
+│   │   ├── route-preloader.ts.backup
+│   │   ├── route-preloader-disabled.ts
+│   │   ├── useRoutePreloader.ts
+│   │   ├── useRoutePreloader.ts.backup
+│   │   ├── useRoutePreloader-disabled.ts
+│   ├── security/
+│   ├── services/
+│   │   ├── image-preload-service.ts
+│   ├── service-worker/
+│   │   ├── sw-registration.ts
+│   ├── storage/
+│   ├── utils/
+│   │   ├── __tests__/
+│   │   │   ├── image-optimization.test.ts
+│   │   ├── image-optimization.ts
+├── land-verification/
+│   ├── components/
+│   │   ├── __tests__/
+│   │   │   ├── ContextualGuidanceProvider.test.tsx
+│   │   │   ├── DecisionSupportTool.test.tsx
+│   │   │   ├── HelpSystem.test.tsx
+│   │   │   ├── KenyaLandEducation.test.tsx
+│   │   │   ├── ReportingPortal.test.tsx
+│   │   │   ├── RiskFactorAnalysis.test.tsx
+│   │   │   ├── RiskManagementInterface.test.tsx
+│   │   │   ├── ScenarioModelingTool.test.tsx
+│   │   ├── CommunityInterviewTemplate.tsx
+│   │   ├── ContextualGuidanceProvider.tsx
+│   │   ├── DecisionSupportTool.tsx
+│   │   ├── ExpertCoordinationInterface.tsx
+│   │   ├── HelpSystem.tsx
+│   │   ├── index.ts
+│   │   ├── KenyaLandEducation.tsx
+│   │   ├── LandVerificationDashboard.tsx
+│   │   ├── ProfessionalResourcesDirectory.tsx
+│   │   ├── RecommendationEngine.tsx
+│   │   ├── ReportingPortal.tsx
+│   │   ├── RiskAssessmentDisplay.tsx
+│   │   ├── RiskFactorAnalysis.tsx
+│   │   ├── RiskManagementInterface.tsx
+│   │   ├── RiskProfileVisualization.tsx
+│   │   ├── RiskWeightingControls.tsx
+│   │   ├── ScenarioModelingTool.tsx
+│   │   ├── VerificationProgressTracker.tsx
+│   │   ├── VerificationWizard.tsx
+│   ├── hooks/
+│   │   ├── useLandVerification.ts
+│   ├── index.ts
+│   ├── pages/
+│   │   ├── index.ts
+│   │   ├── LandVerificationDashboardPage.tsx
+│   │   ├── LandVerificationPage.tsx
+│   │   ├── NewVerificationPage.tsx
+│   ├── services/
+│   │   ├── __tests__/
+│   │   │   ├── HelpDocumentationService.test.ts
+│   │   ├── DocumentIntelligenceIntegration.ts
+│   │   ├── HelpDocumentationService.ts
+├── lib/
+├── main.tsx
+├── property/
+│   ├── COMPARE-INTEGRATION.md
+│   ├── components/
+│   │   ├── __tests__/
+│   │   │   ├── accessibility.test.tsx
+│   │   │   ├── ListingCard.test.tsx
+│   │   │   ├── PropertyCard.test.tsx
+│   │   │   ├── PropertyGallery.performance.test.tsx
+│   │   │   ├── PropertyGallery.test.tsx
+│   │   │   ├── PropertyListing.comprehensive.test.tsx
+│   │   │   ├── PropertyListing.integration.test.tsx
+│   │   │   ├── PropertyListing.test.tsx
+│   │   │   ├── PropertyListingTests.test.tsx
+│   │   │   ├── PropertyListingWizard.comprehensive.test.tsx
+│   │   │   ├── PropertyListingWizard.test.tsx
+│   │   │   ├── PropertyMap.test.tsx
+│   │   │   ├── PropertyReviews.test.tsx
+│   │   ├── CompareBar.tsx
+│   │   ├── CompareModal.tsx
+│   │   ├── COMPONENT_CLEANUP_SUMMARY.md
+│   │   ├── COMPONENT_INTEGRATION_ANALYSIS.md
+│   │   ├── EnhancedLandCard.tsx
+│   │   ├── ListingCard.tsx
+│   │   ├── PerformanceTestPanel.tsx
+│   │   ├── PROPERTY_GALLERY_MIGRATION.md
+│   │   ├── PropertyCard.tsx
+│   │   ├── PropertyCardShowcase.tsx
+│   │   ├── PropertyListingWizard.tsx
+│   │   ├── PropertyMap.tsx
+│   │   ├── PropertyReviews.tsx
+│   │   ├── PropertyTestComponent.tsx
+│   │   ├── wizard-steps/
+│   │   │   ├── BasicDetailsStep.tsx
+│   │   │   ├── FeaturesStep.tsx
+│   │   │   ├── ImagesStep.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── LocationStep.tsx
+│   │   │   ├── PreviewStep.tsx
+│   │   │   ├── PricingStep.tsx
+│   ├── contexts/
+│   │   ├── CompareContext.tsx
+│   │   ├── PropertyContext.tsx
+│   ├── hooks/
+│   │   ├── useLandProperty.ts
+│   │   ├── useProperty.ts
+│   │   ├── usePropertySearch.ts
+│   ├── index.ts
+│   ├── INTEGRATION-FIXES.md
+│   ├── LINTING-FIXES.md
+│   ├── NAVIGATION-IMPLEMENTATION.md
+│   ├── pages/
+│   │   ├── __tests__/
+│   │   │   ├── ListProperty.test.tsx
+│   │   │   ├── PropertiesResidential.test.tsx
+│   │   │   ├── PropertyCompare.comprehensive.test.tsx
+│   │   │   ├── PropertyDetails.comprehensive.test.tsx
+│   │   │   ├── PropertyDetails.test.tsx
+│   │   ├── CommercialProperties.tsx
+│   │   ├── index.ts
+│   │   ├── LandDetails.tsx
+│   │   ├── Lands.tsx
+│   │   ├── ListProperty.tsx
+│   │   ├── PropertiesResidential.tsx
+│   │   ├── PropertyCompare.tsx
+│   │   ├── PropertyDetails.tsx
+│   │   ├── PropertyEdit.tsx
+│   │   ├── PropertyMap.tsx
+│   │   ├── PropertyOptimize.tsx
+│   │   ├── PropertyPhotos.tsx
+│   │   ├── PropertyVerification.tsx
+│   │   ├── PropertyWizard.tsx
+│   │   ├── VerifyProperty.tsx
+│   ├── PERFORMANCE-IMPROVEMENTS.md
+│   ├── README-Images.md
+│   ├── services/
+│   │   ├── mock-land-data.ts
+│   │   ├── property-api.ts
+│   │   ├── PropertyDocumentIntegration.ts
+│   │   ├── property-validation.ts
+│   ├── tests/
+│   │   ├── performanceTest.ts
+│   │   ├── property-land-verification.test.ts
+│   ├── types/
+│   │   ├── index.ts
+│   │   ├── property.types.ts
+│   ├── TYPESCRIPT-FIXES.md
+│   ├── utils/
+│   │   ├── performanceMonitor.ts
+│   │   ├── propertyImages.ts
+│   │   ├── raceConditionTest.ts
+├── property-hooks-test.tsx
+├── search/
+│   ├── components/
+│   │   ├── __tests__/
+│   │   │   ├── SearchBar.test.tsx
+│   │   ├── AdvancedSearch.tsx
+│   │   ├── PropertySearch.tsx
+│   │   ├── SearchBar.tsx
+│   │   ├── SearchDebug.tsx
+│   │   ├── SearchDebugger.tsx
+│   │   ├── SearchFilters.tsx
+│   ├── hooks/
+│   │   ├── useSearch.ts
+│   ├── index.ts
+│   ├── pages/
+│   │   ├── AdvancedSearch.tsx
+│   │   ├── SearchResults.tsx
+│   ├── services/
+│   ├── types/
+├── shared/
+│   ├── components/
+│   │   ├── __tests__/
+│   │   │   ├── QueryErrorBoundary.test.tsx
+│   │   ├── AfricaCoverageMap.tsx
+│   │   ├── b2b/
+│   │   │   ├── B2BCommunityInsightsBanner.tsx
+│   │   │   ├── B2BCommunityInsightsPrompt.tsx
+│   │   │   ├── B2BContextualPrompt.tsx
+│   │   │   ├── B2BEntryPointManager.tsx
+│   │   │   ├── B2BFraudReportBanner.tsx
+│   │   │   ├── B2BFraudReportPrompt.tsx
+│   │   │   ├── B2BLeadCapture.tsx
+│   │   │   ├── B2BNotificationBanner.tsx
+│   │   │   ├── index.ts
+│   │   ├── blog/
+│   │   │   ├── BlogPostCard.tsx
+│   │   │   ├── BlogPostSkeleton.tsx
+│   │   ├── CommunityInsights.tsx
+│   │   ├── DemoLoginHelper.tsx
+│   │   ├── examples/
+│   │   │   ├── EnhancedHooksExample.tsx
+│   │   ├── fallbacks/
+│   │   │   ├── index.ts
+│   │   │   ├── MobileNavFallback.tsx
+│   │   │   ├── NavigationFallback.tsx
+│   │   │   ├── RouterFallback.tsx
+│   │   ├── forms/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── FormField.test.tsx
+│   │   │   ├── FileUpload.tsx
+│   │   │   ├── FormField.tsx
+│   │   ├── GlobalPerformanceTestPanel.tsx
+│   │   ├── hero/
+│   │   │   ├── ConversionHero.tsx
+│   │   │   ├── EnhancedHero.tsx
+│   │   ├── images/
+│   │   │   ├── PropertyImageGallery.tsx
+│   │   │   ├── PropertyImageVault.tsx
+│   │   ├── index.ts
+│   │   ├── IntegrationTest.tsx
+│   │   ├── layout/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── accessibility.test.tsx
+│   │   │   │   ├── AppLayout.test.tsx
+│   │   │   │   ├── Navigation.test.tsx
+│   │   │   ├── AppLayout.tsx
+│   │   │   ├── ContentGrid.tsx
+│   │   │   ├── FloatingActionButton.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── HeroSection.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── LayoutContainer.tsx
+│   │   │   ├── MobileNav.tsx
+│   │   │   ├── NavbarSpacer.tsx
+│   │   │   ├── Navigation.tsx
+│   │   │   ├── PageWrapper.tsx
+│   │   │   ├── README.md
+│   │   │   ├── SectionDivider.tsx
+│   │   ├── lazy/
+│   │   │   ├── LazyComponents.tsx
+│   │   ├── navigation/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── accessibility.test.tsx
+│   │   │   │   ├── breadcrumbs.test.tsx
+│   │   │   │   ├── CrashDetector.tsx
+│   │   │   │   ├── FinalNavigationTest.tsx
+│   │   │   │   ├── MinimalNavTest.tsx
+│   │   │   │   ├── MobileNav.test.tsx
+│   │   │   │   ├── Navigation.integration.test.tsx
+│   │   │   │   ├── navigation-crash-fixes.test.tsx
+│   │   │   │   ├── NavigationCrashTest.test.tsx
+│   │   │   │   ├── NavigationSmoothTest.test.tsx
+│   │   │   │   ├── SimpleCrashTest.tsx
+│   │   │   ├── BreadcrumbNavigation.tsx
+│   │   │   ├── ContextualSidebar.tsx
+│   │   │   ├── EnhancedNavigation.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── MOBILE_NAV_VISIBILITY_IMPROVEMENTS.md
+│   │   │   ├── MobileNav.tsx
+│   │   │   ├── NAVIGATION_CRASH_FIXES_COMPLETE.md
+│   │   │   ├── NAVIGATION_FIXES_SUMMARY.md
+│   │   │   ├── NavigationDebug.tsx
+│   │   │   ├── NavigationErrorBoundary.tsx
+│   │   │   ├── NavigationSearch.tsx
+│   │   │   ├── SafeNavigation.tsx
+│   │   ├── NewsBlog.tsx
+│   │   ├── Pagination.tsx
+│   │   ├── PaymentGuidance.tsx
+│   │   ├── PricingCTA.tsx
+│   │   ├── QueryErrorBoundary.tsx
+│   │   ├── RouteRedirect.tsx
+│   │   ├── ServiceCategories.tsx
+│   │   ├── Testimonials.tsx
+│   │   ├── TrustIndicators.tsx
+│   │   ├── ui/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── accessibility.test.tsx
+│   │   │   │   ├── button.test.tsx
+│   │   │   │   ├── form.test.tsx
+│   │   │   │   ├── input.test.tsx
+│   │   │   ├── accordion.tsx
+│   │   │   ├── alert.tsx
+│   │   │   ├── alert-dialog.tsx
+│   │   │   ├── aspect-ratio.tsx
+│   │   │   ├── avatar.tsx
+│   │   │   ├── badge.tsx
+│   │   │   ├── breadcrumb.tsx
+│   │   │   ├── button.tsx
+│   │   │   ├── calendar.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── carousel.tsx
+│   │   │   ├── chart.tsx
+│   │   │   ├── checkbox.tsx
+│   │   │   ├── collapsible.tsx
+│   │   │   ├── command.tsx
+│   │   │   ├── common-buttons.tsx
+│   │   │   ├── context-menu.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── drawer.tsx
+│   │   │   ├── dropdown-menu.tsx
+│   │   │   ├── enhanced-navigation.tsx
+│   │   │   ├── error-states.tsx
+│   │   │   ├── form.tsx
+│   │   │   ├── hover-card.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── input-otp.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── loading-skeleton.tsx
+│   │   │   ├── LoadingSpinner.tsx
+│   │   │   ├── loading-states.tsx
+│   │   │   ├── logo.module.css
+│   │   │   ├── logo.tsx
+│   │   │   ├── menubar.tsx
+│   │   │   ├── navigation-menu.tsx
+│   │   │   ├── pagination.tsx
+│   │   │   ├── popover.tsx
+│   │   │   ├── progress.tsx
+│   │   │   ├── radio-group.tsx
+│   │   │   ├── resizable.tsx
+│   │   │   ├── scroll-area.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── separator.tsx
+│   │   │   ├── sheet.tsx
+│   │   │   ├── sidebar.tsx
+│   │   │   ├── skeleton.tsx
+│   │   │   ├── slider.tsx
+│   │   │   ├── switch.tsx
+│   │   │   ├── table.tsx
+│   │   │   ├── tabs.tsx
+│   │   │   ├── textarea.tsx
+│   │   │   ├── theme-toggle.tsx
+│   │   │   ├── toast.tsx
+│   │   │   ├── toaster.tsx
+│   │   │   ├── toggle.tsx
+│   │   │   ├── toggle-group.tsx
+│   │   │   ├── tooltip.tsx
+│   │   │   ├── wordmark.tsx
+│   │   ├── VideoModal.tsx
+│   │   ├── VirtualizedList.module.css
+│   │   ├── VirtualizedList.tsx
+│   │   ├── VirtualizedPropertyList.tsx
+│   ├── config/
+│   │   ├── assets.ts
+│   │   ├── images.ts
+│   │   ├── image-service.config.ts
+│   │   ├── user-journeys.ts
+│   ├── constants/
+│   ├── contexts/
+│   │   ├── ThemeContext.tsx
+│   ├── docs/
+│   │   ├── memory-optimization-guide.md
+│   ├── hooks/
+│   │   ├── __tests__/
+│   │   │   ├── useDebounce.test.ts
+│   │   │   ├── useFileUpload.test.ts
+│   │   │   ├── useForm.test.tsx
+│   │   │   ├── useFormPersistence.test.ts
+│   │   │   ├── useFormValidation.test.ts
+│   │   │   ├── use-toast.test.ts
+│   │   ├── images/
+│   │   │   ├── usePropertyImageUpload.ts
+│   │   ├── index.ts
+│   │   ├── useAccessibility.ts
+│   │   ├── useAccessibility.tsx
+│   │   ├── useB2BEntryPoints.ts
+│   │   ├── useB2BMessaging.ts
+│   │   ├── useCMS.ts
+│   │   ├── useCompareError.ts
+│   │   ├── useComponentPerformance.ts
+│   │   ├── useDebounce.ts
+│   │   ├── useFileUpload.ts
+│   │   ├── useForm.ts
+│   │   ├── useFormValidation.ts
+│   │   ├── useGeolocation.ts
+│   │   ├── useInfiniteScroll.ts
+│   │   ├── useMemoryOptimization.ts
+│   │   ├── use-mobile.tsx
+│   │   ├── useNavigationSpacing.ts
+│   │   ├── useOperationTracking.ts
+│   │   ├── useOptimisticMutation.ts
+│   │   ├── usePaymentGuidance.ts
+│   │   ├── usePolling.ts
+│   │   ├── usePropertyActions.ts
+│   │   ├── useSafeQuery.ts
+│   │   ├── use-toast.ts
+│   │   ├── useVirtualizationHelpers.ts
+│   │   ├── useWebSocket.ts
+│   ├── index.ts
+│   ├── lib/
+│   │   ├── utils.ts
+│   ├── pages/
+│   │   ├── __tests__/
+│   │   │   ├── Community.test.tsx
+│   │   │   ├── Fraud-resources.test.tsx
+│   │   │   ├── PropertiesResidential.test.tsx
+│   │   ├── About.tsx
+│   │   ├── ApiDemo.tsx
+│   │   ├── Blog.tsx
+│   │   ├── BlogPost.tsx
+│   │   ├── BlogTest.tsx
+│   │   ├── ComingSoon.tsx
+│   │   ├── Community.tsx
+│   │   ├── CommunityAndResources.tsx
+│   │   ├── Contact.tsx
+│   │   ├── ContactSales.tsx
+│   │   ├── Cookies.tsx
+│   │   ├── Demo.tsx
+│   │   ├── DeveloperDashboard.tsx
+│   │   ├── Features.tsx
+│   │   ├── FindProfessionals.tsx
+│   │   ├── Fraud-resources.tsx
+│   │   ├── GettingStarted.tsx
+│   │   ├── Help.tsx
+│   │   ├── Home.tsx
+│   │   ├── index.ts
+│   │   ├── MVP-Demo.tsx
+│   │   ├── NavigationTest.tsx
+│   │   ├── NotFound.tsx
+│   │   ├── OurStory.tsx
+│   │   ├── Partners.tsx
+│   │   ├── PressMedia.tsx
+│   │   ├── Pricing.tsx
+│   │   ├── Privacy.tsx
+│   │   ├── Properties.module.css
+│   │   ├── Properties.tsx
+│   │   ├── Resources.tsx
+│   │   ├── Security.tsx
+│   │   ├── Services.tsx
+│   │   ├── solutions/
+│   │   ├── Solutions.tsx
+│   │   │   ├── LegalExperts.tsx
+│   │   │   ├── PropertyBuyers.tsx
+│   │   │   ├── PropertyDevelopers.tsx
+│   │   │   ├── PropertySellers.tsx
+│   │   │   ├── RealEstateAgents.tsx
+│   │   ├── Terms.tsx
+│   ├── schema.ts
+│   ├── schema-compat.ts
+│   ├── services/
+│   │   ├── __tests__/
+│   │   │   ├── api-client.integration.test.ts
+│   │   │   ├── api-client.test.ts
+│   │   │   ├── api-client-core.test.ts
+│   │   │   ├── api-integration-summary.test.ts
+│   │   │   ├── cache-invalidation.test.ts
+│   │   │   ├── data-transformation.test.ts
+│   │   │   ├── websocket-integration.test.ts
+│   │   │   ├── websocket-simple.test.ts
+│   │   ├── api-client.ts
+│   │   ├── images/
+│   │   │   ├── ImageMetadataService.ts
+│   │   │   ├── PropertyImageUploadCoordinator.ts
+│   │   │   ├── PropertyImageValidationService.ts
+│   │   │   ├── PropertyImageWorkflowManager.ts
+│   │   ├── propertyApi.ts
+│   ├── styles/
+│   │   ├── css.d.ts
+│   │   ├── DESIGN_SYSTEM_MIGRATION.md
+│   │   ├── design-system.css
+│   │   ├── globals.css
+│   ├── test-utils/
+│   │   ├── __tests__/
+│   │   │   ├── accessibility-basic.test.tsx
+│   │   │   ├── accessibility-forms.test.tsx
+│   │   │   ├── accessibility-suite.test.tsx
+│   │   │   ├── api-error-responses.test.tsx
+│   │   │   ├── bundle-performance.test.ts
+│   │   │   ├── component-performance.test.ts
+│   │   │   ├── component-performance.test.tsx
+│   │   │   ├── core-web-vitals.test.ts
+│   │   │   ├── empty-loading-states.test.tsx
+│   │   │   ├── ERROR_HANDLING_SUMMARY.md
+│   │   │   ├── error-boundaries.test.tsx
+│   │   │   ├── error-handling-demo.test.tsx
+│   │   │   ├── error-handling-integration.test.tsx
+│   │   │   ├── form-validation-integration.test.tsx
+│   │   │   ├── image-performance.test.ts
+│   │   │   ├── network-errors.test.tsx
+│   │   │   ├── page-load-performance.test.ts
+│   │   │   ├── page-performance.test.ts
+│   │   │   ├── performance.test.ts
+│   │   │   ├── validation-errors.test.tsx
+│   │   │   ├── virtualization-performance.test.ts
+│   │   ├── accessibility.ts
+│   │   ├── ACCESSIBILITY_TESTING_GUIDE.md
+│   │   ├── api-handlers.ts
+│   │   ├── bug-detector.ts
+│   │   ├── cross-browser/
+│   │   │   ├── browser-detection.ts
+│   │   ├── error-testing.ts
+│   │   ├── example.test.tsx
+│   │   ├── fixtures.ts
+│   │   ├── FORM_TESTING_SUMMARY.md
+│   │   ├── form-testing.ts
+│   │   ├── foundation.test.tsx
+│   │   ├── index.ts
+│   │   ├── memory-manager.ts
+│   │   ├── msw-server.ts
+│   │   ├── patterns.ts
+│   │   ├── performance-testing.ts
+│   │   ├── README.md
+│   │   ├── render.tsx
+│   │   ├── setup.ts
+│   │   ├── test-chunking.ts
+│   │   ├── user-event.ts
+│   ├── types/
+│   │   ├── api.ts
+│   │   ├── api.types.ts
+│   │   ├── compare.ts
+│   │   ├── images/
+│   │   │   ├── index.ts
+│   │   ├── index.ts
+│   │   ├── property.ts
+│   │   ├── service-interfaces.ts
+│   ├── utils/
+│   │   ├── __tests__/
+│   │   │   ├── form-validation.test.ts
+│   │   │   ├── validation.test.ts
+│   │   ├── api-client.ts
+│   │   ├── cn.ts
+│   │   ├── compare-utils.tsx
+│   │   ├── date-utils.ts
+│   │   ├── enhanced-cache-manager.ts
+│   │   ├── error-handling.ts
+│   │   ├── errors.ts
+│   │   ├── form-validation.ts
+│   │   ├── globalPerformanceMonitor.ts
+│   │   ├── images/
+│   │   │   ├── constants.ts
+│   │   │   ├── formatters.ts
+│   │   ├── logger.ts
+│   │   ├── navigation.ts
+│   │   ├── performance-optimizer.ts
+│   │   ├── request-monitor.ts
+│   │   ├── route-tester.ts
+│   │   ├── route-validator.ts
+│   │   ├── safe-navigation.ts
+│   │   ├── test-helpers.tsx
+│   │   ├── toast-utils.ts
+│   │   ├── validation.ts
+├── test-safe-hooks.tsx
+├── trust/
+│   ├── components/
+│   │   ├── CaseManagementInterface.tsx
+│   │   ├── DocumentAuthentication.tsx
+│   │   ├── DocumentUploadInterface.tsx
+│   │   ├── DocumentVerificationResults.tsx
+│   │   ├── FraudAlertsList.tsx
+│   │   ├── FraudDetectionDashboard.tsx
+│   │   ├── MLAnalyticsDisplay.tsx
+│   │   ├── NetworkAnalysisVisualization.tsx
+│   │   ├── PropertyRiskAssessment.tsx
+│   │   ├── TrustScore.tsx
+│   │   ├── VerificationBadge.tsx
+│   ├── contexts/
+│   │   ├── TrustContext.tsx
+│   ├── hooks/
+│   │   ├── useDocumentAuthentication.ts
+│   │   ├── useFraudDetection.ts
+│   │   ├── useTrustScore.ts
+│   ├── index.ts
+│   ├── pages/
+│   │   ├── __tests__/
+│   │   │   ├── Reviews.test.tsx
+│   │   ├── Alerts.tsx
+│   │   ├── BasicChecks.tsx
+│   │   ├── DocumentAuth.tsx
+│   │   ├── FraudDetection.tsx
+│   │   ├── FraudProtectionInfo.tsx
+│   │   ├── Karma.tsx
+│   │   ├── Reports.tsx
+│   │   ├── Reputation.tsx
+│   │   ├── Reviews.tsx
+│   │   ├── TrustPoints.tsx
+│   ├── services/
+│   │   ├── DocumentTrustIntegration.ts
+│   │   ├── fraudDetectionApi.ts
+│   │   ├── trust-api.ts
+│   │   ├── trust-business-logic.ts
+│   ├── types/
+│   │   ├── index.ts
+│   │   ├── trust.types.ts
+├── types/
+│   ├── google-maps.d.ts
+│   ├── land-verification.ts
+│   ├── react-window-infinite-loader.d.ts
+├── user/
+│   ├── components/
+│   │   ├── UserNotifications.tsx
+│   │   ├── UserProfile.tsx
+│   ├── hooks/
+│   │   ├── useUser.ts
+│   ├── index.ts
+│   ├── pages/
+│   │   ├── Dashboard.tsx
+│   │   ├── index.ts
+│   │   ├── Team.tsx
+│   │   ├── Tenants.tsx
+│   │   ├── UserProfile.tsx
+│   │   ├── UserSettings.tsx
+│   ├── services/
+│   │   ├── README.md
+│   │   ├── user-business-logic.ts
+│   ├── types/
+├── utils/
+│   ├── bundle-optimizer.ts
+│   ├── performance-optimizer.ts
+├── vite-env.d.ts
+srclib/
+srcsharedtest-utils/
+tailwind.config.ts
+temp-files/
+├── eslint-fixes-summary.md
+├── visual-improvements-summary.md
+test-integration-quick.js
+test-property-hook.tsx
+test-results/
+├── e2e-junit.xml
+├── e2e-results.json
+tests/
+├── e2e/
+│   ├── auth-workflows.spec.ts
+│   ├── complete-user-workflows.spec.ts
+│   ├── config/
+│   │   ├── test-config.ts
+│   ├── helpers/
+│   │   ├── test-helpers.ts
+│   ├── integration-workflows.spec.ts
+│   ├── property-workflows.spec.ts
+│   ├── README.md
+│   ├── review-workflows.spec.ts
+│   ├── user-profile-workflows.spec.ts
+├── integration/
+├── test-all-routes.ts
+├── test-app-startup.ts
+├── test-db.cjs
+├── test-deployment.html
+├── test-env.ts
+├── test-imports.mjs
+├── test-imports.ts
+├── test-integration-simple.js
+├── test-with-jsdom.ts
+├── unit/
+├── validate-integration.js
+├── validation/
+├── visual/
+│   ├── animations.visual.test.ts
+│   ├── components.visual.test.ts
+│   ├── helpers/
+│   │   ├── visual-test-utils.ts
+│   ├── layouts.visual.test.ts
+│   ├── README.md
+│   ├── responsive-design.visual.test.ts
+│   ├── responsive-navigation.visual.test.ts
+│   ├── setup.visual.test.ts
+│   ├── visual.config.ts
+test-server.js
+test-server-start.js
+theme.json
+tsconfig.deploy.json
+tsconfig.dev.json
+tsconfig.infrastructure.json
+tsconfig.json
+tsconfig.test.json
+tsx
+uploads/
+├── documents/
+│   ├── file_1754021814606_517d49feb639eee5.pdf
+│   ├── file_1754021839201_29914262918e44b5.pdf
+│   ├── file_1754021865229_42774772cae92bce.pdf
+│   ├── file_1754022048605_5049ab93ad2b7eb9.pdf
+│   ├── results/
+├── images/
+├── optimized/
+├── processed/
+├── profiles/
+├── properties/
+│   ├── file_1754021865181_284dc50dd1fca92e.jpg
+│   ├── file_1754022048581_443ed08738b37ff2.jpg
+├── temp/
+├── thumbnails/
+├── tmp-1-56561752646317955
+├── tmp-2-56561752646341431
+vercel.json
+vite
+vite.config.external.ts
+vite.config.ts
+vite.minimal.config.ts
+vitest.chunk-1.config.ts
+vitest.chunk-10.config.ts
+vitest.chunk-11.config.ts
+vitest.chunk-12.config.ts
+vitest.chunk-13.config.ts
+vitest.chunk-14.config.ts
+vitest.chunk-15.config.ts
+vitest.chunk-16.config.ts
+vitest.chunk-17.config.ts
+vitest.chunk-18.config.ts
+vitest.chunk-19.config.ts
+vitest.chunk-2.config.ts
+vitest.chunk-3.config.ts
+vitest.chunk-4.config.ts
+vitest.chunk-5.config.ts
+vitest.chunk-6.config.ts
+vitest.chunk-7.config.ts
+vitest.chunk-8.config.ts
+vitest.chunk-9.config.ts
+vitest.workspace.ts
 ```
 
-### Testing Strategy
-
-#### Frontend Testing
-- **Unit Tests**: Vitest with React Testing Library in `domain/tests/`
-- **Component Tests**: Isolated component testing with mock data
-- **Integration Tests**: Cross-component interaction testing
-- **E2E Tests**: Playwright tests in `tests/e2e/` covering complete user workflows
-- **Accessibility Tests**: Automated accessibility compliance testing
-- **Performance Tests**: Core Web Vitals and performance monitoring
-
-#### Backend Testing
-- **Unit Tests**: Service and utility function testing in `server/domain/tests/`
-- **Integration Tests**: Database and API integration in `server/tests/integration/`
-- **API Tests**: RESTful API contract testing in `server/tests/api/`
-- **Performance Tests**: Load testing and stress testing in `server/tests/performance/`
-- **Security Tests**: Security vulnerability and penetration testing
-- **Land Verification Tests**: Specialized testing for verification workflows
-
-#### Specialized Testing
-- **Land Verification System Tests**: Comprehensive testing of verification workflows
-- **Fraud Detection Tests**: ML model and fraud detection algorithm testing
-- **Document Authentication Tests**: Document analysis and verification testing
-- **Compatibility Tests**: Backward compatibility and system integration testing
-- **Deployment Tests**: Deployment validation and health checks
-
-### Documentation Structure
-
-#### Core Documentation (`docs/`)
-- **API Documentation**: Comprehensive API endpoint documentation
-- **Database Documentation**: Schema and migration documentation
-- **Deployment Guides**: Environment-specific deployment instructions
-- **Architecture Decisions**: ADR (Architecture Decision Records)
-
-#### Analysis & Reports (`temp-files/`)
-- **Code Analysis Reports**: Automated code quality analysis
-- **Data Generation Reports**: Data pipeline and generation reports
-- **Project Sitemaps**: Structural analysis and mapping
-- **Performance Reports**: System performance analysis
-
-#### Domain-Specific Documentation
-- Each domain folder contains relevant documentation
-- Service-specific README files for complex services
-- Integration guides for external systems
-- Troubleshooting guides for common issues
-
-### Asset Management
-
-#### Static Assets (`public/`)
-- **Images**: Optimized image assets for the application
-- **Icons**: Application icons and favicons
-- **PWA Files**: Progressive Web App manifest and service worker
-- **Static Resources**: CSS, fonts, and other static resources
-
-#### User Uploads (`uploads/`)
-- **Documents**: User-uploaded legal documents and certificates
-- **Images**: Property images and user-uploaded photos
-- **Processed**: System-processed files and generated documents
-- **Secure Storage**: Encrypted storage for sensitive documents
-
-### Development Workflow Structure
-
-#### Environment Configuration
-- **Development**: Local development with hot reloading
-- **Staging**: Pre-production testing environment
-- **Production**: Live production environment
-- **Testing**: Isolated testing environment for CI/CD
-
-#### Build & Deployment Pipeline
-- **Continuous Integration**: Automated testing and quality checks
-- **Continuous Deployment**: Automated deployment to staging and production
-- **Quality Gates**: Code quality, security, and performance thresholds
-- **Monitoring**: Comprehensive application and infrastructure monitoring
-
-### Kiro IDE Integration
-
-#### Kiro Configuration (`.kiro/`)
-- **Steering Files**: Context and guidance documents in `.kiro/steering/`
-- **Settings**: IDE configuration in `.kiro/settings/`
-- **Specs**: Feature specifications and implementation plans
-- **Hooks**: Automated agent execution triggers
-
-#### Analysis & Reports (`temp-files/`)
-- **Code Analysis Reports**: Automated code quality analysis
-- **Data Generation Reports**: Data pipeline and generation reports
-- **Project Sitemaps**: Structural analysis and mapping
-- **Performance Reports**: System performance analysis
-- **Implementation Summaries**: Feature implementation documentation
-
-### Development Workflow Enhancements
-
-#### Chunked Testing Strategy
-- **Parallel Test Execution**: 19 chunked Vitest configurations for faster testing
-- **Domain-Specific Tests**: Tests organized by business domain
-- **Integration Test Suites**: Comprehensive integration testing across services
-- **Performance Validation**: Dedicated performance testing infrastructure
-
-#### Advanced Debugging & Diagnostics
-- **Debug Applications**: Multiple debug entry points (`debug-app.tsx`, `diagnostic-app.tsx`)
-- **Simple Test Apps**: Minimal test applications for isolated testing
-- **Hook Testing**: Dedicated hook testing utilities (`test-safe-hooks.tsx`)
-- **Router Testing**: Router migration and testing utilities
-
-#### Comprehensive Script Ecosystem
-- **200+ NPM Scripts**: Extensive automation covering all aspects of development
-- **Data Pipeline Scripts**: Robust data generation and migration utilities
-- **Security Scripts**: Automated security scanning and vulnerability analysis
-- **Performance Scripts**: Load testing and performance optimization
-- **Deployment Scripts**: Multi-platform deployment automation
-
-This evolved structure supports a comprehensive land verification system with:
-- **Advanced Testing Infrastructure**: Chunked parallel testing, comprehensive validation suites
-- **Robust Development Tools**: Debug applications, diagnostic utilities, performance monitoring
-- **Extensive Automation**: 200+ scripts covering all development lifecycle aspects
-- **Kiro IDE Integration**: Native support for AI-assisted development workflows
-- **Production-Ready Architecture**: Multi-platform deployment, monitoring, and security hardening
-- **Kenya-Specific Localization**: Tailored for Kenyan land verification requirements
-
-The structure maintains scalability and security standards while providing extensive tooling for efficient development and reliable deployment.
+Generated on: Thu, Aug  7, 2025 12:05:58 AM

@@ -8,12 +8,21 @@ import {
   ArrowRight,
   SlidersHorizontal,
 } from "lucide-react";
-import React, { useState, useCallback, useMemo, Suspense, lazy } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  Suspense,
+  lazy,
+  useRef,
+} from "react";
 import { useNavigate } from "react-router-dom";
+
 
 import { CompareBar } from "../../property/components/CompareBar";
 import { CompareModal } from "../../property/components/CompareModal";
 import { CompareProvider } from "../../property/contexts/CompareContext";
+import { GridVirtualizedList } from "../components";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -24,7 +33,10 @@ import {
 import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
 import { useDebounce } from "../hooks/useDebounce";
+import { usePropertyGridVirtualization } from "../hooks/useVirtualizationHelpers";
 import { Property } from "../types/property";
+
+import styles from "./Properties.module.css";
 
 // Lazy load the ListingCard for better performance
 const ListingCard = lazy(() => import("../../property/components/ListingCard"));
@@ -34,7 +46,7 @@ interface PropertyCategory {
   readonly id: string;
   readonly title: string;
   readonly description: string;
-  readonly icon: React.ComponentType<any>;
+  readonly icon: React.ComponentType<{ className?: string | undefined; [key: string]: unknown }>;
   readonly href: string;
   readonly count: string;
   readonly color: string;
@@ -113,347 +125,197 @@ const POPULAR_LOCATIONS: readonly string[] = [
 
 // Remove local useDebounce implementation since we're importing it
 
+// Constants for repeated strings
+const PROPERTY_TYPE_APARTMENT = "Apartment";
+const PROPERTY_TYPE_HOUSE = "House";
+
+// Mock property data
+const MOCK_PROPERTIES: Property[] = [
+  {
+    id: 1,
+    title: "Modern 3-Bedroom Apartment in Westlands",
+    description:
+      "Beautiful modern apartment with stunning city views and premium amenities. Features spacious rooms, modern kitchen, and excellent security.",
+    location: "Westlands, Nairobi",
+    price: "15000000",
+    images: [
+      "/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg",
+      "/assets/Residential/frames-for-your-heart-2d4lAQAlbDA-unsplash.jpg",
+      "/assets/Residential/caroline-badran-aaONSK4BKxc-unsplash.jpg",
+    ],
+    features: {
+      bedrooms: 3,
+      bathrooms: 2,
+      squareFeet: 1200,
+      parkingSpaces: 1,
+      yearBuilt: 2020,
+      amenities: ["Swimming Pool", "Gym", "24/7 Security", "Elevator"],
+      propertyType: PROPERTY_TYPE_APARTMENT,
+      petFriendly: false,
+      furnished: true,
+    },
+    status: "verified",
+  },
+  {
+    id: 2,
+    title: "Luxury Villa in Karen",
+    description:
+      "Spacious family home with beautiful gardens and modern fixtures. Perfect for families seeking comfort and elegance.",
+    location: "Karen, Nairobi",
+    price: "45000000",
+    images: [
+      "/assets/Residential/dillon-kydd-XGvwt544g8k-unsplash.jpg",
+      "/assets/Residential/etienne-beauregard-riverin-B0aCvAVSX8E-unsplash.jpg",
+      "/assets/Residential/luke-van-zyl-koH7IVuwRLw-unsplash.jpg",
+    ],
+    features: {
+      bedrooms: 5,
+      bathrooms: 4,
+      squareFeet: 3500,
+      parkingSpaces: 3,
+      yearBuilt: 2018,
+      amenities: ["Swimming Pool", "Garden", "Staff Quarters", "Generator"],
+      propertyType: PROPERTY_TYPE_HOUSE,
+      petFriendly: true,
+      furnished: false,
+    },
+    status: "verified",
+  },
+  {
+    id: 3,
+    title: "Elegant Penthouse in Kilimani",
+    description:
+      "Stunning penthouse with panoramic city views and luxury finishes. Features premium amenities and modern design.",
+    location: "Kilimani, Nairobi",
+    price: "32000000",
+    images: [
+      "/assets/Residential/joel-filipe-RFDP7_80v5A-unsplash.jpg",
+      "/assets/Residential/krzysztof-hepner-V7Q0Oh3Az-c-unsplash.jpg",
+      "/assets/Residential/sebastien-lavalaye-gNY6RsMIsPo-unsplash.jpg",
+    ],
+    features: {
+      bedrooms: 4,
+      bathrooms: 3,
+      squareFeet: 2800,
+      parkingSpaces: 2,
+      yearBuilt: 2019,
+      amenities: ["Rooftop Terrace", "Gym", "Concierge", "Wine Cellar"],
+      propertyType: PROPERTY_TYPE_APARTMENT,
+      petFriendly: true,
+      furnished: true,
+    },
+    status: "verified",
+  },
+  {
+    id: 4,
+    title: "Cozy Family Home in Kileleshwa",
+    description:
+      "Perfect family home with modern amenities and great location. Ideal for young families starting their journey.",
+    location: "Kileleshwa, Nairobi",
+    price: "18500000",
+    images: [
+      "/assets/Residential/jason-briscoe-AQl-J19ocWE-unsplash.jpg",
+      "/assets/Residential/rebecca-chandler-z6Yn9hhlrJw-unsplash.jpg",
+      "/assets/Residential/terrah-holly-pmhdkgRCbtE-unsplash.jpg",
+    ],
+    features: {
+      bedrooms: 3,
+      bathrooms: 2,
+      squareFeet: 1450,
+      parkingSpaces: 2,
+      yearBuilt: 2021,
+      amenities: [
+        "Garden",
+        "Security",
+        "Backup Generator",
+        "Modern Kitchen",
+      ],
+      propertyType: PROPERTY_TYPE_HOUSE,
+      petFriendly: true,
+      furnished: false,
+    },
+    status: "verified",
+  },
+];
+
+// Helper function to get property location string
+const getPropertyLocationString = (location: Property["location"]): string => {
+  return typeof location === "string" ? location : location.address || "";
+};
+
+// Helper function to apply filters to properties
+const applyFiltersToProperties = (properties: Property[], filters: SearchFilters): Property[] => {
+  let filteredProperties = properties;
+
+  if (filters.query) {
+    const query = filters.query.toLowerCase();
+    filteredProperties = filteredProperties.filter(
+      (property) =>
+        property.title.toLowerCase().includes(query) ||
+        property.description.toLowerCase().includes(query) ||
+        getPropertyLocationString(property.location)
+          .toLowerCase()
+          .includes(query)
+    );
+  }
+
+  if (filters.location) {
+    filteredProperties = filteredProperties.filter((property) =>
+      getPropertyLocationString(property.location)
+        .toLowerCase()
+        .includes(filters.location.toLowerCase())
+    );
+  }
+
+  if (filters.propertyType) {
+    filteredProperties = filteredProperties.filter(
+      (property) =>
+        property.features?.propertyType?.toLowerCase() ===
+        filters.propertyType.toLowerCase()
+    );
+  }
+
+  if (filters.bedrooms) {
+    filteredProperties = filteredProperties.filter(
+      (property) =>
+        property.features?.bedrooms &&
+        property.features.bedrooms >= (filters.bedrooms || 0)
+    );
+  }
+
+  if (filters.bathrooms) {
+    filteredProperties = filteredProperties.filter(
+      (property) =>
+        property.features?.bathrooms &&
+        property.features.bathrooms >= (filters.bathrooms || 0)
+    );
+  }
+
+  if (filters.verified) {
+    filteredProperties = filteredProperties.filter(
+      (property) => property.verificationStatus === "verified"
+    );
+  }
+
+  return filteredProperties;
+};
+
 // Enhanced mock API function with better error handling
 const fetchProperties = async (filters: SearchFilters): Promise<Property[]> => {
   try {
     // Simulate realistic API delay with fixed range for testing
-    await new Promise((resolve) => setTimeout(resolve, 800)); // Fixed delay for consistent testing
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // Mock data with real images from public/assets/Residential only - 4 properties
-    const mockProperties: Property[] = [
-      {
-        id: 1,
-        title: "Modern 3-Bedroom Apartment in Westlands",
-        description:
-          "Beautiful modern apartment with stunning city views and premium amenities. Features spacious rooms, modern kitchen, and excellent security.",
-        location: "Westlands, Nairobi",
-        price: "15000000",
-        images: [
-          "/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg",
-          "/assets/Residential/frames-for-your-heart-2d4lAQAlbDA-unsplash.jpg",
-          "/assets/Residential/caroline-badran-aaONSK4BKxc-unsplash.jpg",
-        ],
-        features: {
-          bedrooms: 3,
-          bathrooms: 2,
-          squareFeet: 1200,
-          parkingSpaces: 1,
-          yearBuilt: 2020,
-          amenities: ["Swimming Pool", "Gym", "24/7 Security", "Elevator"],
-          propertyType: "Apartment",
-          petFriendly: false,
-          furnished: true,
-        },
-        status: "verified",
-      },
-      {
-        id: 2,
-        title: "Luxury Villa in Karen",
-        description:
-          "Spacious family home with beautiful gardens and modern fixtures. Perfect for families seeking comfort and elegance.",
-        location: "Karen, Nairobi",
-        price: "45000000",
-        images: [
-          "/assets/Residential/dillon-kydd-XGvwt544g8k-unsplash.jpg",
-          "/assets/Residential/etienne-beauregard-riverin-B0aCvAVSX8E-unsplash.jpg",
-          "/assets/Residential/luke-van-zyl-koH7IVuwRLw-unsplash.jpg",
-        ],
-        features: {
-          bedrooms: 5,
-          bathrooms: 4,
-          squareFeet: 3500,
-          parkingSpaces: 3,
-          yearBuilt: 2018,
-          amenities: ["Swimming Pool", "Garden", "Staff Quarters", "Generator"],
-          propertyType: "House",
-          petFriendly: true,
-          furnished: false,
-        },
-        status: "verified",
-      },
-      {
-        id: 3,
-        title: "Elegant Penthouse in Kilimani",
-        description:
-          "Stunning penthouse with panoramic city views and luxury finishes. Features premium amenities and modern design.",
-        location: "Kilimani, Nairobi",
-        price: "32000000",
-        images: [
-          "/assets/Residential/joel-filipe-RFDP7_80v5A-unsplash.jpg",
-          "/assets/Residential/krzysztof-hepner-V7Q0Oh3Az-c-unsplash.jpg",
-          "/assets/Residential/sebastien-lavalaye-gNY6RsMIsPo-unsplash.jpg",
-        ],
-        features: {
-          bedrooms: 4,
-          bathrooms: 3,
-          squareFeet: 2800,
-          parkingSpaces: 2,
-          yearBuilt: 2019,
-          amenities: ["Rooftop Terrace", "Gym", "Concierge", "Wine Cellar"],
-          propertyType: "Apartment",
-          petFriendly: true,
-          furnished: true,
-        },
-        status: "verified",
-      },
-      {
-        id: 4,
-        title: "Cozy Family Home in Kileleshwa",
-        description:
-          "Perfect family home with modern amenities and great location. Ideal for young families starting their journey.",
-        location: "Kileleshwa, Nairobi",
-        price: "18500000",
-        images: [
-          "/assets/Residential/jason-briscoe-AQl-J19ocWE-unsplash.jpg",
-          "/assets/Residential/rebecca-chandler-z6Yn9hhlrJw-unsplash.jpg",
-          "/assets/Residential/terrah-holly-pmhdkgRCbtE-unsplash.jpg",
-        ],
-        features: {
-          bedrooms: 3,
-          bathrooms: 2,
-          squareFeet: 1450,
-          parkingSpaces: 2,
-          yearBuilt: 2021,
-          amenities: [
-            "Garden",
-            "Security",
-            "Backup Generator",
-            "Modern Kitchen",
-          ],
-          propertyType: "House",
-          petFriendly: true,
-          furnished: false,
-        },
-        status: "verified",
-      },
-    ];
-
-    // Apply filters to mock data for demonstration
-    let filteredProperties = mockProperties;
-
-    if (filters.query) {
-      const query = filters.query.toLowerCase();
-      filteredProperties = filteredProperties.filter(
-        (property) =>
-          property.title.toLowerCase().includes(query) ||
-          property.description.toLowerCase().includes(query) ||
-          (typeof property.location === "string" ?
-            property.location
-          : property.location.address || ""
-          )
-            .toLowerCase()
-            .includes(query)
-      );
-    }
-
-    if (filters.location) {
-      filteredProperties = filteredProperties.filter((property) =>
-        (typeof property.location === "string" ?
-          property.location
-        : property.location.address || ""
-        )
-          .toLowerCase()
-          .includes(filters.location.toLowerCase())
-      );
-    }
-
-    if (filters.propertyType) {
-      filteredProperties = filteredProperties.filter(
-        (property) =>
-          property.features?.propertyType?.toLowerCase() ===
-          filters.propertyType.toLowerCase()
-      );
-    }
-
-    if (filters.bedrooms) {
-      filteredProperties = filteredProperties.filter(
-        (property) =>
-          property.features?.bedrooms &&
-          property.features.bedrooms >= (filters.bedrooms || 0)
-      );
-    }
-
-    if (filters.bathrooms) {
-      filteredProperties = filteredProperties.filter(
-        (property) =>
-          property.features?.bathrooms &&
-          property.features.bathrooms >= (filters.bathrooms || 0)
-      );
-    }
-
-    if (filters.verified) {
-      filteredProperties = filteredProperties.filter(
-        (property) => property.verificationStatus === "verified"
-      );
-    }
-
-    return filteredProperties;
+    return applyFiltersToProperties(MOCK_PROPERTIES, filters);
   } catch (error) {
     // Log error in development mode only
     if (process.env.NODE_ENV === "development") {
       // eslint-disable-next-line no-console
       console.error("Error fetching properties:", error);
     }
-    
-    // Return mock data as fallback instead of throwing error
-    const mockProperties: Property[] = [
-      {
-        id: 1,
-        title: "Modern 3-Bedroom Apartment in Westlands",
-        description:
-          "Beautiful modern apartment with stunning city views and premium amenities. Features spacious rooms, modern kitchen, and excellent security.",
-        location: "Westlands, Nairobi",
-        price: "15000000",
-        images: [
-          "/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg",
-          "/assets/Residential/frames-for-your-heart-2d4lAQAlbDA-unsplash.jpg",
-          "/assets/Residential/caroline-badran-aaONSK4BKxc-unsplash.jpg",
-        ],
-        features: {
-          bedrooms: 3,
-          bathrooms: 2,
-          squareFeet: 1200,
-          parkingSpaces: 1,
-          yearBuilt: 2020,
-          amenities: ["Swimming Pool", "Gym", "24/7 Security", "Elevator"],
-          propertyType: "Apartment",
-          petFriendly: false,
-          furnished: true,
-        },
-        status: "verified",
-      },
-      {
-        id: 2,
-        title: "Luxury Villa in Karen",
-        description:
-          "Spacious family home with beautiful gardens and modern fixtures. Perfect for families seeking comfort and elegance.",
-        location: "Karen, Nairobi",
-        price: "45000000",
-        images: [
-          "/assets/Residential/dillon-kydd-XGvwt544g8k-unsplash.jpg",
-          "/assets/Residential/etienne-beauregard-riverin-B0aCvAVSX8E-unsplash.jpg",
-          "/assets/Residential/luke-van-zyl-koH7IVuwRLw-unsplash.jpg",
-        ],
-        features: {
-          bedrooms: 5,
-          bathrooms: 4,
-          squareFeet: 3500,
-          parkingSpaces: 3,
-          yearBuilt: 2018,
-          amenities: ["Swimming Pool", "Garden", "Staff Quarters", "Generator"],
-          propertyType: "House",
-          petFriendly: true,
-          furnished: false,
-        },
-        status: "verified",
-      },
-      {
-        id: 3,
-        title: "Elegant Penthouse in Kilimani",
-        description:
-          "Stunning penthouse with panoramic city views and luxury finishes. Features premium amenities and modern design.",
-        location: "Kilimani, Nairobi",
-        price: "32000000",
-        images: [
-          "/assets/Residential/joel-filipe-RFDP7_80v5A-unsplash.jpg",
-          "/assets/Residential/krzysztof-hepner-V7Q0Oh3Az-c-unsplash.jpg",
-          "/assets/Residential/sebastien-lavalaye-gNY6RsMIsPo-unsplash.jpg",
-        ],
-        features: {
-          bedrooms: 4,
-          bathrooms: 3,
-          squareFeet: 2800,
-          parkingSpaces: 2,
-          yearBuilt: 2019,
-          amenities: ["Rooftop Terrace", "Gym", "Concierge", "Wine Cellar"],
-          propertyType: "Apartment",
-          petFriendly: true,
-          furnished: true,
-        },
-        status: "verified",
-      },
-      {
-        id: 4,
-        title: "Cozy Family Home in Kileleshwa",
-        description:
-          "Perfect family home with modern amenities and great location. Ideal for young families starting their journey.",
-        location: "Kileleshwa, Nairobi",
-        price: "18500000",
-        images: [
-          "/assets/Residential/jason-briscoe-AQl-J19ocWE-unsplash.jpg",
-          "/assets/Residential/rebecca-chandler-z6Yn9hhlrJw-unsplash.jpg",
-          "/assets/Residential/terrah-holly-pmhdkgRCbtE-unsplash.jpg",
-        ],
-        features: {
-          bedrooms: 3,
-          bathrooms: 2,
-          squareFeet: 1450,
-          parkingSpaces: 2,
-          yearBuilt: 2021,
-          amenities: [
-            "Garden",
-            "Security",
-            "Backup Generator",
-            "Modern Kitchen",
-          ],
-          propertyType: "House",
-          petFriendly: true,
-          furnished: false,
-        },
-        status: "verified",
-      },
-    ];
-    
-    // Apply the same filters to fallback data
-    let filteredProperties = mockProperties;
 
-    if (filters.query) {
-      const query = filters.query.toLowerCase();
-      filteredProperties = filteredProperties.filter(
-        (property) =>
-          property.title.toLowerCase().includes(query) ||
-          property.description.toLowerCase().includes(query) ||
-          (typeof property.location === 'string' ? property.location : property.location.address || '').toLowerCase().includes(query)
-      );
-    }
-
-    if (filters.location) {
-      filteredProperties = filteredProperties.filter((property) =>
-        (typeof property.location === 'string' ? property.location : property.location.address || '').toLowerCase().includes(filters.location.toLowerCase())
-      );
-    }
-
-    if (filters.propertyType) {
-      filteredProperties = filteredProperties.filter(
-        (property) =>
-          property.features?.propertyType?.toLowerCase() ===
-          filters.propertyType.toLowerCase()
-      );
-    }
-
-    if (filters.bedrooms) {
-      filteredProperties = filteredProperties.filter(
-        (property) =>
-          property.features?.bedrooms &&
-          property.features.bedrooms >= (filters.bedrooms || 0)
-      );
-    }
-
-    if (filters.bathrooms) {
-      filteredProperties = filteredProperties.filter(
-        (property) =>
-          property.features?.bathrooms &&
-          property.features.bathrooms >= (filters.bathrooms || 0)
-      );
-    }
-
-    if (filters.verified) {
-      filteredProperties = filteredProperties.filter(
-        (property) => property.verificationStatus === "verified"
-      );
-    }
-
-    return filteredProperties;
+    // Return filtered mock data as fallback
+    return applyFiltersToProperties(MOCK_PROPERTIES, filters);
   }
 };
 
@@ -878,38 +740,10 @@ function PropertiesContent(): JSX.Element {
           {!isLoading && !error && properties && (
             <>
               {properties.length > 0 ?
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <Suspense
-                    fallback={
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {Array.from({ length: 3 }, (_, i) => (
-                          <div key={i} className="space-y-4 animate-pulse">
-                            <Skeleton className="aspect-[16/10] rounded-2xl" />
-                            <div className="space-y-2">
-                              <Skeleton className="h-4 w-3/4 rounded-md" />
-                              <Skeleton className="h-4 w-1/2 rounded-md" />
-                              <Skeleton className="h-6 w-1/3 rounded-md" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    }
-                  >
-                    {properties.map((property, idx) => (
-                      <div
-                        key={property.id}
-                        className="animate-fadeInUp"
-                        style={{ animationDelay: `${idx * 75}ms` }}
-                      >
-                        <ListingCard
-                          property={property}
-                          className="group rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-                          onClick={handlePropertyClick}
-                        />
-                      </div>
-                    ))}
-                  </Suspense>
-                </div>
+                <VirtualizedPropertyGrid
+                  properties={properties}
+                  onPropertyClick={handlePropertyClick}
+                />
               : <div className="text-center py-12">
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">
                     <Search
@@ -1051,6 +885,76 @@ function PropertiesContent(): JSX.Element {
     </div>
   );
 }
+
+// Virtualized Property Grid Component
+const VirtualizedPropertyGrid: React.FC<{
+  properties: Property[];
+  onPropertyClick: (property: Property) => void;
+}> = ({ properties, onPropertyClick }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(600);
+
+  React.useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const availableHeight = window.innerHeight - rect.top - 100;
+        setContainerHeight(Math.max(400, availableHeight));
+      }
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
+
+  const gridProps = usePropertyGridVirtualization(
+    properties,
+    containerRef.current?.clientWidth || 1200,
+    containerHeight,
+    350, // card width
+    400 // card height
+  );
+
+  const renderPropertyItem = useCallback(
+    (property: Property, index: number, style: React.CSSProperties) => {
+      return (
+        <div style={style} className={styles.propertyItemContainer}>
+          <Suspense
+            fallback={
+              <div className="space-y-4 animate-pulse">
+                <Skeleton className="aspect-[16/10] rounded-2xl" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-3/4 rounded-md" />
+                  <Skeleton className="h-4 w-1/2 rounded-md" />
+                  <Skeleton className="h-6 w-1/3 rounded-md" />
+                </div>
+              </div>
+            }
+          >
+            <div
+              className={`${styles.fadeInUp} ${styles.propertyCard}`}
+              style={{ "--animation-delay": `${index * 75}ms` } as React.CSSProperties}
+            >
+              <ListingCard
+                property={property}
+                className="group rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                onClick={onPropertyClick}
+              />
+            </div>
+          </Suspense>
+        </div>
+      );
+    },
+    [onPropertyClick]
+  );
+
+  return (
+    <div ref={containerRef} className={`w-full ${styles.gridContainer}`}>
+      <GridVirtualizedList {...gridProps} renderItem={renderPropertyItem} />
+    </div>
+  );
+};
 
 // Main component wrapper with CompareProvider
 export default function Properties(): JSX.Element {

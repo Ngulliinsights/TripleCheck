@@ -15,7 +15,12 @@ export * from './components/ui/separator';
 export * from './components/ui/label';
 export { LoadingSkeleton } from './components/ui/loading-skeleton';
 export * from './components/ui/loading-states';
-export { OptimizedImage } from './components/ui/optimized-image';
+// Image components - refactored architecture
+export { default as PropertyImageVault } from './components/images/PropertyImageVault';
+export { default as PropertyImageGallery } from './components/images/ImageGallery';
+export { PropertyImageValidationService } from './services/images/PropertyImageValidationService';
+export { PropertyImageUploadCoordinator } from './services/images/PropertyImageUploadCoordinator';
+export { PropertyImageWorkflowManager } from './services/images/PropertyImageWorkflowManager';
 export { Logo } from './components/ui/logo';
 
 // Navigation Components
@@ -29,6 +34,13 @@ export { ServiceCategories } from './components/ServiceCategories';
 export { TrustIndicators } from './components/TrustIndicators';
 export { DemoLoginHelper } from './components/DemoLoginHelper';
 export { QueryErrorBoundary } from './components/QueryErrorBoundary';
+export { EnterpriseVirtualizedList, GridVirtualizedList } from './components/VirtualizedList';
+export { Pagination } from './components/Pagination';
+
+// Hooks
+export { useDebounce } from './hooks/useDebounce';
+export { useComponentPerformance } from './hooks/useComponentPerformance';
+export { usePropertyListVirtualization, usePropertyGridVirtualization } from './hooks/useVirtualizationHelpers';
 
 
 // Shared Pages

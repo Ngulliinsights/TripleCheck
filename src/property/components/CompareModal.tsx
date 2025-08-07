@@ -12,18 +12,18 @@ import {
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Badge } from "../../shared/components/ui/badge";
+// Using basic img tag for simple image display
 import { Button } from "../../shared/components/ui/button";
-import {
-  Property,
-  PropertyFeatures,
-  LocationData as ImportedLocationData,
-} from "../../shared/types/property";
+import type { CompareProperty } from "../../shared/types/compare";
+import { 
+  formatComparePrice,
+  formatCompareLocation,
+  safeGetPropertyImage,
+  getComparePropertyTitle,
+  getVerificationBadge,
+  getFeatureValue
+} from "../../shared/utils/compare-utils";
 import { useCompare } from "../contexts/CompareContext";
-
-// Create a union type that handles both the imported type and any additional dynamic properties
-// This approach respects the exact structure of the imported type while allowing flexibility
-type LocationDataUnion = ImportedLocationData | { [key: string]: unknown };
 
 // Make props interface readonly as suggested by ESLint
 interface CompareModalProps {
@@ -50,81 +50,7 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
     };
   }, [selectedProperties]);
 
-  // Helper function to format price with proper type handling
-  const formatPrice = useCallback((price: string | number): string => {
-    const numericPrice = typeof price === "string" ? parseFloat(price) : price;
-    if (isNaN(numericPrice)) return "Price on request";
-
-    return new Intl.NumberFormat("en-KE", {
-      style: "currency",
-      currency: "KES",
-      minimumFractionDigits: 0,
-    }).format(numericPrice);
-  }, []);
-
-  // Helper function to safely get property features
-  const getFeatures = useCallback(
-    (property: Property): PropertyFeatures | undefined => {
-      return property.features as PropertyFeatures;
-    },
-    []
-  );
-
-  // Helper function to render verification badges with consistent return type
-  const getVerificationBadge = useCallback(
-    (status?: string): React.ReactElement => {
-      switch (status) {
-        case "verified":
-          return (
-            <Badge className="bg-green-100 text-green-800">Verified</Badge>
-          );
-        case "pending":
-          return (
-            <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
-          );
-        default:
-          return (
-            <Badge className="bg-gray-100 text-gray-800">Unverified</Badge>
-          );
-      }
-    },
-    []
-  );
-
-  // Helper function to safely render location data with proper typing
-  // This function handles the complex type relationship between imported and local types
-  const renderLocation = useCallback(
-    (location: string | LocationDataUnion): string => {
-      // Step 1: Handle the simple case where location is already a string
-      if (typeof location === "string") {
-        return location;
-      }
-
-      // Step 2: Handle object locations by safely extracting known properties
-      if (location && typeof location === "object") {
-        // We use type assertion here because we know the structure from context
-        // This is safe because we're only reading properties, not modifying
-        const locationObj = location as {
-          name?: string;
-          address?: string;
-          city?: string;
-          [key: string]: unknown;
-        };
-
-        // Return the first available property in order of preference
-        return (
-          locationObj.name ||
-          locationObj.address ||
-          locationObj.city ||
-          "Unknown Location"
-        );
-      }
-
-      // Step 3: Fallback for any unexpected cases
-      return "Unknown Location";
-    },
-    []
-  );
+  // Using unified utilities from compare-utils
 
   // Handle keyboard navigation for modal
   const handleKeyDown = useCallback(
@@ -298,11 +224,15 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
               {properties.map((property) => (
                 <div key={property.id} className="text-center">
                   <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                    {property.images?.[0] ?
+                    {safeGetPropertyImage(property) ?
                       <img
-                        src={property.images[0]}
-                        alt={property.title}
+                        src={safeGetPropertyImage(property)}
+                        alt={getComparePropertyTitle(property)}
+                        width={300}
+                        height={200}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        useLandPlaceholder={false}
                       />
                     : <div className="w-full h-full flex items-center justify-center">
                         <Home className="w-12 h-12 text-gray-400" />
@@ -310,12 +240,12 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
                     }
                   </div>
                   <h3 className="font-semibold text-lg mb-1 line-clamp-2">
-                    {property.title}
+                    {getComparePropertyTitle(property)}
                   </h3>
                   <p className="text-sm text-gray-600 mb-2">
-                    {renderLocation(property.location)}
+                    {formatCompareLocation(property.location)}
                   </p>
-                  {getVerificationBadge(property.status)}
+                  {getVerificationBadge(property.verificationStatus)}
                 </div>
               ))}
             </div>
@@ -328,20 +258,20 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
               <ComparisonRow
                 label="Price"
                 icon={<DollarSign className="w-4 h-4" />}
-                values={properties.map((p) => formatPrice(p.price))}
+                values={properties.map((p) => formatComparePrice(p.price))}
               />
 
               <ComparisonRow
                 label="Location"
                 icon={<MapPin className="w-4 h-4" />}
-                values={properties.map((p) => renderLocation(p.location))}
+                values={properties.map((p) => formatCompareLocation(p.location))}
               />
 
               <ComparisonRow
                 label="Bedrooms"
                 icon={<Bed className="w-4 h-4" />}
                 values={properties.map((p) => {
-                  const bedrooms = getFeatures(p)?.bedrooms;
+                  const bedrooms = getFeatureValue(p, "bedrooms");
                   return bedrooms ? String(bedrooms) : "—";
                 })}
               />
@@ -350,7 +280,7 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
                 label="Bathrooms"
                 icon={<Bath className="w-4 h-4" />}
                 values={properties.map((p) => {
-                  const bathrooms = getFeatures(p)?.bathrooms;
+                  const bathrooms = getFeatureValue(p, "bathrooms");
                   return bathrooms ? String(bathrooms) : "—";
                 })}
               />
@@ -359,7 +289,7 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
                 label="Area"
                 icon={<Home className="w-4 h-4" />}
                 values={properties.map((p) => {
-                  const sqft = getFeatures(p)?.squareFeet;
+                  const sqft = getFeatureValue(p, "squareFeet");
                   return sqft ? `${Number(sqft).toLocaleString()} sq ft` : "—";
                 })}
               />
@@ -368,7 +298,7 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
                 label="Parking"
                 icon={<Car className="w-4 h-4" />}
                 values={properties.map((p) => {
-                  const parking = getFeatures(p)?.parkingSpaces;
+                  const parking = getFeatureValue(p, "parkingSpaces");
                   return parking ? `${parking} spaces` : "—";
                 })}
               />
@@ -377,7 +307,7 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
                 label="Year Built"
                 icon={<Calendar className="w-4 h-4" />}
                 values={properties.map((p) => {
-                  const year = getFeatures(p)?.yearBuilt;
+                  const year = getFeatureValue(p, "yearBuilt");
                   return year ? String(year) : "—";
                 })}
               />
@@ -385,7 +315,7 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
               <ComparisonRow
                 label="Status"
                 icon={<Shield className="w-4 h-4" />}
-                values={properties.map((p) => getVerificationBadge(p.status))}
+                values={properties.map((p) => getVerificationBadge(p.verificationStatus))}
               />
             </div>
           </div>

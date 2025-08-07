@@ -1,8 +1,8 @@
 import { apiRequest } from "../../infrastructure/api/queryClient";
 import { requestManager } from "../../infrastructure/api/request-manager";
 import { ApiResponse, PaginatedResponse } from "../../shared/types/api.types";
-import { PropertySearchParams, PropertySearchInput } from "../types/property.types";
 import { Property } from "../../shared/types/property";
+import { PropertySearchParams, PropertySearchInput } from "../types/property.types";
 
 import { PropertyBusinessLogic } from "./property-validation";
 

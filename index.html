@@ -109,6 +109,32 @@
     <meta name="referrer" content="strict-origin-when-cross-origin" />
   </head>
   <body>
+    <script>
+      // FORCE DARK MODE - Apply dark mode immediately
+      (function() {
+        try {
+          // Force dark mode application
+          document.documentElement.classList.remove('light', 'dark');
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.setProperty('color-scheme', 'dark');
+          
+          // Set dark as the stored preference
+          localStorage.setItem('theme', 'dark');
+          
+          // Debug: Check what's applied
+          console.log('Theme Debug - HTML classes:', document.documentElement.className);
+          console.log('Theme Debug - Color scheme:', document.documentElement.style.colorScheme);
+          console.log('Theme Debug - Background color:', getComputedStyle(document.documentElement).getPropertyValue('--background'));
+          
+        } catch (e) {
+          console.error('Theme application failed:', e);
+          // Fallback to dark mode if anything fails
+          document.documentElement.classList.remove('light', 'dark');
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.setProperty('color-scheme', 'dark');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

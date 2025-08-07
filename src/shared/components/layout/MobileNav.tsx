@@ -1,6 +1,6 @@
+import { Menu, X, Home, Search, User, Settings } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Home, Search, User, Settings } from 'lucide-react';
 
 interface MobileNavProps {
   isOpen: boolean;

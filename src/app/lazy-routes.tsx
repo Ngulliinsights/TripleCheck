@@ -358,13 +358,10 @@ export const LazyRoutes = {
     routePath: "/land/:id",
     preloadPriority: "normal",
   }),
-  ImageGallery: createLazyRoute(
-    () => import("../property/pages/ImageGallery"),
-    {
-      routePath: "/property/gallery",
-      preloadPriority: "low",
-    }
-  ),
+  PropertyImageGallery: createLazyRoute(() => import("@shared/components/images/ImageGallery"), {
+    routePath: "/property/gallery",
+    preloadPriority: "low",
+  }),
 
   /* --- Land Verification (Kenya) --- */
   LandVerification: createLazyRoute(

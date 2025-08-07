@@ -1,441 +1,900 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { FixedSizeList as List, VariableSizeList, ListChildComponentProps , FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window';
-import InfiniteLoader from 'react-window-infinite-loader';
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useCallback,
+  useMemo,
+  ReactNode,
+  memo,
+  useEffect,
+} from "react";
+import {
+  VariableSizeList,
+  FixedSizeList,
+  ListOnScrollProps,
+} from "react-window";
 
-import { LoadingSkeleton } from './ui/loading-skeleton';
+import styles from "./VirtualizedList.module.css";
 
-export interface VirtualizedListProps<T> {
-  items: T[];
+// Type-safe CSS module access with security validation
+const VALID_CLASS_NAME_REGEX = /^[a-zA-Z0-9_-]+$/;
+
+const getStyleClass = (className: string): string => {
+  // Validate className to prevent object injection
+  if (
+    typeof className !== "string" ||
+    !VALID_CLASS_NAME_REGEX.exec(className)
+  ) {
+    return "";
+  }
+  const styleValue = styles[className as keyof typeof styles];
+  return typeof styleValue === "string" ? styleValue : "";
+};
+
+/* -------------------------------------------------------------------------- */
+/*                               Constants                                    */
+/* -------------------------------------------------------------------------- */
+
+const CSS_CUSTOM_PROPERTIES = {
+  ITEM_WIDTH: "--item-width",
+  ITEM_HEIGHT: "--item-height",
+  GRID_GAP: "--grid-gap",
+} as const;
+
+const CSS_CLASSES = {
+  DYNAMIC_WIDTH: "dynamic-width",
+  DYNAMIC_HEIGHT: "dynamic-height",
+  GRID_ITEM: "grid-item",
+  EMPTY_ITEM: "empty-item",
+  ERROR_ITEM: "error-item",
+  GRID_ITEM_WRAPPER: "grid-item-wrapper",
+} as const;
+
+/* -------------------------------------------------------------------------- */
+/*                               Shared Types                                 */
+/* -------------------------------------------------------------------------- */
+
+export type VirtualisedRenderFn<ItemType> = (
+  item: ItemType,
+  index: number,
+  style: React.CSSProperties
+) => ReactNode;
+
+export type ScrollAlignment = "auto" | "smart" | "center" | "start" | "end";
+
+/* -------------------------------------------------------------------------- */
+/*                        Enterprise List Props & Handle                      */
+/* -------------------------------------------------------------------------- */
+
+export interface EnterpriseVirtualizedListProps<ItemType> {
+  items: readonly ItemType[];
   itemHeight: number | ((index: number) => number);
-  height: number;
-  width?: number;
-  renderItem: (props: {
-    item: T;
-    index: number;
-    style: React.CSSProperties;
-    isScrolling?: boolean;
-  }) => React.ReactNode;
-  onLoadMore?: () => Promise<void>;
-  hasNextPage?: boolean;
-  isLoading?: boolean;
-  loadingComponent?: React.ReactNode;
-  emptyComponent?: React.ReactNode;
-  overscan?: number;
-  className?: string;
+  estimatedItemHeight?: number;
+  containerHeight: number | string;
+  containerWidth?: number | string;
+  renderItem: VirtualisedRenderFn<ItemType>;
+  keyExtractor: (item: ItemType, index: number) => React.Key;
+  overscanCount?: number;
   onScroll?: (scrollTop: number) => void;
-  scrollToIndex?: number;
-  scrollToAlignment?: 'auto' | 'smart' | 'center' | 'end' | 'start';
+  onEndReached?: () => void;
+  onEndReachedThreshold?: number;
+  loading?: boolean;
+  loadingComponent?: ReactNode;
+  emptyComponent?: ReactNode;
+  header?: ReactNode;
+  footer?: ReactNode;
+  className?: string | undefined;
+  innerClassName?: string | undefined;
+  scrollToIndex?: number | undefined;
+  scrollToAlignment?: ScrollAlignment | undefined;
+  outerRef?:
+    | React.Ref<HTMLDivElement>
+    | React.MutableRefObject<HTMLDivElement | null>;
+  itemData?: Record<string, unknown>;
+  debounceMs?: number;
 }
 
-export interface VirtualizedGridProps<T> {
-  items: T[];
+export interface EnterpriseVirtualizedListHandle {
+  scrollToItem: (index: number, align?: ScrollAlignment) => void;
+  scrollToTop: () => void;
+  recompute: () => void;
+  getScrollOffset: () => number;
+  getTotalSize: () => number;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                         Memoized Row & Helpers                             */
+/* -------------------------------------------------------------------------- */
+
+interface MemoizedRowData<ItemType> {
+  items: readonly ItemType[];
+  renderItem: VirtualisedRenderFn<ItemType>;
+  itemData?: Record<string, unknown> | undefined;
+}
+
+// Enhanced memoized row with consistent return type and better error boundaries
+const MemoizedRow = memo<{
+  index: number;
+  style: React.CSSProperties;
+  data: MemoizedRowData<unknown>;
+}>(({ index, style, data }): React.ReactElement => {
+  const { items, renderItem } = data;
+
+  // Create a fallback div element for all error cases to ensure consistent return type
+  const fallbackElement = (
+    <div
+      style={style}
+      className={getStyleClass("fallback-item")}
+      data-testid={`fallback-item-${index}`}
+    />
+  );
+
+  // Early return for invalid indices - consistent ReactNode return type
+  if (index < 0 || index >= items.length) {
+    return fallbackElement;
+  }
+
+  // Safe array access using bracket notation instead of object injection pattern
+  const item = items[index] ?? null;
+
+  // Use null check instead of undefined for better performance
+  if (item == null) {
+    return fallbackElement;
+  }
+
+  // Wrap in try-catch to prevent render crashes from propagating
+  try {
+    const renderedItem = renderItem(item, index, style);
+    // Ensure we always return a ReactElement, never undefined
+    if (React.isValidElement(renderedItem)) {
+      return renderedItem;
+    }
+    return fallbackElement;
+  } catch (error) {
+    // Use structured logging instead of console.warn for production environments
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.warn(`Failed to render item at index ${index}:`, error);
+    }
+    return (
+      <div style={style} className={getStyleClass("error-item")}>
+        Error rendering item
+      </div>
+    );
+  }
+}) as React.NamedExoticComponent<{
+  index: number;
+  style: React.CSSProperties;
+  data: MemoizedRowData<unknown>;
+}> & { displayName?: string };
+
+MemoizedRow.displayName = "VirtualizedRow";
+
+/* -------------------------------------------------------------------------- */
+/*                    Optimized Debounce Hook                                 */
+/* -------------------------------------------------------------------------- */
+
+// Enhanced debounce hook with cleanup on unmount and better memory management
+function useDebounceCallback<FunctionArgs extends unknown[]>(
+  callback: (...args: FunctionArgs) => void,
+  delay: number
+): [(...args: FunctionArgs) => void, () => void] {
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  const callbackRef = useRef(callback);
+
+  // Keep callback reference fresh without recreating the debounced function
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
+  const debouncedCallback = useCallback(
+    (...args: FunctionArgs) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => {
+        callbackRef.current(...args);
+      }, delay);
+    },
+    [delay] // Only depend on delay, not callback
+  );
+
+  const cancel = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = undefined;
+    }
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return [debouncedCallback, cancel];
+}
+
+/* -------------------------------------------------------------------------- */
+/*                      Ref Assignment Utility                               */
+/* -------------------------------------------------------------------------- */
+
+// Helper function to safely handle ref assignments and reduce cognitive complexity
+const assignOuterRef = (
+  node: HTMLDivElement | null,
+  forwardedRef:
+    | React.Ref<HTMLDivElement>
+    | React.MutableRefObject<HTMLDivElement | null>
+    | undefined
+): void => {
+  if (!forwardedRef) return;
+
+  if (typeof forwardedRef === "function") {
+    forwardedRef(node);
+    return;
+  }
+
+  if (
+    typeof forwardedRef === "object" &&
+    forwardedRef != null &&
+    "current" in forwardedRef
+  ) {
+    try {
+      // Type guard to ensure we have a mutable ref
+      const mutableRef =
+        forwardedRef as React.MutableRefObject<HTMLDivElement | null>;
+      if (
+        mutableRef &&
+        typeof mutableRef === "object" &&
+        "current" in mutableRef
+      ) {
+        mutableRef.current = node;
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.warn("Failed to assign outer ref:", error);
+      }
+    }
+  }
+};
+
+/* -------------------------------------------------------------------------- */
+/*                  EnterpriseVirtualizedList Component                       */
+/* -------------------------------------------------------------------------- */
+
+function EnterpriseVirtualizedListInner<ItemType>(
+  props: EnterpriseVirtualizedListProps<ItemType>,
+  ref: React.Ref<EnterpriseVirtualizedListHandle>
+): React.ReactElement {
+  const {
+    items,
+    itemHeight,
+    estimatedItemHeight = 50,
+    containerHeight,
+    containerWidth = "100%",
+    renderItem,
+    keyExtractor,
+    overscanCount = 5,
+    onScroll,
+    onEndReached,
+    onEndReachedThreshold = 0.8,
+    loading = false,
+    loadingComponent,
+    emptyComponent,
+    header,
+    footer,
+    className,
+    innerClassName,
+    scrollToIndex,
+    scrollToAlignment = "auto",
+    outerRef: forwardedOuterRef,
+    itemData,
+    debounceMs = 150,
+  } = props;
+
+  const variableListRef =
+    useRef<VariableSizeList<MemoizedRowData<ItemType>>>(null);
+  const fixedListRef = useRef<FixedSizeList<MemoizedRowData<ItemType>>>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
+  const scrollTopRef = useRef(0);
+  const lastEndReachedCall = useRef(0);
+  const endReachedTriggered = useRef(false);
+
+  const isVariableSize = typeof itemHeight === "function";
+
+  // Memoize total size calculation for better performance
+  const calculateTotalSize = useCallback((): number => {
+    if (isVariableSize && typeof itemHeight === "function") {
+      let total = 0;
+      // Use cached calculation if items haven't changed
+      for (let i = 0; i < items.length; i += 1) {
+        total += itemHeight(i);
+      }
+      return total;
+    }
+    const height =
+      typeof itemHeight === "number" ? itemHeight : estimatedItemHeight;
+    return items.length * height;
+  }, [items.length, itemHeight, estimatedItemHeight, isVariableSize]);
+
+  // Memoize the total size to avoid recalculation on every scroll
+  const totalSize = useMemo(() => calculateTotalSize(), [calculateTotalSize]);
+
+  useImperativeHandle(
+    ref,
+    (): EnterpriseVirtualizedListHandle => ({
+      scrollToItem: (idx: number, align: ScrollAlignment = "auto"): void => {
+        if (idx >= 0 && idx < items.length) {
+          const list =
+            isVariableSize ? variableListRef.current : fixedListRef.current;
+          list?.scrollToItem(idx, align);
+        }
+      },
+      scrollToTop: (): void => {
+        const list =
+          isVariableSize ? variableListRef.current : fixedListRef.current;
+        list?.scrollToItem(0, "start");
+      },
+      recompute: (): void => {
+        variableListRef.current?.resetAfterIndex(0, true);
+      },
+      getScrollOffset: (): number => scrollTopRef.current,
+      getTotalSize: (): number => totalSize,
+    }),
+    [items.length, totalSize, isVariableSize]
+  );
+
+  // Optimized scroll handler with better end-reached detection
+  const handleScroll = useCallback(
+    (scrollProps: ListOnScrollProps): void => {
+      const { scrollOffset, scrollUpdateWasRequested } = scrollProps;
+      scrollTopRef.current = scrollOffset;
+
+      // Only trigger end-reached for user-initiated scrolls
+      if (!scrollUpdateWasRequested && onEndReached) {
+        const now = Date.now();
+        // Throttle end-reached calls more efficiently
+        if (now - lastEndReachedCall.current > 500) {
+          const viewportHeight = outerRef.current?.clientHeight ?? 0;
+          const ratio = (scrollOffset + viewportHeight) / totalSize;
+
+          if (ratio >= onEndReachedThreshold && !endReachedTriggered.current) {
+            endReachedTriggered.current = true;
+            lastEndReachedCall.current = now;
+            onEndReached();
+          } else if (ratio < onEndReachedThreshold - 0.1) {
+            // Add hysteresis to prevent flapping
+            endReachedTriggered.current = false;
+          }
+        }
+      }
+    },
+    [onEndReached, onEndReachedThreshold, totalSize]
+  );
+
+  // Improved debounced scroll callback
+  const [debouncedOnScroll] = useDebounceCallback((scrollTop: number): void => {
+    onScroll?.(scrollTop);
+  }, debounceMs);
+
+  // Only call debounced scroll when scroll position actually changes
+  useEffect(() => {
+    if (onScroll) {
+      debouncedOnScroll(scrollTopRef.current);
+    }
+  }, [debouncedOnScroll, onScroll]);
+
+  // Optimized item key extraction with better fallback and consistent return type
+  const itemKey = useCallback(
+    (index: number): React.Key => {
+      if (index >= 0 && index < items.length && Array.isArray(items)) {
+        // Safe array access using bracket notation
+        const item = items[index] ?? null;
+        if (item != null) {
+          try {
+            const key = keyExtractor(item, index);
+            // Ensure we always return a valid React.Key
+            return key ?? `fallback-${index}`;
+          } catch (error) {
+            if (process.env.NODE_ENV === "development") {
+              // eslint-disable-next-line no-console
+              console.warn(`Key extraction failed for index ${index}:`, error);
+            }
+            return `fallback-${index}`;
+          }
+        }
+      }
+      return `fallback-${index}`;
+    },
+    [items, keyExtractor]
+  );
+
+  // Stable memoized item data to prevent unnecessary re-renders
+  const memoizedItemData = useMemo(
+    (): MemoizedRowData<ItemType> => ({
+      items,
+      renderItem,
+      itemData,
+    }),
+    [items, renderItem, itemData]
+  );
+
+  // Enhanced outer ref handling with reduced complexity
+  const combinedOuterRef = useCallback(
+    (node: HTMLDivElement | null): void => {
+      // This assignment is always safe - it's our own ref
+      outerRef.current = node;
+
+      // Handle the forwarded ref safely with proper type checking
+      if (forwardedOuterRef) {
+        if (typeof forwardedOuterRef === "function") {
+          // Function refs are always safe to call
+          forwardedOuterRef(node);
+        } else if (
+          forwardedOuterRef &&
+          typeof forwardedOuterRef === "object" &&
+          "current" in forwardedOuterRef
+        ) {
+          try {
+            // Check if the current property is writable before attempting assignment
+            const descriptor = Object.getOwnPropertyDescriptor(
+              forwardedOuterRef,
+              "current"
+            );
+            if (!descriptor || descriptor.writable !== false) {
+              // Safe assignment with explicit type assertion after validation
+              (
+                forwardedOuterRef as { current: HTMLDivElement | null }
+              ).current = node;
+            }
+          } catch (error) {
+            // Graceful fallback if ref assignment fails
+            if (process.env.NODE_ENV === "development") {
+              console.warn("Failed to assign forwarded outer ref:", error);
+            }
+          }
+        }
+      }
+    },
+    [forwardedOuterRef]
+  );
+
+  // Optimized scroll-to-index effect with validation
+  useEffect(() => {
+    if (
+      scrollToIndex !== undefined &&
+      scrollToIndex >= 0 &&
+      scrollToIndex < items.length
+    ) {
+      // Use setTimeout as a cross-platform alternative to requestAnimationFrame
+      const timeoutId = setTimeout(() => {
+        const list =
+          isVariableSize ? variableListRef.current : fixedListRef.current;
+        list?.scrollToItem(scrollToIndex, scrollToAlignment);
+      }, 0);
+
+      return () => clearTimeout(timeoutId);
+    }
+    return undefined;
+  }, [scrollToIndex, scrollToAlignment, items.length, isVariableSize]);
+
+  // Always call useMemo at the top level to avoid conditional hook calls
+  const commonProps = useMemo(
+    () => ({
+      outerRef: combinedOuterRef,
+      height: containerHeight,
+      width: containerWidth,
+      itemCount: items.length,
+      itemKey,
+      itemData: memoizedItemData as MemoizedRowData<unknown>,
+      overscanCount,
+      onScroll: handleScroll,
+      className: innerClassName,
+      children: MemoizedRow,
+    }),
+    [
+      combinedOuterRef,
+      containerHeight,
+      containerWidth,
+      items.length,
+      itemKey,
+      memoizedItemData,
+      overscanCount,
+      handleScroll,
+      innerClassName,
+    ]
+  );
+
+  // Early returns for loading and empty states - ensure consistent ReactNode return
+  if (loading && loadingComponent) {
+    return (
+      <div
+        className={`${getStyleClass("loading-container")} ${className || ""}`}
+        data-testid="loading-container"
+      >
+        {loadingComponent}
+      </div>
+    );
+  }
+
+  if (!loading && items.length === 0 && emptyComponent) {
+    return (
+      <div
+        className={`${getStyleClass("empty-container")} ${className || ""}`}
+        data-testid="empty-container"
+      >
+        {emptyComponent}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`${getStyleClass("virtualized-container")} ${className || ""}`}
+      data-testid="virtualized-container"
+    >
+      {header}
+      {isVariableSize ?
+        <VariableSizeList
+          {...commonProps}
+          ref={
+            variableListRef as React.Ref<
+              VariableSizeList<MemoizedRowData<unknown>>
+            >
+          }
+          itemSize={itemHeight as (index: number) => number}
+          estimatedItemSize={estimatedItemHeight}
+        />
+      : <FixedSizeList
+          {...commonProps}
+          ref={
+            fixedListRef as React.Ref<FixedSizeList<MemoizedRowData<unknown>>>
+          }
+          itemSize={itemHeight as number}
+        />
+      }
+      {footer}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                          Forward Ref With Generics                         */
+/* -------------------------------------------------------------------------- */
+
+export const EnterpriseVirtualizedList = forwardRef(
+  EnterpriseVirtualizedListInner
+) as <ItemType>(
+  p: EnterpriseVirtualizedListProps<ItemType> & {
+    ref?: React.Ref<EnterpriseVirtualizedListHandle>;
+  }
+) => React.ReactElement;
+
+/* -------------------------------------------------------------------------- */
+/*                           Grid Virtualization                              */
+/* -------------------------------------------------------------------------- */
+
+export interface GridVirtualizedListProps<ItemType> {
+  items: readonly ItemType[];
   itemWidth: number;
   itemHeight: number;
-  columnCount: number;
-  height: number;
-  width: number;
-  renderItem: (props: {
-    item: T;
-    columnIndex: number;
-    rowIndex: number;
-    style: React.CSSProperties;
-    isScrolling?: boolean;
-  }) => React.ReactNode;
-  onLoadMore?: () => Promise<void>;
-  hasNextPage?: boolean;
-  isLoading?: boolean;
-  loadingComponent?: React.ReactNode;
-  emptyComponent?: React.ReactNode;
-  overscan?: number;
+  containerWidth: number;
+  containerHeight: number;
+  renderItem: (
+    item: ItemType,
+    index: number,
+    style: React.CSSProperties
+  ) => ReactNode;
+  keyExtractor: (item: ItemType, index: number) => React.Key;
+  gap?: number;
+  overscanCount?: number;
+  onScroll?: (scrollTop: number) => void;
+  onEndReached?: () => void;
+  onEndReachedThreshold?: number;
+  loading?: boolean;
+  loadingComponent?: ReactNode;
+  emptyComponent?: ReactNode;
   className?: string;
 }
 
-/**
- * Virtualized list component for efficient rendering of large datasets
- */
-export function VirtualizedList<T>({
-  items,
-  itemHeight,
-  height,
-  width = 300,
-  renderItem,
-  onLoadMore,
-  hasNextPage = false,
-  isLoading = false,
-  loadingComponent,
-  emptyComponent,
-  overscan = 5,
-  className,
-  onScroll,
-  scrollToIndex,
-  scrollToAlignment = 'auto'
-}: VirtualizedListProps<T>) {
-  const listRef = useRef<List | VariableSizeList>(null);
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-
-  // Determine if we need variable or fixed size list
-  const isVariableSize = typeof itemHeight === 'function';
-
-  // Memoize item count for infinite loading
-  const itemCount = useMemo(() => {
-    return hasNextPage ? items.length + 1 : items.length;
-  }, [items.length, hasNextPage]);
-
-  // Check if item is loaded
-  const isItemLoaded = useCallback((index: number) => {
-    return index < items.length;
-  }, [items.length]);
-
-  // Load more items
-  const loadMoreItems = useCallback(async () => {
-    if (isLoading || !onLoadMore) return;
-    await onLoadMore();
-  }, [isLoading, onLoadMore]);
-
-  // Handle scroll events
-  const handleScroll = useCallback((props: any) => {
-    setIsScrolling(true);
-    
-    // Clear existing timeout
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-    
-    // Set timeout to detect scroll end
-    scrollTimeoutRef.current = setTimeout(() => {
-      setIsScrolling(false);
-    }, 150);
-
-    onScroll?.(props.scrollTop);
-  }, [onScroll]);
-
-  // Scroll to specific index
-  useEffect(() => {
-    if (scrollToIndex !== undefined && listRef.current) {
-      listRef.current.scrollToItem(scrollToIndex, scrollToAlignment);
-    }
-  }, [scrollToIndex, scrollToAlignment]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Render individual list item
-  const renderListItem = useCallback(({ index, style }: ListChildComponentProps) => {
-    const item = items[index];
-    
-    // Show loading placeholder for items being loaded
-    if (!item) {
-      return (
-        <div style={style}>
-          {loadingComponent || <LoadingSkeleton variant="card" />}
-        </div>
-      );
-    }
-
-    return renderItem({
-      item,
-      index,
-      style,
-      isScrolling
-    });
-  }, [items, renderItem, isScrolling, loadingComponent]);
-
-  // Show empty state if no items
-  if (items.length === 0 && !isLoading) {
-    return (
-      <div className={`flex items-center justify-center ${className}`} style={{ height }}>
-        {emptyComponent || (
-          <div className="text-center text-muted-foreground">
-            <p>No items to display</p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Render with infinite loading if onLoadMore is provided
-  if (onLoadMore) {
-    return (
-      <div className={className}>
-        <InfiniteLoader
-          isItemLoaded={isItemLoaded}
-          itemCount={itemCount}
-          loadMoreItems={loadMoreItems}
-        >
-          {({ onItemsRendered, ref }: any) => {
-            if (isVariableSize) {
-              return (
-                <VariableSizeList
-                  ref={(list) => {
-                    ref(list);
-                    (listRef as any).current = list;
-                  }}
-                  height={height}
-                  width={width}
-                  itemCount={itemCount}
-                  itemSize={itemHeight as (index: number) => number}
-                  onItemsRendered={onItemsRendered}
-                  onScroll={handleScroll}
-                  overscanCount={overscan}
-                >
-                  {renderListItem}
-                </VariableSizeList>
-              );
-            } else {
-              return (
-                <List
-                  ref={(list) => {
-                    ref(list);
-                    (listRef as any).current = list;
-                  }}
-                  height={height}
-                  width={width}
-                  itemCount={itemCount}
-                  itemSize={itemHeight as number}
-                  onItemsRendered={onItemsRendered}
-                  onScroll={handleScroll}
-                  overscanCount={overscan}
-                >
-                  {renderListItem}
-                </List>
-              );
-            }
-          }}
-        </InfiniteLoader>
-      </div>
-    );
-  }
-
-  // Render without infinite loading
-  if (isVariableSize) {
-    return (
-      <div className={className}>
-        <VariableSizeList
-          ref={listRef as any}
-          height={height}
-          width={width}
-          itemCount={items.length}
-          itemSize={itemHeight as (index: number) => number}
-          onScroll={handleScroll}
-          overscanCount={overscan}
-        >
-          {renderListItem}
-        </VariableSizeList>
-      </div>
-    );
-  }
-
-  return (
-    <div className={className}>
-      <List
-        ref={listRef as any}
-        height={height}
-        width={width}
-        itemCount={items.length}
-        itemSize={itemHeight as number}
-        onScroll={handleScroll}
-        overscanCount={overscan}
-      >
-        {renderListItem}
-      </List>
-    </div>
-  );
+export interface GridVirtualizedListHandle {
+  scrollToItem: (index: number, align?: ScrollAlignment) => void;
+  scrollToTop: () => void;
+  getScrollOffset: () => number;
 }
 
-/**
- * Virtualized grid component for efficient rendering of large datasets in grid layout
- */
-export function VirtualizedGrid<T>({
-  items,
-  itemWidth,
-  itemHeight,
-  columnCount,
-  height,
-  width,
-  renderItem,
-  onLoadMore,
-  hasNextPage = false,
-  isLoading = false,
-  loadingComponent,
-  emptyComponent,
-  overscan = 5,
-  className
-}: VirtualizedGridProps<T>) {
-  const gridRef = useRef<Grid>(null);
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-
-  // Calculate row count
-  const rowCount = useMemo(() => {
-    const totalItems = hasNextPage ? items.length + columnCount : items.length;
-    return Math.ceil(totalItems / columnCount);
-  }, [items.length, columnCount, hasNextPage]);
-
-  // Handle scroll events
-  const handleScroll = useCallback(() => {
-    setIsScrolling(true);
-    
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-    
-    scrollTimeoutRef.current = setTimeout(() => {
-      setIsScrolling(false);
-    }, 150);
-  }, []);
-
-  // Render individual grid item
-  const renderGridItem = useCallback(({ columnIndex, rowIndex, style }: GridChildComponentProps) => {
-    const itemIndex = rowIndex * columnCount + columnIndex;
-    const item = items[itemIndex];
-    
-    // Don't render if beyond items length
-    if (itemIndex >= items.length && !hasNextPage) {
-      return null;
-    }
-
-    // Show loading placeholder for items being loaded
-    if (!item) {
-      return (
-        <div style={style}>
-          {loadingComponent || <LoadingSkeleton variant="card" />}
-        </div>
-      );
-    }
-
-    return renderItem({
-      item,
-      columnIndex,
-      rowIndex,
-      style,
-      isScrolling
-    });
-  }, [items, columnCount, renderItem, isScrolling, loadingComponent, hasNextPage]);
-
-  // Load more items when scrolling near the end
-  const handleItemsRendered = useCallback(({ visibleRowStopIndex }: any) => {
-    if (hasNextPage && !isLoading && onLoadMore && visibleRowStopIndex >= rowCount - 2) {
-      onLoadMore();
-    }
-  }, [hasNextPage, isLoading, onLoadMore, rowCount]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Show empty state if no items
-  if (items.length === 0 && !isLoading) {
-    return (
-      <div className={`flex items-center justify-center ${className}`} style={{ height }}>
-        {emptyComponent || (
-          <div className="text-center text-muted-foreground">
-            <p>No items to display</p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className={className}>
-      <Grid
-        ref={gridRef}
-        columnCount={columnCount}
-        columnWidth={itemWidth}
-        height={height}
-        rowCount={rowCount}
-        rowHeight={itemHeight}
-        width={width}
-        onScroll={handleScroll}
-        onItemsRendered={handleItemsRendered}
-        overscanRowCount={overscan}
-        overscanColumnCount={overscan}
-      >
-        {renderGridItem}
-      </Grid>
-    </div>
-  );
+// Create CSS custom properties object type for better type safety
+interface GridItemStyles extends React.CSSProperties {
+  [CSS_CUSTOM_PROPERTIES.ITEM_WIDTH]?: string;
+  [CSS_CUSTOM_PROPERTIES.ITEM_HEIGHT]?: string;
+  [CSS_CUSTOM_PROPERTIES.GRID_GAP]?: string;
 }
 
-/**
- * Hook for managing virtualized list state
- */
-export function useVirtualizedList<T>(
-  initialItems: T[] = [],
-  loadMoreFn?: () => Promise<T[]>
-) {
-  const [items, setItems] = useState<T[]>(initialItems);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasNextPage, setHasNextPage] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadMore = useCallback(async () => {
-    if (isLoading || !loadMoreFn || !hasNextPage) return;
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const newItems = await loadMoreFn();
-      
-      if (newItems.length === 0) {
-        setHasNextPage(false);
-      } else {
-        setItems(prev => [...prev, ...newItems]);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load more items');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoading, loadMoreFn, hasNextPage]);
-
-  const reset = useCallback(() => {
-    setItems(initialItems);
-    setHasNextPage(true);
-    setError(null);
-    setIsLoading(false);
-  }, [initialItems]);
-
-  const addItems = useCallback((newItems: T[]) => {
-    setItems(prev => [...prev, ...newItems]);
-  }, []);
-
-  const updateItem = useCallback((index: number, updatedItem: T) => {
-    setItems(prev => {
-      const newItems = [...prev];
-      newItems[index] = updatedItem;
-      return newItems;
-    });
-  }, []);
-
-  const removeItem = useCallback((index: number) => {
-    setItems(prev => prev.filter((_, i) => i !== index));
-  }, []);
-
-  return {
-    items,
-    isLoading,
-    hasNextPage,
-    error,
-    loadMore,
-    reset,
-    addItems,
-    updateItem,
-    removeItem
+// Memoized grid styles to prevent recreation
+const createGridStyles = (
+  itemWidth: number,
+  itemHeight: number,
+  gap: number
+) => {
+  const rowStyle: React.CSSProperties = {
+    gap: `${gap}px`,
+    height: itemHeight,
   };
+
+  const itemStyle: GridItemStyles = {
+    width: itemWidth,
+    height: itemHeight,
+    [CSS_CUSTOM_PROPERTIES.ITEM_WIDTH]: `${itemWidth}px`,
+    [CSS_CUSTOM_PROPERTIES.ITEM_HEIGHT]: `${itemHeight}px`,
+  };
+
+  return { row: rowStyle, item: itemStyle };
+};
+
+function GridVirtualizedListInner<ItemType>(
+  props: GridVirtualizedListProps<ItemType>,
+  ref: React.Ref<GridVirtualizedListHandle>
+): React.ReactElement {
+  const {
+    items,
+    itemWidth,
+    itemHeight,
+    containerWidth,
+    containerHeight,
+    renderItem,
+    keyExtractor,
+    gap = 16,
+    overscanCount = 1,
+    onScroll,
+    onEndReached,
+    onEndReachedThreshold = 0.8,
+    loading = false,
+    loadingComponent,
+    emptyComponent,
+    className,
+  } = props;
+
+  const listRef = useRef<FixedSizeList>(null);
+  const scrollTopRef = useRef(0);
+
+  // Memoize grid calculations
+  const gridConfig = useMemo(() => {
+    const columnsPerRow = Math.max(
+      1,
+      Math.floor((containerWidth + gap) / (itemWidth + gap))
+    );
+    const rowCount = Math.ceil(items.length / columnsPerRow);
+    const rowHeight = itemHeight + gap;
+    const gridStyles = createGridStyles(itemWidth, itemHeight, gap);
+
+    return { columnsPerRow, rowCount, rowHeight, styles: gridStyles };
+  }, [containerWidth, itemWidth, itemHeight, gap, items.length]);
+
+  useImperativeHandle(
+    ref,
+    (): GridVirtualizedListHandle => ({
+      scrollToItem: (index: number, align: ScrollAlignment = "auto"): void => {
+        const rowIndex = Math.floor(index / gridConfig.columnsPerRow);
+        if (
+          listRef.current &&
+          rowIndex >= 0 &&
+          rowIndex < gridConfig.rowCount
+        ) {
+          listRef.current.scrollToItem(rowIndex, align);
+        }
+      },
+      scrollToTop: (): void => listRef.current?.scrollToItem(0, "start"),
+      getScrollOffset: (): number => scrollTopRef.current,
+    }),
+    [gridConfig.columnsPerRow, gridConfig.rowCount]
+  );
+
+  // Helper function to render individual grid items with better type safety
+  const renderGridItem = useCallback(
+    (
+      itemIndex: number,
+      endIndex: number,
+      createItemStyleWithVars: () => GridItemStyles,
+      emptyItemClasses: string,
+      errorItemClasses: string,
+      wrapperItemClasses: string
+    ): React.ReactElement => {
+      if (itemIndex > endIndex) {
+        return (
+          <div
+            key={`empty-${itemIndex}`}
+            style={createItemStyleWithVars()}
+            className={emptyItemClasses}
+            data-testid={`grid-empty-item-${itemIndex}`}
+          />
+        );
+      }
+
+      // Safe array access using bracket notation
+      const item = items[itemIndex] ?? null;
+      if (item == null) {
+        return (
+          <div
+            key={`empty-${itemIndex}`}
+            style={createItemStyleWithVars()}
+            className={emptyItemClasses}
+            data-testid={`grid-empty-item-${itemIndex}`}
+          />
+        );
+      }
+
+      try {
+        const itemStyleWithVars = createItemStyleWithVars();
+        const renderedItem = renderItem(item, itemIndex, itemStyleWithVars);
+        return (
+          <div
+            key={keyExtractor(item, itemIndex)}
+            style={itemStyleWithVars}
+            className={wrapperItemClasses}
+            data-testid={`grid-item-${itemIndex}`}
+          >
+            {renderedItem}
+          </div>
+        );
+      } catch (error) {
+        if (process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `Failed to render grid item at index ${itemIndex}:`,
+            error
+          );
+        }
+        return (
+          <div
+            key={`error-${itemIndex}`}
+            style={createItemStyleWithVars()}
+            className={errorItemClasses}
+            data-testid={`grid-error-item-${itemIndex}`}
+          >
+            Error rendering item
+          </div>
+        );
+      }
+    },
+    [items, renderItem, keyExtractor]
+  );
+
+  // Memoized row renderer for better performance with consistent return type
+  const renderRow = useCallback(
+    ({
+      index: rowIndex,
+      style,
+    }: {
+      index: number;
+      style: React.CSSProperties;
+    }): React.ReactElement => {
+      const { columnsPerRow, styles: gridStyles } = gridConfig;
+      const startIndex = rowIndex * columnsPerRow;
+      const endIndex = Math.min(
+        startIndex + columnsPerRow - 1,
+        items.length - 1
+      );
+
+      const rowStyleWithVars: GridItemStyles = {
+        ...style,
+        [CSS_CUSTOM_PROPERTIES.GRID_GAP]: `${gap}px`,
+        [CSS_CUSTOM_PROPERTIES.ITEM_HEIGHT]: `${itemHeight}px`,
+      };
+
+      const gridRowStyleWithVars: GridItemStyles = {
+        ...gridStyles.row,
+        [CSS_CUSTOM_PROPERTIES.GRID_GAP]: `${gap}px`,
+      };
+
+      // Create reusable item style with CSS custom properties
+      const createItemStyleWithVars = (): GridItemStyles => ({
+        ...gridStyles.item,
+        [CSS_CUSTOM_PROPERTIES.ITEM_WIDTH]: `${itemWidth}px`,
+        [CSS_CUSTOM_PROPERTIES.ITEM_HEIGHT]: `${itemHeight}px`,
+      });
+
+      // Create reusable class names
+      const baseItemClasses = `${getStyleClass(CSS_CLASSES.GRID_ITEM)} ${getStyleClass(CSS_CLASSES.DYNAMIC_WIDTH)} ${getStyleClass(CSS_CLASSES.DYNAMIC_HEIGHT)}`;
+      const emptyItemClasses = `${baseItemClasses} ${getStyleClass(CSS_CLASSES.EMPTY_ITEM)}`;
+      const errorItemClasses = `${baseItemClasses} ${getStyleClass(CSS_CLASSES.ERROR_ITEM)}`;
+      const wrapperItemClasses = `${baseItemClasses} ${getStyleClass(CSS_CLASSES.GRID_ITEM_WRAPPER)}`;
+
+      return (
+        <div
+          style={rowStyleWithVars}
+          className={getStyleClass("grid-row-container")}
+          data-testid={`grid-row-${rowIndex}`}
+        >
+          <div
+            style={gridRowStyleWithVars}
+            className={`${getStyleClass("grid-row")} ${getStyleClass("dynamic-gap")}`}
+          >
+            {Array.from({ length: columnsPerRow }, (_, columnIndex) => {
+              const itemIndex = startIndex + columnIndex;
+              return renderGridItem(
+                itemIndex,
+                endIndex,
+                createItemStyleWithVars,
+                emptyItemClasses,
+                errorItemClasses,
+                wrapperItemClasses
+              );
+            })}
+          </div>
+        </div>
+      );
+    },
+    [gridConfig, gap, itemHeight, itemWidth, renderGridItem]
+  );
+
+  // Enhanced scroll handler with end-reached detection
+  const handleScroll = useCallback(
+    (scrollProps: ListOnScrollProps): void => {
+      const { scrollOffset } = scrollProps;
+      scrollTopRef.current = scrollOffset;
+      onScroll?.(scrollOffset);
+
+      if (onEndReached) {
+        const totalHeight = gridConfig.rowCount * gridConfig.rowHeight;
+        const ratio = (scrollOffset + containerHeight) / totalHeight;
+        if (ratio >= onEndReachedThreshold) {
+          onEndReached();
+        }
+      }
+    },
+    [onScroll, onEndReached, onEndReachedThreshold, gridConfig, containerHeight]
+  );
+
+  if (loading && loadingComponent) {
+    return (
+      <div
+        className={`${getStyleClass("loading-container")} ${className || ""}`}
+        data-testid="grid-loading-container"
+      >
+        {loadingComponent}
+      </div>
+    );
+  }
+
+  if (!loading && items.length === 0 && emptyComponent) {
+    return (
+      <div
+        className={`${getStyleClass("empty-container")} ${className || ""}`}
+        data-testid="grid-empty-container"
+      >
+        {emptyComponent}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`${getStyleClass("grid-container")} ${className || ""}`}
+      data-testid="grid-container"
+    >
+      <FixedSizeList
+        ref={listRef}
+        height={containerHeight}
+        width={containerWidth}
+        itemCount={gridConfig.rowCount}
+        itemSize={gridConfig.rowHeight}
+        overscanCount={overscanCount}
+        onScroll={handleScroll}
+      >
+        {renderRow}
+      </FixedSizeList>
+    </div>
+  );
 }
 
-export default VirtualizedList;
+export const GridVirtualizedList = forwardRef(GridVirtualizedListInner) as <
+  ItemType,
+>(
+  p: GridVirtualizedListProps<ItemType> & {
+    ref?: React.Ref<GridVirtualizedListHandle>;
+  }
+) => React.ReactElement;

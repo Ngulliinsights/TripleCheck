@@ -1,10 +1,10 @@
 import { Router } from 'express';
 
 import { professionalsController } from '../controllers/professionals.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { requireAuth } from '../middleware/auth.middleware';
 import { createDeduplicationMiddleware } from '../middleware/deduplication.middleware';
 import { createRateLimitingMiddleware } from '../middleware/rate-limiting.middleware';
-import { validationMiddleware } from '../middleware/validation.middleware';
+import { validateRequest } from '../middleware/validation.middleware';
 
 const router = Router();
 
@@ -117,10 +117,10 @@ router.get('/:id(\\d+)/stats', professionalsController.getProfessionalStats);
  * @rateLimit 5 requests per hour per user
  */
 router.post('/',
-  authMiddleware,
+  requireAuth,
   createRateLimit,
   createDeduplication,
-  validationMiddleware,
+  validateRequest({}),
   professionalsController.createProfessional
 );
 
@@ -130,8 +130,8 @@ router.post('/',
  * @access Private (own profile only)
  */
 router.put('/:id(\\d+)',
-  authMiddleware,
-  validationMiddleware,
+  requireAuth,
+  validateRequest({}),
   professionalsController.updateProfessional
 );
 
@@ -141,8 +141,8 @@ router.put('/:id(\\d+)',
  * @access Private (own profile only)
  */
 router.patch('/:id(\\d+)/availability',
-  authMiddleware,
-  validationMiddleware,
+  requireAuth,
+  validateRequest({}),
   professionalsController.updateAvailability
 );
 
@@ -153,9 +153,9 @@ router.patch('/:id(\\d+)/availability',
  * @rateLimit 10 reviews per hour per user
  */
 router.post('/:id(\\d+)/reviews',
-  authMiddleware,
+  requireAuth,
   reviewRateLimit,
-  validationMiddleware,
+  validateRequest({}),
   professionalsController.addReview
 );
 

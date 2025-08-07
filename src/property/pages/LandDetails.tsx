@@ -16,6 +16,7 @@ import {
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
+import ImageGallery from "../../shared/components/images/ImageGallery";
 import { Badge } from "../../shared/components/ui/badge";
 import { Button } from "../../shared/components/ui/button";
 import {
@@ -26,7 +27,6 @@ import {
 } from "../../shared/components/ui/card";
 import { formatDate } from "../../shared/utils/date-utils";
 import { useLandProperty } from "../hooks/useLandProperty";
-import type { MockLandProperty } from "../services/mock-land-data";
 
 // Constants
 const NOT_SPECIFIED = "Not specified";
@@ -75,262 +75,15 @@ interface LandDetailsProps {
   readonly id?: string;
 }
 
-// Image Showcase Component
-interface ImageShowcaseProps {
-  images: string[];
-  landTitle: string;
-}
-
-function ImageShowcase({ images, landTitle }: Readonly<ImageShowcaseProps>) {
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [lightboxImage, setLightboxImage] = useState(0);
-
-  const openLightbox = (index: number) => {
-    setLightboxImage(index);
-    setIsLightboxOpen(true);
-  };
-
-  const closeLightbox = () => {
-    setIsLightboxOpen(false);
-  };
-
-  const nextLightboxImage = () => {
-    setLightboxImage((prev) => (prev + 1) % images.length);
-  };
-
-  const prevLightboxImage = () => {
-    setLightboxImage((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const nextImage = () => {
-    setSelectedImage((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = () => {
-    setSelectedImage((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  // Handle keyboard events for lightbox - moved before early return
-  useEffect(() => {
-    if (!isLightboxOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case "Escape":
-          closeLightbox();
-          break;
-        case "ArrowLeft":
-          prevLightboxImage();
-          break;
-        case "ArrowRight":
-          nextLightboxImage();
-          break;
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isLightboxOpen, nextLightboxImage, prevLightboxImage]);
-
-  if (!images || images.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <div className="bg-muted rounded-lg h-64 flex items-center justify-center">
-            <div className="text-center">
-              <TreePine className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">No images available</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <>
-      <Card>
-        <CardContent className="p-0">
-          {/* Main Image Display */}
-          <div className="relative">
-            <div
-              className="relative h-96 cursor-pointer group"
-              onClick={() => openLightbox(selectedImage)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  openLightbox(selectedImage);
-                }
-              }}
-              role="button"
-              tabIndex={0}
-              aria-label={`View full size image ${selectedImage + 1} of ${images.length}`}
-            >
-              <img
-                src={images[selectedImage] || ""}
-                alt={`${landTitle} - View ${selectedImage + 1}`}
-                className="w-full h-full object-cover rounded-t-lg transition-transform group-hover:scale-105"
-                loading="lazy"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/assets/placeholder-land.jpg";
-                }}
-              />
-
-              {/* Image Counter */}
-              <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
-                {selectedImage + 1} / {images.length}
-              </div>
-
-              {/* Expand Icon */}
-              <div className="absolute top-4 left-4 bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                <Maximize2 className="h-4 w-4" />
-              </div>
-            </div>
-
-            {/* Navigation Arrows - moved outside clickable div */}
-            {images.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={prevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/90"
-                  aria-label="Previous image"
-                  title="Previous image"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={nextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/90"
-                  aria-label="Next image"
-                  title="Next image"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </>
-            )}
-
-            {/* Thumbnail Strip */}
-            {images.length > 1 && (
-              <div className="p-4 bg-muted/30">
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {images.map((image, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => setSelectedImage(index)}
-                      className={`flex-shrink-0 relative ${
-                        selectedImage === index ?
-                          "ring-2 ring-primary ring-offset-2"
-                        : "hover:ring-2 hover:ring-primary/50 hover:ring-offset-2"
-                      } transition-all rounded-lg overflow-hidden`}
-                    >
-                      <img
-                        src={image || ""}
-                        alt={`${landTitle} - Thumbnail ${index + 1}`}
-                        className="w-20 h-16 object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/assets/placeholder-land.jpg";
-                        }}
-                      />
-                      {selectedImage === index && (
-                        <div className="absolute inset-0 bg-primary/20" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Lightbox Modal */}
-      {isLightboxOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Image lightbox"
-        >
-          <div
-            className="absolute inset-0"
-            onClick={closeLightbox}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                closeLightbox();
-              } else if (e.key === "ArrowLeft") {
-                prevLightboxImage();
-              } else if (e.key === "ArrowRight") {
-                nextLightboxImage();
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            aria-label="Close lightbox by clicking background"
-          />
-          <div className="relative max-w-7xl max-h-full z-10">
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={closeLightbox}
-              className="absolute top-4 right-4 z-10 bg-black/70 text-white p-2 rounded-full hover:bg-black/90 transition-colors"
-              aria-label="Close lightbox"
-              title="Close lightbox"
-            >
-              <X className="h-6 w-6" />
-            </button>
-
-            {/* Main Lightbox Image */}
-            <img
-              src={images[lightboxImage] || ""}
-              alt={`${landTitle} - Full view ${lightboxImage + 1}`}
-              className="max-w-full max-h-full object-contain"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "/assets/placeholder-land.jpg";
-              }}
-            />
-
-            {/* Lightbox Navigation */}
-            {images.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={prevLightboxImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/70 text-white p-3 rounded-full hover:bg-black/90 transition-colors"
-                  aria-label="Previous image in lightbox"
-                  title="Previous image"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-                <button
-                  type="button"
-                  onClick={nextLightboxImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/70 text-white p-3 rounded-full hover:bg-black/90 transition-colors"
-                  aria-label="Next image in lightbox"
-                  title="Next image"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </button>
-              </>
-            )}
-
-            {/* Lightbox Image Counter */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full">
-              {lightboxImage + 1} of {images.length}
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
+// Convert images to ImageGallery format for land properties
+const convertToLandGalleryImages = (images: string[], title: string) => {
+  return images.map((url, index) => ({
+    id: `land-${index}`,
+    src: url,
+    alt: `${title} - View ${index + 1}`,
+    category: 'land'
+  }));
+};
 
 export default function LandDetails({ id }: LandDetailsProps) {
   const params = useParams<{ id: string }>();
@@ -437,8 +190,17 @@ export default function LandDetails({ id }: LandDetailsProps) {
             </div>
           </div>
 
-          {/* Image Showcase */}
-          <ImageShowcase images={land.images || []} landTitle={land.title} />
+          {/* Land Image Gallery */}
+          <ImageGallery 
+            images={convertToLandGalleryImages(land.images || [], land.title)}
+            enableFullscreen={true}
+            enableSearch={false}
+            masonry={false}
+            showThumbnails={true}
+            showImageCounter={true}
+            wrapInCard={true}
+            mainImageHeight="h-96"
+          />
 
           {/* Description */}
           <Card>
@@ -717,6 +479,32 @@ export default function LandDetails({ id }: LandDetailsProps) {
                     {land.owner.trustScore}%
                   </span>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Land Photo Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TreePine className="w-5 h-5" />
+                Land Photo Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Showcase your land with high-quality photos to attract serious buyers
+              </p>
+              <Button 
+                type="button" 
+                className="w-full"
+                onClick={() => window.location.href = '/property/photos'}
+              >
+                <TreePine className="w-4 h-4 mr-2" />
+                Manage Land Photos
+              </Button>
+              <div className="text-xs text-muted-foreground text-center">
+                Upload aerial views, boundary markers, and land features
               </div>
             </CardContent>
           </Card>

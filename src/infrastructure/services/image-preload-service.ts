@@ -226,6 +226,32 @@ class ImagePreloadServiceClass {
   }
 
   /**
+   * Preload critical images with resource hints
+   * Consolidated from image-optimization.ts for better organization
+   */
+  preloadCriticalImages(images: Array<{
+    src: string;
+    type?: string;
+    media?: string;
+    crossOrigin?: string;
+  }>): void {
+    if (typeof document === 'undefined') return;
+
+    images.forEach(({ src, type, media, crossOrigin }) => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = src;
+      
+      if (type) link.type = type;
+      if (media) link.media = media;
+      if (crossOrigin) link.crossOrigin = crossOrigin;
+      
+      document.head.appendChild(link);
+    });
+  }
+
+  /**
    * Preload images based on viewport and connection speed
    */
   intelligentPreload(images: string[]): void {
@@ -255,6 +281,9 @@ export const ImagePreloadService = new ImagePreloadServiceClass();
 
 // Export class for testing
 export { ImagePreloadServiceClass };
+
+// Export standalone function for backward compatibility
+export const preloadCriticalImages = ImagePreloadService.preloadCriticalImages.bind(ImagePreloadService);
 
 /**
  * React hook for using the image preload service

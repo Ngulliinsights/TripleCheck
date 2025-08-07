@@ -188,6 +188,21 @@ router.get('/history/:userId', async (req: Request, res: Response) => {
   }
 });
 
+// Compatibility route for frontend - redirect to trust-integration
+router.get('/score/:userId', async (req: Request, res: Response) => {
+  try {
+    // Redirect to the new trust-integration endpoint
+    res.redirect(307, `/api/trust-integration/score/${req.params.userId}?includeBreakdown=true`);
+  } catch (error) {
+    logger.error('Error redirecting trust score request:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to process trust score request',
+      message: 'Please use /api/trust-integration/score/{userId} endpoint'
+    });
+  }
+});
+
 // Get system-wide trust statistics
 router.get('/stats/system', async (req: Request, res: Response) => {
   try {

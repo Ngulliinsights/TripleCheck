@@ -4,7 +4,13 @@
  * This file provides a single source of truth for all assets used throughout
  * the TripleCheck application. It ensures consistent asset usage, enables
  * easy updates, and provides type safety for asset references.
+ * 
+ * Integrates with the comprehensive image configuration system
  */
+
+// Import comprehensive image system for integration
+import { images, getBestImageSrc } from './images';
+import type { ImageAsset } from './images';
 
 // Asset base paths
 const ASSET_PATHS = {
@@ -253,6 +259,29 @@ export function validateAssetPath(path: string): boolean {
     path.endsWith('.svg') ||
     path.endsWith('.ico')
   );
+}
+
+// Integration with comprehensive image system
+export function getOptimizedAsset(assetKey: string, category: keyof typeof images): ImageAsset | null {
+  const categoryAssets = images[category] as any;
+  const asset = categoryAssets?.[assetKey];
+  
+  if (!asset) return null;
+  
+  return {
+    webp: asset.webp,
+    jpg: asset.jpg,
+    png: asset.png,
+    svg: asset.svg,
+    alt: asset.alt,
+    aspectRatio: asset.aspectRatio
+  };
+}
+
+// Bridge function to use comprehensive image system
+export function getBestAssetSrc(assetKey: string, category: keyof typeof images): string {
+  const asset = getOptimizedAsset(assetKey, category);
+  return asset ? getBestImageSrc(asset) : '';
 }
 
 // Asset optimization helper
