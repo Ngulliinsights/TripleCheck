@@ -24,3 +24,6 @@ export {
   useTenantListVirtualization,
   useTeamGridVirtualization,
 } from "../hooks/useVirtualizationHelpers";
+
+// Export property components and utilities
+export * from "./property";

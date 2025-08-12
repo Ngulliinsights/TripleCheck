@@ -7,16 +7,11 @@ import {
   Phone,
   Mail,
   FileCheck,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  X,
   Loader2,
 } from "lucide-react";
-import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
-import ImageGallery from "../../shared/components/images/ImageGallery";
+import { ImageGallery } from "../../shared/components/images";
 import { Badge } from "../../shared/components/ui/badge";
 import { Button } from "../../shared/components/ui/button";
 import {
@@ -39,7 +34,7 @@ const NOT_SPECIFIED = "Not specified";
  * Integrates with Kenya land verification system
  */
 
-// Define land-specific types
+// Define land-specific types (used by the hook)
 interface LandFeatures {
   size: string;
   soilType: string;
@@ -116,7 +111,7 @@ export default function LandDetails({ id }: LandDetailsProps) {
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">Land Property Not Found</h2>
           <p className="text-muted-foreground mb-4">
-            The land property you're looking for doesn't exist or has been
+            The land property you&apos;re looking for doesn&apos;t exist or has been
             removed.
           </p>
           <Button type="button" onClick={() => window.history.back()}>
@@ -195,11 +190,8 @@ export default function LandDetails({ id }: LandDetailsProps) {
             images={convertToLandGalleryImages(land.images || [], land.title)}
             enableFullscreen={true}
             enableSearch={false}
-            masonry={false}
-            showThumbnails={true}
             showImageCounter={true}
             wrapInCard={true}
-            mainImageHeight="h-96"
           />
 
           {/* Description */}

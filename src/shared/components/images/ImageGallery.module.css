@@ -1,0 +1,57 @@
+/* ImageGallery Component Styles */
+
+.watermark {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.watermarkText {
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.commentPin {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  background-color: rgb(59 130 246);
+  border-radius: 50%;
+  border: 2px solid white;
+  cursor: pointer;
+}
+
+.commentPinActive {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  background-color: rgb(234 179 8);
+  border-radius: 50%;
+  border: 2px solid white;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.hoverScale {
+  transition: transform 0.2s ease-in-out;
+}
+
+.hoverScale:hover {
+  transform: scale(1.02);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+.progressBar {
+  width: var(--progress-width, 0%);
+  transition: width 0.3s ease-in-out;
+}

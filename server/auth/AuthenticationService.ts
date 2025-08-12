@@ -208,7 +208,7 @@ export class AuthenticationService {
 
     try {
       const user = await storage.getUser(tokenData.userId);
-      if (!user || !user.isActive) {
+      if (!user?.isActive) {
         this.refreshTokens.delete(refreshToken);
         return null;
       }

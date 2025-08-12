@@ -4,15 +4,7 @@
  * Integrates with existing API services and follows project patterns
  */
 
-import { imageServiceConfig } from '../../config/image-service.config';
-import { 
-  generateUniqueId, 
-  formatProcessingStep, 
-  formatTimestamp 
-} from '../../utils/images/formatters';
-
-const UNKNOWN_ERROR = 'Unknown error';
-
+import { imageServiceConfig } from '../../config/image-system.config';
 import type {
   ProcessingStep,
   WorkflowStatus,
@@ -20,8 +12,15 @@ import type {
   PropertyImageMetadata,
   DocumentType,
   ImageServiceConfig,
+  ValidationResult,
+  ScanResult,
+  DocumentAuthResult,
+  ComplianceResult,
 } from '../../types/images';
 import { ImageProcessingError, PROCESSING_STEPS_ORDER } from '../../types/images';
+import { ImageUtils } from '../../utils/images/unified-utils';
+
+const UNKNOWN_ERROR = 'Unknown error';
 
 export interface IPropertyImageWorkflowManager {
   startProcessingWorkflow(imageId: string, fileReference: string, documentType?: DocumentType, landVerificationId?: string): Promise<void>;
@@ -35,15 +34,15 @@ export interface IPropertyImageWorkflowManager {
 
 export interface PropertyWorkflowDependencies {
   validationService: {
-    validateUrl: (url: string, options?: any) => Promise<any>;
+    validateUrl: (url: string, options?: Record<string, unknown>) => Promise<ValidationResult>;
   };
   metadataService: {
     extractMetadata: (fileReference: string) => Promise<PropertyImageMetadata>;
-    performVirusScan: (fileReference: string) => Promise<any>;
-    checkCompliance: (fileReference: string, metadata: PropertyImageMetadata) => Promise<any>;
+    performVirusScan: (fileReference: string) => Promise<ScanResult>;
+    checkCompliance: (fileReference: string, metadata: PropertyImageMetadata) => Promise<ComplianceResult>;
   };
   documentAuthService?: {
-    authenticateDocument: (fileReference: string, documentType: DocumentType) => Promise<any>;
+    authenticateDocument: (fileReference: string, documentType: DocumentType) => Promise<DocumentAuthResult>;
   };
   fraudDetectionService?: {
     analyzeImage: (fileReference: string, metadata: PropertyImageMetadata) => Promise<number>;
@@ -58,11 +57,11 @@ export interface PropertyWorkflowDependencies {
     generateThumbnails: (fileReference: string, sizes: number[]) => Promise<string[]>;
   };
   notificationService?: {
-    notifyWorkflowComplete: (imageId: string, status: 'success' | 'failed', metadata?: any) => Promise<void>;
-    notifyStepComplete: (imageId: string, step: ProcessingStep, success: boolean, metadata?: any) => Promise<void>;
+    notifyWorkflowComplete: (imageId: string, status: 'success' | 'failed', metadata?: Record<string, unknown>) => Promise<void>;
+    notifyStepComplete: (imageId: string, step: ProcessingStep, success: boolean, metadata?: Record<string, unknown>) => Promise<void>;
   };
   auditService?: {
-    logWorkflowEvent: (event: string, metadata: any) => Promise<void>;
+    logWorkflowEvent: (event: string, metadata: Record<string, unknown>) => Promise<void>;
   };
 }
 
@@ -84,7 +83,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
     documentType?: DocumentType,
     landVerificationId?: string
   ): Promise<void> {
-    const workflowId = generateUniqueId();
+    const workflowId = ImageUtils.generateUniqueId();
     
     const workflow: WorkflowStatus = {
       imageId,
@@ -126,13 +125,20 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
       if (landVerificationId && this.dependencies.landVerificationService) {
         try {
           const metadata = await this.getCurrentImageMetadata(imageId);
-          await this.dependencies.landVerificationService.linkImageToVerification(
+          if (metadata.metadata) {
+            await this.dependencies.landVerificationService.linkImageToVerification(
+              imageId,
+              landVerificationId,
+              metadata.metadata
+            );
+          }
+        } catch (error) {
+          // Log warning without console
+          await this.dependencies.auditService?.logWorkflowEvent('land_verification_link_failed', {
             imageId,
             landVerificationId,
-            metadata.metadata
-          );
-        } catch (error) {
-          console.warn('Failed to link image to land verification:', error);
+            error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+          });
         }
       }
 
@@ -436,6 +442,14 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
     }
 
     const currentImage = await this.getCurrentImageMetadata(imageId);
+    if (!currentImage.metadata) {
+      throw new ImageProcessingError(
+        'Image metadata not available for fraud detection',
+        'METADATA_MISSING',
+        imageId
+      );
+    }
+
     const fraudScore = await this.dependencies.fraudDetectionService.analyzeImage(
       fileReference,
       currentImage.metadata
@@ -467,6 +481,14 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
   private async executeComplianceCheck(imageId: string, fileReference: string): Promise<void> {
     const currentImage = await this.getCurrentImageMetadata(imageId);
     
+    if (!currentImage.metadata) {
+      throw new ImageProcessingError(
+        'Image metadata not available for compliance check',
+        'METADATA_MISSING',
+        imageId
+      );
+    }
+
     const complianceResult = await this.dependencies.metadataService.checkCompliance(
       fileReference,
       currentImage.metadata
@@ -606,9 +628,12 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
 
   private async getCurrentImageMetadata(imageId: string): Promise<PropertyImage> {
     // In a real implementation, this would fetch current metadata from storage
-    // For now, return a mock object
+    // For now, return a mock object with required fields
     return {
       id: imageId,
+      file: new File([], 'mock-file.jpg', { type: 'image/jpeg' }),
+      status: 'processing',
+      approvalStatus: 'pending',
       metadata: {
         fileSize: 1024 * 1024, // 1MB
         technicalMetadata: {

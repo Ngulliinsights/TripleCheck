@@ -68,7 +68,6 @@ export const AppRouter: React.FC = () => {
         <Route path="/property/optimize" element={<LazyRoutes.PropertyOptimize />} />
         <Route path="/property/verification" element={<LazyRoutes.PropertyVerification />} />
         <Route path="/verify-property" element={<LazyRoutes.VerifyProperty />} />
-        <Route path="/property/gallery" element={<LazyRoutes.ImageGallery />} />
 
         {/* ==========================================
             LAND VERIFICATION ROUTES (Kenya-specific)

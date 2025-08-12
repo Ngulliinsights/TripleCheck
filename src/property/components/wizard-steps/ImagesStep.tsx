@@ -1,22 +1,10 @@
-import { 
-  Upload, 
-  Camera, 
-  X, 
-  Image as ImageIcon, 
-  Move, 
-  Eye,
-  AlertTriangle,
-  CheckCircle,
-  RotateCw
-} from 'lucide-react';
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { Camera } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
 
-import PropertyImageVault from '../../../shared/components/images/PropertyImageVault';
-import type { PropertyImage as VaultImage } from '../../../shared/types/images';
-import { Alert, AlertDescription } from '../../../shared/components/ui/alert';
+import { PropertyImageVault } from '../../../shared/components/images';
 import { Badge } from '../../../shared/components/ui/badge';
-import { Button } from '../../../shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/card';
+import type { PropertyImage as VaultImage } from '../../../shared/types/images';
 import { PropertyFormData } from '../PropertyListingWizard';
 
 interface ImagesStepProps {
@@ -25,20 +13,11 @@ interface ImagesStepProps {
   onValidation: (isValid: boolean) => void;
 }
 
-interface ImageFile {
-  file: File;
-  preview: string;
-  id: string;
-  uploading?: boolean;
-  uploaded?: boolean;
-  error?: string;
-}
-
 const MAX_FILES = 20;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-export function ImagesStep({ data, onUpdate, onValidation }: ImagesStepProps) {
+export function ImagesStep({ data, onUpdate, onValidation }: Readonly<ImagesStepProps>) {
   const [vaultImages, setVaultImages] = useState<VaultImage[]>([]);
 
   // Validate step
@@ -61,15 +40,16 @@ export function ImagesStep({ data, onUpdate, onValidation }: ImagesStepProps) {
       }));
       setVaultImages(existingFiles);
     }
-  }, []);
+  }, [data.images]);
 
   // Handle image vault changes
   const handleVaultChange = useCallback((images: VaultImage[]) => {
     setVaultImages(images);
     
-    // Update form data
+    // Update form data with files from vault
     onUpdate({
-      images: images.map(img => img.file)
+      images: images.map(img => img.file),
+      imageUrls: images.filter(img => img.src).map(img => img.src!)
     });
   }, [onUpdate]);
 

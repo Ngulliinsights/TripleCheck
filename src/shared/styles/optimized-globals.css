@@ -1,0 +1,282 @@
+/* 
+  TRIPLECHECK GLOBAL STYLES - OPTIMIZED
+  =====================================
+  Streamlined design system entry point with legacy compatibility
+*/
+
+/* Unified Design System - Optimized version */
+@import "./design-system.css";
+
+/* 
+  LEGACY COMPATIBILITY - CONSOLIDATED
+  ==================================
+  Backward compatibility for existing components - optimized and consolidated
+*/
+
+/* Legacy animations - consolidated and optimized */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+/* Legacy progress bar utility - optimized */
+.progressFill {
+  height: 0.5rem;
+  background-color: hsl(var(--secondary));
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+  will-change: width;
+}
+
+/* Navigation variables - consolidated */
+:root {
+  --nav-height: 88px;
+  --nav-blur-strength: 16px;
+  --nav-saturation: 150%;
+}
+
+/* Legacy page container utility - responsive optimized */
+.page-container {
+  padding-top: 5rem;
+  padding-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding-top: 6rem;
+  }
+}
+
+/* Legacy navbar offset utilities - consolidated */
+.navbar-offset {
+  padding-top: calc(var(--nav-height) - 0.5rem);
+}
+
+.navbar-offset-hero {
+  padding-top: calc(var(--nav-height) - 1rem);
+}
+
+.navbar-offset-minimal {
+  padding-top: calc(var(--nav-height) - 1.5rem);
+}
+
+@media (min-width: 768px) {
+  .navbar-offset {
+    padding-top: var(--nav-height);
+  }
+
+  .navbar-offset-hero {
+    padding-top: calc(var(--nav-height) - 0.5rem);
+  }
+
+  .navbar-offset-minimal {
+    padding-top: calc(var(--nav-height) - 1rem);
+  }
+}
+
+/* Legacy mobile navigation drag utilities - optimized */
+.mobile-nav-drag {
+  transition: none !important;
+  will-change: transform;
+}
+
+/* Simplified drag offset support */
+.mobile-nav-drag[data-drag-offset] {
+  transform: translateX(var(--drag-offset, 0px));
+}
+
+/* Legacy progress bar width utility - optimized */
+.progress-bar[data-width] {
+  width: calc(var(--progress-width, 0) * 1%);
+  will-change: width;
+}
+
+/* Legacy navigation utilities - using CSS variables */
+.nav-aware-spacing {
+  padding-top: var(--nav-height);
+}
+
+.scroll-margin-nav {
+  scroll-margin-top: calc(var(--nav-height) + 1rem);
+}
+
+/* 
+  ENHANCED GLASSMORPHISM UTILITIES - OPTIMIZED
+  ============================================
+  Performance-optimized glassmorphism effects
+*/
+
+/* Optimized glassmorphism utility classes */
+.glass-light {
+  background: hsl(var(--background) / 0.08);
+  backdrop-filter: blur(8px) saturate(150%);
+  border: 1px solid hsl(var(--border) / 0.15);
+}
+
+.glass-medium {
+  background: hsl(var(--background) / 0.12);
+  backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid hsl(var(--border) / 0.2);
+}
+
+.glass-strong {
+  background: hsl(var(--background) / 0.16);
+  backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid hsl(var(--border) / 0.25);
+}
+
+/* Enhanced backdrop blur for transparent elements - optimized */
+.enhanced-backdrop-blur {
+  backdrop-filter: blur(var(--nav-blur-strength)) saturate(var(--nav-saturation));
+}
+
+/* Transparent navbar content optimization */
+.transparent-navbar-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Smooth transitions for transparency changes - optimized */
+.navbar-transition {
+  transition: background-color 0.2s ease, backdrop-filter 0.2s ease, border-color 0.2s ease;
+  will-change: background-color, backdrop-filter, border-color;
+}
+
+/* 
+  ACCESSIBILITY ENHANCEMENTS
+  ==========================
+  Enhanced accessibility support
+*/
+
+/* Reduced motion support - comprehensive */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeInUp {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  
+  .navbar-transition,
+  .mobile-nav-drag,
+  .progressFill {
+    transition: none;
+  }
+
+  /* Disable all backdrop filters for reduced motion */
+  .glass-light,
+  .glass-medium,
+  .glass-strong,
+  .enhanced-backdrop-blur {
+    backdrop-filter: none;
+    background: hsl(var(--background) / 0.95);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-light,
+  .glass-medium,
+  .glass-strong {
+    background: hsl(var(--background));
+    backdrop-filter: none;
+    border: 2px solid hsl(var(--border));
+  }
+
+  .enhanced-backdrop-blur {
+    backdrop-filter: none;
+  }
+}
+
+/* 
+  PERFORMANCE OPTIMIZATIONS
+  =========================
+  Additional performance enhancements
+*/
+
+/* GPU acceleration for frequently animated elements */
+.mobile-nav-drag,
+.progressFill,
+.navbar-transition {
+  transform: translateZ(0);
+}
+
+/* Optimize font rendering */
+.enhanced-text-rendering {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 
+  RESPONSIVE UTILITIES
+  ===================
+  Enhanced responsive design utilities
+*/
+
+/* Container queries support (future-proofing) */
+@supports (container-type: inline-size) {
+  .container-query {
+    container-type: inline-size;
+  }
+}
+
+/* Enhanced mobile-first responsive utilities */
+.mobile-only {
+  display: block;
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+
+  .desktop-only {
+    display: block;
+  }
+}
+
+/* Touch-friendly interactive elements */
+@media (hover: none) and (pointer: coarse) {
+  .btn,
+  .badge,
+  .property-card {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* 
+  PRINT STYLES
+  ============
+  Optimized print styles
+*/
+@media print {
+  .glass-light,
+  .glass-medium,
+  .glass-strong,
+  .enhanced-backdrop-blur {
+    background: white !important;
+    backdrop-filter: none !important;
+    border: 1px solid #ccc !important;
+  }
+
+  .mobile-nav-panel,
+  .mobile-nav-overlay {
+    display: none !important;
+  }
+}
+

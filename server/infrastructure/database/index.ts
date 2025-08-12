@@ -1,45 +1,85 @@
 /**
- * Database Infrastructure - Central Export
+ * Consolidated Database Entry Point
  * 
- * Provides centralized access to all database-related services and utilities
+ * This module provides the main interface for all database operations,
+ * including initialization, connection management, and cleanup.
  */
 
-// Core database services
-export { DatabaseConnection } from './connection';
-export { QueryOptimizer } from './QueryOptimizer';
-export { DatabaseMigrator } from './migrations/migrator';
+export interface DatabaseConfig {
+  url: string;
+  ssl: boolean | 'require';
+  poolSize: number;
+  connectionTimeout: number;
+  idleTimeout: number;
+  retryAttempts: number;
+  retryDelay: number;
+  healthCheckInterval: number;
+  applicationName: string;
+}
 
-// Database utilities
-export * from './utils/database-utils';
-export * from './utils/query-builder';
+export interface DatabaseConnection {
+  query<T = any>(sql: string, params?: any[]): Promise<T[]>;
+  transaction<T>(callback: (trx: DatabaseConnection) => Promise<T>): Promise<T>;
+  close(): Promise<void>;
+  isHealthy(): Promise<boolean>;
+}
 
-// Seeding services
-export { LandVerificationSeeder } from './seeds/land-verification-seed';
-export { DatabaseSeeder } from './seeds/database-seeder';
+export interface DatabaseInitResult {
+  success: boolean;
+  error?: Error;
+  connectionInfo?: {
+    host: string;
+    database: string;
+    ssl: boolean;
+    poolSize: number;
+  };
+}
 
-// Types
-export * from './types/database.types';
+export interface MigrationResult {
+  success: boolean;
+  migrationsRun: number;
+  error?: Error;
+  details?: string[];
+}
 
-// Configuration
-export { databaseConfig } from './config/database.config';
+export interface SeedResult {
+  success: boolean;
+  recordsCreated: number;
+  tablesSeeded: string[];
+  error?: Error;
+}
 
-// Initialization
-export { initializeDatabase, checkDatabaseStatus, resetDatabase } from './init';
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  tablesValidated: number;
+}
 
-// Integration
-export { FullStackIntegration } from './integration';
+export enum DataScenario {
+  DEVELOPMENT = 'development',
+  TESTING = 'testing',
+  PERFORMANCE = 'performance',
+  PRODUCTION_SYNTHETIC = 'production_synthetic'
+}
 
-// Core database connection exports
-export { 
-  initializeDatabase,
-  runMigrations,
-  seedDatabase,
-  db,
-  sql,
-  getDatabase,
-  withDatabase,
-  withTransaction,
-  checkDatabaseHealth,
-  getDatabaseDiagnostics,
-  closeDatabaseConnection
-} from './connection';
+export interface DatabaseService {
+  initialize(): Promise<DatabaseInitResult>;
+  getConnection(): Promise<DatabaseConnection>;
+  runMigrations(): Promise<MigrationResult>;
+  seedData(scenario: DataScenario): Promise<SeedResult>;
+  validateSchema(): Promise<ValidationResult>;
+  cleanup(): Promise<void>;
+  healthCheck(): Promise<boolean>;
+}
+
+// Re-export all database components
+export * from './config';
+export * from './schemas';
+export * from './migrations';
+export * from './seeds';
+export * from './utils';
+export * from './types';
+export * from './connection';
+export * from './health';
+export * from './service';

@@ -5,7 +5,10 @@
  * across the image management system and prevent circular dependencies.
  */
 
-// Core image types
+// Export unified types (new consolidated approach)
+export * from './unified';
+
+// Legacy types (kept for backward compatibility during migration)
 export interface PropertyImage {
   id: string;
   file: File;

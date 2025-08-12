@@ -1,14 +1,15 @@
+import { sql } from 'drizzle-orm';
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+
+import { analyticsCache } from '../infrastructure/cache/AnalyticsCache';
+import { CacheService } from '../infrastructure/cache/CacheService';
+import { db } from '../infrastructure/database/connection';
+import { queryOptimizer } from '../infrastructure/database/QueryOptimizer';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { asyncHandler } from '../middleware/centralized-error-handler';
 import { validateRequest } from '../middleware/validation.middleware';
 import { ResponseHelper } from '../utils/response-helpers';
-import { analyticsCache } from '../infrastructure/cache/AnalyticsCache';
-import { queryOptimizer } from '../infrastructure/database/QueryOptimizer';
-import { db } from '../infrastructure/database/connection';
-import { CacheService } from '../infrastructure/cache/CacheService';
-import { sql } from 'drizzle-orm';
 
 const router = Router();
 const cacheService = new CacheService();

@@ -2,7 +2,7 @@ import React from "react";
 
 import { cn } from "../../lib/utils";
 
-import styles from "./logo.module.css";
+// Styles are now consolidated in design-system.css
 
 interface LogoProps {
   readonly className?: string;
@@ -165,7 +165,7 @@ export function Logo({
       <img
         src={logoSrc}
         alt={alt}
-        className={cn(computedClassName, styles.logoImage)}
+        className={cn(computedClassName, "logo-image")}
         loading={priority ? "eager" : "lazy"}
         // Enhanced accessibility and interaction handling
         {...interactiveProps}

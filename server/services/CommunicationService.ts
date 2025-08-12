@@ -282,7 +282,7 @@ export class CommunicationService {
 
     // Verify user is participant
     const thread = await this.getThreadById(threadId);
-    if (!thread || !thread.participants.includes(userId)) {
+    if (!thread?.participants.includes(userId)) {
       throw new Error('Access denied to this thread');
     }
 
@@ -458,7 +458,7 @@ export class CommunicationService {
 
     // Check if user is participant
     const thread = await this.getThreadById(message.threadId);
-    if (!thread || !thread.participants.includes(userId)) {
+    if (!thread?.participants.includes(userId)) {
       throw new Error('Access denied');
     }
 
@@ -489,7 +489,7 @@ export class CommunicationService {
   async markThreadAsRead(threadId: number, userId: number): Promise<void> {
     // Verify user is participant
     const thread = await this.getThreadById(threadId);
-    if (!thread || !thread.participants.includes(userId)) {
+    if (!thread?.participants.includes(userId)) {
       throw new Error('Access denied to this thread');
     }
 
@@ -846,7 +846,7 @@ export class CommunicationService {
    */
   async archiveThread(threadId: number, userId: number): Promise<void> {
     const thread = await this.getThreadById(threadId);
-    if (!thread || !thread.participants.includes(userId)) {
+    if (!thread?.participants.includes(userId)) {
       throw new Error('Thread not found or access denied');
     }
 
@@ -867,7 +867,7 @@ export class CommunicationService {
    */
   async unarchiveThread(threadId: number, userId: number): Promise<void> {
     const thread = await this.getThreadById(threadId);
-    if (!thread || !thread.participants.includes(userId)) {
+    if (!thread?.participants.includes(userId)) {
       throw new Error('Thread not found or access denied');
     }
 
@@ -888,7 +888,7 @@ export class CommunicationService {
    */
   async leaveThread(threadId: number, userId: number): Promise<void> {
     const thread = await this.getThreadById(threadId);
-    if (!thread || !thread.participants.includes(userId)) {
+    if (!thread?.participants.includes(userId)) {
       throw new Error('Thread not found or access denied');
     }
 
@@ -939,7 +939,7 @@ export class CommunicationService {
     newParticipantIds: number[]
   ): Promise<void> {
     const thread = await this.getThreadById(threadId);
-    if (!thread || !thread.participants.includes(userId)) {
+    if (!thread?.participants.includes(userId)) {
       throw new Error('Thread not found or access denied');
     }
 
@@ -1122,7 +1122,7 @@ export class CommunicationService {
     }[];
   }> {
     const thread = await this.getThreadById(threadId);
-    if (!thread || !thread.participants.includes(userId)) {
+    if (!thread?.participants.includes(userId)) {
       throw new Error('Thread not found or access denied');
     }
 

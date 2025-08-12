@@ -17,6 +17,7 @@ export { LoadingSkeleton } from './components/ui/loading-skeleton';
 export * from './components/ui/loading-states';
 // Image components - refactored architecture
 export { default as PropertyImageVault } from './components/images/PropertyImageVault';
+export { default as ImageGallery } from './components/images/ImageGallery';
 export { default as PropertyImageGallery } from './components/images/ImageGallery';
 export { PropertyImageValidationService } from './services/images/PropertyImageValidationService';
 export { PropertyImageUploadCoordinator } from './services/images/PropertyImageUploadCoordinator';
@@ -41,6 +42,20 @@ export { Pagination } from './components/Pagination';
 export { useDebounce } from './hooks/useDebounce';
 export { useComponentPerformance } from './hooks/useComponentPerformance';
 export { usePropertyListVirtualization, usePropertyGridVirtualization } from './hooks/useVirtualizationHelpers';
+
+// Property Management Hooks
+export * from './hooks/useFilterState';
+export * from './hooks/usePaginatedQuery';
+
+// Property Components
+export * from './components/property';
+export { PropertyDataGrid } from './components/PropertyDataGrid';
+export { PropertySkeletonGrid } from './components/PropertySkeletonGrid';
+export { ResidentialFilters } from './components/ResidentialFilters';
+
+// Property Utilities
+export * from './utils/property-mapper';
+export { normalizeProperty } from './utils/property-mapper';
 
 
 // Shared Pages

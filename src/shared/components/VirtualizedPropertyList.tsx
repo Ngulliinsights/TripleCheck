@@ -1,9 +1,12 @@
-import React, { forwardRef, memo, useMemo, useCallback } from 'react';
+import React, { forwardRef, memo, useMemo, useCallback } from "react";
 
-import { PropertyCard } from '../../property/components/PropertyCard';
-import { Property } from '../types/property';
+import ListingCard from "../../property/components/ListingCard";
+import { Property } from "../types/property";
 
-import { EnterpriseVirtualizedList, EnterpriseVirtualizedListHandle } from './VirtualizedList';
+import {
+  EnterpriseVirtualizedList,
+  EnterpriseVirtualizedListHandle,
+} from "./VirtualizedList";
 
 // Define specific analytics event properties type for better type safety
 // Note: id can be string or number to match Property type flexibility
@@ -15,7 +18,10 @@ interface PropertyAnalyticsEventProperties {
 }
 
 // Analytics tracking function type - more specific than Record<string, any>
-type AnalyticsTracker = (eventName: string, properties: PropertyAnalyticsEventProperties) => void;
+type AnalyticsTracker = (
+  eventName: string,
+  properties: PropertyAnalyticsEventProperties
+) => void;
 
 // Props interface for the property-specific list component
 // This extends the generic virtualized list with property-specific features
@@ -30,9 +36,10 @@ export interface EnterprisePropertyListProps {
   loading?: boolean;
   className?: string | undefined;
   scrollToIndex?: number;
-  scrollToAlignment?: 'auto' | 'smart' | 'center' | 'start' | 'end';
+  scrollToAlignment?: "auto" | "smart" | "center" | "start" | "end";
   // Performance optimizations
   enableAnalytics?: boolean; // Toggle analytics tracking
+  viewMode?: "grid" | "list"; // Layout mode for proper styling
 }
 
 // Props interface for PropertyRow - explicitly handling optional properties
@@ -42,64 +49,73 @@ interface PropertyRowProps {
   style: React.CSSProperties; // Positioning styles from react-window
   onPropertyClick: ((property: Property) => void) | undefined; // Explicitly allow undefined
   onAnalyticsTrack: AnalyticsTracker;
+  viewMode?: "grid" | "list"; // Layout mode for proper styling
 }
 
 // Memoized property row component - this is where each property gets rendered
 // Memoization is critical here because without it, every property card would
 // re-render whenever any part of the list changes
-const PropertyRow = memo<PropertyRowProps>(({ 
-  property, 
-  style, 
-  onPropertyClick, 
-  onAnalyticsTrack
-}) => {
-  
-  // Memoized click handler that combines user action with analytics
-  // This prevents creating a new function on every render
-  const handleViewDetails = useCallback(() => {
-    // Only call onPropertyClick if it's defined - this handles the optional nature safely
-    if (onPropertyClick) {
-      onPropertyClick(property);
-    }
-    
-    // Track the interaction for business intelligence
-    onAnalyticsTrack('property_card_click', { 
-      id: property.id,
-      variant: 'list',
-      timestamp: Date.now()
-    });
-  }, [property, onPropertyClick, onAnalyticsTrack]);
+const PropertyRow = memo<PropertyRowProps>(
+  ({
+    property,
+    style,
+    onPropertyClick,
+    onAnalyticsTrack,
+    viewMode = "grid",
+  }) => {
+    // Memoized click handler that combines user action with analytics
+    // This prevents creating a new function on every render
+    const handleViewDetails = useCallback(() => {
+      // Only call onPropertyClick if it's defined - this handles the optional nature safely
+      if (onPropertyClick) {
+        onPropertyClick(property);
+      }
 
-  // Create a positioned wrapper that applies the react-window positioning
-  const PositionedWrapper = ({ children, ...props }: { children: React.ReactNode; style: React.CSSProperties; className?: string }) => (
-    <div {...props}>{children}</div>
-  );
+      // Track the interaction for business intelligence
+      onAnalyticsTrack("property_card_click", {
+        id: property.id,
+        variant: "list",
+        timestamp: Date.now(),
+      });
+    }, [property, onPropertyClick, onAnalyticsTrack]);
 
-  return (
-    <PositionedWrapper style={style} className="property-row-container">
-      <div
-        className="px-2 py-2 cursor-pointer" 
-        onClick={handleViewDetails}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleViewDetails();
-          }
-        }}
-        role="button"
-        tabIndex={0}
-        aria-label={`View details for ${property.title}`}
-      >
-        <PropertyCard
-          property={property as unknown as Parameters<typeof PropertyCard>[0]['property']}
-          viewMode="grid"
-        />
-      </div>
-    </PositionedWrapper>
-  );
-});
+    // Create a positioned wrapper that applies the react-window positioning
+    const PositionedWrapper = ({
+      children,
+      ...props
+    }: {
+      children: React.ReactNode;
+      style: React.CSSProperties;
+      className?: string;
+    }) => <div {...props}>{children}</div>;
 
-PropertyRow.displayName = 'PropertyRow';
+    return (
+      <PositionedWrapper style={style} className="property-row-container">
+        <div
+          className="px-2 py-2 cursor-pointer property-grid-item"
+          onClick={handleViewDetails}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleViewDetails();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={`View details for ${property.title}`}
+        >
+          <ListingCard
+            property={property}
+            onClick={() => {}}
+            viewMode={viewMode}
+          />
+        </div>
+      </PositionedWrapper>
+    );
+  }
+);
+
+PropertyRow.displayName = "PropertyRow";
 
 // Main component using forwardRef to allow parent components to control scrolling
 export const EnterprisePropertyList = memo(
@@ -116,19 +132,23 @@ export const EnterprisePropertyList = memo(
         loading = false,
         className,
         scrollToIndex,
-        scrollToAlignment = 'auto',
+        scrollToAlignment = "auto",
         enableAnalytics = true,
+        viewMode = "grid",
       },
       ref // This ref gets passed through to the underlying virtualized list
     ) => {
       // Simple analytics tracking - can be enhanced later
-      const track = useCallback((eventName: string, properties: Record<string, unknown>) => {
-        // For now, just log to console - can be replaced with real analytics
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('Analytics:', eventName, properties);
-        }
-      }, []);
+      const track = useCallback(
+        (eventName: string, properties: Record<string, unknown>) => {
+          // For now, just log to console - can be replaced with real analytics
+          if (process.env.NODE_ENV === "development") {
+            // eslint-disable-next-line no-console
+            console.log("Analytics:", eventName, properties);
+          }
+        },
+        []
+      );
 
       // Memoized key extractor - this tells React how to identify each property
       // Using both ID and index ensures uniqueness even if properties have duplicate IDs
@@ -140,7 +160,10 @@ export const EnterprisePropertyList = memo(
       // Memoized analytics handler that respects the enableAnalytics flag
       // This abstraction allows us to easily disable analytics in development or for privacy
       const handleAnalyticsTrack = useCallback<AnalyticsTracker>(
-        (eventName: string, eventProperties: PropertyAnalyticsEventProperties) => {
+        (
+          eventName: string,
+          eventProperties: PropertyAnalyticsEventProperties
+        ) => {
           if (enableAnalytics) {
             track(eventName, eventProperties);
           }
@@ -158,9 +181,10 @@ export const EnterprisePropertyList = memo(
             style={style} // Critical: this contains positioning from react-window
             onPropertyClick={onPropertyClick} // Now properly typed to allow undefined
             onAnalyticsTrack={handleAnalyticsTrack}
+            viewMode={viewMode}
           />
         ),
-        [onPropertyClick, handleAnalyticsTrack]
+        [onPropertyClick, handleAnalyticsTrack, viewMode]
       );
 
       // Memoized loading component with accessible design
@@ -168,11 +192,13 @@ export const EnterprisePropertyList = memo(
       const loadingComponent = useMemo(
         () => (
           <div className="flex items-center justify-center h-full">
-            <div 
+            <div
               className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"
               aria-label="Loading properties"
             />
-            <span className="ml-3 text-sm text-gray-600">Loading properties…</span>
+            <span className="ml-3 text-sm text-gray-600">
+              Loading properties…
+            </span>
           </div>
         ),
         [] // Never changes, so empty dependency array is safe
@@ -183,9 +209,9 @@ export const EnterprisePropertyList = memo(
       const emptyComponent = useMemo(
         () => (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <img 
-              src="/empty-state/properties.svg" 
-              alt="No properties available" 
+            <img
+              src="/empty-state/properties.svg"
+              alt="No properties available"
               className="w-24 h-24 mb-4"
               loading="lazy" // Optimize image loading
             />
@@ -203,10 +229,10 @@ export const EnterprisePropertyList = memo(
         if (onEndReached) {
           onEndReached();
         }
-        
+
         // Track this event for understanding user engagement patterns
         if (enableAnalytics) {
-          track('property_list_end_reached', {
+          track("property_list_end_reached", {
             totalProperties: properties.length,
             timestamp: Date.now(),
           });
@@ -230,8 +256,8 @@ export const EnterprisePropertyList = memo(
         emptyComponent,
         className: className ?? "",
         debounceMs: 100,
-        ...(scrollToIndex !== undefined && { scrollToIndex }),
-        ...(scrollToAlignment !== undefined && { scrollToAlignment }),
+        ...(scrollToIndex != undefined && { scrollToIndex }),
+        ...(scrollToAlignment != undefined && { scrollToAlignment }),
       };
 
       return <EnterpriseVirtualizedList<Property> {...listProps} />;
@@ -239,4 +265,4 @@ export const EnterprisePropertyList = memo(
   )
 );
 
-EnterprisePropertyList.displayName = 'EnterprisePropertyList';
+EnterprisePropertyList.displayName = "EnterprisePropertyList";

@@ -3,7 +3,7 @@
  */
 
 // Import from auth types and schema
-import type { User } from "../../src/shared/schema";
+import type { User } from "../infrastructure/database/schemas/consolidated";
 
 import type { UserRole } from "./auth.types";
 

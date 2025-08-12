@@ -143,7 +143,7 @@ export class ApiContractRegistry {
 
   validateRequest<T>(contractName: string, data: unknown): T {
     const contract = this.contracts.get(contractName);
-    if (!contract || !contract.requestSchema) {
+    if (!contract?.requestSchema) {
       throw new Error(`Contract ${contractName} not found or has no request schema`);
     }
     

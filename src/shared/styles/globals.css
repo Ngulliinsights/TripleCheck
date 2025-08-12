@@ -13,40 +13,61 @@
   Backward compatibility for existing components
 */
 
-/* Legacy fadeInUp animation for existing components */
+/* Legacy fadeInUp animation for existing components - Performance Optimized */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translate3d(0, 16px, 0); /* GPU acceleration */
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
-.animate-fadeInUp {
-  animation: fadeInUp 0.5s ease forwards;
+.animate-fadeInUp,
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease forwards; /* Faster animation */
+  will-change: opacity, transform; /* Performance hint */
 }
 
-/* Legacy progress bar utility */
+/* Property grid styles */
+.property-item-container {
+  padding: 0.5rem;
+}
+
+.property-card {
+  transition: all 0.3s ease;
+}
+
+.grid-container {
+  width: 100%;
+}
+
+/* Background pattern utility */
+.bg-dot-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239ca3af' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Legacy progress bar utility - Performance Optimized */
 .progressFill {
   height: 0.5rem;
   background-color: hsl(var(--secondary));
   border-radius: 9999px;
-  transition: width 300ms ease;
+  transition: width 0.3s ease; /* Consistent timing */
+  will-change: width; /* Performance hint */
 }
 
-/* Navigation height and transparency variables */
+/* Navigation variables - Performance Optimized */
 :root {
   --nav-height: 88px;
-  --nav-blur-strength: 20px;
-  --nav-saturation: 180%;
+  --nav-blur-strength: 16px; /* Reduced for better performance */
+  --nav-saturation: 150%; /* Reduced for better performance */
 }
 
-/* Legacy page container utility */
+/* Legacy page container utility - Responsive Optimized */
 .page-container {
-  padding-top: 6rem;
+  padding-top: 5rem; /* Mobile-first approach */
   padding-bottom: 2rem;
 }
 
@@ -56,43 +77,46 @@
   }
 }
 
-/* Legacy navbar offset utilities */
+/* Legacy navbar offset utilities - CSS Variables Optimized */
 .navbar-offset {
-  padding-top: 5.5rem;
+  padding-top: calc(var(--nav-height) - 0.5rem);
 }
 
 .navbar-offset-hero {
-  padding-top: 5rem;
+  padding-top: calc(var(--nav-height) - 1rem);
 }
 
 .navbar-offset-minimal {
-  padding-top: 4rem;
+  padding-top: calc(var(--nav-height) - 1.5rem);
 }
 
 @media (min-width: 768px) {
   .navbar-offset {
-    padding-top: 6rem;
+    padding-top: var(--nav-height);
   }
 
   .navbar-offset-hero {
-    padding-top: 5.5rem;
+    padding-top: calc(var(--nav-height) - 0.5rem);
   }
 
   .navbar-offset-minimal {
-    padding-top: 4.5rem;
+    padding-top: calc(var(--nav-height) - 1rem);
   }
 }
 
-/* Legacy mobile navigation drag utilities */
+/* Legacy mobile navigation drag utilities - Performance Optimized */
 .mobile-nav-drag {
   transition: none !important;
+  will-change: transform; /* Performance hint */
 }
 
+/* Simplified drag offset support */
 .mobile-nav-drag[data-drag-offset] {
-  transform: translateX(attr(data-drag-offset px, 0px));
+  transform: translateX(var(--drag-offset, 0px));
 }
 
-@supports not (transform: translateX(attr(data-drag-offset px))) {
+/* Fallback for older browsers */
+@supports not (--css: variables) {
   .mobile-nav-drag[data-drag-offset="-50"] {
     transform: translateX(-50px);
   }
@@ -113,9 +137,10 @@
   }
 }
 
-/* Legacy progress bar width utility */
+/* Legacy progress bar width utility - Performance Optimized */
 .progress-bar[data-width] {
   width: calc(var(--progress-width, 0) * 1%);
+  will-change: width; /* Performance hint */
 }
 
 /* Legacy navigation utilities */
@@ -145,38 +170,41 @@
   -webkit-backdrop-filter: blur(var(--nav-blur-strength)) saturate(var(--nav-saturation));
 }
 
-/* Glassmorphism utility classes */
+/* Glassmorphism utility classes - Performance Optimized */
 .glass-light {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: hsl(var(--background) / 0.08);
+  backdrop-filter: blur(8px) saturate(150%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+  border: 1px solid hsl(var(--border) / 0.15);
 }
 
 .glass-medium {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(15px) saturate(180%);
-  -webkit-backdrop-filter: blur(15px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: hsl(var(--background) / 0.12);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid hsl(var(--border) / 0.2);
 }
 
 .glass-strong {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: hsl(var(--background) / 0.16);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid hsl(var(--border) / 0.25);
 }
 
-/* Ensure smooth transitions for transparency changes */
+/* Ensure smooth transitions for transparency changes - Performance Optimized */
 .navbar-transition {
-  transition: background-color 300ms ease, backdrop-filter 300ms ease, border-color 300ms ease;
+  transition: background-color 0.2s ease, backdrop-filter 0.2s ease, border-color 0.2s ease;
+  will-change: background-color, backdrop-filter, border-color; /* Performance hint */
 }
 
 /* 
-  ACCESSIBILITY OVERRIDES
-  =======================
-  Ensure accessibility is maintained
+  ACCESSIBILITY ENHANCEMENTS
+  ==========================
+  Enhanced accessibility support with comprehensive coverage
 */
+
+/* Comprehensive reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .animate-fadeInUp {
     animation: none;
@@ -184,7 +212,107 @@
     transform: none;
   }
   
-  .navbar-transition {
+  .navbar-transition,
+  .mobile-nav-drag,
+  .progressFill {
     transition: none;
+  }
+
+  /* Disable all backdrop filters for reduced motion */
+  .glass-light,
+  .glass-medium,
+  .glass-strong,
+  .enhanced-backdrop-blur {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: hsl(var(--background) / 0.95);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-light,
+  .glass-medium,
+  .glass-strong {
+    background: hsl(var(--background));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 2px solid hsl(var(--border));
+  }
+
+  .enhanced-backdrop-blur {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Touch-friendly interactive elements */
+@media (hover: none) and (pointer: coarse) {
+  .btn,
+  .badge,
+  .property-card {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* 
+  PERFORMANCE OPTIMIZATIONS
+  =========================
+  Additional performance enhancements
+*/
+
+/* GPU acceleration for frequently animated elements */
+.mobile-nav-drag,
+.progressFill,
+.navbar-transition {
+  transform: translateZ(0);
+}
+
+/* Enhanced mobile-first responsive utilities */
+.mobile-only {
+  display: block;
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+
+  .desktop-only {
+    display: block;
+  }
+}
+
+/* Container queries support (future-proofing) */
+@supports (container-type: inline-size) {
+  .container-query {
+    container-type: inline-size;
+  }
+}
+
+/* 
+  PRINT STYLES
+  ============
+  Optimized print styles
+*/
+@media print {
+  .glass-light,
+  .glass-medium,
+  .glass-strong,
+  .enhanced-backdrop-blur {
+    background: white !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid #ccc !important;
+  }
+
+  .mobile-nav-panel,
+  .mobile-nav-overlay {
+    display: none !important;
   }
 }

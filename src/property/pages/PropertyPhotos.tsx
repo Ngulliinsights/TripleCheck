@@ -2,7 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Camera, Image as ImageIcon, AlertTriangle, Zap } from "lucide-react";
 import { useState, useCallback } from "react";
 
-import PropertyImageVault from "../../shared/components/images/PropertyImageVault";
+import { PropertyImageVault, ImageGallery, IMAGE_COMPONENT_PRESETS } from "../../shared/components/images";
+import type { BaseImage } from "../../shared/components/images";
 import { Badge } from "../../shared/components/ui/badge";
 import { Button } from "../../shared/components/ui/button";
 import {
@@ -145,6 +146,18 @@ export default function PropertyPhotosPage() {
     []
   );
 
+  // Convert property images to BaseImage format for ImageViewer
+  const convertToBaseImages = useCallback((property: PropertyWithImages): BaseImage[] => {
+    if (!property.imageUrls || property.imageUrls.length === 0) return [];
+    
+    return property.imageUrls.map((url, index) => ({
+      id: `${property.id}-${index}`,
+      src: url,
+      alt: `${property.title} - Image ${index + 1}`,
+      caption: index === 0 ? 'Main photo' : undefined
+    }));
+  }, []);
+
   // Render property selection
   const renderPropertySelection = useCallback((): React.ReactNode => {
     if (isLoading) {
@@ -187,13 +200,14 @@ export default function PropertyPhotosPage() {
         <CardContent className="p-4">
           <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
             {property.imageUrls && property.imageUrls.length > 0 ? (
-              <img
-                src={property.imageUrls[0]}
-                alt={property.title}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                width={300}
-                height={200}
+              <ImageGallery
+                images={convertToBaseImages(property)}
+                {...IMAGE_COMPONENT_PRESETS.SIMPLE_VIEWER}
+                showThumbnails={false}
+                allowNavigation={property.imageUrls.length > 1}
+                enableFullscreen={true}
+                showImageCounter={property.imageUrls.length > 1}
+                className="h-full"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -216,7 +230,7 @@ export default function PropertyPhotosPage() {
         </CardContent>
       </Card>
     ));
-  }, [isLoading, error, properties, selectedProperty, formatLocation]);
+  }, [isLoading, error, properties, selectedProperty, formatLocation, convertToBaseImages]);
 
   return (
     <div className="container mx-auto px-4 py-8">

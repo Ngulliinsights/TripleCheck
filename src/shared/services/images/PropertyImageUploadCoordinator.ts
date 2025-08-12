@@ -4,8 +4,8 @@
  * Integrates with existing API structure and service patterns
  */
 
-import { imageServiceConfig } from '../../config/image-service.config';
-import { generateUniqueId, calculateHash } from '../../utils/images/formatters';
+import { imageServiceConfig } from '../../config/image-system.config';
+import { generateUniqueId, calculateHash } from '../../utils/images/unified-utils';
 
 const UNKNOWN_ERROR = 'Unknown error';
 
@@ -133,7 +133,7 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
       throw new ImageProcessingError(
         `Upload session ${sessionId} not found`,
         'SESSION_NOT_FOUND',
-        session?.imageId
+        undefined
       );
     }
 
@@ -173,7 +173,7 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
       });
 
     } catch (error) {
-      chunk.retryCount++;
+      chunk.retryCount = (chunk.retryCount || 0) + 1;
       
       // Log failed chunk upload
       await this.dependencies.auditService?.logUploadEvent('chunk_upload_failed', {
@@ -281,7 +281,7 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
 
   private async createChunks(file: File, sessionId: string): Promise<ImageChunk[]> {
     const chunks: ImageChunk[] = [];
-    const chunkSize = this.config.upload.chunkSize;
+    const {chunkSize} = this.config.upload;
     const totalChunks = Math.ceil(file.size / chunkSize);
 
     for (let i = 0; i < totalChunks; i++) {

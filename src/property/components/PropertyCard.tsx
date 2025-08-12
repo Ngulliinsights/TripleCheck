@@ -1,5 +1,6 @@
 import { B2BContextualPrompt } from "@shared/components/b2b";
-// Using basic img tag for simple image display
+import { ImageGallery, IMAGE_COMPONENT_PRESETS } from "@shared/components/images";
+import type { BaseImage } from "@shared/components/images";
 import { Badge } from "@shared/components/ui/badge";
 import { Button } from "@shared/components/ui/button";
 import {
@@ -103,140 +104,28 @@ interface PropertyCardProps {
 /* ------------------------------------------------------------------ */
 
 /**
- * Hook for managing image gallery state and navigation
- * Separates complex image logic from the main component
+ * Convert property images to BaseImage format for ImageGallery
+ * Replaces the complex useImageGallery hook with simple conversion
  */
-function useImageGallery(images: readonly ImageUrl[], priority = false) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loadStates, setLoadStates] = useState<
-    Record<number, "loading" | "loaded" | "error">
-  >({});
-  const preloadedImages = useRef(new Set<string>());
-
-  // Memoized processed images with validation
-  const processedImages = useMemo(() => {
-    const validImages = images.filter(
-      (img): img is ImageUrl => typeof img === "string" && img.trim() !== ""
-    );
-    return validImages.length > 0 ? validImages : [CONFIG.PLACEHOLDER_IMAGE as ImageUrl];
-  }, [images]);
-
-  // Smart preloading strategy - only preload when needed
-  useEffect(() => {
-    if (processedImages.length <= 1) return;
-
-    const handleImageLoad = (index: number) => {
-      setLoadStates((prev) => ({ ...prev, [index]: "loaded" }));
-    };
-
-    const handleImageError = (index: number) => {
-      setLoadStates((prev) => ({ ...prev, [index]: "error" }));
-    };
-
-    const preloadImage = (src: string, index: number) => {
-      if (preloadedImages.current.has(src)) return;
-
-      const img = new window.Image();
-      img.onload = () => {
-        handleImageLoad(index);
-        preloadedImages.current.add(src);
-      };
-      img.onerror = () => handleImageError(index);
-
-      // Priority loading for above-the-fold images
-      if (priority && index === 0) {
-        img.loading = "eager";
-      }
-
-      img.src = src;
-      setLoadStates((prev) => ({ ...prev, [index]: "loading" }));
-    };
-
-    // Preload current image and next few images
-    const indicesToPreload = [
-      currentIndex,
-      (currentIndex + 1) % processedImages.length,
-      (currentIndex + 2) % processedImages.length,
-    ].slice(0, CONFIG.IMAGE_PRELOAD_COUNT);
-
-    indicesToPreload.forEach((index) => {
-      const src = processedImages.at(index);
-      if (src) preloadImage(src, index);
-    });
-
-    // Cleanup function to cancel ongoing loads
-    return () => {
-      // In a real app, you'd want to track and cancel ongoing requests
-    };
-  }, [currentIndex, processedImages, priority]);
-
-  const navigateToImage = useCallback(
-    (index: number) => {
-      if (
-        index >= 0 &&
-        index < processedImages.length &&
-        index !== currentIndex
-      ) {
-        setCurrentIndex(index);
-      }
-    },
-    [processedImages.length, currentIndex]
+function convertToBaseImages(images: readonly ImageUrl[], propertyTitle: string): BaseImage[] {
+  const validImages = images.filter(
+    (img): img is ImageUrl => typeof img === "string" && img.trim() !== ""
   );
+  
+  if (validImages.length === 0) {
+    return [{
+      id: 'placeholder',
+      src: CONFIG.PLACEHOLDER_IMAGE,
+      alt: `${propertyTitle} - No image available`
+    }];
+  }
 
-  const navigateNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % processedImages.length);
-  }, [processedImages.length]);
-
-  const navigatePrev = useCallback(() => {
-    setCurrentIndex((prev) =>
-      prev === 0 ? processedImages.length - 1 : prev - 1
-    );
-  }, [processedImages.length]);
-
-  // Handle keyboard navigation including number keys
-  const handleKeyNavigation = useCallback(
-    (event: React.KeyboardEvent) => {
-      switch (event.key) {
-        case "ArrowLeft":
-          event.preventDefault();
-          navigatePrev();
-          break;
-        case "ArrowRight":
-          event.preventDefault();
-          navigateNext();
-          break;
-        default: {
-          // Handle number keys for direct navigation (1-9)
-          const num = parseInt(event.key);
-          if (num >= 1 && num <= 9 && num <= processedImages.length) {
-            event.preventDefault();
-            navigateToImage(num - 1);
-          }
-          break;
-        }
-      }
-    },
-    [navigateNext, navigatePrev, navigateToImage, processedImages.length]
-  );
-
-  const currentImage = useMemo((): ImageUrl => {
-    const imageState = loadStates[currentIndex as keyof typeof loadStates];
-    const imageAtIndex = processedImages.at(currentIndex);
-    return imageState === "error" ? (CONFIG.PLACEHOLDER_IMAGE as ImageUrl) : (imageAtIndex ?? CONFIG.PLACEHOLDER_IMAGE as ImageUrl);
-  }, [processedImages, currentIndex, loadStates]);
-
-  return {
-    currentIndex,
-    currentImage,
-    processedImages,
-    loadStates,
-    hasMultipleImages: processedImages.length > 1,
-    hasValidImages: processedImages.at(0) != CONFIG.PLACEHOLDER_IMAGE,
-    navigateToImage,
-    navigateNext,
-    navigatePrev,
-    handleKeyNavigation,
-  };
+  return validImages.map((img, index) => ({
+    id: `${propertyTitle}-${index}`,
+    src: img,
+    alt: `${propertyTitle} - Image ${index + 1}`,
+    caption: index === 0 ? 'Main photo' : undefined
+  }));
 }
 
 /**
@@ -469,53 +358,37 @@ PropertyCardSkeleton.displayName = "PropertyCardSkeleton";
 /**
  * Image gallery component with enhanced accessibility
  */
-const ImageGallery = memo(
+const PropertyImageGallery = memo(
   ({
-    gallery,
+    images,
     property,
     isHovered,
     onViewDetails,
   }: {
-    gallery: ReturnType<typeof useImageGallery>;
+    images: BaseImage[];
     property: Property;
     isHovered: boolean;
     onViewDetails: () => void;
   }) => {
-    const {
-      currentIndex,
-      currentImage,
-      processedImages,
-      hasMultipleImages,
-      navigateToImage,
-      navigateNext,
-      navigatePrev,
-      handleKeyNavigation,
-    } = gallery;
 
     return (
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 aspect-[4/3]">
-        {/* Main Image with Enhanced Loading State */}
-        <button
-          className="relative w-full h-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
+        {/* Use ImageGallery for simplified image handling */}
+        <div 
+          className="w-full h-full cursor-pointer"
           onClick={onViewDetails}
-          onKeyDown={handleKeyNavigation}
-          aria-label={`View details for ${property.title}. Image ${currentIndex + 1} of ${processedImages.length}. Use arrow keys or number keys 1-${Math.min(9, processedImages.length)} to navigate images.`}
-          type="button"
         >
-          <img
-            src={currentImage}
-            alt={`${property.title} - View ${currentIndex + 1} of ${processedImages.length}`}
-            width={400}
-            height={300}
-            className={cn(
-              "w-full h-full object-cover transition-all duration-500",
-              "group-hover:scale-110 group-hover:brightness-105"
-            )}
-            loading="lazy"
-            landType={property.type === 'commercial' ? 'commercial' : 'residential'}
-            priority={false}
+          <ImageGallery
+            images={images}
+            {...IMAGE_COMPONENT_PRESETS.SIMPLE_VIEWER}
+            showThumbnails={false}
+            allowNavigation={images.length > 1}
+            enableFullscreen={false}
+            showImageCounter={images.length > 1}
+            className="w-full h-full"
+            onImageClick={onViewDetails}
           />
-        </button>
+        </div>
 
         {/* Enhanced Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -551,74 +424,6 @@ const ImageGallery = memo(
             );
           })()}
         </div>
-
-        {/* Enhanced Navigation Controls */}
-        {hasMultipleImages && isHovered && (
-          <>
-            <button
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition-all duration-200 backdrop-blur-sm z-10 focus:outline-none focus:ring-2 focus:ring-white"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigatePrev();
-              }}
-              aria-label="Previous image"
-              type="button"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition-all duration-200 backdrop-blur-sm z-10 focus:outline-none focus:ring-2 focus:ring-white"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigateNext();
-              }}
-              aria-label="Next image"
-              type="button"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </>
-        )}
-
-        {/* Enhanced Image Indicators */}
-        {hasMultipleImages && (
-          <>
-            <div
-              className="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-2"
-              role="tablist"
-              aria-label="Image navigation"
-            >
-              {processedImages.map((_, index) => {
-                const isSelected = currentIndex === index;
-                return (
-                  <button
-                    key={index}
-                    className={cn(
-                      "w-2 h-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-white",
-                      isSelected ? "bg-white scale-125" : (
-                        "bg-white/60 hover:bg-white/80 hover:scale-110"
-                      )
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigateToImage(index);
-                    }}
-                    aria-label={`View image ${index + 1} of ${processedImages.length}`}
-                    type="button"
-                    role="tab"
-                    aria-selected={isSelected}
-                  />
-                );
-              })}
-            </div>
-
-            <div className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full font-medium">
-              {currentIndex + 1}/{processedImages.length}
-            </div>
-          </>
-        )}
-
-        {/* Accessibility Announcement for Screen Readers */}
         <div className="sr-only" aria-live="polite" aria-atomic="true">
           Viewing image {currentIndex + 1} of {processedImages.length}
         </div>
@@ -648,8 +453,8 @@ export const PropertyCard = memo<PropertyCardProps>(
     // Intersection observer for performance optimization
     const { elementRef, hasBeenVisible } = useIntersectionObserver(0.1);
 
-    // Custom hooks for separated concerns
-    const gallery = useImageGallery(property.images, priority);
+    // Convert images to BaseImage format for ImageGallery
+    const images = useMemo(() => convertToBaseImages(property.images, property.title), [property.images, property.title]);
     const actions = usePropertyActions(property, {
       ...(onSave && { onSave }),
       ...(onShare && { onShare }),
@@ -777,8 +582,8 @@ export const PropertyCard = memo<PropertyCardProps>(
             viewMode === "grid" ? "aspect-[4/3]" : "w-80 h-60"
           )}
         >
-          <ImageGallery
-            gallery={gallery}
+          <PropertyImageGallery
+            images={images}
             property={property}
             isHovered={isHovered}
             onViewDetails={actions.handleViewDetails}

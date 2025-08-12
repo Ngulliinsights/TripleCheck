@@ -1,11 +1,11 @@
-import { Badge } from "@shared/components/ui/badge";
-import { Button } from "@shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@shared/components/ui/card";
 import { Bell, Check, X, AlertCircle, Info, CheckCircle } from "lucide-react";
-import { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef } from "react";
 
-import { EnterpriseVirtualizedList } from "@shared/components";
-import { useNotificationListVirtualization } from "@shared/hooks/useVirtualizationHelpers";
+import { EnterpriseVirtualizedList } from "../../shared/components";
+import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
+import { useNotificationListVirtualization } from "../../shared/hooks/useVirtualizationHelpers";
 
 interface Notification {
   id: string;

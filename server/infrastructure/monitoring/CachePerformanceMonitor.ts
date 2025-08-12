@@ -20,6 +20,16 @@ export interface CacheMetrics {
   timestamp: Date;
 }
 
+export interface UnifiedCacheMetrics {
+  l1HitRate: number;
+  l2HitRate: number;
+  overallHitRate: number;
+  l1MemoryUsage: number;
+  totalRequests: number;
+  averageLatency: number;
+  timestamp: Date;
+}
+
 export interface DeduplicationMetrics {
   totalRequests: number;
   deduplicatedRequests: number;
@@ -99,6 +109,20 @@ export class CachePerformanceMonitor {
 
   recordCacheError(key: string, error: Error): void {
     console.warn(`[CachePerformanceMonitor] Cache error for key ${key}:`, error.message); // eslint-disable-line
+  }
+
+  recordCacheStats(stats: UnifiedCacheMetrics): void {
+    // Store unified cache statistics for monitoring
+    const enhancedStats = {
+      ...stats,
+      timestamp: new Date()
+    };
+    
+    // You could store these in a separate array or integrate with existing metrics
+    // For now, we'll just log them for monitoring purposes
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[CachePerformanceMonitor] Unified Cache Stats:', enhancedStats); // eslint-disable-line
+    }
   }
 
   getCurrentMetrics(): CacheMetrics | null {

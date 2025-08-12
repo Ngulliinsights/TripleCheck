@@ -1,4 +1,4 @@
-import PropertyImageVault from '@shared/components/images/PropertyImageVault';
+import { PropertyImageVault } from '@shared/components/images';
 import { Avatar, AvatarFallback, AvatarImage } from '@shared/components/ui/avatar';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';

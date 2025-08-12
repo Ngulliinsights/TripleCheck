@@ -5,7 +5,8 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { generateUniqueId } from '../../utils/images/formatters';
+
+import { generateUniqueId } from '../../utils/images/unified-utils';
 import { PropertyImageUploadCoordinator } from '../../services/images/PropertyImageUploadCoordinator';
 import { PropertyImageWorkflowManager } from '../../services/images/PropertyImageWorkflowManager';
 

@@ -1,4 +1,4 @@
-import { Property } from "../../src/shared/schema";
+import { Property } from "../../../../src/shared/schema";
 
 /**
  * Sample AI Verification Data Generator

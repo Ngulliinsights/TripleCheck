@@ -36,7 +36,7 @@ import { useDebounce } from "../hooks/useDebounce";
 import { usePropertyGridVirtualization } from "../hooks/useVirtualizationHelpers";
 import { Property } from "../types/property";
 
-import styles from "./Properties.module.css";
+// Import styles - using Tailwind classes instead of CSS modules
 
 // Lazy load the ListingCard for better performance
 const ListingCard = lazy(() => import("../../property/components/ListingCard"));
@@ -446,11 +446,7 @@ function PropertiesContent(): JSX.Element {
       <section className="relative isolate overflow-hidden bg-gradient-to-br from-sky-50 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950 py-20 md:py-28">
         <div
           aria-hidden="true"
-          className="absolute inset-0 -z-10 opacity-20"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239ca3af' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/svg%3E\")",
-          }}
+          className="absolute inset-0 -z-10 opacity-20 bg-dot-pattern"
         />
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -771,7 +767,7 @@ function PropertiesContent(): JSX.Element {
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Can't Find What You're Looking For?
+              Can&apos;t Find What You&apos;re Looking For?
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8 leading-relaxed">
               Let us help you find the perfect property or list your own with
@@ -919,7 +915,7 @@ const VirtualizedPropertyGrid: React.FC<{
   const renderPropertyItem = useCallback(
     (property: Property, index: number, style: React.CSSProperties) => {
       return (
-        <div style={style} className={styles.propertyItemContainer}>
+        <div style={style} className="property-item-container p-2">
           <Suspense
             fallback={
               <div className="space-y-4 animate-pulse">
@@ -933,7 +929,7 @@ const VirtualizedPropertyGrid: React.FC<{
             }
           >
             <div
-              className={`${styles.fadeInUp} ${styles.propertyCard}`}
+              className="animate-fade-in-up property-card"
               style={{ "--animation-delay": `${index * 75}ms` } as React.CSSProperties}
             >
               <ListingCard
@@ -950,7 +946,7 @@ const VirtualizedPropertyGrid: React.FC<{
   );
 
   return (
-    <div ref={containerRef} className={`w-full ${styles.gridContainer}`}>
+    <div ref={containerRef} className="w-full grid-container">
       <GridVirtualizedList {...gridProps} renderItem={renderPropertyItem} />
     </div>
   );

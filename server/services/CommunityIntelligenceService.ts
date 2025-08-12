@@ -1,6 +1,6 @@
 import { eq, and, desc, count, avg, gte, sql } from "drizzle-orm";
 
-import { properties, users, reviews } from "../../src/shared/schema";
+import { properties, users, reviews } from "../infrastructure/database/schemas/consolidated";
 import { db } from "../infrastructure/database/connection";
 
 export interface CommunityIntelligence {

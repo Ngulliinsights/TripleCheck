@@ -1,3 +1,4 @@
+import { EnhancedCacheService, CacheFactory } from '../cache/CacheIntegrationAdapter';
 import { CacheService } from '../cache/CacheService';
 
 /**
@@ -43,7 +44,7 @@ export class ApiRateLimiter {
   private userLimits = new Map<string, RateLimitEntry>();
   private globalLimits = new Map<string, RateLimitEntry>();
   private endpointLimits = new Map<string, RateLimitEntry>();
-  private cache?: CacheService;
+  private cache: EnhancedCacheService;
   private defaultConfig: RateLimitConfig;
   
   // Memory management constants
@@ -62,7 +63,18 @@ export class ApiRateLimiter {
       headers: true,
       ...config
     };
-    this.cache = cache;
+    
+    // Use enhanced cache service optimized for rate limiting
+    this.cache = cache instanceof EnhancedCacheService 
+      ? cache 
+      : CacheFactory.createDomainCache('rate-limiting', {
+          l1MaxItems: 10000, // Rate limiting needs fast access to many keys
+          l1DefaultTtl: this.defaultConfig.windowMs,
+          l2DefaultTtl: Math.floor(this.defaultConfig.windowMs / 1000),
+          l2KeyPrefix: 'rate_limit:',
+          enablePreFetching: false, // Don't pre-fetch rate limit data
+          enableStampedeProtection: false // Rate limiting should be immediate
+        });
 
     // Clean up expired entries periodically
     setInterval(() => this.cleanupExpiredEntries(), 60000); // Every minute
@@ -258,14 +270,12 @@ export class ApiRateLimiter {
     this.globalLimits.delete(globalKey);
     this.endpointLimits.delete(endpointKey);
 
-    // Clear from Redis if available
-    if (this.cache) {
-      await Promise.all([
-        this.cache.delete(`rate_limit:user:${userKey}`),
-        this.cache.delete(`rate_limit:global:${globalKey}`),
-        this.cache.delete(`rate_limit:endpoint:${endpointKey}`)
-      ]);
-    }
+    // Clear from unified cache
+    await Promise.all([
+      this.cache.delete(`user:${userKey}`),
+      this.cache.delete(`global:${globalKey}`),
+      this.cache.delete(`endpoint:${endpointKey}`)
+    ]);
   }
 
   /**
@@ -390,32 +400,30 @@ export class ApiRateLimiter {
       return entry;
     }
 
-    // Try Redis if available
-    if (this.cache) {
-      try {
-        const cacheKey = `rate_limit:${type}:${key}`;
-        const cached = await this.cache.get(cacheKey);
-        if (cached && typeof cached === 'object' && cached !== null) {
-          // Validate cached data structure to prevent object injection
-          const cachedData = cached as any;
-          if (typeof cachedData.count === 'number' && 
-              typeof cachedData.resetTime === 'string' && 
-              typeof cachedData.windowStart === 'string') {
-            entry = {
-              count: cachedData.count,
-              resetTime: new Date(cachedData.resetTime),
-              windowStart: new Date(cachedData.windowStart)
-            };
-          }
-          // Store in memory for faster access
-          memoryStore.set(key, entry);
-          return entry;
+    // Try unified cache
+    try {
+      const cacheKey = `${type}:${key}`;
+      const cached = await this.cache.get(cacheKey);
+      if (cached && typeof cached === 'object' && cached !== null) {
+        // Validate cached data structure to prevent object injection
+        const cachedData = cached as any;
+        if (typeof cachedData.count === 'number' && 
+            typeof cachedData.resetTime === 'string' && 
+            typeof cachedData.windowStart === 'string') {
+          entry = {
+            count: cachedData.count,
+            resetTime: new Date(cachedData.resetTime),
+            windowStart: new Date(cachedData.windowStart)
+          };
         }
-      } catch (error) {
-        // Log error through proper logging system instead of console
-        // TODO: Replace with structured logging
-        console.warn('Redis rate limit lookup failed:', error);
+        // Store in memory for faster access
+        if (entry) {
+          memoryStore.set(key, entry);
+        }
+        return entry;
       }
+    } catch (error) {
+      console.warn('Unified cache rate limit lookup failed:', error);
     }
 
     return null;
@@ -441,21 +449,17 @@ export class ApiRateLimiter {
     
     memoryStore.set(key, entry);
 
-    // Store in Redis if available
-    if (this.cache) {
-      try {
-        const cacheKey = `rate_limit:${type}:${key}`;
-        const ttl = Math.ceil((entry.resetTime.getTime() - Date.now()) / 1000);
-        await this.cache.set(cacheKey, {
-          count: entry.count,
-          resetTime: entry.resetTime.toISOString(),
-          windowStart: entry.windowStart.toISOString()
-        }, { ttl });
-      } catch (error) {
-        // Log error through proper logging system instead of console
-        // TODO: Replace with structured logging
-        console.warn('Redis rate limit storage failed:', error);
-      }
+    // Store in unified cache
+    try {
+      const cacheKey = `${type}:${key}`;
+      const ttl = Math.ceil((entry.resetTime.getTime() - Date.now()) / 1000);
+      await this.cache.setWithTags(cacheKey, {
+        count: entry.count,
+        resetTime: entry.resetTime.toISOString(),
+        windowStart: entry.windowStart.toISOString()
+      }, ['rate-limiting', type], { ttl });
+    } catch (error) {
+      console.warn('Unified cache rate limit storage failed:', error);
     }
   }
 

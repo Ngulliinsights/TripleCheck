@@ -29,24 +29,110 @@ config/
 │   ├── vitest.security.config.ts
 │   ├── vitest.server.config.ts
 │   ├── vitest.unit.config.ts
+CONSOLIDATION_IMPLEMENTATION_SUMMARY.md
+cspell.json
 database/
 ├── __tests__/
 │   ├── config.test.ts
 │   ├── service.test.ts
+├── audit/
+│   ├── comprehensive-database-audit.md
+│   ├── database-inventory.json
+│   ├── database-structure-audit.md
+│   ├── dependency-map.md
 ├── config/
 │   ├── database.config.ts
 │   ├── index.ts
 ├── connection/
 │   ├── __tests__/
 │   │   ├── connection-pool.test.ts
+│   ├── DatabaseCircuitBreaker.ts
 │   ├── index.ts
+│   ├── ProductionConnectionPool.ts
+│   ├── production-pool.ts
+├── data-generation/
+│   ├── __tests__/
+│   │   ├── production-demo-generator.test.ts
+│   ├── cli/
+│   │   ├── demo-generator-cli.ts
+│   │   ├── demo-scenario-cli.ts
+│   │   ├── unified-data-generation.ts
+│   ├── core/
+│   │   ├── checkpoint-manager.ts
+│   │   ├── data-validator.ts
+│   │   ├── KenyanDataGenerator.ts
+│   │   ├── UnifiedDataGenerator.ts
+│   ├── docs/
+│   │   ├── examples/
+│   ├── examples/
+│   │   ├── demo-generation-example.ts
+│   ├── generators/
+│   │   ├── index.ts
+│   │   ├── python/
+│   │   │   ├── runner.ts
+│   │   ├── typescript/
+│   ├── index.ts
+│   ├── integrations/
+│   ├── output/
+│   │   ├── checkpoints/
+│   │   ├── datasets/
+│   │   ├── reports/
+│   │   ├── statistics/
+│   ├── README.md
+│   ├── scenarios/
+│   │   ├── demo-data-validator.ts
+│   │   ├── production-demo-generator.ts
+│   │   ├── production-demo-scenarios.ts
+│   │   ├── README.md
+│   │   ├── scenario-generator.ts
+│   ├── templates/
+├── deployment/
+│   ├── BlueGreenDeploymentManager.ts
+│   ├── deployment-cli.ts
+│   ├── deployment-utils.ts
+│   ├── DeploymentValidator.ts
+│   ├── examples/
+│   │   ├── complete-deployment-example.ts
+│   ├── index.ts
+│   ├── README.md
+│   ├── ZeroDowntimeMigrationManager.ts
+├── disaster-recovery/
+│   ├── __tests__/
+│   │   ├── ComprehensiveDisasterRecovery.test.ts
+│   │   ├── disaster-recovery-integration.test.ts
+│   ├── BackupManager.ts
+│   ├── ComprehensiveDisasterRecovery.ts
+│   ├── config.json
+│   ├── disaster-recovery-cli.ts
+│   ├── DisasterRecoveryManager.ts
+│   ├── IMPLEMENTATION_COMPLETE.md
+│   ├── index.ts
+│   ├── package-scripts.json
+│   ├── README.md
+│   ├── scripts/
+│   │   ├── activate-replica.sh
+│   │   ├── restore-config.sh
+│   │   ├── restore-original-db.sh
+│   │   ├── restore-pre-recovery-backup.sh
+│   │   ├── restore-primary-region.sh
 ├── docs/
 │   ├── kenya-land-verification.md
+│   ├── operational-excellence-guide.md
+│   ├── production-deployment-checklist.md
 ├── examples/
 │   ├── production-setup.ts
 ├── health/
+│   ├── DatabaseHealthMonitor.ts
+│   ├── health-monitor.ts
 │   ├── index.ts
 ├── index.ts
+├── integration/
+│   ├── integration-cli.ts
+│   ├── integration-test-runner.ts
+│   ├── ProductionReadinessAssessment.ts
+│   ├── run-production-assessment.ts
+│   ├── simple-assessment.cjs
+│   ├── SystemIntegrationValidator.ts
 ├── MIGRATION_SUMMARY.md
 ├── migration-plan.md
 ├── migrations/
@@ -55,49 +141,64 @@ database/
 │   │   ├── migration-manager.test.ts
 │   │   ├── migrations/
 │   │   │   ├── meta/
+│   │   ├── test-migration.ts
+│   │   ├── test-scripts.test.ts
+│   ├── _legacy_backup/
 │   ├── 0000_daffy_skrulls.sql
 │   ├── analytics/
+│   │   ├── 001_create_analytics_tables.sql
 │   │   ├── index.ts
 │   ├── communication/
+│   │   ├── 001_create_communication_tables.sql
 │   │   ├── index.ts
 │   ├── core/
-│   │   ├── 0000_aberrant_rhino.sql
-│   │   ├── 0001_audit_events_table.sql
-│   │   ├── 001_add_land_verification_tables.sql
-│   │   ├── create-all-tables.ts
-│   │   ├── create-essential-tables.ts
-│   │   ├── create-fraud-intelligence-tables.sql
-│   │   ├── database-manager.ts
+│   │   ├── 001_create_comprehensive_tables.sql
 │   │   ├── files/
 │   │   │   ├── 001_initial_schema.sql
-│   │   ├── fix-database.ts
-│   │   ├── generate-test-chunks.ts
-│   │   ├── index.ts
-│   │   ├── inspect-schema.ts
 │   │   ├── meta/
 │   │   │   ├── _journal.json
 │   │   │   ├── 0000_snapshot.json
-│   │   ├── migrate-existing-properties.ts
-│   │   ├── migrator.ts
-│   │   ├── quality-gates.ts
 │   │   ├── README.md
-│   │   ├── reset-and-create.ts
-│   │   ├── robust-batch-loader.ts
-│   │   ├── rollback-migration.ts
-│   │   ├── run-migration.ts
-│   │   ├── seed-kenya-properties.ts
-│   │   ├── test-migration.ts
-│   │   ├── test-scripts.test.ts
-│   │   ├── validate-migration.ts
 │   ├── fraud/
+│   │   ├── 001_create_fraud_detection_tables.sql
 │   │   ├── index.ts
 │   ├── index.ts
+│   ├── migration-cli.ts
+│   ├── migration-executor.ts
+│   ├── migration-loader.ts
+│   ├── migration-manager.ts
+│   ├── migration-registry.ts
+│   ├── performance/
+│   │   ├── 001_create_performance_indexes.sql
+│   ├── README.md
 │   ├── trust/
+│   │   ├── 001_create_trust_system_tables.sql
 │   │   ├── index.ts
+│   ├── update-package-scripts.ts
 │   ├── verification/
+│   │   ├── 001_create_land_verification_tables.sql
 │   │   ├── index.ts
 ├── OPTIMIZED_STRUCTURE.md
+├── performance/
+│   ├── index.ts
+│   ├── LoadTestingFramework.ts
+│   ├── PerformanceCertificationSystem.ts
+│   ├── performance-cli.ts
+│   ├── PerformanceMonitoringDashboard.ts
+├── PRODUCTION_DEPLOYMENT_GUIDE.md
 ├── README.md
+├── replication/
+│   ├── ConnectionRouter.ts
+│   ├── docker-compose.ha.yml
+│   ├── FailoverManager.ts
+│   ├── haproxy.cfg
+│   ├── pg_hba.conf
+│   ├── postgresql-primary.conf
+│   ├── postgresql-replica.conf
+│   ├── ReplicationManager.ts
+│   ├── scripts/
+│   │   ├── 01-setup-replication.sh
+│   ├── setup-ha.ts
 ├── schemas/
 │   ├── __tests__/
 │   │   ├── schema-manager.test.ts
@@ -106,24 +207,36 @@ database/
 │   │   ├── index.ts
 │   ├── communication/
 │   │   ├── index.ts
+│   ├── consolidated.ts
 │   ├── core/
 │   │   ├── index.ts
 │   ├── fraud/
 │   │   ├── index.ts
 │   ├── index.ts
+│   ├── README.md
 │   ├── trust/
 │   │   ├── index.ts
 │   ├── validation.ts
 │   ├── verification/
 │   │   ├── index.ts
 ├── scripts/
+│   ├── cleanup-redundant-files.ts
+│   ├── consolidate-database-files.ts
+│   ├── consolidate-database-infrastructure.ts
+│   ├── consolidate-schemas.ts
 │   ├── database-setup/
 │   │   ├── initialize-database.ts
 │   ├── data-pipeline.ts
 │   ├── deploy.ts
 │   ├── deploy-land-verification.ts
+│   ├── execute-production-deployment.ts
 │   ├── load-data.ts
+│   ├── remove-empty-dirs.ts
 │   ├── reset.ts
+│   ├── run-disaster-recovery-test.ts
+│   ├── run-performance-certification.ts
+│   ├── run-production-readiness-assessment.ts
+│   ├── run-security-validation.ts
 │   ├── seed-data.ts
 │   ├── setup-database.ts
 │   ├── status.ts
@@ -131,18 +244,61 @@ database/
 │   ├── test-migration-system.ts
 │   ├── test-schema-management.ts
 │   ├── test-setup.ts
+│   ├── unified-data-generation.ts
 │   ├── validate.ts
+│   ├── validate-consolidation.ts
 ├── scripts-evaluation.md
+├── security/
+│   ├── __tests__/
+│   │   ├── SecuritySystem.test.ts
+│   ├── ComplianceManager.ts
+│   ├── index.ts
+│   ├── security-cli.ts
+│   ├── SecurityMonitor.ts
+│   ├── SecurityReporting.ts
+│   ├── SecuritySystem.ts
+│   ├── VulnerabilityScanner.ts
 ├── seeds/
 │   ├── __tests__/
 │   │   ├── database-seeder.test.ts
+│   │   ├── UnifiedDataGenerator.test.ts
 │   ├── database-seeder.ts
+│   ├── generators/
+│   │   ├── checkpoint-manager.ts
+│   │   ├── community-insights-generator.py
+│   │   ├── fraud_analysis_report.json
+│   │   ├── fraud-reports-generator.py
+│   │   ├── fraud-simulator.py
+│   │   ├── fraudulent_property_dataset.json
+│   │   ├── fraudulent_transaction_dataset.json
+│   │   ├── fraudulent_user_dataset.json
+│   │   ├── index.ts
+│   │   ├── integrate-data.ts
+│   │   ├── KenyanDataGenerator.ts
+│   │   ├── land-verification-generator.py
+│   │   ├── optimized_land_dataset.json
+│   │   ├── optimized_land_dataset_statistics.json
+│   │   ├── property_dataset.json
+│   │   ├── property_statistics.json
+│   │   ├── property-generator.py
+│   │   ├── README.md
+│   │   ├── transaction_dataset.json
+│   │   ├── user_dataset.json
+│   │   ├── user_statistics.json
+│   │   ├── user-generator.py
 │   ├── index.ts
+│   ├── kenyan-data-generator.ts
 │   ├── land-verification.ts
 │   ├── land-verification-seed.ts
 │   ├── land-verification-system.ts
+│   ├── README.md
 │   ├── sample-ai-data.ts
+│   ├── seed-kenya-properties.ts
+│   ├── UnifiedDataGenerator.ts
 ├── service.ts
+├── types/
+│   ├── database.types.ts
+│   ├── index.ts
 ├── utils/
 │   ├── analyzers/
 │   │   ├── index.ts
@@ -150,33 +306,32 @@ database/
 │   ├── generators/
 │   │   ├── __tests__/
 │   │   │   ├── data-generator.test.ts
-│   │   ├── data-generation/
-│   │   │   ├── checkpoint-manager.ts
-│   │   │   ├── community-insights-generator.py
-│   │   │   ├── fraud_analysis_report.json
-│   │   │   ├── fraud-reports-generator.py
-│   │   │   ├── fraud-simulator.py
-│   │   │   ├── fraudulent_property_dataset.json
-│   │   │   ├── fraudulent_transaction_dataset.json
-│   │   │   ├── fraudulent_user_dataset.json
-│   │   │   ├── integrate-data.ts
-│   │   │   ├── land-verification-generator.py
-│   │   │   ├── optimized_land_dataset.json
-│   │   │   ├── optimized_land_dataset_statistics.json
-│   │   │   ├── property_dataset.json
-│   │   │   ├── property_statistics.json
-│   │   │   ├── property-generator.py
-│   │   │   ├── README.md
-│   │   │   ├── transaction_dataset.json
-│   │   │   ├── user_dataset.json
-│   │   │   ├── user_statistics.json
-│   │   │   ├── user-generator.py
 │   │   ├── index.ts
+│   │   ├── kenyan-data-generator.ts
 │   │   ├── README.md
 │   │   ├── unified-generator.ts
 │   ├── index.ts
+│   ├── migration-tools/
+│   │   ├── consolidate-schemas.ts
+│   │   ├── database-manager.ts
+│   │   ├── fix-database.ts
+│   │   ├── generate-test-chunks.ts
+│   │   ├── index.ts
+│   │   ├── inspect-schema.ts
+│   │   ├── migrate-existing-properties.ts
+│   │   ├── quality-gates.ts
+│   │   ├── reset-and-create.ts
+│   │   ├── robust-batch-loader.ts
+│   │   ├── rollback-migration.ts
+│   │   ├── run-migration.ts
+│   │   ├── validate-migration.ts
+│   ├── QueryOptimizer.ts
 │   ├── validators/
 │   │   ├── index.ts
+database-consolidation-audit.md
+database-consolidation-complete-report.md
+database-consolidation-migration-plan.md
+database-redundant-files-cleanup-complete.md
 DEPLOYMENT.md
 desktop.ini
 developer-portal.html
@@ -187,6 +342,7 @@ docs/
 ├── improved-triplecheck-data-generation-prompts.md
 ├── Kenya Land Verification Data Generation prompts.md
 ├── kenya_land_verification_guide.md
+├── monitoring-integration-guide.md
 ├── partnerships/
 │   ├── MTN_Partnership_Pitch.md
 │   ├── Safaricom_Partnership_Pitch.md
@@ -199,16 +355,23 @@ eslint.config.js
 firebase.json
 generate-structure.sh
 generate-structure-to-file.sh
+IMAGE_COMPONENT_ANALYSIS.md
+IMAGE_IMPORT_ANALYSIS.md
+IMAGE_SYSTEM_ANALYSIS.md
+IMAGE_SYSTEM_INTEGRATION_FIXES.md
 index.html
+INTERLINKING_AUDIT_SUMMARY.md
 load-test-config.yml
 MEMORY_OPTIMIZATION_SUMMARY.md
 nul
+optimized-tailwind.config.ts
 package.json
 package-lock.json
 playwright.config.ts
 playwright-report/
 ├── index.html
 postcss.config.js
+PROPERTY_LISTING_IMPROVEMENTS.md
 public/
 ├── assets/
 │   ├── alice-pasqual-Olki5QpHxts-unsplash.jpg
@@ -353,16 +516,23 @@ scripts/
 │   ├── deploy-production.ts
 │   ├── deploy-staging.ts
 │   ├── docker-compose.land-verification.yml
+│   ├── enhanced-alert-rules.yml
 │   ├── grafana/
+│   │   ├── dashboards/
+│   │   │   ├── business-metrics.json
+│   │   │   ├── database-health.json
+│   │   │   ├── query-performance.json
 │   │   ├── provisioning/
 │   │   │   ├── dashboards/
 │   │   │   │   ├── dashboard.yml
+│   │   │   │   ├── dashboard-provisioning.yml
 │   │   │   ├── datasources/
 │   │   │   │   ├── prometheus.yml
 │   ├── kubernetes/
 │   │   ├── land-verification-deployment.yaml
 │   ├── prometheus.yml
 │   ├── README.md
+│   ├── setup-comprehensive-monitoring.ts
 │   ├── setup-monitoring.ts
 │   ├── validate-deployment.ts
 ├── deploy-minimal.js
@@ -527,46 +697,23 @@ server/
 ├── index.ts
 ├── infrastructure/
 │   ├── cache/
+│   │   ├── __tests__/
+│   │   │   ├── UnifiedCacheManager.test.ts
 │   │   ├── AnalyticsCache.ts
+│   │   ├── CacheIntegrationAdapter.ts
+│   │   ├── CacheIntegrationMigrator.ts
 │   │   ├── CacheService.ts
+│   │   ├── CacheWarmingStrategy.ts
+│   │   ├── index.ts
 │   │   ├── PropertyCacheService.ts
+│   │   ├── README.md
+│   │   ├── UnifiedCacheManager.ts
 │   ├── database/
-│   │   ├── config/
-│   │   │   ├── database.config.ts
 │   │   ├── connection.ts
 │   │   ├── index.ts
 │   │   ├── init.ts
 │   │   ├── integration.ts
-│   │   ├── migrations/
-│   │   │   ├── 0000_aberrant_rhino.sql
-│   │   │   ├── 0001_audit_events_table.sql
-│   │   │   ├── 001_add_land_verification_tables.sql
-│   │   │   ├── create-all-tables.ts
-│   │   │   ├── create-essential-tables.ts
-│   │   │   ├── create-fraud-intelligence-tables.sql
-│   │   │   ├── files/
-│   │   │   │   ├── 001_initial_schema.sql
-│   │   │   ├── meta/
-│   │   │   │   ├── _journal.json
-│   │   │   │   ├── 0000_snapshot.json
-│   │   │   ├── migrator.ts
-│   │   │   ├── reset-and-create.ts
-│   │   ├── QueryOptimizer.ts
 │   │   ├── README.md
-│   │   ├── schemas/
-│   │   │   ├── core/
-│   │   │   │   ├── index.ts
-│   │   │   ├── index.ts
-│   │   │   ├── land-verification/
-│   │   │   │   ├── index.ts
-│   │   ├── seeds/
-│   │   │   ├── database-seeder.ts
-│   │   │   ├── land-verification-seed.ts
-│   │   │   ├── sample-ai-data.ts
-│   │   ├── types/
-│   │   │   ├── database.types.ts
-│   │   ├── utils/
-│   │   │   ├── database-utils.ts
 │   ├── deduplication/
 │   │   ├── __tests__/
 │   │   │   ├── deduplication-middleware.integration.test.ts
@@ -589,12 +736,16 @@ server/
 │   ├── monitoring/
 │   │   ├── __tests__/
 │   │   │   ├── PerformanceOptimizer.test.ts
+│   │   ├── AlertingSystem.ts
 │   │   ├── CachePerformanceMonitor.ts
+│   │   ├── index.ts
 │   │   ├── logger.ts
 │   │   ├── logging.service.ts
 │   │   ├── MonitoringDashboard.ts
+│   │   ├── ObservabilitySystem.ts
 │   │   ├── PerformanceMonitor.ts
 │   │   ├── PerformanceOptimizer.ts
+│   │   ├── PrometheusMetrics.ts
 │   │   ├── QueryPerformanceMonitor.ts
 │   ├── optimization/
 │   │   ├── PerformanceOptimizer.ts
@@ -787,6 +938,7 @@ server/
 │   ├── email-routes.ts
 │   ├── fraud-intelligence.routes.ts
 │   ├── index.ts
+│   ├── metrics.routes.ts
 │   ├── ml-routes.ts
 │   ├── payments.ts
 │   ├── professionals.routes.ts
@@ -1128,6 +1280,7 @@ src/
 │   │   ├── PROPERTY_GALLERY_MIGRATION.md
 │   │   ├── PropertyCard.tsx
 │   │   ├── PropertyCardShowcase.tsx
+│   │   ├── PropertyGallery.tsx
 │   │   ├── PropertyListingWizard.tsx
 │   │   ├── PropertyMap.tsx
 │   │   ├── PropertyReviews.tsx
@@ -1158,13 +1311,17 @@ src/
 │   │   │   ├── PropertyCompare.comprehensive.test.tsx
 │   │   │   ├── PropertyDetails.comprehensive.test.tsx
 │   │   │   ├── PropertyDetails.test.tsx
+│   │   ├── CommercialProperties.migrated.tsx
 │   │   ├── CommercialProperties.tsx
 │   │   ├── index.ts
 │   │   ├── LandDetails.tsx
+│   │   ├── Lands.migrated.tsx
 │   │   ├── Lands.tsx
 │   │   ├── ListProperty.tsx
+│   │   ├── PropertiesResidential.migrated.tsx
 │   │   ├── PropertiesResidential.tsx
 │   │   ├── PropertyCompare.tsx
+│   │   ├── PropertyDetails.migrated.tsx
 │   │   ├── PropertyDetails.tsx
 │   │   ├── PropertyEdit.tsx
 │   │   ├── PropertyMap.tsx
@@ -1230,6 +1387,7 @@ src/
 │   │   │   ├── BlogPostSkeleton.tsx
 │   │   ├── CommunityInsights.tsx
 │   │   ├── DemoLoginHelper.tsx
+│   │   ├── EnhancedVirtualizedPropertyList.tsx
 │   │   ├── examples/
 │   │   │   ├── EnhancedHooksExample.tsx
 │   │   ├── fallbacks/
@@ -1247,8 +1405,12 @@ src/
 │   │   │   ├── ConversionHero.tsx
 │   │   │   ├── EnhancedHero.tsx
 │   │   ├── images/
-│   │   │   ├── PropertyImageGallery.tsx
+│   │   │   ├── ImageGallery.module.css
+│   │   │   ├── ImageGallery.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── MIGRATION_GUIDE.md
 │   │   │   ├── PropertyImageVault.tsx
+│   │   │   ├── REDUNDANCY_ANALYSIS.md
 │   │   ├── index.ts
 │   │   ├── IntegrationTest.tsx
 │   │   ├── layout/
@@ -1300,6 +1462,19 @@ src/
 │   │   ├── Pagination.tsx
 │   │   ├── PaymentGuidance.tsx
 │   │   ├── PricingCTA.tsx
+│   │   ├── property/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── PropertyListingPage.test.tsx
+│   │   │   ├── filters/
+│   │   │   │   ├── BasePropertyFilters.tsx
+│   │   │   │   ├── CommercialFilters.tsx
+│   │   │   │   ├── ResidentialFilters.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── PhotoManagementButton.tsx
+│   │   │   ├── PropertyArchitectureComparison.tsx
+│   │   │   ├── PropertyDataGrid.tsx
+│   │   │   ├── PropertyListingPage.tsx
+│   │   │   ├── PropertySkeletonGrid.tsx
 │   │   ├── QueryErrorBoundary.tsx
 │   │   ├── RouteRedirect.tsx
 │   │   ├── ServiceCategories.tsx
@@ -1341,7 +1516,6 @@ src/
 │   │   │   ├── loading-skeleton.tsx
 │   │   │   ├── LoadingSpinner.tsx
 │   │   │   ├── loading-states.tsx
-│   │   │   ├── logo.module.css
 │   │   │   ├── logo.tsx
 │   │   │   ├── menubar.tsx
 │   │   │   ├── navigation-menu.tsx
@@ -1369,13 +1543,14 @@ src/
 │   │   │   ├── tooltip.tsx
 │   │   │   ├── wordmark.tsx
 │   │   ├── VideoModal.tsx
-│   │   ├── VirtualizedList.module.css
 │   │   ├── VirtualizedList.tsx
 │   │   ├── VirtualizedPropertyList.tsx
 │   ├── config/
 │   │   ├── assets.ts
+│   │   ├── image-components.config.ts
 │   │   ├── images.ts
-│   │   ├── image-service.config.ts
+│   │   ├── image-system.config.ts
+│   │   ├── propertyTypes.ts
 │   │   ├── user-journeys.ts
 │   ├── constants/
 │   ├── contexts/
@@ -1402,6 +1577,7 @@ src/
 │   │   ├── useComponentPerformance.ts
 │   │   ├── useDebounce.ts
 │   │   ├── useFileUpload.ts
+│   │   ├── useFilterState.ts
 │   │   ├── useForm.ts
 │   │   ├── useFormValidation.ts
 │   │   ├── useGeolocation.ts
@@ -1411,6 +1587,7 @@ src/
 │   │   ├── useNavigationSpacing.ts
 │   │   ├── useOperationTracking.ts
 │   │   ├── useOptimisticMutation.ts
+│   │   ├── usePaginatedQuery.ts
 │   │   ├── usePaymentGuidance.ts
 │   │   ├── usePolling.ts
 │   │   ├── usePropertyActions.ts
@@ -1454,8 +1631,8 @@ src/
 │   │   ├── PressMedia.tsx
 │   │   ├── Pricing.tsx
 │   │   ├── Privacy.tsx
-│   │   ├── Properties.module.css
 │   │   ├── Properties.tsx
+│   │   ├── PropertiesNew.tsx
 │   │   ├── Resources.tsx
 │   │   ├── Security.tsx
 │   │   ├── Services.tsx
@@ -1485,12 +1662,15 @@ src/
 │   │   │   ├── PropertyImageUploadCoordinator.ts
 │   │   │   ├── PropertyImageValidationService.ts
 │   │   │   ├── PropertyImageWorkflowManager.ts
+│   │   │   ├── UnifiedImageServiceFactory.ts
 │   │   ├── propertyApi.ts
 │   ├── styles/
 │   │   ├── css.d.ts
 │   │   ├── DESIGN_SYSTEM_MIGRATION.md
 │   │   ├── design-system.css
 │   │   ├── globals.css
+│   │   ├── optimized-design-system (1).css
+│   │   ├── optimized-globals.css
 │   ├── test-utils/
 │   │   ├── __tests__/
 │   │   │   ├── accessibility-basic.test.tsx
@@ -1539,9 +1719,14 @@ src/
 │   ├── types/
 │   │   ├── api.ts
 │   │   ├── api.types.ts
+│   │   ├── api-contracts.ts
 │   │   ├── compare.ts
+│   │   ├── contracts/
+│   │   │   ├── property-contracts.ts
+│   │   │   ├── user-contracts.ts
 │   │   ├── images/
 │   │   │   ├── index.ts
+│   │   │   ├── unified.ts
 │   │   ├── index.ts
 │   │   ├── property.ts
 │   │   ├── service-interfaces.ts
@@ -1559,11 +1744,13 @@ src/
 │   │   ├── form-validation.ts
 │   │   ├── globalPerformanceMonitor.ts
 │   │   ├── images/
-│   │   │   ├── constants.ts
-│   │   │   ├── formatters.ts
+│   │   │   ├── unified-utils.ts
 │   │   ├── logger.ts
+│   │   ├── mockPropertyApi.ts
 │   │   ├── navigation.ts
 │   │   ├── performance-optimizer.ts
+│   │   ├── propertyAdapters.ts
+│   │   ├── property-mapper.ts
 │   │   ├── request-monitor.ts
 │   │   ├── route-tester.ts
 │   │   ├── route-validator.ts
@@ -1641,6 +1828,7 @@ src/
 ├── vite-env.d.ts
 srclib/
 srcsharedtest-utils/
+STYLE_CONSOLIDATION_SUMMARY.md
 tailwind.config.ts
 temp-files/
 ├── eslint-fixes-summary.md
@@ -1741,4 +1929,4 @@ vitest.chunk-9.config.ts
 vitest.workspace.ts
 ```
 
-Generated on: Thu, Aug 7, 2025 12:05:58 AM
+Generated on: Sun, Aug 10, 2025  2:53:08 AM

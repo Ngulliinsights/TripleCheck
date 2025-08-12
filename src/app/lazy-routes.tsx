@@ -358,10 +358,7 @@ export const LazyRoutes = {
     routePath: "/land/:id",
     preloadPriority: "normal",
   }),
-  PropertyImageGallery: createLazyRoute(() => import("@shared/components/images/ImageGallery"), {
-    routePath: "/property/gallery",
-    preloadPriority: "low",
-  }),
+  // PropertyImageGallery removed - it's a shared component, not a route component
 
   /* --- Land Verification (Kenya) --- */
   LandVerification: createLazyRoute(

@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 
+import { EnhancedCacheService, CacheFactory } from '../cache/CacheIntegrationAdapter';
 import { CacheService } from '../cache/CacheService';
 import { cachePerformanceMonitor } from '../monitoring/CachePerformanceMonitor';
 
@@ -66,8 +67,8 @@ export class RequestDeduplicator {
   private readonly pendingRequests = new Map<string, Promise<unknown>>();
   private readonly completedRequests = new Map<string, CompletedRequest>();
   
-  // Explicitly type as potentially undefined to satisfy exactOptionalPropertyTypes
-  private readonly cache: CacheService | undefined;
+  // Use enhanced cache service for better performance
+  private readonly cache: EnhancedCacheService;
   private readonly config: DeduplicationConfig;
   private readonly logger: Logger;
 
@@ -84,8 +85,16 @@ export class RequestDeduplicator {
       ...config
     };
     
-    // Explicit assignment to satisfy TypeScript's exact optional property types
-    this.cache = cache;
+    // Use enhanced cache service or create a new one optimized for deduplication
+    this.cache = cache instanceof EnhancedCacheService 
+      ? cache 
+      : CacheFactory.createDomainCache('deduplication', {
+          l1MaxItems: 5000,
+          l1DefaultTtl: this.config.defaultTtl,
+          l2DefaultTtl: Math.floor(this.config.defaultTtl / 1000),
+          l2KeyPrefix: this.config.keyPrefix,
+          enableStampedeProtection: true
+        });
     
     // Use provided logger or create a default implementation
     this.logger = logger || this.createDefaultLogger();
@@ -305,16 +314,19 @@ export class RequestDeduplicator {
   }
 
   /**
-   * Check Redis cache for cached result
-   * Handles Redis operations with proper error handling
+   * Check unified cache for cached result
+   * Uses the enhanced cache service with L1/L2 architecture
    */
   private async checkRedisCache<T>(cacheKey: string): Promise<CacheLookupResult<T>> {
-    if (!this.cache || !this.config.enableRedisBackup) {
+    if (!this.config.enableRedisBackup) {
       return { found: false };
     }
 
     try {
+      const startTime = Date.now();
       const cachedResult = await this.cache.get(cacheKey);
+      const latency = Date.now() - startTime;
+      
       if (!cachedResult) {
         return { found: false };
       }
@@ -326,10 +338,10 @@ export class RequestDeduplicator {
         etag: this.generateETag(cachedResult)
       });
       
-      cachePerformanceMonitor.recordCacheHit(cacheKey, 0);
+      cachePerformanceMonitor.recordCacheHit(cacheKey, latency);
       return { found: true, data: cachedResult as T };
     } catch (error) {
-      this.logger.warn('Redis cache lookup failed', error as Error);
+      this.logger.warn('Unified cache lookup failed', error as Error);
       cachePerformanceMonitor.recordCacheError(cacheKey, error as Error);
       return { found: false };
     }
@@ -371,18 +383,20 @@ export class RequestDeduplicator {
   }
 
   /**
-   * Store result in Redis cache
-   * Isolated Redis storage logic with error handling
+   * Store result in unified cache
+   * Uses enhanced cache service with automatic L1/L2 distribution
    */
   private async storeInRedis(cacheKey: string, result: unknown, ttl: number): Promise<void> {
-    if (!this.cache || !this.config.enableRedisBackup) {
+    if (!this.config.enableRedisBackup) {
       return;
     }
 
     try {
-      await this.cache.set(cacheKey, result, { ttl: Math.floor(ttl / 1000) });
+      await this.cache.setWithTags(cacheKey, result, ['deduplication'], { 
+        ttl: Math.floor(ttl / 1000) 
+      });
     } catch (error) {
-      this.logger.warn('Redis cache storage failed', error as Error);
+      this.logger.warn('Unified cache storage failed', error as Error);
     }
   }
 
@@ -425,22 +439,24 @@ export class RequestDeduplicator {
   }
 
   /**
-   * Clear Redis cache safely
-   * Handles Redis cache clearing with proper error handling
+   * Clear unified cache safely
+   * Uses tag-based invalidation for better performance
    */
   private async clearRedisCache(keyOrPattern: string, cacheKey: string): Promise<void> {
-    if (!this.cache || !this.config.enableRedisBackup) {
+    if (!this.config.enableRedisBackup) {
       return;
     }
 
     try {
       if (keyOrPattern.includes('*')) {
-        await this.cache.invalidateByPattern(cacheKey);
+        // Use tag-based invalidation for pattern matching
+        const tag = keyOrPattern.replace(/\*/g, '').replace(this.config.keyPrefix, '');
+        await this.cache.invalidateByTags([tag, 'deduplication']);
       } else {
         await this.cache.delete(cacheKey);
       }
     } catch (error) {
-      this.logger.warn('Redis cache clear failed', error as Error);
+      this.logger.warn('Unified cache clear failed', error as Error);
     }
   }
 

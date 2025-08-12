@@ -218,7 +218,8 @@ describe('Property Components Accessibility', () => {
   });
 
   describe('Property Gallery Component', () => {
-    const PropertyGallery = ({ images }: { images: typeof mockProperty.images }) => {
+    // Using a simple test component instead of the removed PropertyGallery
+    const PropertyGalleryTest = ({ images }: { images: typeof mockProperty.images }) => {
       const [currentIndex, setCurrentIndex] = React.useState(0);
 
       return (
@@ -292,12 +293,12 @@ describe('Property Components Accessibility', () => {
     };
 
     it('passes automated accessibility tests', async () => {
-      const { container } = render(<PropertyGallery images={mockProperty.images} />);
+      const { container } = render(<PropertyGalleryTest images={mockProperty.images} />);
       await testA11y(container);
     });
 
     it('has proper ARIA attributes for carousel', () => {
-      const { container } = render(<PropertyGallery images={mockProperty.images} />);
+      const { container } = render(<PropertyGalleryTest images={mockProperty.images} />);
 
       // Main image should have proper alt text
       const mainImage = container.querySelector('img');
@@ -318,7 +319,7 @@ describe('Property Components Accessibility', () => {
 
     it('supports keyboard navigation', async () => {
       const user = userEvent.setup();
-      render(<PropertyGallery images={mockProperty.images} />);
+      render(<PropertyGalleryTest images={mockProperty.images} />);
 
       const prevButton = screen.getByRole('button', { name: 'Previous image' });
       const nextButton = screen.getByRole('button', { name: 'Next image' });
@@ -333,7 +334,7 @@ describe('Property Components Accessibility', () => {
 
     it('announces image changes to screen readers', async () => {
       const user = userEvent.setup();
-      render(<PropertyGallery images={mockProperty.images} />);
+      render(<PropertyGalleryTest images={mockProperty.images} />);
 
       const nextButton = screen.getByRole('button', { name: 'Next image' });
       

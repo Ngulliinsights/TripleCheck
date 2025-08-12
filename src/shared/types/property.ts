@@ -1,4 +1,4 @@
-// Unified Property interface that matches the database schema
+// Legacy Property interface - maintained for backward compatibility
 export interface Property {
   id: number | string; // Allow both for API compatibility
   title: string;
@@ -9,7 +9,12 @@ export interface Property {
   coordinates?: Coordinates | null | undefined; // Optional since not always present in API
   imageUrls?: string[] | undefined; // Optional, API uses 'images'
   images?: string[] | undefined; // API field name
-  verificationStatus?: 'verified' | 'pending' | 'unverified' | 'draft' | undefined;
+  verificationStatus?:
+    | "verified"
+    | "pending"
+    | "unverified"
+    | "draft"
+    | undefined;
   features?: PropertyFeatures | null | undefined;
   ownerId?: string | undefined;
   aiVerificationResults?: AIVerificationResults | null | undefined;
@@ -24,15 +29,17 @@ export interface Property {
   // Extended properties for frontend use
   landVerification?: LandVerificationStatus | undefined;
   trustScore?: number | undefined;
-  owner?: {
-    id: string;
-    username: string;
-    email: string;
-    firstName?: string | undefined;
-    lastName?: string | undefined;
-    trustScore: number;
-    isVerifiedAgent: boolean;
-  } | undefined;
+  owner?:
+    | {
+        id: string;
+        username: string;
+        email: string;
+        firstName?: string | undefined;
+        lastName?: string | undefined;
+        trustScore: number;
+        isVerifiedAgent: boolean;
+      }
+    | undefined;
   // Additional fields that might be present in API responses
   bedrooms?: number | undefined;
   bathrooms?: number | undefined;
@@ -42,6 +49,102 @@ export interface Property {
   propertyType?: string | undefined;
   status?: string | undefined;
   amenities?: string[] | undefined;
+}
+
+// Enhanced normalized property interface for new architecture
+export interface NormalizedProperty {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  location: string;
+  images: string[];
+  verified: boolean;
+  type: string;
+  category: "residential" | "commercial" | "land";
+  features: Record<string, any>;
+  createdAt: string;
+  updatedAt?: string;
+  status: "available" | "under-offer" | "sold" | "rented" | "pending";
+  rating?: number;
+  views?: number;
+  trustScore?: number;
+  verificationStatus?: "verified" | "pending" | "unverified" | "flagged";
+  owner?: PropertyOwner;
+  coordinates?: Coordinates;
+}
+
+// Property owner interface
+export interface PropertyOwner {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  trustScore: number;
+  isVerifiedAgent: boolean;
+  avatar?: string;
+}
+
+// Property-specific interfaces extending NormalizedProperty
+export interface ResidentialProperty extends NormalizedProperty {
+  category: "residential";
+  type:
+    | "apartment"
+    | "house"
+    | "duplex"
+    | "penthouse"
+    | "studio"
+    | "townhouse"
+    | "villa";
+  features: {
+    bedrooms: number;
+    bathrooms: number;
+    squareFeet: number;
+    parkingSpaces?: number;
+    yearBuilt?: number;
+    amenities?: string[];
+    furnished?: boolean;
+    petFriendly?: boolean;
+    balcony?: boolean;
+    garden?: boolean;
+    [key: string]: any;
+  };
+}
+
+export interface CommercialProperty extends NormalizedProperty {
+  category: "commercial";
+  type: "office" | "retail" | "warehouse" | "industrial" | "mixed-use";
+  features: {
+    size: number; // in square feet
+    yearBuilt: number;
+    occupancyRate?: number;
+    roi?: number;
+    parkingSpaces?: number;
+    floors?: number;
+    elevators?: number;
+    airConditioning?: boolean;
+    security?: boolean;
+    loadingDock?: boolean;
+    [key: string]: any;
+  };
+}
+
+export interface LandProperty extends NormalizedProperty {
+  category: "land";
+  type: "agricultural" | "residential" | "commercial" | "industrial";
+  features: {
+    size: string; // e.g., "2.5 acres", "1000 sqm"
+    soilType?: string;
+    waterAccess?: boolean;
+    roadAccess?: boolean;
+    electricityAccess?: boolean;
+    zoning?: string;
+    developmentPotential?: string;
+    titleDeedStatus?: "available" | "pending" | "missing";
+    topography?: string;
+    drainage?: string;
+    [key: string]: any;
+  };
 }
 
 export interface LocationData {
@@ -94,9 +197,9 @@ export interface AIVerificationResults {
 
 export interface LandVerificationStatus {
   sessionId?: string | undefined;
-  status: 'not_started' | 'in_progress' | 'completed' | 'suspended' | 'failed';
+  status: "not_started" | "in_progress" | "completed" | "suspended" | "failed";
   overallRiskScore: number;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: "low" | "medium" | "high" | "critical";
   confidence: number;
   completedLayers: string[];
   lastUpdated: Date;
@@ -104,8 +207,115 @@ export interface LandVerificationStatus {
 }
 
 export interface LandVerificationBadge {
-  type: 'verified' | 'in_progress' | 'high_risk' | 'expert_required';
+  type: "verified" | "in_progress" | "high_risk" | "expert_required";
   label: string;
-  color: 'green' | 'blue' | 'red' | 'orange';
+  color: "green" | "blue" | "red" | "orange";
   description: string;
+}
+
+// Filter interfaces for different property types
+export interface BasePropertyFilters {
+  query: string;
+  location: string;
+  priceMin: number | null;
+  priceMax: number | null;
+  verified: boolean;
+  category?: "residential" | "commercial" | "land" | null;
+}
+
+export interface ResidentialFilters extends BasePropertyFilters {
+  category: "residential";
+  bedrooms: number | null;
+  bathrooms: number | null;
+  propertyType: string;
+  amenities: string[];
+  furnished?: boolean;
+  petFriendly?: boolean;
+}
+
+export interface CommercialFilters extends BasePropertyFilters {
+  category: "commercial";
+  propertyType: string;
+  sizeMin: number | null;
+  sizeMax: number | null;
+  yearBuiltMin: number | null;
+  roiMin: number | null;
+}
+
+export interface LandFilters extends BasePropertyFilters {
+  category: "land";
+  landType: string;
+  sizeMin: string;
+  sizeMax: string;
+  waterAccess: boolean;
+  roadAccess: boolean;
+  electricityAccess: boolean;
+}
+
+// Configuration interfaces for property type system
+export interface PropertyTypeConfig<
+  TFilters extends BasePropertyFilters,
+  TProperty,
+> {
+  title: string;
+  description: string;
+  queryKey: string[];
+  defaultFilters: TFilters;
+  fetcher: (
+    filters: TFilters,
+    page: number,
+    pageSize: number
+  ) => Promise<{
+    items: TProperty[];
+    totalCount: number;
+    totalPages: number;
+  }>;
+  adapter: (item: TProperty) => NormalizedProperty;
+  filterComponent: React.ComponentType<{
+    filters: TFilters;
+    onChange: (filters: TFilters) => void;
+    onReset: () => void;
+    errors?: Record<string, string>;
+  }>;
+  cardComponent: React.ComponentType<{
+    property: NormalizedProperty;
+    onClick?: (property: NormalizedProperty) => void;
+    className?: string;
+  }>;
+}
+
+// View and sort options
+export type ViewMode = "grid" | "list";
+export type SortOption =
+  | "newest"
+  | "oldest"
+  | "price-low"
+  | "price-high"
+  | "rating"
+  | "views";
+
+// Property adapter utility type
+export type PropertyAdapter<T> = (item: T) => NormalizedProperty;
+
+// Validation result interface
+export interface ValidationResult {
+  isValid: boolean;
+  errors: Record<string, string>;
+}
+
+// Property search and pagination types
+export interface PropertySearchParams {
+  filters: BasePropertyFilters;
+  page: number;
+  pageSize: number;
+  sortBy: SortOption;
+}
+
+export interface PropertySearchResponse<T> {
+  items: T[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }

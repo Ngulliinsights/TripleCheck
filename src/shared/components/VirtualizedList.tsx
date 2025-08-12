@@ -14,22 +14,9 @@ import {
   ListOnScrollProps,
 } from "react-window";
 
-import styles from "./VirtualizedList.module.css";
+// Styles are now consolidated in design-system.css
 
-// Type-safe CSS module access with security validation
-const VALID_CLASS_NAME_REGEX = /^[a-zA-Z0-9_-]+$/;
-
-const getStyleClass = (className: string): string => {
-  // Validate className to prevent object injection
-  if (
-    typeof className !== "string" ||
-    !VALID_CLASS_NAME_REGEX.exec(className)
-  ) {
-    return "";
-  }
-  const styleValue = styles[className as keyof typeof styles];
-  return typeof styleValue === "string" ? styleValue : "";
-};
+// CSS classes are now consolidated in design-system.css
 
 /* -------------------------------------------------------------------------- */
 /*                               Constants                                    */
@@ -124,7 +111,7 @@ const MemoizedRow = memo<{
   const fallbackElement = (
     <div
       style={style}
-      className={getStyleClass("fallback-item")}
+      className={CSS_CLASSES.FALLBACK_ITEM}
       data-testid={`fallback-item-${index}`}
     />
   );
@@ -157,7 +144,7 @@ const MemoizedRow = memo<{
       console.warn(`Failed to render item at index ${index}:`, error);
     }
     return (
-      <div style={style} className={getStyleClass("error-item")}>
+      <div style={style} className={CSS_CLASSES.ERROR_ITEM}>
         Error rendering item
       </div>
     );
@@ -513,7 +500,7 @@ function EnterpriseVirtualizedListInner<ItemType>(
   if (loading && loadingComponent) {
     return (
       <div
-        className={`${getStyleClass("loading-container")} ${className || ""}`}
+        className={`${CSS_CLASSES.LOADING_CONTAINER} ${className || ""}`}
         data-testid="loading-container"
       >
         {loadingComponent}
@@ -524,7 +511,7 @@ function EnterpriseVirtualizedListInner<ItemType>(
   if (!loading && items.length === 0 && emptyComponent) {
     return (
       <div
-        className={`${getStyleClass("empty-container")} ${className || ""}`}
+        className={`${CSS_CLASSES.EMPTY_CONTAINER} ${className || ""}`}
         data-testid="empty-container"
       >
         {emptyComponent}
@@ -534,7 +521,7 @@ function EnterpriseVirtualizedListInner<ItemType>(
 
   return (
     <div
-      className={`${getStyleClass("virtualized-container")} ${className || ""}`}
+      className={`${CSS_CLASSES.VIRTUALIZED_CONTAINER} ${className || ""}`}
       data-testid="virtualized-container"
     >
       {header}
@@ -798,20 +785,20 @@ function GridVirtualizedListInner<ItemType>(
       });
 
       // Create reusable class names
-      const baseItemClasses = `${getStyleClass(CSS_CLASSES.GRID_ITEM)} ${getStyleClass(CSS_CLASSES.DYNAMIC_WIDTH)} ${getStyleClass(CSS_CLASSES.DYNAMIC_HEIGHT)}`;
-      const emptyItemClasses = `${baseItemClasses} ${getStyleClass(CSS_CLASSES.EMPTY_ITEM)}`;
-      const errorItemClasses = `${baseItemClasses} ${getStyleClass(CSS_CLASSES.ERROR_ITEM)}`;
-      const wrapperItemClasses = `${baseItemClasses} ${getStyleClass(CSS_CLASSES.GRID_ITEM_WRAPPER)}`;
+      const baseItemClasses = `${CSS_CLASSES.GRID_ITEM} ${CSS_CLASSES.DYNAMIC_WIDTH} ${CSS_CLASSES.DYNAMIC_HEIGHT}`;
+      const emptyItemClasses = `${baseItemClasses} ${CSS_CLASSES.EMPTY_ITEM}`;
+      const errorItemClasses = `${baseItemClasses} ${CSS_CLASSES.ERROR_ITEM}`;
+      const wrapperItemClasses = `${baseItemClasses} ${CSS_CLASSES.GRID_ITEM_WRAPPER}`;
 
       return (
         <div
           style={rowStyleWithVars}
-          className={getStyleClass("grid-row-container")}
+          className={CSS_CLASSES.GRID_ROW_CONTAINER}
           data-testid={`grid-row-${rowIndex}`}
         >
           <div
             style={gridRowStyleWithVars}
-            className={`${getStyleClass("grid-row")} ${getStyleClass("dynamic-gap")}`}
+            className={`${CSS_CLASSES.GRID_ROW} ${CSS_CLASSES.DYNAMIC_GAP}`}
           >
             {Array.from({ length: columnsPerRow }, (_, columnIndex) => {
               const itemIndex = startIndex + columnIndex;
@@ -852,7 +839,7 @@ function GridVirtualizedListInner<ItemType>(
   if (loading && loadingComponent) {
     return (
       <div
-        className={`${getStyleClass("loading-container")} ${className || ""}`}
+        className={`${CSS_CLASSES.LOADING_CONTAINER} ${className || ""}`}
         data-testid="grid-loading-container"
       >
         {loadingComponent}
@@ -863,7 +850,7 @@ function GridVirtualizedListInner<ItemType>(
   if (!loading && items.length === 0 && emptyComponent) {
     return (
       <div
-        className={`${getStyleClass("empty-container")} ${className || ""}`}
+        className={`${CSS_CLASSES.EMPTY_CONTAINER} ${className || ""}`}
         data-testid="grid-empty-container"
       >
         {emptyComponent}
@@ -873,7 +860,7 @@ function GridVirtualizedListInner<ItemType>(
 
   return (
     <div
-      className={`${getStyleClass("grid-container")} ${className || ""}`}
+      className={`${CSS_CLASSES.GRID_CONTAINER} ${className || ""}`}
       data-testid="grid-container"
     >
       <FixedSizeList

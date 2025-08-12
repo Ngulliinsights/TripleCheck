@@ -41,7 +41,7 @@ export const EXTERNAL_DEPENDENCIES = {
   // Styling (CDN)
   styling: {
     tailwind: 'https://cdn.tailwindcss.com',
-    glassmorphism: '/assets/css/glassmorphism-minimal.css', // Self-hosted minimal version
+    // Glassmorphism styles are now consolidated in design-system.css
   }
 } as const;
 

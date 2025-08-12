@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Star, User, ThumbsUp, Flag } from "lucide-react";
-import { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef } from "react";
 
 import { EnterpriseVirtualizedList } from "../../shared/components";
 import FormField from "../../shared/components/forms/FormField";

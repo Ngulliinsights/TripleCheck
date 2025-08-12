@@ -1,7 +1,7 @@
 import { MapPin, Bed, Bath, Square, Camera, Plus, Check, Eye } from 'lucide-react';
-import React, { useState } from 'react';
+import React from 'react';
 
-import ImageGallery from '../../shared/components/images/ImageGallery';
+
 import { Badge } from '../../shared/components/ui/badge';
 import { Button } from '../../shared/components/ui/button';
 import { Card, CardContent } from '../../shared/components/ui/card';
@@ -13,6 +13,7 @@ interface ListingCardProps {
   className?: string;
   // Enhanced onClick to be backwards compatible with both patterns
   onClick?: (() => void) | ((property: Property) => void);
+  viewMode?: 'grid' | 'list'; // New prop for layout-specific styling
 }
 
 // Enhanced price formatter with fallback - combines safety from deleted component
@@ -32,7 +33,8 @@ const formatPriceWithFallback = (price?: number): string => {
 const ListingCard = React.memo<ListingCardProps>(({ 
   property, 
   className = '',
-  onClick 
+  onClick,
+  viewMode = 'grid'
 }) => {
   // Compare functionality
   const { addToCompare, removeFromCompare, isSelected, canAddMore } = useCompare();
@@ -138,7 +140,8 @@ const ListingCard = React.memo<ListingCardProps>(({
   return (
     <Card 
       className={`
-        glass-property-card overflow-hidden transition-all duration-300 
+        property-card overflow-hidden transition-all duration-300 
+        ${viewMode === 'grid' ? 'property-card--grid-mode' : 'property-card--list-mode'}
         ${isInteractive ? 'cursor-pointer group' : ''} 
         ${className}
       `.trim()}
@@ -149,20 +152,19 @@ const ListingCard = React.memo<ListingCardProps>(({
       // Enhanced accessibility label
       aria-label={isInteractive ? `View property ${property.title}` : undefined}
     >
-      {/* Image container using basic img tag */}
-      <div className="relative aspect-video overflow-hidden">
+      {/* Image container with proper containment */}
+      <div className="property-card-image-container">
         <img
           src={imageSrc}
           alt={`${property.title} property`}
           width={400}
           height={225}
           className={`
-            w-full h-full object-cover transition-all duration-300
-            ${isInteractive ? 'group-hover:scale-110' : ''}
+            property-card-image transition-all duration-300
+            ${isInteractive ? 'group-hover:scale-105' : ''}
           `}
           loading="lazy"
-          landType={landType}
-          priority={false}
+          data-land-type={landType}
         />
         
         {/* Multi-photo indicator - adds valuable UX info */}

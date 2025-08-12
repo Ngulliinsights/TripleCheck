@@ -7,10 +7,12 @@
  * Integrates with image system for property image comparison
  */
 
-// Re-export image-related types for comparison context
-export type { PropertyImage, DocumentType, PropertyImageMetadata } from '../types/images';
+import type { PropertyImage, DocumentType, PropertyImageMetadata } from './images/index';
 
-export type VerificationStatus = "verified" | "pending" | "unverified" | "draft";
+// Re-export image-related types for comparison context
+export type { PropertyImage, DocumentType, PropertyImageMetadata };
+
+export type VerificationStatus = "verified" | "pending" | "unverified" | "draft" | "flagged";
 
 export interface PropertyFeatures {
   bedrooms?: number;
@@ -48,7 +50,7 @@ export interface CompareProperty {
   aiVerificationResults?: unknown;
   // Image-based verification data
   imageVerificationScore?: number;
-  documentAuthResults?: Record<DocumentType, boolean>;
+  documentAuthResults?: Record<string, boolean>;
 }
 
 export interface ComparisonResult {

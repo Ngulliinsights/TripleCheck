@@ -1,22 +1,22 @@
 /**
- * Core Database Schema
+ * Core Database Schemas
  * 
- * Consolidated database schema definitions for the TripleCheck system.
- * This file contains all core table definitions, enums, and types.
+ * Contains the main entities: users, properties, reviews, favorites, etc.
+ * This is moved from server/infrastructure/database/schemas/ndex.ts to the consolidated database directory.
  */
 
 import { relations } from "drizzle-orm";
 import {
   pgTable,
-  pgEnum,
   serial,
   varchar,
   text,
   integer,
   boolean,
   timestamp,
-  decimal,
   json,
+  pgEnum,
+  decimal,
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
@@ -45,57 +45,6 @@ export const propertyTypeEnum = pgEnum("property_type", [
   "studio",
   "commercial",
   "land",
-] as const);
-
-// Land verification specific enums
-export const landVerificationStatusEnum = pgEnum("land_verification_status", [
-  "not_started",
-  "in_progress",
-  "completed",
-  "suspended",
-  "failed",
-] as const);
-
-export const verificationLayerTypeEnum = pgEnum("verification_layer_type", [
-  "registry",
-  "physical",
-  "community",
-  "government",
-  "legal",
-  "expert",
-] as const);
-
-export const riskLevelEnum = pgEnum("risk_level", [
-  "low",
-  "medium",
-  "high",
-  "critical",
-] as const);
-
-export const riskCategoryEnum = pgEnum("risk_category", [
-  "ownership",
-  "government",
-  "legal",
-  "physical",
-  "community",
-] as const);
-
-export const governmentDesignationTypeEnum = pgEnum(
-  "government_designation_type",
-  [
-    "riparian",
-    "road_reserve",
-    "utility_corridor",
-    "environmental",
-    "mineral_rights",
-  ] as const
-);
-
-export const communityFeedbackSourceEnum = pgEnum("community_feedback_source", [
-  "local_admin",
-  "neighbor",
-  "community_leader",
-  "resident",
 ] as const);
 
 // Extract property type values for reuse in validation schemas
@@ -340,6 +289,82 @@ export const propertyViews = pgTable(
   })
 );
 
+// Define relationships with consistent naming and proper typing
+export const usersRelations = relations(users, ({ many }) => ({
+  properties: many(properties),
+  reviews: many(reviews),
+  favorites: many(favorites),
+  propertyViews: many(propertyViews),
+}));
+
+export const propertiesRelations = relations(properties, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [properties.ownerId],
+    references: [users.id],
+  }),
+  reviews: many(reviews),
+  favorites: many(favorites),
+  views: many(propertyViews),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  property: one(properties, {
+    fields: [reviews.propertyId],
+    references: [properties.id],
+  }),
+  user: one(users, {
+    fields: [reviews.userId],
+    references: [users.id],
+  }),
+}));
+
+export const favoritesRelations = relations(favorites, ({ one }) => ({
+  user: one(users, {
+    fields: [favorites.userId],
+    references: [users.id],
+  }),
+  property: one(properties, {
+    fields: [favorites.propertyId],
+    references: [properties.id],
+  }),
+}));
+
+export const propertyViewsRelations = relations(propertyViews, ({ one }) => ({
+  property: one(properties, {
+    fields: [propertyViews.propertyId],
+    references: [properties.id],
+  }),
+  user: one(users, {
+    fields: [propertyViews.userId],
+    references: [users.id],
+  }),
+}));
+
+// Zod schemas for validation
+export const insertUserSchema = createInsertSchema(users, {
+  email: z.string().email(),
+  username: z.string().min(3).max(50),
+  trustScore: z.number().min(0).max(100),
+});
+
+export const selectUserSchema = createSelectSchema(users);
+
+export const insertPropertySchema = createInsertSchema(properties, {
+  title: z.string().min(1).max(255),
+  description: z.string().min(1),
+  price: z.string().regex(/^\d+(\.\d{1,2})?$/),
+  location: z.string().min(1).max(255),
+});
+
+export const selectPropertySchema = createSelectSchema(properties);
+
+export const insertReviewSchema = createInsertSchema(reviews, {
+  rating: z.number().min(1).max(5),
+  comment: z.string().min(1),
+});
+
+export const selectReviewSchema = createSelectSchema(reviews);
+
 // Transaction status enum
 export const transactionStatusEnum = pgEnum("transaction_status", [
   "pending",
@@ -451,125 +476,156 @@ export const statistics = pgTable(
   })
 );
 
-// Enhanced Zod schemas with comprehensive validation
-export const insertUserSchema = createInsertSchema(users, {
-  username: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
-    .max(50, "Username cannot exceed 50 characters")
-    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
-  email: z
-    .string()
-    .email("Invalid email format")
-    .max(255, "Email cannot exceed 255 characters"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(255, "Password cannot exceed 255 characters"),
-  trustScore: z
-    .number()
-    .int("Trust score must be a whole number")
-    .min(0, "Trust score cannot be negative")
-    .max(100, "Trust score cannot exceed 100"),
-  firstName: z
-    .string()
-    .max(100, "First name cannot exceed 100 characters")
-    .optional(),
-  lastName: z
-    .string()
-    .max(100, "Last name cannot exceed 100 characters")
-    .optional(),
-  phone: z
-    .string()
-    .max(20, "Phone number cannot exceed 20 characters")
-    .optional(),
-  bio: z
-    .string()
-    .max(1000, "Bio cannot exceed 1000 characters")
-    .optional(),
-});
+// Professional specialization enum
+export const professionalSpecializationEnum = pgEnum("professional_specialization", [
+  "land_surveying",
+  "property_law",
+  "real_estate_appraisal",
+  "construction_inspection",
+  "environmental_assessment",
+  "title_verification",
+  "boundary_disputes",
+  "zoning_compliance",
+  "mortgage_processing",
+  "property_management",
+] as const);
 
-export const insertPropertySchema = createInsertSchema(properties, {
-  title: z
-    .string()
-    .min(5, "Property title must be at least 5 characters")
-    .max(255, "Property title cannot exceed 255 characters"),
-  description: z
-    .string()
-    .min(20, "Property description must be at least 20 characters")
-    .max(5000, "Property description cannot exceed 5000 characters"),
-  price: z
-    .string()
-    .refine((val) => {
-      const num = parseFloat(val);
-      return !isNaN(num) && num > 0;
-    }, "Price must be a positive number"),
-  location: z
-    .string()
-    .min(2, "Location must be at least 2 characters")
-    .max(255, "Location cannot exceed 255 characters"),
-  address: z
-    .string()
-    .max(500, "Address cannot exceed 500 characters")
-    .optional(),
-});
+// Professional verification status enum
+export const professionalVerificationStatusEnum = pgEnum("professional_verification_status", [
+  "pending",
+  "verified",
+  "suspended",
+  "rejected",
+] as const);
 
-export const insertReviewSchema = createInsertSchema(reviews, {
-  rating: z
-    .number()
-    .int("Rating must be a whole number")
-    .min(1, "Rating must be at least 1")
-    .max(5, "Rating cannot exceed 5"),
-  comment: z
-    .string()
-    .min(10, "Review comment must be at least 10 characters")
-    .max(2000, "Review comment cannot exceed 2000 characters"),
-});
+// Professionals table - Main professional directory
+export const professionals = pgTable(
+  "professionals",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+    businessName: varchar("business_name", { length: 255 }).notNull(),
+    firstName: varchar("first_name", { length: 100 }).notNull(),
+    lastName: varchar("last_name", { length: 100 }).notNull(),
+    email: varchar("email", { length: 255 }).notNull().unique(),
+    phone: varchar("phone", { length: 20 }).notNull(),
+    alternatePhone: varchar("alternate_phone", { length: 20 }),
+    businessAddress: text("business_address").notNull(),
+    serviceAreas: json("service_areas").$type<string[]>().default([]).notNull(),
+    primarySpecialization: professionalSpecializationEnum("primary_specialization").notNull(),
+    secondarySpecializations: json("secondary_specializations").$type<string[]>().default([]),
+    yearsOfExperience: integer("years_of_experience").notNull(),
+    licenseNumber: varchar("license_number", { length: 100 }),
+    licenseExpiryDate: timestamp("license_expiry_date"),
+    certifications: json("certifications").$type<Array<{
+      name: string;
+      issuingBody: string;
+      issueDate: string;
+      expiryDate?: string;
+      certificateNumber?: string;
+    }>>().default([]),
+    education: json("education").$type<Array<{
+      institution: string;
+      degree: string;
+      fieldOfStudy: string;
+      graduationYear: number;
+    }>>().default([]),
+    profileImageUrl: varchar("profile_image_url", { length: 500 }),
+    bio: text("bio"),
+    website: varchar("website", { length: 255 }),
+    socialMedia: json("social_media").$type<{
+      linkedin?: string;
+      twitter?: string;
+      facebook?: string;
+    }>().default({}),
+    hourlyRate: decimal("hourly_rate", { precision: 8, scale: 2 }),
+    projectMinimum: decimal("project_minimum", { precision: 8, scale: 2 }),
+    availability: json("availability").$type<{
+      monday?: { start: string; end: string };
+      tuesday?: { start: string; end: string };
+      wednesday?: { start: string; end: string };
+      thursday?: { start: string; end: string };
+      friday?: { start: string; end: string };
+      saturday?: { start: string; end: string };
+      sunday?: { start: string; end: string };
+    }>().default({}),
+    verificationStatus: professionalVerificationStatusEnum("verification_status")
+      .default("pending")
+      .notNull(),
+    verificationDocuments: json("verification_documents").$type<string[]>().default([]),
+    rating: decimal("rating", { precision: 3, scale: 2 }).default("0.00"), // 0.00-5.00
+    reviewCount: integer("review_count").default(0).notNull(),
+    completedProjects: integer("completed_projects").default(0).notNull(),
+    responseTime: integer("response_time").default(24), // in hours
+    isActive: boolean("is_active").default(true).notNull(),
+    isAvailable: boolean("is_available").default(true).notNull(),
+    lastActiveAt: timestamp("last_active_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("professionals_user_idx").on(table.userId),
+    emailIdx: uniqueIndex("professionals_email_idx").on(table.email),
+    specializationIdx: index("professionals_specialization_idx").on(table.primarySpecialization),
+    verificationStatusIdx: index("professionals_verification_status_idx").on(table.verificationStatus),
+    ratingIdx: index("professionals_rating_idx").on(table.rating),
+    activeIdx: index("professionals_active_idx").on(table.isActive),
+    availableIdx: index("professionals_available_idx").on(table.isAvailable),
+    serviceAreasIdx: index("professionals_service_areas_idx").using("gin", table.serviceAreas),
+    // Composite indexes for common queries
+    activeVerifiedIdx: index("professionals_active_verified_idx").on(
+      table.isActive,
+      table.verificationStatus
+    ),
+    specializationRatingIdx: index("professionals_specialization_rating_idx").on(
+      table.primarySpecialization,
+      table.rating
+    ),
+  })
+);
 
+// Add relations for new tables
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  user: one(users, {
+    fields: [transactions.userId],
+    references: [users.id],
+  }),
+  property: one(properties, {
+    fields: [transactions.propertyId],
+    references: [properties.id],
+  }),
+}));
+
+export const professionalsRelations = relations(professionals, ({ one }) => ({
+  user: one(users, {
+    fields: [professionals.userId],
+    references: [users.id],
+  }),
+}));
+
+// Update user relations to include new tables
+export const updatedUsersRelations = relations(users, ({ many }) => ({
+  properties: many(properties),
+  reviews: many(reviews),
+  favorites: many(favorites),
+  propertyViews: many(propertyViews),
+  transactions: many(transactions),
+  professionalProfile: many(professionals),
+}));
+
+// Zod schemas for new tables
 export const insertTransactionSchema = createInsertSchema(transactions, {
-  amount: z.string().refine((val) => {
-    const num = parseFloat(val);
-    return !isNaN(num) && num > 0;
-  }, "Amount must be a positive number"),
-  transactionDate: z
-    .date()
-    .max(new Date(), "Transaction date cannot be in the future"),
-  fraudScore: z
-    .number()
-    .int("Fraud score must be a whole number")
-    .min(0, "Fraud score cannot be negative")
-    .max(100, "Fraud score cannot exceed 100"),
+  amount: z.string().regex(/^\d+(\.\d{1,2})?$/),
+  fraudScore: z.number().min(0).max(100),
 });
 
-export const insertStatisticSchema = createInsertSchema(statistics, {
-  metricType: z
-    .string()
-    .min(1, "Metric type is required")
-    .max(100, "Metric type cannot exceed 100 characters"),
-  metricKey: z
-    .string()
-    .min(1, "Metric key is required")
-    .max(100, "Metric key cannot exceed 100 characters"),
-  periodType: z
-    .enum(["daily", "weekly", "monthly", "yearly", "all_time"])
-    .default("all_time"),
-});
-
-// Create select schemas for full entity types
-export const selectUserSchema = createSelectSchema(users);
-export const selectPropertySchema = createSelectSchema(properties);
-export const selectReviewSchema = createSelectSchema(reviews);
 export const selectTransactionSchema = createSelectSchema(transactions);
-export const selectStatisticSchema = createSelectSchema(statistics);
 
-// Export types for use throughout the application
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Property = typeof properties.$inferSelect;
-export type NewProperty = typeof properties.$inferInsert;
-export type Review = typeof reviews.$inferSelect;
-export type NewReview = typeof reviews.$inferInsert;
-export type Transaction = typeof transactions.$inferSelect;
-export type NewTransaction = typeof transactions.$inferInsert;
-export type Statistic = typeof statistics.$inferSelect;
-export type NewStatistic = typeof statistics.$inferInsert;
+export const insertProfessionalSchema = createInsertSchema(professionals, {
+  email: z.string().email(),
+  yearsOfExperience: z.number().min(0),
+  hourlyRate: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+  projectMinimum: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+});
+
+export const selectProfessionalSchema = createSelectSchema(professionals);

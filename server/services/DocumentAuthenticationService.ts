@@ -4,7 +4,7 @@ import * as path from 'path';
 
 import { eq, and, desc } from "drizzle-orm";
 
-import { properties } from "../../src/shared/schema";
+import { properties } from "../infrastructure/database/schemas/consolidated";
 import { db } from "../infrastructure/database/connection";
 
 export interface DocumentFile {

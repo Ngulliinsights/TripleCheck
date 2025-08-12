@@ -6,6 +6,7 @@
  * Integrates with configuration system and shared utilities
  */
 
+import { imageServiceConfig } from '../../config/image-system.config';
 import type {
   PropertyImageMetadata as AssetMetadata,
   AITag,
@@ -13,12 +14,6 @@ import type {
   ComplianceResult,
 } from '../../types/images';
 import { ImageProcessingError } from '../../types/images';
-import { 
-  generateUniqueId, 
-  formatFileSize, 
-  formatTimestamp 
-} from '../../utils/images/formatters';
-import { imageServiceConfig } from '../../config/image-service.config';
 
 export interface IImageMetadataService {
   extractMetadata(fileReference: string): Promise<AssetMetadata>;

@@ -4,7 +4,7 @@ import { Check, Home, Upload, Building, Map, Info } from "lucide-react";
 import { useState, useCallback } from "react";
 
 import { apiRequest } from "../../infrastructure/api/queryClient";
-import PropertyImageVault from "../../shared/components/images/PropertyImageVault";
+import { PropertyImageVault } from "../../shared/components/images";
 import { Button } from "../../shared/components/ui/button";
 import {
   Card,

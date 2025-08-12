@@ -1,12 +1,11 @@
 import { eq, and, desc, gte, sql, count, avg, lt, gt } from "drizzle-orm";
 
-import { 
-  fraudAlerts, 
+import {
+  fraudAlerts,
   fraudSubscriptions,
   properties,
-  users,
-  reviews
-} from "../../src/shared/schema";
+  users
+} from "../infrastructure/database/schemas/consolidated";
 import { db } from "../infrastructure/database/connection";
 import { storage } from "../infrastructure/storage/storage";
 
@@ -102,9 +101,9 @@ export class FraudIntelligenceService {
   constructor() {
     // Create a mock server object for NotificationService
     const mockServer = {
-      on: () => {},
-      listen: () => {},
-      close: () => {}
+      on: () => { },
+      listen: () => { },
+      close: () => { }
     };
     this.notificationService = new NotificationService(mockServer);
   }
@@ -129,16 +128,16 @@ export class FraudIntelligenceService {
       }
 
       const conditions = [eq(fraudAlerts.status, 'active')];
-      
+
       if (query.severity) {
         conditions.push(eq(fraudAlerts.severity, query.severity));
       }
-      
+
       if (query.location) {
         const locationPattern = `%${query.location}%`;
         conditions.push(sql`${fraudAlerts.location} ILIKE ${locationPattern}`);
       }
-      
+
       if (query.type) {
         conditions.push(eq(fraudAlerts.type, query.type));
       }
@@ -212,7 +211,7 @@ export class FraudIntelligenceService {
       const now = new Date();
       const periodStart = new Date();
       const previousPeriodStart = new Date();
-      
+
       switch (query.period || 'month') {
         case 'week':
           periodStart.setDate(now.getDate() - 7);
@@ -233,7 +232,7 @@ export class FraudIntelligenceService {
 
       // Get suspicious properties from current period
       const suspiciousProperties = await this.detectSuspiciousProperties(periodStart, query.location);
-      
+
       // Get suspicious properties from previous period for comparison
       const previousSuspiciousProperties = await this.detectSuspiciousProperties(previousPeriodStart, query.location);
 
@@ -244,7 +243,7 @@ export class FraudIntelligenceService {
       for (const fraudType of fraudTypes) {
         const currentCount = suspiciousProperties.filter(p => p.fraudType === fraudType).length;
         const previousCount = previousSuspiciousProperties.filter(p => p.fraudType === fraudType).length;
-        
+
         const change = previousCount > 0 ? ((currentCount - previousCount) / previousCount) * 100 : 0;
         const locations = [...new Set(suspiciousProperties
           .filter(p => p.fraudType === fraudType)
@@ -688,7 +687,7 @@ export class FraudIntelligenceService {
 
     for (const property of recentProperties) {
       const riskFactors = await this.analyzePropertyRisk(property, locationAverages);
-      
+
       if (riskFactors.riskScore > 60) { // Threshold for suspicious
         suspiciousProperties.push({
           id: property.id,
@@ -820,7 +819,7 @@ export class FraudIntelligenceService {
 
     const sortedEntries = Object.entries(locationCounts)
       .sort(([, a], [, b]) => Number(b) - Number(a));
-    
+
     return sortedEntries[0]?.[0] || 'Unknown';
   }
 

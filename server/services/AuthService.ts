@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 
-import type { User, InsertUser } from '../../src/shared/schema';
+import type { User, InsertUser } from '../infrastructure/database/schemas/consolidated';
 import type { IStorage } from '../infrastructure/storage/storage';
 import type { 
   LoginRequest, 
