@@ -54,7 +54,7 @@ node scripts/migrate-database-structure.cjs           # Execute
 # 7. Update the 3 files with old imports:
 # - database/scripts/consolidate-schemas.ts
 # - src/shared/schema-compat.ts  
-# - server/infrastructure/database/schemas/ndex.ts
+# - server/infrastructure/database/schemas/consolidated
 
 # These will be updated automatically by the migration script
 ```

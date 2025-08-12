@@ -30,7 +30,7 @@ export function useAccessibility(): UseAccessibilityReturn {
     const liveRegion = getLiveRegion();
     liveRegion.setAttribute('aria-live', priority);
     liveRegion.textContent = message;
-    
+
     // Clear after announcement
     setTimeout(() => {
       liveRegion.textContent = '';
@@ -42,7 +42,7 @@ export function useAccessibility(): UseAccessibilityReturn {
     const focusableElements = element.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
-    
+
     const firstFocusable = focusableElements[0] as HTMLElement;
     const lastFocusable = focusableElements[focusableElements.length - 1] as HTMLElement;
 

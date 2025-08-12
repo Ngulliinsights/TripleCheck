@@ -1,8 +1,8 @@
 import { eq, and, gte, lte, desc, sql, count } from 'drizzle-orm';
 
-import { analyticsEvents, analyticsMetrics, performanceMetrics } from '../../src/shared/schema';
 import { CacheService } from '../infrastructure/cache/CacheService';
 import { db } from '../infrastructure/database/connection';
+import { analyticsEvents, performanceMetrics } from '../infrastructure/database/schemas/consolidated';
 import { RequestDeduplicator } from '../infrastructure/deduplication/RequestDeduplicator';
 
 /**
@@ -11,15 +11,16 @@ import { RequestDeduplicator } from '../infrastructure/deduplication/RequestDedu
 export interface AnalyticsEvent {
   eventType: string;
   eventName: string;
-  userId?: number;
-  sessionId?: string;
-  propertyId?: number;
-  professionalId?: number;
-  eventData?: Record<string, unknown>;
-  metadata?: Record<string, unknown>;
-  userAgent?: string;
-  ipAddress?: string;
-  referrer?: string;
+  userId?: number | undefined;
+  sessionId?: string | undefined;
+  propertyId?: number | undefined;
+  professionalId?: number | undefined;
+  eventData?: Record<string, unknown> | undefined;
+  metadata?: Record<string, unknown> | undefined;
+  userAgent?: string | undefined;
+  ipAddress?: string | undefined;
+  referrer?: string | undefined;
+  timestamp?: Date;
 }
 
 /**
@@ -51,6 +52,7 @@ export interface PerformanceMetric {
   deviceType?: string;
   connectionType?: string;
   additionalData?: Record<string, unknown>;
+  timestamp?: Date;
 }
 
 /**
@@ -92,7 +94,7 @@ export class AnalyticsService {
   constructor(cache?: CacheService) {
     this.cache = cache || new CacheService();
     this.deduplicator = RequestDeduplicator.getInstance({}, this.cache);
-    
+
     // Start batch processing
     this.startBatchProcessing();
   }
@@ -116,6 +118,7 @@ export class AnalyticsService {
         await this.flushEventBuffer();
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to track event:', error);
       throw error;
     }
@@ -159,6 +162,7 @@ export class AnalyticsService {
         await this.flushEventBuffer();
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to batch track events:', error);
       throw error;
     }
@@ -167,22 +171,22 @@ export class AnalyticsService {
   /**
    * Get analytics metrics with smart caching
    */
-  async getMetrics(filters: AnalyticsFilters = {}): Promise<any[]> {
+  async getMetrics(filters: AnalyticsFilters = {}): Promise<Record<string, unknown>[]> {
     const cacheKey = `analytics:metrics:${JSON.stringify(filters)}`;
-    
+
     return this.deduplicator.handleIdempotentRequest(
       cacheKey,
       async () => {
-        const query = db.select().from(analyticsMetrics);
-        
+        const query = db.select().from(performanceMetrics);
+
         // Apply filters
-        const conditions = this.buildMetricsConditions(filters);
+        const conditions = this.buildPerformanceConditions(filters);
         if (conditions.length > 0) {
           query.where(and(...conditions));
         }
 
         return await query
-          .orderBy(desc(analyticsMetrics.createdAt))
+          .orderBy(desc(performanceMetrics.createdAt))
           .limit(1000);
       },
       300000 // 5 minutes cache
@@ -198,32 +202,32 @@ export class AnalyticsService {
     granularity: 'hour' | 'day' | 'week' | 'month' = 'day'
   ): Promise<TimeSeriesDataPoint[]> {
     const cacheKey = `analytics:timeseries:${metricName}:${granularity}:${JSON.stringify(filters)}`;
-    
+
     return this.deduplicator.handleIdempotentRequest(
       cacheKey,
       async () => {
         const truncateFunction = this.getTruncateFunction(granularity);
-        
+
         const results = await db
           .select({
-            timestamp: sql`${truncateFunction}(${analyticsMetrics.periodStart})`.as('timestamp'),
-            value: sql`SUM(${analyticsMetrics.value})`.as('value'),
-            dimensions: analyticsMetrics.dimensions,
+            timestamp: sql`${truncateFunction}(${performanceMetrics.timestamp})`.as('timestamp'),
+            value: sql`AVG(${performanceMetrics.value})`.as('value'),
+            metadata: performanceMetrics.metadata,
           })
-          .from(analyticsMetrics)
+          .from(performanceMetrics)
           .where(
             and(
-              eq(analyticsMetrics.metricName, metricName),
-              ...this.buildMetricsConditions(filters)
+              eq(performanceMetrics.name, metricName),
+              ...this.buildPerformanceConditions(filters)
             )
           )
-          .groupBy(sql`${truncateFunction}(${analyticsMetrics.periodStart})`, analyticsMetrics.dimensions)
-          .orderBy(sql`${truncateFunction}(${analyticsMetrics.periodStart})`);
+          .groupBy(sql`${truncateFunction}(${performanceMetrics.timestamp})`, performanceMetrics.metadata)
+          .orderBy(sql`${truncateFunction}(${performanceMetrics.timestamp})`);
 
         return results.map(row => ({
           timestamp: new Date(row.timestamp as string),
           value: Number(row.value),
-          dimensions: row.dimensions as Record<string, unknown>,
+          dimensions: row.metadata as Record<string, unknown>,
         }));
       },
       600000 // 10 minutes cache
@@ -233,9 +237,13 @@ export class AnalyticsService {
   /**
    * Get user analytics data
    */
-  async getUserAnalytics(userId: number, filters: AnalyticsFilters = {}): Promise<any> {
+  async getUserAnalytics(userId: number, filters: AnalyticsFilters = {}): Promise<{
+    events: Record<string, unknown>[];
+    eventCounts: Record<string, unknown>[];
+    totalEvents: number;
+  }> {
     const cacheKey = `analytics:user:${userId}:${JSON.stringify(filters)}`;
-    
+
     return this.deduplicator.handleIdempotentRequest(
       cacheKey,
       async () => {
@@ -273,9 +281,13 @@ export class AnalyticsService {
   /**
    * Get property analytics data
    */
-  async getPropertyAnalytics(propertyId: number, filters: AnalyticsFilters = {}): Promise<any> {
+  async getPropertyAnalytics(propertyId: number, filters: AnalyticsFilters = {}): Promise<{
+    events: Record<string, unknown>[];
+    viewCount: number;
+    totalEvents: number;
+  }> {
     const cacheKey = `analytics:property:${propertyId}:${JSON.stringify(filters)}`;
-    
+
     return this.deduplicator.handleIdempotentRequest(
       cacheKey,
       async () => {
@@ -284,7 +296,7 @@ export class AnalyticsService {
           .from(analyticsEvents)
           .where(
             and(
-              eq(analyticsEvents.propertyId, propertyId),
+              eq(analyticsEvents.relatedEntityId, propertyId),
               ...this.buildEventConditions(filters)
             )
           )
@@ -298,8 +310,8 @@ export class AnalyticsService {
           .from(analyticsEvents)
           .where(
             and(
-              eq(analyticsEvents.propertyId, propertyId),
-              eq(analyticsEvents.eventName, 'property_view')
+              eq(analyticsEvents.relatedEntityId, propertyId),
+              eq(analyticsEvents.action, 'property_view')
             )
           );
 
@@ -319,22 +331,17 @@ export class AnalyticsService {
   async recordPerformanceMetric(metric: PerformanceMetric): Promise<void> {
     try {
       await db.insert(performanceMetrics).values({
-        metricType: metric.metricType,
-        metricName: metric.metricName,
+        metricId: `${metric.metricType}_${Date.now()}`,
+        name: metric.metricName,
+        type: metric.metricType as 'counter' | 'gauge' | 'histogram' | 'timer',
         value: metric.value.toString(),
-        unit: metric.unit,
-        url: metric.url,
-        userAgent: metric.userAgent,
-        userId: metric.userId,
-        sessionId: metric.sessionId,
-        deviceType: metric.deviceType,
-        connectionType: metric.connectionType,
-        additionalData: metric.additionalData,
+        source: 'analytics_service',
       });
 
       // Update aggregated metrics
       await this.updateAggregatedMetrics(metric);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to record performance metric:', error);
       throw error;
     }
@@ -343,17 +350,23 @@ export class AnalyticsService {
   /**
    * Get Core Web Vitals with time range filtering
    */
-  async getCoreWebVitals(filters: AnalyticsFilters = {}): Promise<any> {
+  async getCoreWebVitals(filters: AnalyticsFilters = {}): Promise<Record<string, {
+    average: number;
+    p50: number;
+    p75: number;
+    p95: number;
+    count: number;
+  }>> {
     const cacheKey = `analytics:core-web-vitals:${JSON.stringify(filters)}`;
-    
+
     return this.deduplicator.handleIdempotentRequest(
       cacheKey,
       async () => {
         const webVitalsMetrics = ['LCP', 'FID', 'CLS', 'FCP', 'TTFB'];
-        
+
         const results = await db
           .select({
-            metricName: performanceMetrics.metricName,
+            metricName: performanceMetrics.name,
             avgValue: sql`AVG(${performanceMetrics.value})`.as('avgValue'),
             p50Value: sql`PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ${performanceMetrics.value})`.as('p50Value'),
             p75Value: sql`PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY ${performanceMetrics.value})`.as('p75Value'),
@@ -363,11 +376,11 @@ export class AnalyticsService {
           .from(performanceMetrics)
           .where(
             and(
-              sql`${performanceMetrics.metricName} = ANY(${webVitalsMetrics})`,
+              sql`${performanceMetrics.name} = ANY(${webVitalsMetrics})`,
               ...this.buildPerformanceConditions(filters)
             )
           )
-          .groupBy(performanceMetrics.metricName);
+          .groupBy(performanceMetrics.name);
 
         return results.reduce((acc, row) => {
           acc[row.metricName] = {
@@ -378,7 +391,13 @@ export class AnalyticsService {
             count: Number(row.count),
           };
           return acc;
-        }, {} as Record<string, any>);
+        }, {} as Record<string, {
+          average: number;
+          p50: number;
+          p75: number;
+          p95: number;
+          count: number;
+        }>);
       },
       600000 // 10 minutes cache
     );
@@ -387,9 +406,9 @@ export class AnalyticsService {
   /**
    * Get bundle metrics for frontend optimization
    */
-  async getBundleMetrics(filters: AnalyticsFilters = {}): Promise<any> {
+  async getBundleMetrics(filters: AnalyticsFilters = {}): Promise<Record<string, unknown>[]> {
     const cacheKey = `analytics:bundle-metrics:${JSON.stringify(filters)}`;
-    
+
     return this.deduplicator.handleIdempotentRequest(
       cacheKey,
       async () => {
@@ -398,7 +417,8 @@ export class AnalyticsService {
           .from(performanceMetrics)
           .where(
             and(
-              eq(performanceMetrics.metricType, 'bundle_size'),
+              eq(performanceMetrics.type, 'gauge'),
+              sql`${performanceMetrics.name} LIKE '%bundle%'`,
               ...this.buildPerformanceConditions(filters)
             )
           )
@@ -415,7 +435,7 @@ export class AnalyticsService {
     if (!event.eventType || !event.eventName) {
       throw new Error('Event type and name are required');
     }
-    
+
     if (event.eventType.length > 100 || event.eventName.length > 200) {
       throw new Error('Event type or name too long');
     }
@@ -429,21 +449,24 @@ export class AnalyticsService {
 
     try {
       await db.insert(analyticsEvents).values(
-        eventsToFlush.map(event => ({
-          eventType: event.eventType,
-          eventName: event.eventName,
-          userId: event.userId,
+        eventsToFlush.map((event, index) => ({
+          eventId: `${Date.now()}_${index}`,
           sessionId: event.sessionId,
-          propertyId: event.propertyId,
-          professionalId: event.professionalId,
-          eventData: event.eventData,
-          metadata: event.metadata,
+          userId: event.userId,
+          eventType: event.eventType as 'page_view' | 'property_view' | 'search' | 'filter_applied' | 'property_favorite' | 'property_unfavorite' | 'property_inquiry' | 'user_registration' | 'user_login' | 'verification_started' | 'verification_completed' | 'transaction_initiated' | 'transaction_completed' | 'error_occurred',
+          category: 'user_behavior' as 'user_behavior' | 'property_interaction' | 'verification_process' | 'transaction_flow' | 'system_performance' | 'error_tracking',
+          action: event.eventName,
+          label: event.eventName,
+          properties: event.eventData || {},
+          relatedEntityId: event.propertyId,
+          relatedEntityType: event.propertyId ? 'property' : undefined,
           userAgent: event.userAgent,
           ipAddress: event.ipAddress,
           referrer: event.referrer,
         }))
       );
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to flush event buffer:', error);
       // Re-add events to buffer for retry
       this.eventBuffer.unshift(...eventsToFlush);
@@ -459,7 +482,7 @@ export class AnalyticsService {
     }, this.FLUSH_INTERVAL);
   }
 
-  private buildEventConditions(filters: AnalyticsFilters): any[] {
+  private buildEventConditions(filters: AnalyticsFilters) {
     const conditions = [];
 
     if (filters.startDate) {
@@ -469,10 +492,10 @@ export class AnalyticsService {
       conditions.push(lte(analyticsEvents.timestamp, filters.endDate));
     }
     if (filters.eventType) {
-      conditions.push(eq(analyticsEvents.eventType, filters.eventType));
+      conditions.push(eq(analyticsEvents.eventType, filters.eventType as any));
     }
     if (filters.eventName) {
-      conditions.push(eq(analyticsEvents.eventName, filters.eventName));
+      conditions.push(eq(analyticsEvents.action, filters.eventName));
     }
     if (filters.sessionId) {
       conditions.push(eq(analyticsEvents.sessionId, filters.sessionId));
@@ -481,26 +504,9 @@ export class AnalyticsService {
     return conditions;
   }
 
-  private buildMetricsConditions(filters: AnalyticsFilters): any[] {
-    const conditions = [];
 
-    if (filters.startDate) {
-      conditions.push(gte(analyticsMetrics.periodStart, filters.startDate));
-    }
-    if (filters.endDate) {
-      conditions.push(lte(analyticsMetrics.periodEnd, filters.endDate));
-    }
-    if (filters.metricType) {
-      conditions.push(eq(analyticsMetrics.metricType, filters.metricType));
-    }
-    if (filters.aggregationPeriod) {
-      conditions.push(eq(analyticsMetrics.aggregationPeriod, filters.aggregationPeriod));
-    }
 
-    return conditions;
-  }
-
-  private buildPerformanceConditions(filters: AnalyticsFilters): any[] {
+  private buildPerformanceConditions(filters: AnalyticsFilters) {
     const conditions = [];
 
     if (filters.startDate) {
@@ -509,25 +515,24 @@ export class AnalyticsService {
     if (filters.endDate) {
       conditions.push(lte(performanceMetrics.timestamp, filters.endDate));
     }
-    if (filters.userId) {
-      conditions.push(eq(performanceMetrics.userId, filters.userId));
-    }
+    // Note: userId is not available in performance_metrics table
+    // This filter is ignored for performance metrics
 
     return conditions;
   }
 
-  private getTruncateFunction(granularity: string): any {
+  private getTruncateFunction(granularity: string): unknown {
     switch (granularity) {
       case 'hour':
-        return sql`DATE_TRUNC('hour', ${analyticsMetrics.periodStart})`;
+        return sql`DATE_TRUNC('hour', ${performanceMetrics.timestamp})`;
       case 'day':
-        return sql`DATE_TRUNC('day', ${analyticsMetrics.periodStart})`;
+        return sql`DATE_TRUNC('day', ${performanceMetrics.timestamp})`;
       case 'week':
-        return sql`DATE_TRUNC('week', ${analyticsMetrics.periodStart})`;
+        return sql`DATE_TRUNC('week', ${performanceMetrics.timestamp})`;
       case 'month':
-        return sql`DATE_TRUNC('month', ${analyticsMetrics.periodStart})`;
+        return sql`DATE_TRUNC('month', ${performanceMetrics.timestamp})`;
       default:
-        return sql`DATE_TRUNC('day', ${analyticsMetrics.periodStart})`;
+        return sql`DATE_TRUNC('day', ${performanceMetrics.timestamp})`;
     }
   }
 
@@ -556,18 +561,16 @@ export class AnalyticsService {
 
   private async upsertMetric(metric: AnalyticsMetric): Promise<void> {
     try {
-      await db.insert(analyticsMetrics).values({
-        metricName: metric.metricName,
-        metricType: metric.metricType,
+      await db.insert(performanceMetrics).values({
+        metricId: `${metric.metricName}_${Date.now()}`,
+        name: metric.metricName,
+        type: metric.metricType as 'counter' | 'gauge' | 'histogram' | 'timer',
         value: metric.value.toString(),
-        dimensions: metric.dimensions,
-        tags: metric.tags,
-        aggregationPeriod: metric.aggregationPeriod,
-        periodStart: metric.periodStart,
-        periodEnd: metric.periodEnd,
+        source: 'analytics_aggregation',
       });
     } catch (error) {
       // If insert fails due to conflict, update existing record
+      // eslint-disable-next-line no-console
       console.warn('Metric upsert conflict, updating existing record:', error);
     }
   }

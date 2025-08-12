@@ -1,7 +1,7 @@
 import { eq, and, desc, count, avg, gte, sql } from "drizzle-orm";
 
-import { properties, users, reviews } from "../infrastructure/database/schemas/consolidated";
 import { db } from "../infrastructure/database/connection";
+import { properties, users, reviews } from "../infrastructure/database/schemas/consolidated";
 
 export interface CommunityIntelligence {
   propertyId: number;
@@ -45,14 +45,16 @@ export interface CommunityReport {
 }
 
 export class CommunityIntelligenceService {
-  
+  private static readonly DB_CONNECTION_ERROR = 'Database connection not available';
+  private static readonly UNKNOWN_ERROR = 'Unknown error';
+
   /**
    * Get comprehensive community intelligence for a property
    */
   async getCommunityIntelligence(propertyId: number): Promise<CommunityIntelligence> {
     try {
       if (!db) {
-        throw new Error('Database connection not available');
+        throw new Error(CommunityIntelligenceService.DB_CONNECTION_ERROR);
       }
 
       // Get property details
@@ -66,17 +68,17 @@ export class CommunityIntelligenceService {
         throw new Error('Property not found');
       }
 
-      const propertyData = property[0];
+      const [propertyData] = property;
 
       // Get reviews and ratings
       const reviewData = await this.getReviewAnalysis(propertyId);
-      
+
       // Get owner trust score
-      const ownerData = await db
+      const ownerData = propertyData?.ownerId ? await db
         .select({ trustScore: users.trustScore })
         .from(users)
         .where(eq(users.id, propertyData.ownerId))
-        .limit(1);
+        .limit(1) : [];
 
       const ownerTrustScore = ownerData[0]?.trustScore || 50;
 
@@ -84,7 +86,7 @@ export class CommunityIntelligenceService {
       const communityFlags = await this.getCommunityFlags(propertyId);
 
       // Get neighborhood insights
-      const neighborhoodInsights = await this.getNeighborhoodInsights(propertyData.location);
+      const neighborhoodInsights = await this.getNeighborhoodInsights(propertyData?.location || '');
 
       // Calculate community score
       const communityScore = this.calculateCommunityScore(
@@ -95,12 +97,12 @@ export class CommunityIntelligenceService {
       );
 
       // Identify risk indicators
-      const riskIndicators = this.identifyRiskIndicators(
+      const riskIndicators = propertyData ? this.identifyRiskIndicators(
         reviewData,
         ownerTrustScore,
         communityFlags,
         propertyData
-      );
+      ) : [];
 
       return {
         propertyId,
@@ -116,7 +118,7 @@ export class CommunityIntelligenceService {
       };
 
     } catch (error) {
-      throw new Error(`Failed to get community intelligence: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to get community intelligence: ${error instanceof Error ? error.message : CommunityIntelligenceService.UNKNOWN_ERROR}`);
     }
   }
 
@@ -129,8 +131,9 @@ export class CommunityIntelligenceService {
       await this.validateCommunityReport(report);
 
       // Store report (in real implementation, would have a community_reports table)
-      const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+      const [randomValue] = globalThis.crypto.getRandomValues(new Uint32Array(1));
+      const reportId = `report_${Date.now()}_${(randomValue ?? 0).toString(36)}`;
+
       // For now, create a community flag based on the report
       await this.createCommunityFlag(report, reportId);
 
@@ -143,7 +146,7 @@ export class CommunityIntelligenceService {
       };
 
     } catch (error) {
-      throw new Error(`Failed to submit community report: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to submit community report: ${error instanceof Error ? error.message : CommunityIntelligenceService.UNKNOWN_ERROR}`);
     }
   }
 
@@ -177,7 +180,7 @@ export class CommunityIntelligenceService {
       };
 
     } catch (error) {
-      throw new Error(`Failed to get neighborhood analysis: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to get neighborhood analysis: ${error instanceof Error ? error.message : CommunityIntelligenceService.UNKNOWN_ERROR}`);
     }
   }
 
@@ -192,7 +195,7 @@ export class CommunityIntelligenceService {
     suspiciousPatterns: string[];
   }> {
     if (!db) {
-      throw new Error('Database connection not available');
+      throw new Error(CommunityIntelligenceService.DB_CONNECTION_ERROR);
     }
 
     const reviewStats = await db
@@ -208,7 +211,7 @@ export class CommunityIntelligenceService {
         eq(reviews.isActive, true)
       ));
 
-    const stats = reviewStats[0];
+    const [stats] = reviewStats;
     const reviewCount = stats?.count || 0;
     const averageRating = parseFloat(stats?.avgRating || '0');
     const verifiedReviews = stats?.verifiedCount || 0;
@@ -255,7 +258,7 @@ export class CommunityIntelligenceService {
     // Check for rating manipulation
     const ratings = allReviews.map(r => r.rating);
     const averageRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
-    
+
     if (averageRating > 4.5 && allReviews.length > 5) {
       const lowRatings = ratings.filter(r => r <= 3).length;
       if (lowRatings === 0) {
@@ -274,7 +277,7 @@ export class CommunityIntelligenceService {
     }
 
     // Check for similar comments
-    const comments = allReviews.map(r => r.comment.toLowerCase());
+    const comments = allReviews.map(r => r.comment?.toLowerCase() || '');
     const similarComments = this.findSimilarComments(comments);
     if (similarComments.length > 0) {
       patterns.push('Similar or duplicate review comments detected');
@@ -283,7 +286,7 @@ export class CommunityIntelligenceService {
     // Check verified vs unverified ratio
     const verifiedCount = allReviews.filter(r => r.verified).length;
     const verifiedRatio = verifiedCount / allReviews.length;
-    
+
     if (verifiedRatio < 0.3 && allReviews.length > 5) {
       patterns.push('Low ratio of verified reviews');
     }
@@ -296,16 +299,20 @@ export class CommunityIntelligenceService {
    */
   private findSimilarComments(comments: string[]): string[] {
     const similar: string[] = [];
-    
+
     for (let i = 0; i < comments.length; i++) {
       for (let j = i + 1; j < comments.length; j++) {
-        const similarity = this.calculateStringSimilarity(comments[i], comments[j]);
-        if (similarity > 0.8) {
-          similar.push(`Comments ${i + 1} and ${j + 1} are highly similar`);
+        const comment1 = comments[i];
+        const comment2 = comments[j];
+        if (comment1 && comment2) {
+          const similarity = this.calculateStringSimilarity(comment1, comment2);
+          if (similarity > 0.8) {
+            similar.push(`Comments ${i + 1} and ${j + 1} are highly similar`);
+          }
         }
       }
     }
-    
+
     return similar;
   }
 
@@ -315,17 +322,17 @@ export class CommunityIntelligenceService {
   private calculateStringSimilarity(str1: string, str2: string): number {
     const words1 = str1.split(' ');
     const words2 = str2.split(' ');
-    
+
     const commonWords = words1.filter(word => words2.includes(word));
     const totalWords = Math.max(words1.length, words2.length);
-    
+
     return totalWords > 0 ? commonWords.length / totalWords : 0;
   }
 
   /**
    * Get community flags for a property
    */
-  private async getCommunityFlags(propertyId: number): Promise<CommunityFlag[]> {
+  private async getCommunityFlags(_propertyId: number): Promise<CommunityFlag[]> {
     // In real implementation, would query community_flags table
     // For now, return empty array as we don't have the table yet
     return [];
@@ -336,7 +343,7 @@ export class CommunityIntelligenceService {
    */
   private async getNeighborhoodInsights(location: string): Promise<NeighborhoodInsights> {
     if (!db) {
-      throw new Error('Database connection not available');
+      throw new Error(CommunityIntelligenceService.DB_CONNECTION_ERROR);
     }
 
     // Get properties in the same location
@@ -411,13 +418,14 @@ export class CommunityIntelligenceService {
   /**
    * Extract common amenities from properties
    */
-  private extractCommonAmenities(locationProperties: any[]): string[] {
-    const amenityCount: { [key: string]: number } = {};
-    
+  private extractCommonAmenities(locationProperties: Array<{ features: { amenities?: string[] } | null }>): string[] {
+    const amenityCount: Record<string, number> = {};
+
     locationProperties.forEach(property => {
       if (property.features?.amenities) {
         property.features.amenities.forEach((amenity: string) => {
-          amenityCount[amenity] = (amenityCount[amenity] || 0) + 1;
+          const currentCount = amenityCount[amenity] || 0;
+          amenityCount[amenity] = currentCount + 1;
         });
       }
     });
@@ -433,11 +441,11 @@ export class CommunityIntelligenceService {
   /**
    * Calculate market trend
    */
-  private calculateMarketTrend(locationProperties: any[]): 'rising' | 'stable' | 'declining' {
+  private calculateMarketTrend(locationProperties: Array<{ price: string; createdAt: Date }>): 'rising' | 'stable' | 'declining' {
     if (locationProperties.length < 5) return 'stable';
 
-    // Sort by creation date
-    const sortedProperties = locationProperties.sort((a, b) => 
+    // Sort by creation date (create new array to avoid mutation)
+    const sortedProperties = [...locationProperties].sort((a, b) =>
       a.createdAt.getTime() - b.createdAt.getTime()
     );
 
@@ -446,8 +454,8 @@ export class CommunityIntelligenceService {
     const firstHalf = sortedProperties.slice(0, midPoint);
     const secondHalf = sortedProperties.slice(midPoint);
 
-    const firstHalfAvg = firstHalf.reduce((sum, p) => sum + parseFloat(p.price), 0) / firstHalf.length;
-    const secondHalfAvg = secondHalf.reduce((sum, p) => sum + parseFloat(p.price), 0) / secondHalf.length;
+    const firstHalfAvg = firstHalf.reduce((sum: number, p) => sum + parseFloat(p.price), 0) / firstHalf.length;
+    const secondHalfAvg = secondHalf.reduce((sum: number, p) => sum + parseFloat(p.price), 0) / secondHalf.length;
 
     const changePercent = ((secondHalfAvg - firstHalfAvg) / firstHalfAvg) * 100;
 
@@ -460,7 +468,12 @@ export class CommunityIntelligenceService {
    * Calculate community score
    */
   private calculateCommunityScore(
-    reviewData: any,
+    reviewData: {
+      reviewCount: number;
+      averageRating: number;
+      verifiedReviews: number;
+      suspiciousPatterns: string[];
+    },
     ownerTrustScore: number,
     communityFlags: CommunityFlag[],
     neighborhoodInsights: NeighborhoodInsights
@@ -495,10 +508,18 @@ export class CommunityIntelligenceService {
    * Identify risk indicators
    */
   private identifyRiskIndicators(
-    reviewData: any,
+    reviewData: {
+      reviewCount: number;
+      averageRating: number;
+      verifiedReviews: number;
+      suspiciousPatterns: string[];
+    },
     ownerTrustScore: number,
     communityFlags: CommunityFlag[],
-    propertyData: any
+    propertyData: {
+      imageUrls?: string[];
+      description: string;
+    }
   ): string[] {
     const indicators: string[] = [];
 
@@ -550,7 +571,7 @@ export class CommunityIntelligenceService {
   }>> {
     if (!db) return [];
 
-    const comparables = await db
+    const comparableProperties = await db
       .select({
         id: properties.id,
         title: properties.title,
@@ -566,7 +587,7 @@ export class CommunityIntelligenceService {
       .groupBy(properties.id, properties.title, properties.price)
       .limit(5);
 
-    return comparables.map(comp => ({
+    return comparableProperties.map(comp => ({
       id: comp.id,
       title: comp.title,
       price: comp.price,
@@ -628,7 +649,7 @@ export class CommunityIntelligenceService {
 
     // Check if property exists
     if (!db) {
-      throw new Error('Database connection not available');
+      throw new Error(CommunityIntelligenceService.DB_CONNECTION_ERROR);
     }
 
     const property = await db
@@ -645,18 +666,17 @@ export class CommunityIntelligenceService {
   /**
    * Create community flag from report
    */
-  private async createCommunityFlag(report: CommunityReport, reportId: string): Promise<void> {
+  private async createCommunityFlag(report: CommunityReport, _reportId: string): Promise<void> {
     // In real implementation, would store in community_flags table
-    // For now, we'll just log it
-    console.log(`Community flag created for property ${report.propertyId}: ${report.description}`);
+    // For now, we'll just acknowledge the report parameters
+    void report.propertyId; // Acknowledge parameter usage
   }
 
   /**
    * Update community intelligence after new report
    */
-  private async updateCommunityIntelligence(propertyId: number): Promise<void> {
+  private async updateCommunityIntelligence(_propertyId: number): Promise<void> {
     // In real implementation, would recalculate and cache community intelligence
-    // For now, we'll just log it
-    console.log(`Community intelligence updated for property ${propertyId}`);
+    // For now, this is a placeholder
   }
 }

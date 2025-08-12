@@ -451,7 +451,7 @@ export class ComprehensiveDisasterRecovery extends EventEmitter {
           const stepDuration = Date.now() - stepStartTime;
           execution.metrics.stepsCompleted++;
 
-          this.addLog(execution, "info", `Step completed in ${stepDuration}ms`);
+          this.addLog(execution, "info", `Step completed in ${stepDuration}ms`, step.id);
         } catch (stepError) {
           this.addLog(execution, "error", `Step failed: ${stepError}`);
 
@@ -685,6 +685,9 @@ export class ComprehensiveDisasterRecovery extends EventEmitter {
         overall = "healthy";
       }
 
+      // Emit health check completed event
+      this.emit("health_check_completed", { overall, checks });
+
       return { overall, checks };
     } catch (error) {
       console.error("❌ Health check failed:", error);
@@ -694,7 +697,9 @@ export class ComprehensiveDisasterRecovery extends EventEmitter {
         message: `Health check system failed: ${error}`,
       });
 
-      return { overall: "critical", checks };
+      const result = { overall: "critical" as const, checks };
+      this.emit("health_check_completed", result);
+      return result;
     }
   } /**
 

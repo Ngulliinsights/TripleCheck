@@ -4,7 +4,7 @@ import { Check, Home, Upload, Building, Map, Info } from "lucide-react";
 import { useState, useCallback } from "react";
 
 import { apiRequest } from "../../infrastructure/api/queryClient";
-import { PropertyImageVault } from "../../shared/components/images";
+import { PropertyImageGallery } from "../../shared/components/images";
 import { Button } from "../../shared/components/ui/button";
 import {
   Card,
@@ -995,22 +995,38 @@ export default function ListPropertyPage() {
                               Add high-quality photos to showcase your property
                             </p>
                           </div>
-                          <PropertyImageVault
-                            images={propertyData.selectedImages.map(img => ({
+                          <PropertyImageGallery
+                            images={propertyData.selectedImages.map((img) => ({
                               id: img.id,
                               src: img.url,
                               alt: img.alt,
-                              file: new File([], img.alt) // Mock file for compatibility
                             }))}
-                            onImagesChange={(images) => {
-                              const propertyImages = images.map(img => ({
-                                id: img.id,
-                                url: img.src,
-                                alt: img.alt
-                              }));
-                              handleImagesChange(propertyImages);
+                            onImageClick={(_img, _idx) => {
+                              // Handle image click if needed
                             }}
-                            maxFiles={10}
+                            onImageUpload={(files: FileList) => {
+                              // Handle new image uploads
+                              const newImages = Array.from(files).map(
+                                (file, index) => ({
+                                  id: `upload-${Date.now()}-${index}`,
+                                  url: URL.createObjectURL(file),
+                                  alt: file.name,
+                                  category: "residential" as const,
+                                })
+                              );
+                              handleImagesChange([
+                                ...propertyData.selectedImages,
+                                ...newImages,
+                              ]);
+                            }}
+                            onImageDelete={(id: string) => {
+                              const updatedImages =
+                                propertyData.selectedImages.filter(
+                                  (img) => img.id !== id
+                                );
+                              handleImagesChange(updatedImages);
+                            }}
+                            className="rounded-lg"
                           />
                         </div>
                       </div>

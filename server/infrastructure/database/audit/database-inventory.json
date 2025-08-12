@@ -524,7 +524,7 @@
     {
       "id": "SCHEMA_FRAGMENTATION",
       "severity": "critical",
-      "description": "Core schemas duplicated between server/infrastructure/database/schemas/ndex.ts and database/schemas/",
+      "description": "Core schemas duplicated between server/infrastructure/database/schemas/consolidated and database/schemas/",
       "impact": "Development confusion, maintenance overhead, deployment risks",
       "solution": "Complete consolidation to database/schemas/ structure",
       "estimatedEffort": "2-3 days"

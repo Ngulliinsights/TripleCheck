@@ -160,7 +160,7 @@ database/
 ✅ Proper foreign key relationships without cycles
 
 ## Orphaned Components
-- `server/infrastructure/database/schemas/ndex.ts` - Legacy file, should be removed after consolidation
+- `server/infrastructure/database/schemas/consolidated` - Legacy file, should be removed after consolidation
 - Empty domain schema directories - Should be populated or removed
 - Unused migration scripts - Need cleanup and reorganization
 
@@ -189,7 +189,7 @@ import { users, properties, landVerificationSessions } from 'database/schemas/co
 
 ### Immediate Actions (Week 1)
 1. **Eliminate Schema Fragmentation**
-   - Remove `server/infrastructure/database/schemas/ndex.ts` after migration
+   - Remove `server/infrastructure/database/schemas/consolidated` after migration
    - Update all imports to use `database/schemas/consolidated`
    - Ensure backward compatibility during transition
 

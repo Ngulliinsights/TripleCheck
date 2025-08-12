@@ -7,7 +7,7 @@ The database structure has been optimized and consolidated to follow best practi
 ## Changes Made
 
 ### 1. Database Location Standardization
-- **Before**: Mixed locations (`database/`, `server/infrastructure/database/schemas/ndex.ts`)
+- **Before**: Mixed locations (`database/`, `server/infrastructure/database/schemas/consolidated`)
 - **After**: Consolidated at `server/infrastructure/database/`
 - **Rationale**: Follows infrastructure-as-code principles and maintains clear separation of concerns
 
@@ -20,7 +20,7 @@ out: "./server/infrastructure/database/migrations"
 schema: "./server/infrastructure/database/schemas/core/index.ts"
 ```
 
-#### Shared Schema Deprecation (`server/infrastructure/database/schemas/ndex.ts`)
+#### Shared Schema Deprecation (`server/infrastructure/database/schemas/consolidated`)
 - File marked as deprecated with clear migration instructions
 - Re-exports from consolidated database schemas for backward compatibility
 - Will be removed in future version after full migration
@@ -103,7 +103,7 @@ server/infrastructure/database/
 
 3. **Update New Code**:
    - Always import from `server/infrastructure/database/schemas/consolidated`
-   - Never add new imports to `server/infrastructure/database/schemas/ndex.ts`
+   - Never add new imports to `server/infrastructure/database/schemas/consolidated`
    - Use database scripts from `server/infrastructure/database/scripts/`
 
 ### For New Features
@@ -151,7 +151,7 @@ server/infrastructure/database/
 2. **Run Migration**: Execute `npm run migrate:schema-imports` on all branches
 3. **Validate**: Run `npm run validate:database-paths` regularly
 4. **Monitor**: Watch for new code using deprecated patterns
-5. **Cleanup**: Remove `server/infrastructure/database/schemas/ndex.ts` after full migration (future release)
+5. **Cleanup**: Remove `server/infrastructure/database/schemas/consolidated` after full migration (future release)
 
 ## Rollback Plan
 
@@ -159,7 +159,7 @@ If issues arise, the rollback process is:
 
 1. Revert drizzle.config.ts changes
 2. Revert package.json script changes  
-3. Update imports back to `server/infrastructure/database/schemas/ndex.ts`
+3. Update imports back to `server/infrastructure/database/schemas/consolidated`
 4. The deprecated schema file still works as a compatibility layer
 
 ## Success Metrics

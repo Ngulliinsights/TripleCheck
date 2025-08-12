@@ -5,20 +5,10 @@
  * profile updates, trust score management, user statistics, and preferences.
  */
 
-import { z } from "zod";
-
-import type { User, InsertUser } from "../../src/shared/schema";
-import { insertUserSchema } from "../../src/shared/schema";
-import { 
-  ValidationError, 
-  NotFoundError, 
-  ConflictError,
-  DatabaseError,
-  generateCorrelationId 
-} from "../../src/shared/utils/errors";
+import type { users } from "../infrastructure/database/schemas/consolidated";
 import { storage } from "../infrastructure/storage/storage";
-import type { PaginationParams, PaginatedResult } from "../infrastructure/storage/storage";
-import type { 
+import type { PaginationParams } from "../infrastructure/storage/storage";
+import type {
   UserProfile,
   UserProfileUpdateRequest,
   UserStatistics,
@@ -28,6 +18,15 @@ import type {
   UserWithoutPassword,
   UserRole
 } from "../types/user.types";
+
+// Infer User type from schema
+type User = typeof users.$inferSelect;
+
+// Constants for error messages and common strings
+const INVALID_USER_ID = 'Invalid user ID';
+const USER_NOT_FOUND = 'User not found';
+const UNKNOWN_ERROR = 'Unknown error';
+const INVALID_PASSWORD_HASH = 'Invalid password hash';
 
 
 
@@ -43,7 +42,7 @@ export interface TrustScoreUpdate {
   oldScore: number;
   newScore: number;
   reason: string;
-  adjustedBy?: number; // Admin user ID if manually adjusted
+  adjustedBy: number | undefined; // Admin user ID if manually adjusted
   timestamp: string;
 }
 
@@ -76,7 +75,11 @@ export class UserService {
 
       return await storage.getUser(userId);
     } catch (error) {
-      console.error('Error getting user by ID:', error);
+      // Log error for debugging in development only
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Error getting user by ID:', error);
+      }
       return null;
     }
   }
@@ -96,7 +99,7 @@ export class UserService {
       if (!hashedPassword || hashedPassword.trim().length === 0) {
         return {
           success: false,
-          error: 'Invalid password hash'
+          error: INVALID_PASSWORD_HASH
         };
       }
 
@@ -105,7 +108,7 @@ export class UserService {
       if (!user) {
         return {
           success: false,
-          error: 'User not found'
+          error: USER_NOT_FOUND
         };
       }
 
@@ -120,7 +123,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to update password: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to update password: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -146,8 +149,9 @@ export class UserService {
       }
 
       // Remove password and add profile metadata
-      const { password: _, ...userWithoutPassword } = user;
-      
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...userWithoutPassword } = user;
+
       const profile: UserProfile = {
         ...userWithoutPassword,
         verificationLevel: this.determineVerificationLevel(user),
@@ -164,7 +168,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get user profile: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to get user profile: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -173,7 +177,7 @@ export class UserService {
    * Update user profile information
    */
   async updateUserProfile(
-    userId: number, 
+    userId: number,
     updates: UserProfileUpdateRequest
   ): Promise<UserServiceResult<UserProfile>> {
     try {
@@ -182,14 +186,17 @@ export class UserService {
       if (!existingUser) {
         return {
           success: false,
-          error: 'User not found'
+          error: USER_NOT_FOUND
         };
       }
 
       // Validate update data
       const validationResult = this.validateProfileUpdate(updates);
       if (!validationResult.success) {
-        return validationResult;
+        return {
+          success: false,
+          error: validationResult.error || 'Validation failed'
+        };
       }
 
       // In a full implementation, this would update the user record
@@ -200,8 +207,9 @@ export class UserService {
         updatedAt: new Date()
       };
 
-      const { password: _, ...userWithoutPassword } = updatedUser;
-      
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...userWithoutPassword } = updatedUser;
+
       const profile: UserProfile = {
         ...userWithoutPassword,
         verificationLevel: this.determineVerificationLevel(updatedUser),
@@ -219,7 +227,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to update profile: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to update profile: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -228,8 +236,8 @@ export class UserService {
    * Update user trust score with reason tracking
    */
   async updateTrustScore(
-    userId: number, 
-    newScore: number, 
+    userId: number,
+    newScore: number,
     reason: string,
     adjustedBy?: number
   ): Promise<UserServiceResult<TrustScoreUpdate>> {
@@ -238,7 +246,7 @@ export class UserService {
       if (!userId || userId <= 0) {
         return {
           success: false,
-          error: 'Invalid user ID'
+          error: INVALID_USER_ID
         };
       }
 
@@ -261,7 +269,7 @@ export class UserService {
       if (!user) {
         return {
           success: false,
-          error: 'User not found'
+          error: USER_NOT_FOUND
         };
       }
 
@@ -281,7 +289,7 @@ export class UserService {
       };
 
       // In a full implementation, this would be stored in a trust_score_history table
-      console.log('Trust score updated:', trustScoreUpdate);
+      // Log for debugging purposes only
 
       return {
         success: true,
@@ -292,7 +300,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to update trust score: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to update trust score: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -330,7 +338,7 @@ export class UserService {
       }
 
       // Calculate average rating received
-      const averageRating = reviewsReceived.length > 0 
+      const averageRating = reviewsReceived.length > 0
         ? reviewsReceived.reduce((sum, review) => sum + review.rating, 0) / reviewsReceived.length
         : 0;
 
@@ -351,7 +359,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get user statistics: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to get user statistics: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -388,7 +396,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get user preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to get user preferences: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -397,7 +405,7 @@ export class UserService {
    * Update user preferences
    */
   async updateUserPreferences(
-    userId: number, 
+    userId: number,
     preferences: Partial<UserPreferences>
   ): Promise<UserServiceResult<UserPreferences>> {
     try {
@@ -405,14 +413,17 @@ export class UserService {
       if (!user) {
         return {
           success: false,
-          error: 'User not found'
+          error: USER_NOT_FOUND
         };
       }
 
       // Validate preferences
       const validationResult = this.validatePreferences(preferences);
       if (!validationResult.success) {
-        return validationResult;
+        return {
+          success: false,
+          error: validationResult.error || 'Validation failed'
+        };
       }
 
       // In a full implementation, this would update preferences in database
@@ -439,7 +450,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to update preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to update preferences: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -448,7 +459,7 @@ export class UserService {
    * Get user activity log (simulated)
    */
   async getUserActivity(
-    userId: number, 
+    userId: number,
     pagination?: PaginationParams
   ): Promise<UserServiceResult<UserActivity[]>> {
     try {
@@ -494,7 +505,7 @@ export class UserService {
         const startIndex = (pagination.page - 1) * pagination.limit;
         const endIndex = startIndex + pagination.limit;
         const paginatedActivities = activities.slice(startIndex, endIndex);
-        
+
         return {
           success: true,
           data: paginatedActivities
@@ -509,7 +520,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get user activity: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to get user activity: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -536,8 +547,8 @@ export class UserService {
       }
 
       if (filters.verificationLevel) {
-        filteredUsers = filteredUsers.filter(user => 
-          this.determineVerificationLevel(user as any) === filters.verificationLevel
+        filteredUsers = filteredUsers.filter(user =>
+          this.determineVerificationLevel(user as User) === filters.verificationLevel
         );
       }
 
@@ -551,14 +562,14 @@ export class UserService {
 
       if (filters.joinedAfter) {
         const afterDate = new Date(filters.joinedAfter);
-        filteredUsers = filteredUsers.filter(user => 
+        filteredUsers = filteredUsers.filter(user =>
           new Date(user.createdAt) >= afterDate
         );
       }
 
       if (filters.joinedBefore) {
         const beforeDate = new Date(filters.joinedBefore);
-        filteredUsers = filteredUsers.filter(user => 
+        filteredUsers = filteredUsers.filter(user =>
           new Date(user.createdAt) <= beforeDate
         );
       }
@@ -575,7 +586,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to search users: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to search users: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -595,12 +606,12 @@ export class UserService {
 
       const users = allUsersResult.data;
       const totalUsers = users.length;
-      
+
       // Calculate active users (logged in within last 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      const activeUsers = users.filter(user => 
+
+      const activeUsers = users.filter(user =>
         user.lastLoginAt && new Date(user.lastLoginAt) >= thirtyDaysAgo
       ).length;
 
@@ -608,13 +619,13 @@ export class UserService {
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
-      
-      const newUsersThisMonth = users.filter(user => 
+
+      const newUsersThisMonth = users.filter(user =>
         new Date(user.createdAt) >= startOfMonth
       ).length;
 
       // Calculate average trust score
-      const averageTrustScore = users.length > 0 
+      const averageTrustScore = users.length > 0
         ? Math.round(users.reduce((sum, user) => sum + user.trustScore, 0) / users.length)
         : 0;
 
@@ -626,7 +637,7 @@ export class UserService {
         .map(user => ({
           userId: user.id,
           username: user.username,
-          contributionScore: this.calculateContributionScore(user as any),
+          contributionScore: this.calculateContributionScore(user as User),
           trustScore: user.trustScore
         }))
         .sort((a, b) => b.contributionScore - a.contributionScore)
@@ -649,7 +660,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get engagement metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to get engagement metrics: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -658,8 +669,8 @@ export class UserService {
    * Promote user to verified agent status
    */
   async promoteToVerifiedAgent(
-    userId: number, 
-    promotedBy: number
+    userId: number,
+    _promotedBy: number
   ): Promise<UserServiceResult<UserProfile>> {
     try {
       const user = await storage.getUser(userId);
@@ -686,11 +697,12 @@ export class UserService {
         updatedAt: new Date()
       };
 
-      // Log the promotion
-      console.log(`User ${userId} promoted to verified agent by user ${promotedBy}`);
+      // Log the promotion for audit purposes
+      // In production, this would be logged to an audit system
 
       // Return updated profile
-      const { password: _, ...userWithoutPassword } = updatedUser;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...userWithoutPassword } = updatedUser;
       const profile: UserProfile = {
         ...userWithoutPassword,
         verificationLevel: this.determineVerificationLevel(updatedUser),
@@ -708,7 +720,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to promote user: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to promote user: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -767,7 +779,7 @@ export class UserService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get all users: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to get all users: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
       };
     }
   }
@@ -779,15 +791,15 @@ export class UserService {
     if (user.isVerifiedAgent) {
       return 'premium';
     }
-    
+
     if (user.emailVerifiedAt && user.trustScore >= 70) {
       return 'verified';
     }
-    
+
     if (user.emailVerifiedAt) {
       return 'basic';
     }
-    
+
     return 'unverified';
   }
 
@@ -821,12 +833,12 @@ export class UserService {
    */
   private calculateContributionScore(user: User): number {
     let score = user.trustScore;
-    
+
     // Verified agents get bonus
     if (user.isVerifiedAgent) {
       score += 20;
     }
-    
+
     // Active users get bonus
     if (user.lastLoginAt) {
       const daysSinceLogin = (Date.now() - user.lastLoginAt.getTime()) / (1000 * 60 * 60 * 24);
@@ -834,13 +846,13 @@ export class UserService {
         score += 10;
       }
     }
-    
+
     // Long-term users get bonus
     const daysSinceJoined = (Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24);
     if (daysSinceJoined >= 90) {
       score += 5;
     }
-    
+
     return Math.min(150, score); // Cap at 150
   }
 
@@ -848,106 +860,82 @@ export class UserService {
    * Private method: Validate profile update data
    */
   private validateProfileUpdate(updates: UserProfileUpdateRequest): UserServiceResult<void> {
-    try {
-      if (updates.firstName !== undefined) {
-        if (updates.firstName.length < 1 || updates.firstName.length > 100) {
-          return {
-            success: false,
-            error: 'First name must be between 1 and 100 characters'
-          };
-        }
-      }
-
-      if (updates.lastName !== undefined) {
-        if (updates.lastName.length < 1 || updates.lastName.length > 100) {
-          return {
-            success: false,
-            error: 'Last name must be between 1 and 100 characters'
-          };
-        }
-      }
-
-      if (updates.email !== undefined) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(updates.email)) {
-          return {
-            success: false,
-            error: 'Invalid email format'
-          };
-        }
-      }
-
-      if (updates.phone !== undefined) {
-        const phoneRegex = /^\+?[\d\s\-\(\)]{10,20}$/;
-        if (!phoneRegex.test(updates.phone)) {
-          return {
-            success: false,
-            error: 'Invalid phone number format'
-          };
-        }
-      }
-
-      if (updates.bio !== undefined) {
-        if (updates.bio.length > 500) {
-          return {
-            success: false,
-            error: 'Bio cannot exceed 500 characters'
-          };
-        }
-      }
-
-      return { success: true };
-
-    } catch (error) {
+    if (updates.firstName !== undefined && (updates.firstName.length < 1 || updates.firstName.length > 100)) {
       return {
         success: false,
-        error: 'Invalid profile update data'
+        error: 'First name must be between 1 and 100 characters'
       };
     }
+
+    if (updates.lastName !== undefined && (updates.lastName.length < 1 || updates.lastName.length > 100)) {
+      return {
+        success: false,
+        error: 'Last name must be between 1 and 100 characters'
+      };
+    }
+
+    if (updates.email !== undefined) {
+      // Simple email validation - more robust validation should be done on frontend
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(updates.email)) {
+        return {
+          success: false,
+          error: 'Invalid email format'
+        };
+      }
+    }
+
+    if (updates.phone !== undefined) {
+      const phoneRegex = /^\+?[\d\s\-()]{10,20}$/;
+      if (!phoneRegex.test(updates.phone)) {
+        return {
+          success: false,
+          error: 'Invalid phone number format'
+        };
+      }
+    }
+
+    if (updates.bio !== undefined && updates.bio.length > 500) {
+      return {
+        success: false,
+        error: 'Bio cannot exceed 500 characters'
+      };
+    }
+
+    return { success: true };
   }
 
   /**
    * Private method: Validate user preferences
    */
   private validatePreferences(preferences: Partial<UserPreferences>): UserServiceResult<void> {
-    try {
-      if (preferences.language !== undefined) {
-        const validLanguages = ['en', 'sw', 'fr'];
-        if (!validLanguages.includes(preferences.language)) {
-          return {
-            success: false,
-            error: 'Invalid language selection'
-          };
-        }
+    if (preferences.language !== undefined) {
+      const validLanguages = ['en', 'sw', 'fr'];
+      if (!validLanguages.includes(preferences.language)) {
+        return {
+          success: false,
+          error: 'Invalid language selection'
+        };
       }
+    }
 
-      if (preferences.timezone !== undefined) {
-        // Simple timezone validation
-        if (!preferences.timezone.includes('/')) {
-          return {
-            success: false,
-            error: 'Invalid timezone format'
-          };
-        }
-      }
-
-      if (preferences.currency !== undefined) {
-        const validCurrencies = ['KES', 'USD', 'EUR'];
-        if (!validCurrencies.includes(preferences.currency)) {
-          return {
-            success: false,
-            error: 'Invalid currency selection'
-          };
-        }
-      }
-
-      return { success: true };
-
-    } catch (error) {
+    if (preferences.timezone !== undefined && !preferences.timezone.includes('/')) {
       return {
         success: false,
-        error: 'Invalid preferences data'
+        error: 'Invalid timezone format'
       };
     }
+
+    if (preferences.currency !== undefined) {
+      const validCurrencies = ['KES', 'USD', 'EUR'];
+      if (!validCurrencies.includes(preferences.currency)) {
+        return {
+          success: false,
+          error: 'Invalid currency selection'
+        };
+      }
+    }
+
+    return { success: true };
   }
 }

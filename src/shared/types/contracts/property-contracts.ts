@@ -45,7 +45,13 @@ export const PropertyListRequestSchema = z.object({
   search: z.string().optional(),
   sortBy: z.enum(['price', 'createdAt', 'trustScore']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
-});
+}).transform((data) => ({
+  ...data,
+  sortBy: data.sortBy as 'price' | 'createdAt' | 'trustScore',
+  sortOrder: data.sortOrder as 'asc' | 'desc',
+  page: data.page as number,
+  limit: data.limit as number,
+}));
 
 export type PropertyListRequest = z.infer<typeof PropertyListRequestSchema>;
 
@@ -64,7 +70,10 @@ export const PropertyCreateRequestSchema = z.object({
     parking: z.boolean().optional(),
     furnished: z.boolean().optional(),
   }).optional(),
-});
+}).transform((data) => ({
+  ...data,
+  images: data.images as string[],
+}));
 
 export type PropertyCreateRequest = z.infer<typeof PropertyCreateRequestSchema>;
 

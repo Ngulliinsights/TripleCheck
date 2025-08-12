@@ -119,11 +119,7 @@ export class AuthenticationService {
       return false;
     }
 
-    if (this.config.password.requireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      return false;
-    }
-
-    return true;
+    return !this.config.password.requireSpecialChars || /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
   }
 
   /**
@@ -161,7 +157,7 @@ export class AuthenticationService {
   private generateRefreshToken(userId: number): string {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + this.parseExpirationTime(this.config.jwt.refreshExpiresIn) * 1000);
-    
+
     this.refreshTokens.set(token, { userId, expiresAt });
     return token;
   }
@@ -174,7 +170,13 @@ export class AuthenticationService {
       const decoded = jwt.verify(token, this.config.jwt.secret, {
         issuer: this.config.jwt.issuer,
         audience: this.config.jwt.audience
-      }) as any;
+      }) as jwt.JwtPayload & {
+        sub: string;
+        username: string;
+        email: string;
+        role: string;
+        trustScore?: number;
+      };
 
       return {
         id: parseInt(decoded.sub),
@@ -200,7 +202,7 @@ export class AuthenticationService {
    */
   async refreshAccessToken(refreshToken: string): Promise<AuthTokens | null> {
     const tokenData = this.refreshTokens.get(refreshToken);
-    
+
     if (!tokenData || Date.now() > tokenData.expiresAt.getTime()) {
       this.refreshTokens.delete(refreshToken);
       return null;
@@ -250,12 +252,12 @@ export class AuthenticationService {
   }> {
     const ip = req.ip || 'unknown';
     const userAgent = req.get('User-Agent') || '';
-    const {correlationId} = (req as any);
+    const { correlationId } = req as { correlationId?: string };
 
     // Check if account is locked
     if (this.isAccountLocked(email)) {
       this.recordLoginAttempt(email, ip, userAgent, false, undefined, 'account_locked');
-      
+
       structuredLogger.warn('Login attempt on locked account', {
         correlationId,
         component: 'auth',
@@ -272,11 +274,11 @@ export class AuthenticationService {
     try {
       // Get user by email
       const user = await storage.getUserByUsername(email); // Assuming this works with email too
-      
+
       if (!user) {
         this.recordLoginAttempt(email, ip, userAgent, false, undefined, 'user_not_found');
         this.handleFailedLogin(email);
-        
+
         structuredLogger.warn('Login attempt with non-existent email', {
           correlationId,
           component: 'auth',
@@ -293,7 +295,7 @@ export class AuthenticationService {
       // Check if user is active
       if (!user.isActive) {
         this.recordLoginAttempt(email, ip, userAgent, false, user.id, 'account_inactive');
-        
+
         structuredLogger.warn('Login attempt on inactive account', {
           correlationId,
           component: 'auth',
@@ -309,11 +311,11 @@ export class AuthenticationService {
 
       // Verify password
       const isPasswordValid = await this.verifyPassword(password, user.password);
-      
+
       if (!isPasswordValid) {
         this.recordLoginAttempt(email, ip, userAgent, false, user.id, 'invalid_password');
         this.handleFailedLogin(email);
-        
+
         structuredLogger.warn('Login attempt with invalid password', {
           correlationId,
           component: 'auth',
@@ -396,7 +398,7 @@ export class AuthenticationService {
   requireAuth() {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction): void | Response => {
       const authHeader = req.headers.authorization;
-      
+
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         res.status(401).json({
           success: false,
@@ -492,12 +494,12 @@ export class AuthenticationService {
 
     const attempts = this.loginAttempts.get(email) || [];
     attempts.push(attempt);
-    
+
     // Keep only last 10 attempts
     if (attempts.length > 10) {
       attempts.shift();
     }
-    
+
     this.loginAttempts.set(email, attempts);
   }
 
@@ -511,14 +513,14 @@ export class AuthenticationService {
 
     const attempts = this.loginAttempts.get(email) || [];
     const recentFailures = attempts.filter(
-      attempt => !attempt.success && 
-      Date.now() - attempt.timestamp.getTime() < 15 * 60 * 1000 // Last 15 minutes
+      attempt => !attempt.success &&
+        Date.now() - attempt.timestamp.getTime() < 15 * 60 * 1000 // Last 15 minutes
     );
 
     if (recentFailures.length >= this.config.lockout.maxAttempts) {
       const lockUntil = new Date(Date.now() + this.config.lockout.lockoutDuration);
       this.lockedAccounts.set(email, lockUntil);
-      
+
       structuredLogger.warn('Account locked due to failed login attempts', {
         component: 'auth',
         operation: 'account_locked',
@@ -536,7 +538,7 @@ export class AuthenticationService {
    */
   private isAccountLocked(email: string): boolean {
     const lockUntil = this.lockedAccounts.get(email);
-    
+
     if (!lockUntil) {
       return false;
     }
@@ -561,13 +563,14 @@ export class AuthenticationService {
    * Parse expiration time string to seconds
    */
   private parseExpirationTime(expiresIn: string): number {
-    const match = expiresIn.match(/^(\d+)([smhd])$/);
+    const regex = /^(\d+)([smhd])$/;
+    const match = regex.exec(expiresIn);
     if (!match) {
       throw new Error(`Invalid expiration format: ${expiresIn}`);
     }
 
-    const value = parseInt(match[1]!);
-    const unit = match[2]!;
+    const value = parseInt(match[1]);
+    const unit = match[2];
 
     switch (unit) {
       case 's': return value;
@@ -645,7 +648,7 @@ export class AuthenticationService {
     // Clear all intervals
     this.cleanupIntervals.forEach(interval => clearInterval(interval));
     this.cleanupIntervals = [];
-    
+
     // Clear all maps
     this.refreshTokens.clear();
     this.loginAttempts.clear();

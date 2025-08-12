@@ -33,9 +33,9 @@ This audit identifies the current fragmented database structure across multiple 
 - **Utils**: Database utilities (duplicates main utils)
 - **Types**: Database types (should be consolidated)
 
-### 3. Shared Schema (`server/infrastructure/database/schemas/ndex.ts`)
+### 3. Shared Schema (`server/infrastructure/database/schemas/consolidated`)
 **Status**: ✅ Already deprecated and redirecting
-**Location**: `/server/infrastructure/database/schemas/ndex.ts`
+**Location**: `/server/infrastructure/database/schemas/consolidated`
 **Assessment**: Properly deprecated with backward compatibility
 
 ## Duplication Analysis
@@ -77,7 +77,7 @@ This audit identifies the current fragmented database structure across multiple 
 #### Schema Files:
 2. `server/infrastructure/database/schemas/core/` → Merge with `database/schemas/core/`
 3. `server/infrastructure/database/schemas/land-verification/` → Merge with `database/schemas/verification/`
-4. `server/infrastructure/database/schemas/index.ts` → Update `database/schemas/index.ts`
+4. `server/infrastructure/database/schemas/consolidated` → Update `database/schemas/index.ts`
 
 #### Utility Files:
 5. `server/infrastructure/database/utils/database-utils.ts` → Merge with `database/utils/database-utils.ts`

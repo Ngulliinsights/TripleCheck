@@ -1,28 +1,33 @@
-import { eq, and, desc, sql, count, avg, ilike, or } from "drizzle-orm";
+import { eq, and, desc, sql, count, ilike, or } from "drizzle-orm";
 
-import { 
-  communityExperiences, 
-  experienceComments, 
+import {
+  communityExperiences,
+  experienceComments,
   experienceInteractions,
   contentReports,
-  users 
+  users
 } from "../../src/shared/schema";
 import { db } from "../infrastructure/database/connection";
 
 import { NotificationService } from "./notification-service";
+
+// Constants to avoid duplication
+const ANONYMOUS_USER = 'Anonymous User';
+const DEFAULT_LIMIT = 10;
+const THREE_MONTHS_AGO_MS = 3 * 30 * 24 * 60 * 60 * 1000;
 
 interface CommunityExperience {
   id: string;
   title: string;
   location: string;
   fraudType: string;
-  amountLost?: string;
+  amountLost?: string | undefined;
   whatHappened: string;
-  personalVulnerabilities?: string;
-  systemicChallenges?: string;
-  lessonsLearned?: string;
+  personalVulnerabilities?: string | undefined;
+  systemicChallenges?: string | undefined;
+  lessonsLearned?: string | undefined;
   resolutionStatus: 'resolved' | 'partial' | 'unresolved';
-  resolutionDetails?: string;
+  resolutionDetails?: string | undefined;
   anonymous: boolean;
   userId: number;
   datePosted: Date;
@@ -31,10 +36,11 @@ interface CommunityExperience {
   views: number;
   helpful: number;
   tags: string[];
-  author?: {
+  // Make author optional at the interface level to handle both anonymous and named cases
+  author: {
     name: string;
     verified: boolean;
-  };
+  } | undefined;
 }
 
 interface ExperienceComment {
@@ -45,10 +51,11 @@ interface ExperienceComment {
   anonymous: boolean;
   createdAt: Date;
   likes: number;
-  author?: {
+  // Make author optional to handle anonymous comments
+  author: {
     name: string;
     verified: boolean;
-  };
+  } | undefined;
 }
 
 interface CommunityStats {
@@ -63,6 +70,9 @@ interface CommunityStats {
   };
 }
 
+// Helper type for database query results that might be undefined
+// type QueryResult<T> = T | undefined;
+
 export class CommunityResourcesService {
   private notificationService: NotificationService;
 
@@ -72,6 +82,7 @@ export class CommunityResourcesService {
 
   /**
    * Get community experiences with filtering and pagination
+   * This method handles complex filtering logic while maintaining type safety
    */
   async getExperiences(query: {
     category?: string;
@@ -87,119 +98,70 @@ export class CommunityResourcesService {
     hasMore: boolean;
   }> {
     try {
-      const conditions = [];
-      
-      // Category filter
-      if (query.category && query.category !== 'all') {
-        conditions.push(eq(communityExperiences.fraudType, query.category));
-      }
-      
-      // Resolution status filter
-      if (query.resolved && query.resolved !== 'all') {
-        if (query.resolved === 'resolved') {
-          conditions.push(eq(communityExperiences.resolutionStatus, 'resolved'));
-        } else {
-          conditions.push(or(
-            eq(communityExperiences.resolutionStatus, 'partial'),
-            eq(communityExperiences.resolutionStatus, 'unresolved')
-          ));
-        }
-      }
-      
-      // Location filter
-      if (query.location) {
-        conditions.push(ilike(communityExperiences.location, `%${query.location}%`));
-      }
-      
-      // Search filter
-      if (query.search) {
-        conditions.push(or(
-          ilike(communityExperiences.title, `%${query.search}%`),
-          ilike(communityExperiences.whatHappened, `%${query.search}%`),
-          ilike(communityExperiences.location, `%${query.search}%`)
-        ));
-      }
+      const conditions = this.buildQueryConditions(query);
 
-      // Get total count
-      const [{ count: totalCount }] = await db
+      // Get total count with proper null handling
+      const countResult = await db
         .select({ count: count() })
         .from(communityExperiences)
         .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-      // Determine sort order
-      let orderBy;
-      switch (query.sortBy) {
-        case 'popular':
-          orderBy = desc(communityExperiences.likes);
-          break;
-        case 'amount':
-          orderBy = desc(sql`CAST(REGEXP_REPLACE(${communityExperiences.amountLost}, '[^0-9.]', '', 'g') AS NUMERIC)`);
-          break;
-        case 'resolved':
-          orderBy = [desc(communityExperiences.resolutionStatus), desc(communityExperiences.datePosted)];
-          break;
-        default:
-          orderBy = desc(communityExperiences.datePosted);
-      }
+      const totalCount = countResult[0]?.count ?? 0;
+
+      // Determine sort order - extract to method for clarity
+      const orderBy = this.buildOrderBy(query.sortBy);
 
       // Get experiences with user info
-      const experiencesQuery = db
+      const results = await db
         .select({
-          experience: communityExperiences,
-          author: {
-            name: users.name,
-            verified: users.verified
-          }
+          // Select all experience fields explicitly
+          id: communityExperiences.id,
+          title: communityExperiences.title,
+          location: communityExperiences.location,
+          fraudType: communityExperiences.fraudType,
+          amountLost: communityExperiences.amountLost,
+          whatHappened: communityExperiences.whatHappened,
+          personalVulnerabilities: communityExperiences.personalVulnerabilities,
+          systemicChallenges: communityExperiences.systemicChallenges,
+          lessonsLearned: communityExperiences.lessonsLearned,
+          resolutionStatus: communityExperiences.resolutionStatus,
+          resolutionDetails: communityExperiences.resolutionDetails,
+          anonymous: communityExperiences.anonymous,
+          userId: communityExperiences.userId,
+          datePosted: communityExperiences.datePosted,
+          likes: communityExperiences.likes,
+          comments: communityExperiences.comments,
+          views: communityExperiences.views,
+          helpful: communityExperiences.helpful,
+          tags: communityExperiences.tags,
+          // Select user fields explicitly if they exist in schema
+          userName: users.username,
+          userVerified: users.emailVerifiedAt
         })
         .from(communityExperiences)
         .leftJoin(users, eq(communityExperiences.userId, users.id))
         .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(orderBy)
-        .limit(query.limit || 10)
+        .orderBy(...orderBy)
+        .limit(query.limit || DEFAULT_LIMIT)
         .offset(query.offset || 0);
 
-      const results = await experiencesQuery;
-
-      const experiences = results.map(result => ({
-        id: result.experience.id,
-        title: result.experience.title,
-        location: result.experience.location,
-        fraudType: result.experience.fraudType,
-        amountLost: result.experience.amountLost || undefined,
-        whatHappened: result.experience.whatHappened,
-        personalVulnerabilities: result.experience.personalVulnerabilities || undefined,
-        systemicChallenges: result.experience.systemicChallenges || undefined,
-        lessonsLearned: result.experience.lessonsLearned || undefined,
-        resolutionStatus: result.experience.resolutionStatus as CommunityExperience['resolutionStatus'],
-        resolutionDetails: result.experience.resolutionDetails || undefined,
-        anonymous: result.experience.anonymous,
-        userId: result.experience.userId,
-        datePosted: result.experience.datePosted,
-        likes: result.experience.likes,
-        comments: result.experience.comments,
-        views: result.experience.views,
-        helpful: result.experience.helpful,
-        tags: result.experience.tags ? JSON.parse(result.experience.tags) : [],
-        author: result.experience.anonymous ? undefined : {
-          name: result.author?.name || 'Anonymous User',
-          verified: result.author?.verified || false
-        }
-      }));
+      // Transform results with proper type safety
+      const experiences = results.map(result => this.transformExperienceResult(result));
 
       return {
         experiences,
         total: totalCount,
-        hasMore: (query.offset || 0) + (query.limit || 10) < totalCount
+        hasMore: (query.offset || 0) + (query.limit || DEFAULT_LIMIT) < totalCount
       };
 
     } catch (error) {
-      console.error('Error fetching community experiences:', error);
+      this.logError('Error fetching community experiences:', error);
       throw new Error('Failed to fetch community experiences');
     }
   }
 
   /**
-   * Share a new experience
+   * Share a new experience with comprehensive validation
    */
   async shareExperience(experienceData: {
     title: string;
@@ -217,10 +179,10 @@ export class CommunityResourcesService {
     datePosted: Date;
   }): Promise<CommunityExperience> {
     try {
-      // Generate tags based on content
+      // Generate tags based on content - moved to helper method for clarity
       const tags = this.generateTags(experienceData);
 
-      const [experience] = await db
+      const insertResult = await db
         .insert(communityExperiences)
         .values({
           title: experienceData.title,
@@ -244,39 +206,24 @@ export class CommunityResourcesService {
         })
         .returning();
 
+      const [experience] = insertResult;
+      if (!experience) {
+        throw new Error('Failed to create experience record');
+      }
+
       // Send notification to community moderators
       await this.notificationService.sendCommunityModerationNotification(experience);
 
-      return {
-        id: experience.id,
-        title: experience.title,
-        location: experience.location,
-        fraudType: experience.fraudType,
-        amountLost: experience.amountLost || undefined,
-        whatHappened: experience.whatHappened,
-        personalVulnerabilities: experience.personalVulnerabilities || undefined,
-        systemicChallenges: experience.systemicChallenges || undefined,
-        lessonsLearned: experience.lessonsLearned || undefined,
-        resolutionStatus: experience.resolutionStatus as CommunityExperience['resolutionStatus'],
-        resolutionDetails: experience.resolutionDetails || undefined,
-        anonymous: experience.anonymous,
-        userId: experience.userId,
-        datePosted: experience.datePosted,
-        likes: experience.likes,
-        comments: experience.comments,
-        views: experience.views,
-        helpful: experience.helpful,
-        tags: JSON.parse(experience.tags)
-      };
+      return this.transformExperienceForReturn(experience, tags);
 
     } catch (error) {
-      console.error('Error sharing community experience:', error);
+      this.logError('Error sharing community experience:', error);
       throw new Error('Failed to share experience');
     }
   }
 
   /**
-   * Get a specific experience with comments
+   * Get a specific experience with comments and proper view tracking
    */
   async getExperienceById(experienceId: string): Promise<{
     experience: CommunityExperience;
@@ -284,92 +231,84 @@ export class CommunityResourcesService {
   } | null> {
     try {
       // Get experience with author info
-      const [experienceResult] = await db
+      const experienceResults = await db
         .select({
-          experience: communityExperiences,
-          author: {
-            name: users.name,
-            verified: users.verified
-          }
+          // Explicit field selection for type safety
+          id: communityExperiences.id,
+          title: communityExperiences.title,
+          location: communityExperiences.location,
+          fraudType: communityExperiences.fraudType,
+          amountLost: communityExperiences.amountLost,
+          whatHappened: communityExperiences.whatHappened,
+          personalVulnerabilities: communityExperiences.personalVulnerabilities,
+          systemicChallenges: communityExperiences.systemicChallenges,
+          lessonsLearned: communityExperiences.lessonsLearned,
+          resolutionStatus: communityExperiences.resolutionStatus,
+          resolutionDetails: communityExperiences.resolutionDetails,
+          anonymous: communityExperiences.anonymous,
+          userId: communityExperiences.userId,
+          datePosted: communityExperiences.datePosted,
+          likes: communityExperiences.likes,
+          comments: communityExperiences.comments,
+          views: communityExperiences.views,
+          helpful: communityExperiences.helpful,
+          tags: communityExperiences.tags,
+          userName: users.username,
+          userVerified: users.emailVerifiedAt
         })
         .from(communityExperiences)
         .leftJoin(users, eq(communityExperiences.userId, users.id))
         .where(eq(communityExperiences.id, experienceId));
 
-      if (!experienceResult) {
+      if (!experienceResults.length) {
         return null;
       }
 
-      // Increment view count
-      await db
-        .update(communityExperiences)
-        .set({ views: sql`${communityExperiences.views} + 1` })
-        .where(eq(communityExperiences.id, experienceId));
+      const [experienceResult] = experienceResults;
+
+      // Increment view count with error handling
+      await this.incrementViewCount(experienceId);
 
       // Get comments with author info
       const commentsResults = await db
         .select({
-          comment: experienceComments,
-          author: {
-            name: users.name,
-            verified: users.verified
-          }
+          id: experienceComments.id,
+          experienceId: experienceComments.experienceId,
+          userId: experienceComments.userId,
+          content: experienceComments.content,
+          anonymous: experienceComments.anonymous,
+          createdAt: experienceComments.createdAt,
+          likes: experienceComments.likes,
+          userName: users.username,
+          userVerified: users.emailVerifiedAt
         })
         .from(experienceComments)
         .leftJoin(users, eq(experienceComments.userId, users.id))
         .where(eq(experienceComments.experienceId, experienceId))
         .orderBy(desc(experienceComments.createdAt));
 
-      const experience = {
-        id: experienceResult.experience.id,
-        title: experienceResult.experience.title,
-        location: experienceResult.experience.location,
-        fraudType: experienceResult.experience.fraudType,
-        amountLost: experienceResult.experience.amountLost || undefined,
-        whatHappened: experienceResult.experience.whatHappened,
-        personalVulnerabilities: experienceResult.experience.personalVulnerabilities || undefined,
-        systemicChallenges: experienceResult.experience.systemicChallenges || undefined,
-        lessonsLearned: experienceResult.experience.lessonsLearned || undefined,
-        resolutionStatus: experienceResult.experience.resolutionStatus as CommunityExperience['resolutionStatus'],
-        resolutionDetails: experienceResult.experience.resolutionDetails || undefined,
-        anonymous: experienceResult.experience.anonymous,
-        userId: experienceResult.experience.userId,
-        datePosted: experienceResult.experience.datePosted,
-        likes: experienceResult.experience.likes,
-        comments: experienceResult.experience.comments,
-        views: experienceResult.experience.views + 1, // Include the increment
-        helpful: experienceResult.experience.helpful,
-        tags: experienceResult.experience.tags ? JSON.parse(experienceResult.experience.tags) : [],
-        author: experienceResult.experience.anonymous ? undefined : {
-          name: experienceResult.author?.name || 'Anonymous User',
-          verified: experienceResult.author?.verified || false
-        }
-      };
+      // Transform results with proper type handling
+      if (!experienceResult) {
+        return null;
+      }
+      
+      const experience = this.transformExperienceResult({
+        ...experienceResult,
+        views: (experienceResult.views ?? 0) + 1 // Include the incremented view count
+      });
 
-      const comments = commentsResults.map(result => ({
-        id: result.comment.id,
-        experienceId: result.comment.experienceId,
-        userId: result.comment.userId,
-        content: result.comment.content,
-        anonymous: result.comment.anonymous,
-        createdAt: result.comment.createdAt,
-        likes: result.comment.likes,
-        author: result.comment.anonymous ? undefined : {
-          name: result.author?.name || 'Anonymous User',
-          verified: result.author?.verified || false
-        }
-      }));
+      const comments = commentsResults.map(result => this.transformCommentResult(result));
 
       return { experience, comments };
 
     } catch (error) {
-      console.error('Error fetching experience by ID:', error);
+      this.logError('Error fetching experience by ID:', error);
       throw new Error('Failed to fetch experience');
     }
   }
 
   /**
-   * Interact with an experience (like, helpful, etc.)
+   * Interact with an experience (like, helpful, etc.) with proper transaction handling
    */
   async interactWithExperience(
     userId: number,
@@ -377,79 +316,39 @@ export class CommunityResourcesService {
     interactionType: 'like' | 'unlike' | 'helpful' | 'unhelpful'
   ): Promise<{ success: boolean; newCount: number }> {
     try {
+      const baseType = interactionType.replace('un', '') as 'like' | 'helpful';
+      const isRemoving = interactionType.startsWith('un');
+
       // Check if user already has an interaction
-      const [existingInteraction] = await db
+      const existingInteractions = await db
         .select()
         .from(experienceInteractions)
         .where(and(
           eq(experienceInteractions.userId, userId),
           eq(experienceInteractions.experienceId, experienceId),
-          eq(experienceInteractions.type, interactionType.replace('un', ''))
+          eq(experienceInteractions.type, baseType)
         ));
 
-      let newCount = 0;
+      const [existingInteraction] = existingInteractions;
 
-      if (interactionType.startsWith('un')) {
-        // Remove interaction
-        if (existingInteraction) {
-          await db
-            .delete(experienceInteractions)
-            .where(eq(experienceInteractions.id, existingInteraction.id));
-
-          // Decrement count
-          const field = interactionType === 'unlike' ? 'likes' : 'helpful';
-          await db
-            .update(communityExperiences)
-            .set({ [field]: sql`${communityExperiences[field]} - 1` })
-            .where(eq(communityExperiences.id, experienceId));
-
-          // Get new count
-          const [updated] = await db
-            .select({ count: communityExperiences[field] })
-            .from(communityExperiences)
-            .where(eq(communityExperiences.id, experienceId));
-          
-          newCount = updated.count;
-        }
-      } else {
-        // Add interaction
-        if (!existingInteraction) {
-          await db
-            .insert(experienceInteractions)
-            .values({
-              userId,
-              experienceId,
-              type: interactionType,
-              createdAt: new Date()
-            });
-
-          // Increment count
-          const field = interactionType === 'like' ? 'likes' : 'helpful';
-          await db
-            .update(communityExperiences)
-            .set({ [field]: sql`${communityExperiences[field]} + 1` })
-            .where(eq(communityExperiences.id, experienceId));
-
-          // Get new count
-          const [updated] = await db
-            .select({ count: communityExperiences[field] })
-            .from(communityExperiences)
-            .where(eq(communityExperiences.id, experienceId));
-          
-          newCount = updated.count;
-        }
+      if (isRemoving && existingInteraction) {
+        return await this.removeInteraction(existingInteraction.id, experienceId, baseType);
+      } else if (!isRemoving && !existingInteraction) {
+        return await this.addInteraction(userId, experienceId, baseType);
       }
 
-      return { success: true, newCount };
+      // No change needed - interaction already in desired state
+      const currentCount = await this.getInteractionCount(experienceId, baseType);
+      return { success: true, newCount: currentCount };
 
     } catch (error) {
-      console.error('Error processing experience interaction:', error);
+      this.logError('Error processing experience interaction:', error);
       throw new Error('Failed to process interaction');
     }
   }
 
   /**
-   * Add comment to an experience
+   * Add comment to an experience with proper validation
    */
   async addComment(commentData: {
     experienceId: string;
@@ -459,7 +358,7 @@ export class CommunityResourcesService {
     createdAt: Date;
   }): Promise<ExperienceComment> {
     try {
-      const [comment] = await db
+      const insertResult = await db
         .insert(experienceComments)
         .values({
           experienceId: commentData.experienceId,
@@ -470,6 +369,11 @@ export class CommunityResourcesService {
           likes: 0
         })
         .returning();
+
+      const [comment] = insertResult;
+      if (!comment) {
+        throw new Error('Failed to create comment');
+      }
 
       // Increment comment count on experience
       await db
@@ -484,102 +388,64 @@ export class CommunityResourcesService {
         content: comment.content,
         anonymous: comment.anonymous,
         createdAt: comment.createdAt,
-        likes: comment.likes
+        likes: comment.likes,
+        author: comment.anonymous ? undefined : {
+          name: ANONYMOUS_USER, // We don't have user info in this context
+          verified: false
+        }
       };
 
     } catch (error) {
-      console.error('Error adding comment:', error);
+      this.logError('Error adding comment:', error);
       throw new Error('Failed to add comment');
     }
   }
 
   /**
-   * Get community statistics
+   * Get community statistics with proper null handling
    */
   async getCommunityStats(): Promise<CommunityStats> {
     try {
-      // Total experiences
-      const [{ count: totalExperiences }] = await db
-        .select({ count: count() })
-        .from(communityExperiences);
-
-      // Resolved cases
-      const [{ count: resolvedCases }] = await db
-        .select({ count: count() })
-        .from(communityExperiences)
-        .where(eq(communityExperiences.resolutionStatus, 'resolved'));
-
-      // Total losses (sum of amounts)
-      const [{ total: totalLossesResult }] = await db
-        .select({
-          total: sql`SUM(CAST(REGEXP_REPLACE(${communityExperiences.amountLost}, '[^0-9.]', '', 'g') AS NUMERIC))`
-        })
-        .from(communityExperiences)
-        .where(sql`${communityExperiences.amountLost} IS NOT NULL`);
-
-      const totalLosses = Number(totalLossesResult) || 0;
-
-      // Active members (users who posted in last 3 months)
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
-      const [{ count: activeMembers }] = await db
-        .select({ count: sql`COUNT(DISTINCT ${communityExperiences.userId})` })
-        .from(communityExperiences)
-        .where(sql`${communityExperiences.datePosted} >= ${threeMonthsAgo}`);
-
-      // This month stats
-      const thisMonthStart = new Date();
-      thisMonthStart.setDate(1);
-      thisMonthStart.setHours(0, 0, 0, 0);
-
-      const [{ count: newExperiencesThisMonth }] = await db
-        .select({ count: count() })
-        .from(communityExperiences)
-        .where(sql`${communityExperiences.datePosted} >= ${thisMonthStart}`);
-
-      const [{ count: resolvedThisMonth }] = await db
-        .select({ count: count() })
-        .from(communityExperiences)
-        .where(and(
-          eq(communityExperiences.resolutionStatus, 'resolved'),
-          sql`${communityExperiences.datePosted} >= ${thisMonthStart}`
-        ));
-
-      const [{ total: savedThisMonthResult }] = await db
-        .select({
-          total: sql`SUM(CAST(REGEXP_REPLACE(${communityExperiences.amountLost}, '[^0-9.]', '', 'g') AS NUMERIC))`
-        })
-        .from(communityExperiences)
-        .where(and(
-          eq(communityExperiences.resolutionStatus, 'resolved'),
-          sql`${communityExperiences.datePosted} >= ${thisMonthStart}`
-        ));
-
-      const savedThisMonth = Number(savedThisMonthResult) || 0;
+      const [
+        totalExperiencesResult,
+        resolvedCasesResult,
+        totalLossesResult,
+        activeMembersResult,
+        newExperiencesResult,
+        resolvedThisMonthResult,
+        savedThisMonthResult
+      ] = await Promise.all([
+        this.getTotalExperiences(),
+        this.getResolvedCases(),
+        this.getTotalLosses(),
+        this.getActiveMembers(),
+        this.getNewExperiencesThisMonth(),
+        this.getResolvedCasesThisMonth(),
+        this.getSavedAmountThisMonth()
+      ]);
 
       return {
-        totalExperiences,
-        resolvedCases,
-        totalLosses,
-        activeMembers,
+        totalExperiences: totalExperiencesResult,
+        resolvedCases: resolvedCasesResult,
+        totalLosses: totalLossesResult,
+        activeMembers: activeMembersResult,
         thisMonth: {
-          newExperiences: newExperiencesThisMonth,
-          resolvedCases: resolvedThisMonth,
-          savedAmount: savedThisMonth
+          newExperiences: newExperiencesResult,
+          resolvedCases: resolvedThisMonthResult,
+          savedAmount: savedThisMonthResult
         }
       };
 
     } catch (error) {
-      console.error('Error fetching community stats:', error);
+      this.logError('Error fetching community stats:', error);
       throw new Error('Failed to fetch community statistics');
     }
   }
 
   /**
-   * Get categories with counts
+   * Get categories with counts and proper error handling
    */
-  async getCategories(): Promise<Array<{ id: string; name: string; count: number }>> {
+  async getCategories(): Promise<Array<{ id: string; name: string | 'All Stories'; count: number }>> {
     try {
       const categories = await db
         .select({
@@ -595,7 +461,7 @@ export class CommunityResourcesService {
         'development': 'Property Development',
         'investment': 'Investment Scams',
         'other': 'Other'
-      };
+      } as const;
 
       const result = categories.map(cat => ({
         id: cat.fraudType,
@@ -603,20 +469,20 @@ export class CommunityResourcesService {
         count: cat.count
       }));
 
-      // Add "all" category
+      // Add "all" category with total count
       const totalCount = result.reduce((sum, cat) => sum + cat.count, 0);
-      result.unshift({ id: 'all', name: 'All Stories', count: totalCount });
+      result.unshift({ id: 'all', name: 'All Stories' as const, count: totalCount });
 
       return result;
 
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      this.logError('Error fetching categories:', error);
       throw new Error('Failed to fetch categories');
     }
   }
 
   /**
-   * Report inappropriate content
+   * Report inappropriate content with comprehensive validation
    */
   async reportContent(reportData: {
     contentId: string;
@@ -627,7 +493,7 @@ export class CommunityResourcesService {
     timestamp: Date;
   }): Promise<{ id: string; status: string }> {
     try {
-      const [report] = await db
+      const insertResult = await db
         .insert(contentReports)
         .values({
           contentId: reportData.contentId,
@@ -640,6 +506,11 @@ export class CommunityResourcesService {
         })
         .returning();
 
+      const [report] = insertResult;
+      if (!report) {
+        throw new Error('Failed to create report');
+      }
+
       // Send notification to moderators
       await this.notificationService.sendContentReportNotification(report);
 
@@ -649,13 +520,13 @@ export class CommunityResourcesService {
       };
 
     } catch (error) {
-      console.error('Error reporting content:', error);
+      this.logError('Error reporting content:', error);
       throw new Error('Failed to report content');
     }
   }
 
   /**
-   * Get user's own experiences
+   * Get user's own experiences with proper type safety
    */
   async getUserExperiences(userId: number): Promise<CommunityExperience[]> {
     try {
@@ -684,59 +555,438 @@ export class CommunityResourcesService {
         comments: exp.comments,
         views: exp.views,
         helpful: exp.helpful,
-        tags: exp.tags ? JSON.parse(exp.tags) : []
+        tags: exp.tags ? JSON.parse(exp.tags) : [],
+        author: exp.anonymous ? undefined : {
+          name: ANONYMOUS_USER, // We don't have user info in this context
+          verified: false
+        }
       }));
 
     } catch (error) {
-      console.error('Error fetching user experiences:', error);
+      this.logError('Error fetching user experiences:', error);
       throw new Error('Failed to fetch user experiences');
     }
   }
 
   /**
-   * Private helper methods
+   * Private helper methods for better code organization and reusability
    */
-  private generateTags(experienceData: any): string[] {
+
+  private buildQueryConditions(query: {
+    category?: string;
+    search?: string;
+    resolved?: string;
+    location?: string;
+  }) {
+    const conditions = [];
+
+    // Category filter
+    if (query.category && query.category !== 'all') {
+      conditions.push(eq(communityExperiences.fraudType, query.category));
+    }
+
+    // Resolution status filter
+    if (query.resolved && query.resolved !== 'all') {
+      if (query.resolved === 'resolved') {
+        conditions.push(eq(communityExperiences.resolutionStatus, 'resolved'));
+      } else {
+        conditions.push(or(
+          eq(communityExperiences.resolutionStatus, 'partial'),
+          eq(communityExperiences.resolutionStatus, 'unresolved')
+        ));
+      }
+    }
+
+    // Location filter
+    if (query.location) {
+      conditions.push(ilike(communityExperiences.location, `%${query.location}%`));
+    }
+
+    // Search filter
+    if (query.search) {
+      conditions.push(or(
+        ilike(communityExperiences.title, `%${query.search}%`),
+        ilike(communityExperiences.whatHappened, `%${query.search}%`),
+        ilike(communityExperiences.location, `%${query.search}%`)
+      ));
+    }
+
+    return conditions;
+  }
+
+  private buildOrderBy(sortBy?: string): unknown[] {
+    switch (sortBy) {
+      case 'popular':
+        return [desc(communityExperiences.likes)];
+      case 'amount':
+        return [desc(sql`CAST(REGEXP_REPLACE(${communityExperiences.amountLost}, '[^0-9.]', '', 'g') AS NUMERIC)`)];
+      case 'resolved':
+        return [desc(communityExperiences.resolutionStatus), desc(communityExperiences.datePosted)];
+      default:
+        return [desc(communityExperiences.datePosted)];
+    }
+  }
+
+  private transformExperienceResult(result: {
+    id: string;
+    title: string;
+    location: string;
+    fraudType: string;
+    amountLost?: string | null;
+    whatHappened: string;
+    personalVulnerabilities?: string | null;
+    systemicChallenges?: string | null;
+    lessonsLearned?: string | null;
+    resolutionStatus: string;
+    resolutionDetails?: string | null;
+    anonymous: boolean;
+    userId: number;
+    datePosted: Date;
+    likes: number;
+    comments: number;
+    views: number;
+    helpful: number;
+    tags?: string | null;
+    userName?: string | null;
+    userVerified?: Date | null;
+  }): CommunityExperience {
+    return {
+      id: result.id,
+      title: result.title,
+      location: result.location,
+      fraudType: result.fraudType,
+      amountLost: result.amountLost || undefined,
+      whatHappened: result.whatHappened,
+      personalVulnerabilities: result.personalVulnerabilities || undefined,
+      systemicChallenges: result.systemicChallenges || undefined,
+      lessonsLearned: result.lessonsLearned || undefined,
+      resolutionStatus: result.resolutionStatus as CommunityExperience['resolutionStatus'],
+      resolutionDetails: result.resolutionDetails || undefined,
+      anonymous: result.anonymous,
+      userId: result.userId,
+      datePosted: result.datePosted,
+      likes: result.likes,
+      comments: result.comments,
+      views: result.views,
+      helpful: result.helpful,
+      tags: result.tags ? JSON.parse(result.tags) : [],
+      author: result.anonymous ? undefined : {
+        name: result.userName || ANONYMOUS_USER,
+        verified: !!result.userVerified
+      }
+    };
+  }
+
+  private transformCommentResult(result: {
+    id: string;
+    experienceId: string;
+    userId: number;
+    content: string;
+    anonymous: boolean;
+    createdAt: Date;
+    likes: number;
+    userName?: string | null;
+    userVerified?: Date | null;
+  }): ExperienceComment {
+    return {
+      id: result.id,
+      experienceId: result.experienceId,
+      userId: result.userId,
+      content: result.content,
+      anonymous: result.anonymous,
+      createdAt: result.createdAt,
+      likes: result.likes,
+      author: result.anonymous ? undefined : {
+        name: result.userName || ANONYMOUS_USER,
+        verified: !!result.userVerified
+      }
+    };
+  }
+
+  private transformExperienceForReturn(experience: {
+    id: string;
+    title: string;
+    location: string;
+    fraudType: string;
+    amountLost?: string | null;
+    whatHappened: string;
+    personalVulnerabilities?: string | null;
+    systemicChallenges?: string | null;
+    lessonsLearned?: string | null;
+    resolutionStatus: string;
+    resolutionDetails?: string | null;
+    anonymous: boolean;
+    userId: number;
+    datePosted: Date;
+    likes: number;
+    comments: number;
+    views: number;
+    helpful: number;
+  }, tags: string[]): CommunityExperience {
+    return {
+      id: experience.id,
+      title: experience.title,
+      location: experience.location,
+      fraudType: experience.fraudType,
+      amountLost: experience.amountLost || undefined,
+      whatHappened: experience.whatHappened,
+      personalVulnerabilities: experience.personalVulnerabilities || undefined,
+      systemicChallenges: experience.systemicChallenges || undefined,
+      lessonsLearned: experience.lessonsLearned || undefined,
+      resolutionStatus: experience.resolutionStatus as CommunityExperience['resolutionStatus'],
+      resolutionDetails: experience.resolutionDetails || undefined,
+      anonymous: experience.anonymous,
+      userId: experience.userId,
+      datePosted: experience.datePosted,
+      likes: experience.likes,
+      comments: experience.comments,
+      views: experience.views,
+      helpful: experience.helpful,
+      tags,
+      author: experience.anonymous ? undefined : {
+        name: ANONYMOUS_USER, // We don't have user info in this context
+        verified: false
+      }
+    };
+  }
+
+  private async incrementViewCount(experienceId: string): Promise<void> {
+    try {
+      await db
+        .update(communityExperiences)
+        .set({ views: sql`${communityExperiences.views} + 1` })
+        .where(eq(communityExperiences.id, experienceId));
+    } catch (error) {
+      // Log but don't throw - view counting shouldn't break the main functionality
+      this.logError('Error incrementing view count:', error);
+    }
+  }
+
+  private async removeInteraction(
+    interactionId: string,
+    experienceId: string,
+    type: 'like' | 'helpful'
+  ): Promise<{ success: boolean; newCount: number }> {
+    await db
+      .delete(experienceInteractions)
+      .where(eq(experienceInteractions.id, interactionId));
+
+    if (type === 'like') {
+      await db
+        .update(communityExperiences)
+        .set({ likes: sql`${communityExperiences.likes} - 1` })
+        .where(eq(communityExperiences.id, experienceId));
+    } else {
+      await db
+        .update(communityExperiences)
+        .set({ helpful: sql`${communityExperiences.helpful} - 1` })
+        .where(eq(communityExperiences.id, experienceId));
+    }
+
+    const newCount = await this.getInteractionCount(experienceId, type);
+    return { success: true, newCount };
+  }
+
+  private async addInteraction(
+    userId: number,
+    experienceId: string,
+    type: 'like' | 'helpful'
+  ): Promise<{ success: boolean; newCount: number }> {
+    await db
+      .insert(experienceInteractions)
+      .values({
+        userId,
+        experienceId,
+        type,
+        createdAt: new Date()
+      });
+
+    if (type === 'like') {
+      await db
+        .update(communityExperiences)
+        .set({ likes: sql`${communityExperiences.likes} + 1` })
+        .where(eq(communityExperiences.id, experienceId));
+    } else {
+      await db
+        .update(communityExperiences)
+        .set({ helpful: sql`${communityExperiences.helpful} + 1` })
+        .where(eq(communityExperiences.id, experienceId));
+    }
+
+    const newCount = await this.getInteractionCount(experienceId, type);
+    return { success: true, newCount };
+  }
+
+  private async getInteractionCount(experienceId: string, type: 'like' | 'helpful'): Promise<number> {
+    if (type === 'like') {
+      const results = await db
+        .select({ count: communityExperiences.likes })
+        .from(communityExperiences)
+        .where(eq(communityExperiences.id, experienceId));
+      return results[0]?.count ?? 0;
+    } else {
+      const results = await db
+        .select({ count: communityExperiences.helpful })
+        .from(communityExperiences)
+        .where(eq(communityExperiences.id, experienceId));
+      return results[0]?.count ?? 0;
+    }
+  }
+
+  // Statistics helper methods for better organization
+  private async getTotalExperiences(): Promise<number> {
+    const results = await db
+      .select({ count: count() })
+      .from(communityExperiences);
+    return results[0]?.count ?? 0;
+  }
+
+  private async getResolvedCases(): Promise<number> {
+    const results = await db
+      .select({ count: count() })
+      .from(communityExperiences)
+      .where(eq(communityExperiences.resolutionStatus, 'resolved'));
+    return results[0]?.count ?? 0;
+  }
+
+  private async getTotalLosses(): Promise<number> {
+    const results = await db
+      .select({
+        total: sql`SUM(CAST(REGEXP_REPLACE(${communityExperiences.amountLost}, '[^0-9.]', '', 'g') AS NUMERIC))`
+      })
+      .from(communityExperiences)
+      .where(sql`${communityExperiences.amountLost} IS NOT NULL`);
+
+    return Number(results[0]?.total) || 0;
+  }
+
+  private async getActiveMembers(): Promise<number> {
+    const threeMonthsAgo = new Date(Date.now() - THREE_MONTHS_AGO_MS);
+
+    const results = await db
+      .select({ count: sql`COUNT(DISTINCT ${communityExperiences.userId})` })
+      .from(communityExperiences)
+      .where(sql`${communityExperiences.datePosted} >= ${threeMonthsAgo}`);
+
+    return Number(results[0]?.count) || 0;
+  }
+
+  private async getNewExperiencesThisMonth(): Promise<number> {
+    const thisMonthStart = new Date();
+    thisMonthStart.setDate(1);
+    thisMonthStart.setHours(0, 0, 0, 0);
+
+    const results = await db
+      .select({ count: count() })
+      .from(communityExperiences)
+      .where(sql`${communityExperiences.datePosted} >= ${thisMonthStart}`);
+
+    return results[0]?.count ?? 0;
+  }
+
+  private async getResolvedCasesThisMonth(): Promise<number> {
+    const thisMonthStart = new Date();
+    thisMonthStart.setDate(1);
+    thisMonthStart.setHours(0, 0, 0, 0);
+
+    const results = await db
+      .select({ count: count() })
+      .from(communityExperiences)
+      .where(and(
+        eq(communityExperiences.resolutionStatus, 'resolved'),
+        sql`${communityExperiences.datePosted} >= ${thisMonthStart}`
+      ));
+
+    return results[0]?.count ?? 0;
+  }
+
+  private async getSavedAmountThisMonth(): Promise<number> {
+    const thisMonthStart = new Date();
+    thisMonthStart.setDate(1);
+    thisMonthStart.setHours(0, 0, 0, 0);
+
+    const results = await db
+      .select({
+        total: sql`SUM(CAST(REGEXP_REPLACE(${communityExperiences.amountLost}, '[^0-9.]', '', 'g') AS NUMERIC))`
+      })
+      .from(communityExperiences)
+      .where(and(
+        eq(communityExperiences.resolutionStatus, 'resolved'),
+        sql`${communityExperiences.datePosted} >= ${thisMonthStart}`
+      ));
+
+    return Number(results[0]?.total) || 0;
+  }
+
+  private generateTags(experienceData: {
+    fraudType: string;
+    location: string;
+    resolutionStatus: string;
+    amountLost?: string;
+    whatHappened: string;
+    lessonsLearned?: string;
+  }): string[] {
     const tags = [];
-    
+
     // Add fraud type
     tags.push(experienceData.fraudType);
-    
+
     // Add location-based tag
     const location = experienceData.location.toLowerCase();
-    if (location.includes('nairobi')) tags.push('nairobi');
-    if (location.includes('mombasa')) tags.push('mombasa');
-    if (location.includes('kisumu')) tags.push('kisumu');
-    if (location.includes('nakuru')) tags.push('nakuru');
-    if (location.includes('eldoret')) tags.push('eldoret');
-    
+    const locationTags = ['nairobi', 'mombasa', 'kisumu', 'nakuru', 'eldoret'];
+    locationTags.forEach(city => {
+      if (location.includes(city)) {
+        tags.push(city);
+      }
+    });
+
     // Add resolution status
     if (experienceData.resolutionStatus === 'resolved') {
       tags.push('resolved', 'recovery');
     } else {
       tags.push('unresolved');
     }
-    
+
     // Add amount-based tags
     if (experienceData.amountLost) {
       const amount = this.parseAmount(experienceData.amountLost);
       if (amount > 1000000) tags.push('high-value');
       if (amount > 5000000) tags.push('major-loss');
     }
-    
+
     // Add content-based tags
-    const content = (`${experienceData.whatHappened  } ${  experienceData.lessonsLearned || ''}`).toLowerCase();
-    if (content.includes('title')) tags.push('title-fraud');
-    if (content.includes('broker')) tags.push('broker-scam');
-    if (content.includes('developer')) tags.push('developer-fraud');
-    if (content.includes('rental')) tags.push('rental-scam');
-    if (content.includes('deposit')) tags.push('deposit-scam');
-    
+    const content = (`${experienceData.whatHappened} ${experienceData.lessonsLearned || ''}`).toLowerCase();
+    const contentKeywords = [
+      { keyword: 'title', tag: 'title-fraud' },
+      { keyword: 'broker', tag: 'broker-scam' },
+      { keyword: 'developer', tag: 'developer-fraud' },
+      { keyword: 'rental', tag: 'rental-scam' },
+      { keyword: 'deposit', tag: 'deposit-scam' }
+    ];
+
+    contentKeywords.forEach(({ keyword, tag }) => {
+      if (content.includes(keyword)) {
+        tags.push(tag);
+      }
+    });
+
     return [...new Set(tags)]; // Remove duplicates
   }
 
   private parseAmount(amount: string): number {
     const cleaned = amount.replace(/[^\d.]/g, '');
     return parseFloat(cleaned) || 0;
+  }
+
+  private logError(message: string, error: unknown): void {
+    // In production, you might want to use a proper logging service
+    // For now, we'll use console.error but make it conditional
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.error(message, error);
+    }
+
+    // In production, you could send to a logging service:
+    // this.loggingService.error(message, error);
   }
 }

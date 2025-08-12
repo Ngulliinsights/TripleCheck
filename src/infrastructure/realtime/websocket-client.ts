@@ -232,7 +232,7 @@ class WebSocketClient {
 const defaultConfig: WebSocketConfig = {
   url: process.env.NODE_ENV === 'production' 
     ? 'wss://your-domain.com/ws' 
-    : 'ws://localhost:3001/ws',
+    : 'ws://localhost:3000/ws',
   reconnectInterval: 1000,
   maxReconnectAttempts: 5,
   heartbeatInterval: 30000, // 30 seconds

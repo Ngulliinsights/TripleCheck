@@ -335,6 +335,9 @@ describe('ComprehensiveDisasterRecovery', () => {
     it('should generate runbooks for all scenarios', async () => {
       const { writeFile } = await import('fs/promises');
       const writeFileSpy = vi.mocked(writeFile);
+      
+      // Clear previous calls from initialization
+      writeFileSpy.mockClear();
 
       await drSystem.generateComprehensiveRunbooks();
 

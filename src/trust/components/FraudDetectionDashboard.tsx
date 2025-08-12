@@ -79,15 +79,14 @@ export function FraudDetectionDashboard({ userId, showControls = true }: FraudDe
     refetch: refetchDashboard 
   } = useFraudDashboard(userId, { timeRange });
 
-  const { 
-    data: alerts, 
-    isLoading: alertsLoading 
-  } = useFraudAlerts({
-    severity: severityFilter !== 'all' ? severityFilter : undefined,
-    category: categoryFilter !== 'all' ? categoryFilter : undefined,
-    search: searchQuery || undefined,
+  const alertsQuery = useFraudAlerts({
+    ...(severityFilter !== 'all' && { severity: severityFilter }),
+    ...(categoryFilter !== 'all' && { category: categoryFilter }),
+    ...(searchQuery && { search: searchQuery }),
     limit: 50
   });
+  
+  const { data: alerts, isLoading: alertsLoading } = alertsQuery;
 
   const { 
     data: systemStatus,

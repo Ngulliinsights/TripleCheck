@@ -10,17 +10,17 @@ router.get('/locations', (req, res) => {
     { id: 1, name: `${q} City`, country: 'Test Country' },
     { id: 2, name: `${q} Town`, country: 'Test Country' }
   ] : [];
-  
-  res.json({ 
-    success: true, 
-    data: mockLocations 
+
+  res.json({
+    success: true,
+    data: mockLocations
   });
 });
 
 // Advanced property search
 router.post('/properties', (req, res) => {
   const { filters } = req.body;
-  
+
   // Mock search results
   res.json({
     success: true,
@@ -43,10 +43,10 @@ router.get('/suggestions', (req, res) => {
     `${q} houses`,
     `${q} condos`
   ] : [];
-  
-  res.json({ 
-    success: true, 
-    data: suggestions 
+
+  res.json({
+    success: true,
+    data: suggestions
   });
 });
 

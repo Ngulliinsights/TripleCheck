@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { TrustScore, VerificationCheck, FraudAlert } from '../types/trust.types';
+import { TrustScore } from '../types/trust.types';
 
 // Trust validation schemas
 export const TrustScoreSchema = z.object({
@@ -37,6 +37,57 @@ export const FraudAlertSchema = z.object({
   reportedBy: z.string().uuid().optional(),
 });
 
+// Type definitions for better type safety
+interface UserTransaction {
+  id: string;
+  date: string;
+  amount: number;
+  type: string;
+  status: string;
+}
+
+interface PropertyData {
+  duplicateCount: number;
+  priceVariance: number;
+  imageAuthenticityScore: number;
+}
+
+interface TransactionData {
+  unusualPaymentMethods: boolean;
+  urgencyIndicators: number;
+}
+
+interface DocumentData {
+  tamperingScore: number;
+  expiryDate?: string;
+  [key: string]: unknown;
+}
+
+interface CommunityReference {
+  id: string;
+  verified: boolean;
+  referenceType: string;
+}
+
+interface CommunityReview {
+  id: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
+
+interface CommunityEngagement {
+  id: string;
+  type: string;
+  date: string;
+}
+
+interface ReportedIssue {
+  id: string;
+  status: 'active' | 'investigating' | 'resolved' | 'false_positive';
+  severity: string;
+}
+
 // Trust business logic implementation
 export class TrustBusinessLogic {
   // Trust score calculation weights
@@ -69,8 +120,8 @@ export class TrustBusinessLogic {
     let totalScore = 0;
     const breakdown: Record<string, number> = {};
 
-    Object.entries(this.TRUST_WEIGHTS).forEach(([factor, weight]) => {
-      const factorScore = factors[factor as keyof typeof factors] || 0;
+    (Object.entries(this.TRUST_WEIGHTS) as Array<[keyof typeof factors, number]>).forEach(([factor, weight]) => {
+      const factorScore = factors[factor] || 0;
       const weightedScore = factorScore * weight;
       totalScore += weightedScore;
       breakdown[factor] = weightedScore;
@@ -107,7 +158,21 @@ export class TrustBusinessLogic {
   static generateTrustRecommendations(factors: TrustScore['factors'], currentScore: number): string[] {
     const recommendations: string[] = [];
 
-    // Document verification recommendations
+    // Add verification recommendations
+    recommendations.push(...this.getVerificationRecommendations(factors));
+    
+    // Add community recommendations
+    recommendations.push(...this.getCommunityRecommendations(factors));
+    
+    // Add overall score recommendations
+    recommendations.push(...this.getScoreBasedRecommendations(currentScore));
+
+    return recommendations.slice(0, 5); // Limit to top 5 recommendations
+  }
+
+  private static getVerificationRecommendations(factors: TrustScore['factors']): string[] {
+    const recommendations: string[] = [];
+
     if (factors.documentVerification < 80) {
       recommendations.push('Complete document verification to increase trust score');
       if (factors.documentVerification < 50) {
@@ -115,7 +180,6 @@ export class TrustBusinessLogic {
       }
     }
 
-    // Identity verification recommendations
     if (factors.identityVerification < 80) {
       recommendations.push('Complete identity verification through video call');
       if (factors.identityVerification < 30) {
@@ -123,23 +187,6 @@ export class TrustBusinessLogic {
       }
     }
 
-    // Community feedback recommendations
-    if (factors.communityFeedback < 70) {
-      recommendations.push('Engage with the community to build positive feedback');
-      if (factors.communityFeedback < 40) {
-        recommendations.push('Complete your profile and add references');
-      }
-    }
-
-    // Transaction history recommendations
-    if (factors.transactionHistory < 60) {
-      recommendations.push('Complete more transactions to build history');
-      if (factors.transactionHistory < 20) {
-        recommendations.push('Start with smaller transactions to build trust');
-      }
-    }
-
-    // Property verification recommendations
     if (factors.propertyVerification && factors.propertyVerification < 70) {
       recommendations.push('Verify property ownership documents');
       if (factors.propertyVerification < 40) {
@@ -147,25 +194,47 @@ export class TrustBusinessLogic {
       }
     }
 
-    // Overall score recommendations
-    if (currentScore < 500) {
-      recommendations.push('Focus on basic verification steps first');
-    } else if (currentScore < 750) {
-      recommendations.push('Build community reputation through positive interactions');
-    } else if (currentScore < 900) {
-      recommendations.push('Complete advanced verification for premium status');
+    return recommendations;
+  }
+
+  private static getCommunityRecommendations(factors: TrustScore['factors']): string[] {
+    const recommendations: string[] = [];
+
+    if (factors.communityFeedback < 70) {
+      recommendations.push('Engage with the community to build positive feedback');
+      if (factors.communityFeedback < 40) {
+        recommendations.push('Complete your profile and add references');
+      }
     }
 
-    return recommendations.slice(0, 5); // Limit to top 5 recommendations
+    if (factors.transactionHistory < 60) {
+      recommendations.push('Complete more transactions to build history');
+      if (factors.transactionHistory < 20) {
+        recommendations.push('Start with smaller transactions to build trust');
+      }
+    }
+
+    return recommendations;
+  }
+
+  private static getScoreBasedRecommendations(currentScore: number): string[] {
+    if (currentScore < 500) {
+      return ['Focus on basic verification steps first'];
+    } else if (currentScore < 750) {
+      return ['Build community reputation through positive interactions'];
+    } else if (currentScore < 900) {
+      return ['Complete advanced verification for premium status'];
+    }
+    return [];
   }
 
   // Fraud detection algorithm
   static detectFraudRisk(data: {
     userId: string;
     propertyId?: string;
-    userHistory: any[];
-    propertyData?: any;
-    transactionData?: any;
+    userHistory: UserTransaction[];
+    propertyData?: PropertyData;
+    transactionData?: TransactionData;
   }): {
     riskLevel: 'low' | 'medium' | 'high' | 'critical';
     riskScore: number;
@@ -176,96 +245,136 @@ export class TrustBusinessLogic {
     const flags: string[] = [];
     const recommendations: string[] = [];
 
-    // Check user history patterns
-    if (data.userHistory.length === 0) {
-      riskScore += 20;
-      flags.push('New user with no transaction history');
-      recommendations.push('Require additional verification for new users');
-    }
+    // Analyze different risk factors
+    const userRisk = this.analyzeUserRisk(data.userHistory);
+    const propertyRisk = this.analyzePropertyRisk(data.propertyData);
+    const transactionRisk = this.analyzeTransactionRisk(data.transactionData);
 
-    // Check for suspicious activity patterns
-    const recentTransactions = data.userHistory.filter(
-      (transaction: any) => 
-        new Date(transaction.date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    );
+    // Combine risk assessments
+    riskScore += userRisk.score;
+    flags.push(...userRisk.flags);
+    recommendations.push(...userRisk.recommendations);
 
-    if (recentTransactions.length > 10) {
-      riskScore += 15;
-      flags.push('High transaction frequency in recent period');
-      recommendations.push('Monitor user activity closely');
-    }
+    riskScore += propertyRisk.score;
+    flags.push(...propertyRisk.flags);
+    recommendations.push(...propertyRisk.recommendations);
 
-    // Check property data if available
-    if (data.propertyData) {
-      // Check for duplicate listings
-      if (data.propertyData.duplicateCount > 0) {
-        riskScore += 30;
-        flags.push('Property appears in multiple listings');
-        recommendations.push('Verify property ownership documents');
-      }
-
-      // Check for unrealistic pricing
-      if (data.propertyData.priceVariance > 50) {
-        riskScore += 25;
-        flags.push('Property price significantly differs from market value');
-        recommendations.push('Request property valuation report');
-      }
-
-      // Check image authenticity
-      if (data.propertyData.imageAuthenticityScore < 70) {
-        riskScore += 20;
-        flags.push('Property images may be manipulated or stolen');
-        recommendations.push('Request original property photos with timestamp');
-      }
-    }
-
-    // Check transaction data
-    if (data.transactionData) {
-      // Check for unusual payment patterns
-      if (data.transactionData.unusualPaymentMethods) {
-        riskScore += 25;
-        flags.push('Unusual payment methods requested');
-        recommendations.push('Verify payment method legitimacy');
-      }
-
-      // Check for pressure tactics
-      if (data.transactionData.urgencyIndicators > 2) {
-        riskScore += 20;
-        flags.push('High-pressure sales tactics detected');
-        recommendations.push('Allow cooling-off period for transactions');
-      }
-    }
-
-    // Determine risk level
-    let riskLevel: 'low' | 'medium' | 'high' | 'critical';
-    if (riskScore >= 80) {
-      riskLevel = 'critical';
-    } else if (riskScore >= 60) {
-      riskLevel = 'high';
-    } else if (riskScore >= 30) {
-      riskLevel = 'medium';
-    } else {
-      riskLevel = 'low';
-    }
+    riskScore += transactionRisk.score;
+    flags.push(...transactionRisk.flags);
+    recommendations.push(...transactionRisk.recommendations);
 
     return {
-      riskLevel,
+      riskLevel: this.calculateRiskLevel(riskScore),
       riskScore,
       flags,
       recommendations,
     };
   }
 
+  private static analyzeUserRisk(userHistory: UserTransaction[]): {
+    score: number;
+    flags: string[];
+    recommendations: string[];
+  } {
+    let score = 0;
+    const flags: string[] = [];
+    const recommendations: string[] = [];
+
+    if (userHistory.length === 0) {
+      score += 20;
+      flags.push('New user with no transaction history');
+      recommendations.push('Require additional verification for new users');
+    }
+
+    const recentTransactions = userHistory.filter(
+      (transaction) =>
+        new Date(transaction.date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    );
+
+    if (recentTransactions.length > 10) {
+      score += 15;
+      flags.push('High transaction frequency in recent period');
+      recommendations.push('Monitor user activity closely');
+    }
+
+    return { score, flags, recommendations };
+  }
+
+  private static analyzePropertyRisk(propertyData?: PropertyData): {
+    score: number;
+    flags: string[];
+    recommendations: string[];
+  } {
+    let score = 0;
+    const flags: string[] = [];
+    const recommendations: string[] = [];
+
+    if (!propertyData) return { score, flags, recommendations };
+
+    if (propertyData.duplicateCount > 0) {
+      score += 30;
+      flags.push('Property appears in multiple listings');
+      recommendations.push('Verify property ownership documents');
+    }
+
+    if (propertyData.priceVariance > 50) {
+      score += 25;
+      flags.push('Property price significantly differs from market value');
+      recommendations.push('Request property valuation report');
+    }
+
+    if (propertyData.imageAuthenticityScore < 70) {
+      score += 20;
+      flags.push('Property images may be manipulated or stolen');
+      recommendations.push('Request original property photos with timestamp');
+    }
+
+    return { score, flags, recommendations };
+  }
+
+  private static analyzeTransactionRisk(transactionData?: TransactionData): {
+    score: number;
+    flags: string[];
+    recommendations: string[];
+  } {
+    let score = 0;
+    const flags: string[] = [];
+    const recommendations: string[] = [];
+
+    if (!transactionData) return { score, flags, recommendations };
+
+    if (transactionData.unusualPaymentMethods) {
+      score += 25;
+      flags.push('Unusual payment methods requested');
+      recommendations.push('Verify payment method legitimacy');
+    }
+
+    if (transactionData.urgencyIndicators > 2) {
+      score += 20;
+      flags.push('High-pressure sales tactics detected');
+      recommendations.push('Allow cooling-off period for transactions');
+    }
+
+    return { score, flags, recommendations };
+  }
+
+  private static calculateRiskLevel(riskScore: number): 'low' | 'medium' | 'high' | 'critical' {
+    if (riskScore >= 80) return 'critical';
+    if (riskScore >= 60) return 'high';
+    if (riskScore >= 30) return 'medium';
+    return 'low';
+  }
+
   // Document verification logic
   static verifyDocument(document: {
     type: string;
     imageUrl: string;
-    extractedData: any;
+    extractedData: DocumentData;
   }): {
     isValid: boolean;
     confidence: number;
     issues: string[];
-    extractedInfo: any;
+    extractedInfo: DocumentData;
   } {
     const issues: string[] = [];
     let confidence = 100;
@@ -286,7 +395,7 @@ export class TrustBusinessLogic {
     // Validate required fields based on document type
     const requiredFields = this.getRequiredFieldsForDocument(document.type);
     const missingFields = requiredFields.filter(
-      field => !document.extractedData[field]
+      field => !(field in document.extractedData) || !document.extractedData[field]
     );
 
     if (missingFields.length > 0) {
@@ -328,15 +437,15 @@ export class TrustBusinessLogic {
       utility_bill: ['fullName', 'address', 'billDate', 'serviceProvider'],
     };
 
-    return fieldMap[documentType] || [];
+    return fieldMap[documentType] ?? [];
   }
 
   // Community trust scoring
   static calculateCommunityTrust(data: {
-    references: any[];
-    reviews: any[];
-    communityEngagement: any[];
-    reportedIssues: any[];
+    references: CommunityReference[];
+    reviews: CommunityReview[];
+    communityEngagement: CommunityEngagement[];
+    reportedIssues: ReportedIssue[];
   }): {
     score: number;
     factors: Record<string, number>;
@@ -356,8 +465,8 @@ export class TrustBusinessLogic {
     }
 
     // Review scoring
-    const avgRating = data.reviews.length > 0 
-      ? data.reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / data.reviews.length
+    const avgRating = data.reviews.length > 0
+      ? data.reviews.reduce((sum, review) => sum + review.rating, 0) / data.reviews.length
       : 0;
     factors.reviews = Math.round(avgRating * 10);
     score += factors.reviews;
@@ -376,7 +485,7 @@ export class TrustBusinessLogic {
 
     // Penalty for reported issues
     const activePenalties = data.reportedIssues.filter(
-      (issue: any) => issue.status === 'active' || issue.status === 'investigating'
+      (issue) => issue.status === 'active' || issue.status === 'investigating'
     );
     factors.penalties = -activePenalties.length * 20;
     score += factors.penalties;
@@ -430,7 +539,7 @@ export class TrustBusinessLogic {
   // Validate trust operations
   static validateTrustOperation(
     operation: 'create' | 'update' | 'delete',
-    data: any,
+    data: Record<string, unknown>,
     userId: string
   ): {
     isValid: boolean;

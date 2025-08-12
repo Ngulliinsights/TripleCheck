@@ -260,7 +260,7 @@ export function simulateNetworkConditions(options: {
           );
         }
         // Let other handlers process the request
-        
+        return undefined;
       })
     );
   }

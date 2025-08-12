@@ -1,17 +1,21 @@
 import bcrypt from 'bcrypt';
 
-import type { User, InsertUser } from '../infrastructure/database/schemas/consolidated';
+import type { users } from '../infrastructure/database/schemas/consolidated';
 import type { IStorage } from '../infrastructure/storage/storage';
-import type { 
-  LoginRequest, 
-  RegisterRequest, 
-  AuthResult, 
+import type {
+  LoginRequest,
+  RegisterRequest,
+  AuthResult,
   SessionValidationResult,
   RateLimitResult,
-  AuthenticatedRequest 
+  AuthenticatedRequest
 } from '../types/auth.types';
 import { AUTH_CONSTANTS } from '../utils/constants';
-import { AUTH_ERROR_MESSAGES, DATABASE_ERROR_MESSAGES } from '../utils/error-messages';
+import { AUTH_ERROR_MESSAGES } from '../utils/error-messages';
+
+// Infer types from the schema
+type User = typeof users.$inferSelect;
+type InsertUser = typeof users.$inferInsert;
 
 /**
  * AuthService handles all authentication-related business logic
@@ -19,12 +23,20 @@ import { AUTH_ERROR_MESSAGES, DATABASE_ERROR_MESSAGES } from '../utils/error-mes
  */
 export class AuthService {
   private storage: IStorage;
-  
+
   // Rate limiting storage (in production, this should use Redis or similar)
   private static loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
 
   constructor(storage: IStorage) {
     this.storage = storage;
+  }
+
+  /**
+   * Helper method to exclude password from user object
+   */
+  private excludePassword(user: User): Omit<User, 'password'> {
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
   /**
@@ -39,10 +51,10 @@ export class AuthService {
       }
 
       // Hash password with appropriate salt rounds
-      const saltRounds = process.env.NODE_ENV === 'production' 
-        ? AUTH_CONSTANTS.SALT_ROUNDS_PRODUCTION 
+      const saltRounds = process.env.NODE_ENV === 'production'
+        ? AUTH_CONSTANTS.SALT_ROUNDS_PRODUCTION
         : AUTH_CONSTANTS.SALT_ROUNDS_DEVELOPMENT;
-      
+
       const hashedPassword = await this.hashPassword(userData.password, saltRounds);
 
       // Create user with hashed password
@@ -58,18 +70,16 @@ export class AuthService {
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
-      
+
       return {
         user: userWithoutPassword,
         expiresAt: new Date(Date.now() + AUTH_CONSTANTS.SESSION_MAX_AGE),
       };
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === AUTH_ERROR_MESSAGES.USERNAME_EXISTS) {
-          throw error;
-        }
+      if (error instanceof Error && error.message === AUTH_ERROR_MESSAGES.USERNAME_EXISTS) {
+        throw error;
       }
-      
+
       console.error('Registration error:', error);
       throw new Error(AUTH_ERROR_MESSAGES.REGISTRATION_FAILED);
     }
@@ -103,21 +113,16 @@ export class AuthService {
       // Clear failed attempts on successful login
       this.clearFailedAttempts(clientId);
 
-      // Return user without password
-      const { password: _, ...userWithoutPassword } = user;
-      
       return {
-        user: userWithoutPassword,
+        user: this.excludePassword(user),
         expiresAt: new Date(Date.now() + AUTH_CONSTANTS.SESSION_MAX_AGE),
       };
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS || 
-            error.message === AUTH_ERROR_MESSAGES.RATE_LIMITED) {
-          throw error;
-        }
+      if (error instanceof Error && (error.message === AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS ||
+        error.message === AUTH_ERROR_MESSAGES.RATE_LIMITED)) {
+        throw error;
       }
-      
+
       console.error('Login error:', error);
       throw new Error(AUTH_ERROR_MESSAGES.LOGIN_FAILED);
     }
@@ -143,13 +148,10 @@ export class AuthService {
         };
       }
 
-      // Return user without password
-      const { password: _, ...userWithoutPassword } = user;
-      
       return {
         valid: true,
         userId: user.id,
-        user: userWithoutPassword,
+        user: this.excludePassword(user),
       };
     } catch (error) {
       console.error('Session validation error:', error);
@@ -199,9 +201,7 @@ export class AuthService {
         return null;
       }
 
-      // Return user without password
-      const { password: _, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+      return this.excludePassword(user);
     } catch (error) {
       console.error('Get user by ID error:', error);
       return null;
@@ -218,11 +218,10 @@ export class AuthService {
         return null;
       }
 
-      // Return user without password
-      const { password: _, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+      return this.excludePassword(user);
     } catch (error) {
-      console.error('Get user by username error:', error);
+      // Log error for debugging but don't expose details to client
+      
       return null;
     }
   }
@@ -243,9 +242,9 @@ export class AuthService {
   async clearUserSession(req: AuthenticatedRequest): Promise<void> {
     return new Promise((resolve, reject) => {
       if (req.session) {
-        req.session.destroy((err: any) => {
+        req.session.destroy((err: Error | null) => {
           if (err) {
-            console.error('Session destruction error:', err);
+            
             reject(new Error(AUTH_ERROR_MESSAGES.LOGOUT_FAILED));
           } else {
             resolve();
@@ -272,7 +271,7 @@ export class AuthService {
       return false;
     }
 
-    const {lastActivity} = req.session;
+    const { lastActivity } = req.session;
     if (lastActivity) {
       const sessionAge = Date.now() - new Date(lastActivity).getTime();
       return sessionAge <= maxAgeMs;
@@ -304,24 +303,24 @@ export class AuthService {
     if (!attempts || now - attempts.lastAttempt > windowMs) {
       // Reset or initialize attempts
       AuthService.loginAttempts.set(clientId, { count: 0, lastAttempt: now });
-      return { 
-        allowed: true, 
-        attemptsRemaining: maxAttempts 
+      return {
+        allowed: true,
+        attemptsRemaining: maxAttempts
       };
     }
 
     if (attempts.count >= maxAttempts) {
       const timeLeft = Math.ceil((windowMs - (now - attempts.lastAttempt)) / 1000 / 60);
-      return { 
-        allowed: false, 
+      return {
+        allowed: false,
         timeLeft,
         attemptsRemaining: 0
       };
     }
 
-    return { 
-      allowed: true, 
-      attemptsRemaining: maxAttempts - attempts.count 
+    return {
+      allowed: true,
+      attemptsRemaining: maxAttempts - attempts.count
     };
   }
 
@@ -389,7 +388,7 @@ export class AuthService {
       errors.push(`Username must be less than ${AUTH_CONSTANTS.USERNAME_MAX_LENGTH} characters long`);
     }
 
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    if (!/^\w+$/.test(username)) {
       errors.push('Username can only contain letters, numbers, and underscores');
     }
 

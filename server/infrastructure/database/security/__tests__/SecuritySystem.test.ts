@@ -66,37 +66,85 @@ describe('SecuritySystem', () => {
 
   describe('Initialization', () => {
     it('should initialize all security components', async () => {
-      const mockComplianceManager = vi.mocked(ComplianceManager);
-      const mockSecurityMonitor = vi.mocked(SecurityMonitor);
-      const mockVulnerabilityScanner = vi.mocked(VulnerabilityScanner);
-
-      mockComplianceManager.prototype.initializeComplianceTables = vi.fn().mockResolvedValue(undefined);
-      mockSecurityMonitor.prototype.initializeSecurityTables = vi.fn().mockResolvedValue(undefined);
-      mockSecurityMonitor.prototype.startMonitoring = vi.fn().mockResolvedValue(undefined);
-      mockVulnerabilityScanner.prototype.runComprehensiveScan = vi.fn().mockResolvedValue({
+      // Mock the prototype methods before creating the SecuritySystem instance
+      const initializeComplianceTablesSpy = vi.fn().mockResolvedValue(undefined);
+      const initializeSecurityTablesSpy = vi.fn().mockResolvedValue(undefined);
+      const startMonitoringSpy = vi.fn().mockResolvedValue(undefined);
+      const runComprehensiveScanSpy = vi.fn().mockResolvedValue({
         summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0 }
       });
 
-      await securitySystem.initialize();
+      vi.mocked(ComplianceManager).mockImplementation(() => ({
+        initializeComplianceTables: initializeComplianceTablesSpy,
+        processGDPRRequest: vi.fn(),
+      } as any));
 
-      expect(mockComplianceManager.prototype.initializeComplianceTables).toHaveBeenCalled();
-      expect(mockSecurityMonitor.prototype.initializeSecurityTables).toHaveBeenCalled();
-      expect(mockSecurityMonitor.prototype.startMonitoring).toHaveBeenCalled();
-      expect(mockVulnerabilityScanner.prototype.runComprehensiveScan).toHaveBeenCalled();
+      vi.mocked(SecurityMonitor).mockImplementation(() => ({
+        initializeSecurityTables: initializeSecurityTablesSpy,
+        startMonitoring: startMonitoringSpy,
+        stopMonitoring: vi.fn(),
+        logSecurityEvent: vi.fn(),
+      } as any));
+
+      vi.mocked(VulnerabilityScanner).mockImplementation(() => ({
+        runComprehensiveScan: runComprehensiveScanSpy,
+      } as any));
+
+      // Create a new SecuritySystem instance with mocked components
+      const testSecuritySystem = new SecuritySystem(mockConfig);
+      await testSecuritySystem.initialize();
+
+      expect(initializeComplianceTablesSpy).toHaveBeenCalled();
+      expect(initializeSecurityTablesSpy).toHaveBeenCalled();
+      expect(startMonitoringSpy).toHaveBeenCalled();
+      expect(runComprehensiveScanSpy).toHaveBeenCalled();
     });
 
     it('should handle initialization errors gracefully', async () => {
-      const mockComplianceManager = vi.mocked(ComplianceManager);
-      mockComplianceManager.prototype.initializeComplianceTables = vi.fn().mockRejectedValue(new Error('DB Error'));
+      const initializeComplianceTablesSpy = vi.fn().mockRejectedValue(new Error('DB Error'));
 
-      await expect(securitySystem.initialize()).rejects.toThrow('DB Error');
+      vi.mocked(ComplianceManager).mockImplementation(() => ({
+        initializeComplianceTables: initializeComplianceTablesSpy,
+        processGDPRRequest: vi.fn(),
+      } as any));
+
+      vi.mocked(SecurityMonitor).mockImplementation(() => ({
+        initializeSecurityTables: vi.fn(),
+        startMonitoring: vi.fn(),
+        stopMonitoring: vi.fn(),
+        logSecurityEvent: vi.fn(),
+      } as any));
+
+      vi.mocked(VulnerabilityScanner).mockImplementation(() => ({
+        runComprehensiveScan: vi.fn(),
+      } as any));
+
+      const testSecuritySystem = new SecuritySystem(mockConfig);
+      await expect(testSecuritySystem.initialize()).rejects.toThrow('DB Error');
     });
   });
 
   describe('GDPR Compliance', () => {
     it('should process GDPR data access request', async () => {
-      const mockComplianceManager = vi.mocked(ComplianceManager);
-      mockComplianceManager.prototype.processGDPRRequest = vi.fn().mockResolvedValue('request-123');
+      const processGDPRRequestSpy = vi.fn().mockResolvedValue('request-123');
+
+      vi.mocked(ComplianceManager).mockImplementation(() => ({
+        initializeComplianceTables: vi.fn(),
+        processGDPRRequest: processGDPRRequestSpy,
+      } as any));
+
+      vi.mocked(SecurityMonitor).mockImplementation(() => ({
+        initializeSecurityTables: vi.fn(),
+        startMonitoring: vi.fn(),
+        stopMonitoring: vi.fn(),
+        logSecurityEvent: vi.fn(),
+      } as any));
+
+      vi.mocked(VulnerabilityScanner).mockImplementation(() => ({
+        runComprehensiveScan: vi.fn(),
+      } as any));
+
+      const testSecuritySystem = new SecuritySystem(mockConfig);
 
       const request = {
         type: 'access' as const,
@@ -104,15 +152,32 @@ describe('SecuritySystem', () => {
         requestedBy: 'user@example.com'
       };
 
-      const requestId = await securitySystem.processGDPRRequest(request);
+      const requestId = await testSecuritySystem.processGDPRRequest(request);
 
       expect(requestId).toBe('request-123');
-      expect(mockComplianceManager.prototype.processGDPRRequest).toHaveBeenCalledWith(request);
+      expect(processGDPRRequestSpy).toHaveBeenCalledWith(request);
     });
 
     it('should process GDPR data erasure request', async () => {
-      const mockComplianceManager = vi.mocked(ComplianceManager);
-      mockComplianceManager.prototype.processGDPRRequest = vi.fn().mockResolvedValue('request-456');
+      const processGDPRRequestSpy = vi.fn().mockResolvedValue('request-456');
+
+      vi.mocked(ComplianceManager).mockImplementation(() => ({
+        initializeComplianceTables: vi.fn(),
+        processGDPRRequest: processGDPRRequestSpy,
+      } as any));
+
+      vi.mocked(SecurityMonitor).mockImplementation(() => ({
+        initializeSecurityTables: vi.fn(),
+        startMonitoring: vi.fn(),
+        stopMonitoring: vi.fn(),
+        logSecurityEvent: vi.fn(),
+      } as any));
+
+      vi.mocked(VulnerabilityScanner).mockImplementation(() => ({
+        runComprehensiveScan: vi.fn(),
+      } as any));
+
+      const testSecuritySystem = new SecuritySystem(mockConfig);
 
       const request = {
         type: 'erasure' as const,
@@ -120,17 +185,34 @@ describe('SecuritySystem', () => {
         requestedBy: 'user@example.com'
       };
 
-      const requestId = await securitySystem.processGDPRRequest(request);
+      const requestId = await testSecuritySystem.processGDPRRequest(request);
 
       expect(requestId).toBe('request-456');
-      expect(mockComplianceManager.prototype.processGDPRRequest).toHaveBeenCalledWith(request);
+      expect(processGDPRRequestSpy).toHaveBeenCalledWith(request);
     });
   });
 
   describe('Security Monitoring', () => {
     it('should log security events', async () => {
-      const mockSecurityMonitor = vi.mocked(SecurityMonitor);
-      mockSecurityMonitor.prototype.logSecurityEvent = vi.fn().mockResolvedValue('event-123');
+      const logSecurityEventSpy = vi.fn().mockResolvedValue('event-123');
+
+      vi.mocked(ComplianceManager).mockImplementation(() => ({
+        initializeComplianceTables: vi.fn(),
+        processGDPRRequest: vi.fn(),
+      } as any));
+
+      vi.mocked(SecurityMonitor).mockImplementation(() => ({
+        initializeSecurityTables: vi.fn(),
+        startMonitoring: vi.fn(),
+        stopMonitoring: vi.fn(),
+        logSecurityEvent: logSecurityEventSpy,
+      } as any));
+
+      vi.mocked(VulnerabilityScanner).mockImplementation(() => ({
+        runComprehensiveScan: vi.fn(),
+      } as any));
+
+      const testSecuritySystem = new SecuritySystem(mockConfig);
 
       const event = {
         type: 'authentication' as const,
@@ -140,10 +222,10 @@ describe('SecuritySystem', () => {
         details: { attempts: 5 }
       };
 
-      const eventId = await securitySystem.logSecurityEvent(event);
+      const eventId = await testSecuritySystem.logSecurityEvent(event);
 
       expect(eventId).toBe('event-123');
-      expect(mockSecurityMonitor.prototype.logSecurityEvent).toHaveBeenCalledWith(event);
+      expect(logSecurityEventSpy).toHaveBeenCalledWith(event);
     });
 
     it('should handle security alerts', async () => {

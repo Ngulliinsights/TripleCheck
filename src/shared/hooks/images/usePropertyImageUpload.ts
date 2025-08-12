@@ -6,25 +6,23 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-import { generateUniqueId } from '../../utils/images/unified-utils';
 import { PropertyImageUploadCoordinator } from '../../services/images/PropertyImageUploadCoordinator';
 import { PropertyImageWorkflowManager } from '../../services/images/PropertyImageWorkflowManager';
-
-const UNKNOWN_ERROR = 'Unknown error';
-
 import type {
   UploadSession,
   UploadProgress,
   PropertyImage,
   DocumentType,
+  WorkflowStatus,
 } from '../../types/images';
 import { ImageProcessingError } from '../../types/images';
+import { generateUniqueId } from '../../utils/images/unified-utils';
 
 export interface UsePropertyImageUploadOptions {
   onUploadComplete?: (imageId: string, documentType?: DocumentType) => void;
   onUploadError?: (error: ImageProcessingError) => void;
   onProgressUpdate?: (sessionId: string, progress: UploadProgress) => void;
-  onWorkflowUpdate?: (imageId: string, status: any) => void;
+  onWorkflowUpdate?: (imageId: string, status: WorkflowStatus) => void;
   maxConcurrentUploads?: number;
   landVerificationId?: string; // For linking to land verification process
   defaultDocumentType?: DocumentType;
@@ -65,7 +63,7 @@ export function usePropertyImageUpload(
   const [isUploading, setIsUploading] = useState(false);
   const activeSessionsRef = useRef<Map<string, UploadSession>>(new Map());
   const imageSessionMapRef = useRef<Map<string, string>>(new Map()); // imageId -> sessionId
-  const workflowStatusRef = useRef<Map<string, any>>(new Map()); // imageId -> workflow status
+  const workflowStatusRef = useRef<Map<string, WorkflowStatus>>(new Map()); // imageId -> workflow status
 
   const {
     onUploadComplete,
@@ -75,12 +73,12 @@ export function usePropertyImageUpload(
     maxConcurrentUploads = 3,
     landVerificationId,
     defaultDocumentType = 'property_photo',
-    enableAuditLogging = true,
+
   } = options;
 
   // Update image status in the state
   const updateImageStatus = useCallback((imageId: string, updates: Partial<PropertyImage>) => {
-    setImages(prev => prev.map(img => 
+    setImages(prev => prev.map(img =>
       img.id === imageId ? { ...img, ...updates } : img
     ));
   }, []);
@@ -97,11 +95,27 @@ export function usePropertyImageUpload(
     workflowStatusRef.current.delete(imageId);
   }, []);
 
+  // Helper function to map workflow status to image status
+  const mapWorkflowStatusToImageStatus = useCallback((workflowStatus: string): PropertyImage['status'] => {
+    switch (workflowStatus) {
+      case 'running':
+        return 'processing';
+      case 'completed':
+        return 'uploaded';
+      case 'failed':
+        return 'error';
+      case 'paused':
+        return 'paused';
+      default:
+        return 'processing';
+    }
+  }, []);
+
   // Upload a single file
   const uploadFile = useCallback(async (file: File, documentType?: DocumentType): Promise<string> => {
     const imageId = generateUniqueId();
     const docType = documentType || defaultDocumentType;
-    
+
     try {
       // Create initial image object with property-specific fields
       const initialImage: PropertyImage = {
@@ -141,7 +155,7 @@ export function usePropertyImageUpload(
         },
         startTime: Date.now(),
         documentType: docType,
-        landVerificationId,
+        ...(landVerificationId && { landVerificationId }),
       };
 
       addImage(initialImage);
@@ -159,26 +173,27 @@ export function usePropertyImageUpload(
           uploadSpeed: progress.uploadSpeed,
           status: progress.status === 'completed' ? 'uploaded' : 'uploading',
         });
-        
+
         onProgressUpdate?.(session.id, progress);
 
         // Start workflow processing when upload is complete
         if (progress.status === 'completed') {
           activeSessionsRef.current.delete(session.id);
-          
+
           // Update status to processing
           updateImageStatus(imageId, { status: 'processing' });
 
           // Start processing workflow with document type and land verification ID
           workflowManager.startProcessingWorkflow(
-            imageId, 
-            `storage://${imageId}`, 
-            docType, 
+            imageId,
+            `storage://${imageId}`,
+            docType,
             landVerificationId
           )
             .then(() => {
               updateImageStatus(imageId, { status: 'uploaded' });
               onUploadComplete?.(imageId, docType);
+              return imageId;
             })
             .catch((error) => {
               updateImageStatus(imageId, { status: 'error' });
@@ -198,66 +213,67 @@ export function usePropertyImageUpload(
       });
 
       // Start uploading chunks
-      const chunkPromises = session.chunks.map(chunk => 
+      const chunkPromises = session.chunks.map(chunk =>
         uploadCoordinator.uploadChunk(session.id, chunk)
       );
 
       await Promise.all(chunkPromises);
-      
+
       return imageId;
 
     } catch (error) {
       updateImageStatus(imageId, { status: 'error' });
-      const processingError = error instanceof ImageProcessingError 
-        ? error 
-        : new ImageProcessingError(
-            error instanceof Error ? error.message : 'Upload failed',
-            'UPLOAD_FAILED',
-            imageId
-          );
-      
+      let processingError: ImageProcessingError;
+      if (error instanceof ImageProcessingError) {
+        processingError = error;
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+        processingError = new ImageProcessingError(errorMessage, 'UPLOAD_FAILED', imageId);
+      }
+
       onUploadError?.(processingError);
       throw processingError;
     } finally {
       // Check if any uploads are still active
       const hasActiveUploads = Array.from(activeSessionsRef.current.values())
         .some(session => session.status === 'uploading' || session.status === 'pending');
-      
+
       if (!hasActiveUploads) {
         setIsUploading(false);
       }
     }
   }, [
-    uploadCoordinator, 
-    workflowManager, 
-    addImage, 
-    updateImageStatus, 
-    onUploadComplete, 
-    onUploadError, 
+    uploadCoordinator,
+    workflowManager,
+    addImage,
+    updateImageStatus,
+    onUploadComplete,
+    onUploadError,
     onProgressUpdate,
     onWorkflowUpdate,
     defaultDocumentType,
-    landVerificationId
+    landVerificationId,
+    mapWorkflowStatusToImageStatus
   ]);
 
   // Upload multiple files with concurrency control and document type support
   const uploadFiles = useCallback(async (files: File[], documentType?: DocumentType): Promise<string[]> => {
     const imageIds: string[] = [];
     const docType = documentType || defaultDocumentType;
-    
+
     for (let i = 0; i < files.length; i += maxConcurrentUploads) {
       const batch = files.slice(i, i + maxConcurrentUploads);
       const batchPromises = batch.map(file => uploadFile(file, docType));
-      
+
       const batchResults = await Promise.allSettled(batchPromises);
-      
+
       batchResults.forEach((result) => {
         if (result.status === 'fulfilled') {
           imageIds.push(result.value);
         }
       });
     }
-    
+
     return imageIds;
   }, [uploadFile, maxConcurrentUploads, defaultDocumentType]);
 
@@ -278,14 +294,14 @@ export function usePropertyImageUpload(
       // Find and remove the associated image
       const imageId = Array.from(imageSessionMapRef.current.entries())
         .find(([, sId]) => sId === sessionId)?.[0];
-      
+
       if (imageId) {
         // Cancel workflow if active
         workflowManager.cancelWorkflow(imageId);
         removeImage(imageId);
       }
     }
-    
+
     uploadCoordinator.cancelUpload(sessionId);
     activeSessionsRef.current.delete(sessionId);
   }, [uploadCoordinator, workflowManager, removeImage]);
@@ -333,38 +349,26 @@ export function usePropertyImageUpload(
       .filter(status => status.status === 'running').length,
   };
 
-  // Helper function to map workflow status to image status
-  const mapWorkflowStatusToImageStatus = useCallback((workflowStatus: string): PropertyImage['status'] => {
-    switch (workflowStatus) {
-      case 'running':
-        return 'processing';
-      case 'completed':
-        return 'uploaded';
-      case 'failed':
-        return 'error';
-      case 'paused':
-        return 'paused';
-      default:
-        return 'processing';
-    }
-  }, []);
-
   // Cleanup on unmount
   useEffect(() => {
+    // Copy refs to variables inside the effect to avoid stale closure issues
+    const activeSessions = activeSessionsRef.current;
+    const workflowStatuses = workflowStatusRef.current;
+    
     return () => {
       // Cancel all active uploads
-      activeSessionsRef.current.forEach((session) => {
+      activeSessions.forEach((session) => {
         uploadCoordinator.cancelUpload(session.id);
       });
 
       // Cancel all active workflows
-      workflowStatusRef.current.forEach((_, imageId) => {
+      workflowStatuses.forEach((_, imageId) => {
         workflowManager.cancelWorkflow(imageId);
       });
-      
+
       // Revoke object URLs to prevent memory leaks
       images.forEach(image => {
-        if (image.preview.startsWith('blob:')) {
+        if (image.preview && image.preview.startsWith('blob:')) {
           URL.revokeObjectURL(image.preview);
         }
       });

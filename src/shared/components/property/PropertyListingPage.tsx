@@ -3,7 +3,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useFilterState } from '../../hooks/useFilterState';
-import { usePaginatedQuery } from '../../hooks/usePaginatedQuery';
+import { useSimplePaginatedQuery } from '../../hooks/usePaginatedQuery';
 import type { 
   BasePropertyFilters, 
   PropertyTypeConfig, 
@@ -15,6 +15,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Skeleton } from '../ui/skeleton';
+import { Pagination } from '../Pagination';
 
 interface PropertyListingPageProps<TFilters extends BasePropertyFilters, TProperty> {
   config: PropertyTypeConfig<TFilters, TProperty>;
@@ -44,6 +45,7 @@ export function PropertyListingPage<TFilters extends BasePropertyFilters, TPrope
   // State management
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter state management
   const {
@@ -66,44 +68,51 @@ export function PropertyListingPage<TFilters extends BasePropertyFilters, TPrope
   // Data fetching with pagination
   const {
     data,
-    items,
     isLoading,
-    isFetching,
     error,
-    isError,
-    totalCount,
-    totalPages,
-    hasNextPage,
-    hasPreviousPage,
-    currentPage,
-    setPage,
-    nextPage,
-    previousPage,
     refetch,
-    isEmpty,
-    getPageNumbers,
-  } = usePaginatedQuery({
-    queryKey: [...config.queryKey, debouncedFilters, sortBy],
-    fetcher: (page, pageSize) => config.fetcher(debouncedFilters, page, pageSize),
+    isRefetching,
+  } = useSimplePaginatedQuery({
+    queryKey: config.queryKey[0], // Use first element as base key
+    fetcher: config.fetcher,
+    filters: debouncedFilters,
+    sortBy,
+    page: currentPage,
     pageSize: 12,
     enabled: filtersValid,
   });
 
+  // Extract data properties with safe defaults
+  const items = data?.items || [];
+  const totalCount = data?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / 12);
+  const isEmpty = items.length === 0;
+  const isError = !!error;
+  const isFetching = isLoading || isRefetching;
+
+  // Pagination function
+  const setPage = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
   // Adapt properties to normalized format
   const normalizedProperties = useMemo(() => {
+    if (!items || !Array.isArray(items)) {
+      return [];
+    }
     return items.map(item => config.adapter(item));
   }, [items, config.adapter]);
 
   // Event handlers
   const handleFilterChange = useCallback((newFilters: TFilters) => {
     setFilters(newFilters);
-    setPage(1);
-  }, [setFilters, setPage]);
+    setCurrentPage(1);
+  }, [setFilters]);
 
   const handleSortChange = useCallback((newSortBy: SortOption) => {
     setSortBy(newSortBy);
-    setPage(1);
-  }, [setPage]);
+    setCurrentPage(1);
+  }, []);
 
   const handlePropertyClick = useCallback((property: NormalizedProperty) => {
     const route = property.category === 'land' ? `/land/${property.id}` : `/property/${property.id}`;
@@ -211,6 +220,7 @@ export function PropertyListingPage<TFilters extends BasePropertyFilters, TPrope
                 value={sortBy}
                 onChange={(e) => handleSortChange(e.target.value as SortOption)}
                 className="px-3 py-2 border border-input rounded-md bg-background text-sm"
+                aria-label="Sort properties by"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -340,38 +350,18 @@ export function PropertyListingPage<TFilters extends BasePropertyFilters, TPrope
           </div>
         )}
 
-        {/* Pagination */}
+        {/* Enhanced Pagination */}
         {!isLoading && !isError && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-8">
-            <Button
-              variant="outline"
-              onClick={previousPage}
-              disabled={!hasPreviousPage || isFetching}
-            >
-              Previous
-            </Button>
-            
-            <div className="flex items-center gap-1">
-              {getPageNumbers(5).map((page) => (
-                <Button
-                  key={page}
-                  variant={page === currentPage ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPage(page)}
-                  disabled={isFetching}
-                >
-                  {page}
-                </Button>
-              ))}
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={nextPage}
-              disabled={!hasNextPage || isFetching}
-            >
-              Next
-            </Button>
+          <div className="mt-8">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              disabled={isFetching}
+              showPageInfo={true}
+              showFirstLast={totalPages > 7}
+              className="justify-center"
+            />
           </div>
         )}
       </div>

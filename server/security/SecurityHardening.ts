@@ -1,10 +1,14 @@
 import crypto from 'crypto';
 
 import { Request, Response, NextFunction } from 'express';
-import rateLimit from 'express-rate-limit';
+import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
+import { ParsedQs } from 'qs';
 
 import { structuredLogger } from '../monitoring/StructuredLogger';
+
+// Constants
+const USER_AGENT_HEADER = 'User-Agent';
 
 
 export interface SecurityConfig {
@@ -49,18 +53,20 @@ export class SecurityHardening {
     return rateLimit({
       windowMs: rateLimitConfig.windowMs,
       max: rateLimitConfig.max,
-      skipSuccessfulRequests: rateLimitConfig.skipSuccessfulRequests,
-      skipFailedRequests: rateLimitConfig.skipFailedRequests,
+      skipSuccessfulRequests: rateLimitConfig.skipSuccessfulRequests ?? false,
+      skipFailedRequests: rateLimitConfig.skipFailedRequests ?? false,
       standardHeaders: true,
       legacyHeaders: false,
       handler: (req: Request, res: Response) => {
+        const userAgent = req.get(USER_AGENT_HEADER);
+        const correlationId = (req as Request & { correlationId?: string }).correlationId || 'unknown';
         structuredLogger.warn('Rate limit exceeded', {
-          correlationId: (req as any).correlationId,
+          correlationId,
           component: 'security',
           operation: 'rate_limit',
           metadata: {
             ip: req.ip,
-            userAgent: req.get('User-Agent'),
+            userAgent,
             path: req.path,
             method: req.method
           }
@@ -113,8 +119,14 @@ export class SecurityHardening {
    * Configure Helmet security headers
    */
   configureHelmet() {
-    return helmet({
-      contentSecurityPolicy: this.config.helmet.contentSecurityPolicy ? {
+    const helmetOptions: Record<string, unknown> = {
+      noSniff: true,
+      xssFilter: true,
+      referrerPolicy: { policy: 'same-origin' }
+    };
+
+    if (this.config.helmet.contentSecurityPolicy !== undefined) {
+      helmetOptions.contentSecurityPolicy = this.config.helmet.contentSecurityPolicy ? {
         directives: {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
@@ -128,17 +140,22 @@ export class SecurityHardening {
           formAction: ["'self'"],
           upgradeInsecureRequests: []
         }
-      } : false,
-      crossOriginEmbedderPolicy: this.config.helmet.crossOriginEmbedderPolicy,
-      hsts: this.config.helmet.hsts ? {
+      } : false;
+    }
+
+    if (this.config.helmet.crossOriginEmbedderPolicy !== undefined) {
+      helmetOptions.crossOriginEmbedderPolicy = this.config.helmet.crossOriginEmbedderPolicy;
+    }
+
+    if (this.config.helmet.hsts !== undefined) {
+      helmetOptions.hsts = this.config.helmet.hsts ? {
         maxAge: 31536000, // 1 year
         includeSubDomains: true,
         preload: true
-      } : false,
-      noSniff: true,
-      xssFilter: true,
-      referrerPolicy: { policy: 'same-origin' }
-    });
+      } : false;
+    }
+
+    return helmet(helmetOptions as Parameters<typeof helmet>[0]);
   }
 
   /**
@@ -158,24 +175,25 @@ export class SecurityHardening {
 
         // Sanitize query parameters
         if (req.query && typeof req.query === 'object') {
-          req.query = this.sanitizeObject(req.query);
+          req.query = this.sanitizeObject(req.query) as ParsedQs;
         }
 
         // Sanitize route parameters
         if (req.params && typeof req.params === 'object') {
-          req.params = this.sanitizeObject(req.params);
+          req.params = this.sanitizeObject(req.params) as { [key: string]: string };
         }
 
         next();
       } catch (error) {
+        const correlationId = (req as Request & { correlationId?: string }).correlationId || 'unknown';
         structuredLogger.error('Input sanitization error', {
-          correlationId: (req as any).correlationId,
+          correlationId,
           component: 'security',
           operation: 'input_sanitization',
           error: error instanceof Error ? error.message : String(error)
         });
 
-        res.status(400).json({
+        return res.status(400).json({
           success: false,
           error: {
             code: 'INVALID_INPUT',
@@ -201,16 +219,18 @@ export class SecurityHardening {
       }
 
       const token = req.headers['x-csrf-token'] as string || req.body._csrf;
-      const sessionId = (req as any).sessionID || req.ip;
+      const sessionId = (req as Request & { sessionID?: string }).sessionID || req.ip || 'unknown';
 
       if (!token || !this.validateCSRFToken(sessionId, token)) {
+        const userAgent = req.get(USER_AGENT_HEADER);
+        const correlationId = (req as Request & { correlationId?: string }).correlationId || 'unknown';
         structuredLogger.warn('CSRF token validation failed', {
-          correlationId: (req as any).correlationId,
+          correlationId,
           component: 'security',
           operation: 'csrf_validation',
           metadata: {
             ip: req.ip,
-            userAgent: req.get('User-Agent'),
+            userAgent,
             path: req.path,
             method: req.method,
             hasToken: !!token
@@ -246,7 +266,7 @@ export class SecurityHardening {
    */
   private validateCSRFToken(sessionId: string, token: string): boolean {
     const storedToken = this.csrfTokens.get(sessionId);
-    
+
     if (!storedToken) {
       return false;
     }
@@ -270,12 +290,12 @@ export class SecurityHardening {
       const sqlPatterns = [
         /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi,
         /(\b(OR|AND)\s+\d+\s*=\s*\d+)/gi,
-        /(;|\-\-|\/\*|\*\/)/g,
+        /(;|--|\/\*|\*\/)/g,
         /(\b(WAITFOR|DELAY)\b)/gi,
         /(\b(XP_|SP_)\w+)/gi
       ];
 
-      const checkForSQLInjection = (obj: any, path: string = ''): boolean => {
+      const checkForSQLInjection = (obj: unknown, path: string = ''): boolean => {
         if (typeof obj === 'string') {
           return sqlPatterns.some(pattern => pattern.test(obj));
         }
@@ -299,13 +319,15 @@ export class SecurityHardening {
       ].some(Boolean);
 
       if (suspicious) {
+        const userAgent = req.get(USER_AGENT_HEADER);
+        const correlationId = (req as Request & { correlationId?: string }).correlationId || 'unknown';
         structuredLogger.error('SQL injection attempt detected', {
-          correlationId: (req as any).correlationId,
+          correlationId,
           component: 'security',
           operation: 'sql_injection_detection',
           metadata: {
             ip: req.ip,
-            userAgent: req.get('User-Agent'),
+            userAgent,
             path: req.path,
             method: req.method,
             body: req.body,
@@ -323,7 +345,7 @@ export class SecurityHardening {
         });
       }
 
-      next();
+      return next();
     };
   }
 
@@ -333,15 +355,15 @@ export class SecurityHardening {
   xssPrevention() {
     return (req: Request, res: Response, next: NextFunction) => {
       const xssPatterns = [
-        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-        /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
+        /<script[^>]*>[\s\S]*?<\/script>/gi,
+        /<iframe[^>]*>[\s\S]*?<\/iframe>/gi,
         /javascript:/gi,
         /on\w+\s*=/gi,
-        /<img[^>]+src[^>]*=\s*["\']?\s*javascript:/gi,
-        /<svg[^>]*>.*<script/gi
+        /<img[^>]{0,100}src\s*=\s*["']?\s*javascript:/i,
+        /<svg[^>]*>.*?<script/gi
       ];
 
-      const checkForXSS = (obj: any): boolean => {
+      const checkForXSS = (obj: unknown): boolean => {
         if (typeof obj === 'string') {
           return xssPatterns.some(pattern => pattern.test(obj));
         }
@@ -364,13 +386,15 @@ export class SecurityHardening {
       ].some(Boolean);
 
       if (suspicious) {
+        const userAgent = req.get(USER_AGENT_HEADER);
+        const correlationId = (req as Request & { correlationId?: string }).correlationId || 'unknown';
         structuredLogger.error('XSS attempt detected', {
-          correlationId: (req as any).correlationId,
+          correlationId,
           component: 'security',
           operation: 'xss_detection',
           metadata: {
             ip: req.ip,
-            userAgent: req.get('User-Agent'),
+            userAgent,
             path: req.path,
             method: req.method
           }
@@ -385,7 +409,7 @@ export class SecurityHardening {
         });
       }
 
-      next();
+      return next();
     };
   }
 
@@ -410,7 +434,15 @@ export class SecurityHardening {
       const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.txt'];
       const maxFileSize = 10 * 1024 * 1024; // 10MB
 
-      const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+      interface UploadedFile {
+        name: string;
+        size: number;
+        mimetype: string;
+      }
+
+      const files = Array.isArray(req.files)
+        ? (req.files as unknown as UploadedFile[])
+        : (Object.values(req.files).flat() as unknown as UploadedFile[]);
 
       for (const file of files) {
         // Check file size
@@ -426,8 +458,9 @@ export class SecurityHardening {
 
         // Check MIME type
         if (!allowedMimeTypes.includes(file.mimetype)) {
+          const correlationId = (req as Request & { correlationId?: string }).correlationId || 'unknown';
           structuredLogger.warn('Unauthorized file type upload attempt', {
-            correlationId: (req as any).correlationId,
+            correlationId,
             component: 'security',
             operation: 'file_upload_security',
             metadata: {
@@ -466,14 +499,16 @@ export class SecurityHardening {
         ];
 
         if (dangerousPatterns.some(pattern => pattern.test(file.name))) {
+          const userAgent = req.get(USER_AGENT_HEADER);
+          const correlationId = (req as Request & { correlationId?: string }).correlationId || 'unknown';
           structuredLogger.error('Dangerous file upload attempt', {
-            correlationId: (req as any).correlationId,
+            correlationId,
             component: 'security',
             operation: 'dangerous_file_upload',
             metadata: {
               fileName: file.name,
               ip: req.ip,
-              userAgent: req.get('User-Agent')
+              userAgent
             }
           });
 
@@ -487,14 +522,14 @@ export class SecurityHardening {
         }
       }
 
-      next();
+      return next();
     };
   }
 
   /**
    * Sanitize object recursively
    */
-  private sanitizeObject(obj: any): any {
+  private sanitizeObject(obj: unknown): unknown {
     if (typeof obj === 'string') {
       return this.sanitizeString(obj);
     }
@@ -504,7 +539,7 @@ export class SecurityHardening {
     }
 
     if (typeof obj === 'object' && obj !== null) {
-      const sanitized: any = {};
+      const sanitized: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(obj)) {
         sanitized[this.sanitizeString(key)] = this.sanitizeObject(value);
       }
@@ -529,8 +564,8 @@ export class SecurityHardening {
 
     // Remove dangerous characters
     str = str
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
       .replace(/javascript:/gi, '')
       .replace(/on\w+\s*=/gi, '')
       .replace(/data:text\/html/gi, '');

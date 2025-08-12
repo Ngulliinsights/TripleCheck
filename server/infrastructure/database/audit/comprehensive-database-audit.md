@@ -23,7 +23,7 @@ This comprehensive audit reveals significant fragmentation and structural issues
 #### 1.1 Current Schema Locations
 ```
 📁 Schema Distribution Analysis:
-├── server/infrastructure/database/schemas/ndex.ts (DEPRECATED - 2,440 lines)
+├── server/infrastructure/database/schemas/consolidated (DEPRECATED - 2,440 lines)
 │   ├── ✅ Core tables: users, properties, reviews
 │   ├── ✅ Land verification tables
 │   ├── ⚠️  Located outside database directory
@@ -40,7 +40,7 @@ This comprehensive audit reveals significant fragmentation and structural issues
 ```
 
 #### 1.2 Schema Fragmentation Issues
-- **Primary Issue**: Core schemas duplicated between `server/infrastructure/database/schemas/ndex.ts` and `database/schemas/`
+- **Primary Issue**: Core schemas duplicated between `server/infrastructure/database/schemas/consolidated` and `database/schemas/`
 - **Backward Compatibility**: Legacy file maintained for compatibility but creates confusion
 - **Import Inconsistency**: Multiple import paths for same schemas across codebase
 - **Maintenance Overhead**: Changes must be synchronized across multiple locations

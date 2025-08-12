@@ -68,11 +68,11 @@ class FraudDetectionApiService {
    */
   async getActiveScans(): Promise<BackgroundScan[]> {
     const response = await apiClient.get<ApiResponse<BackgroundScan[]>>(`${this.baseUrl}/scans/active`);
-    
+
     if (!response.data?.success) {
       throw new Error(response.data?.message || 'Failed to fetch active scans');
     }
-    
+
     return response.data?.data || [];
   }
 
@@ -81,11 +81,11 @@ class FraudDetectionApiService {
    */
   async getRecentReports(): Promise<FraudReport[]> {
     const response = await apiClient.get<ApiResponse<FraudReport[]>>(`${this.baseUrl}/reports/recent`);
-    
+
     if (!response.data?.success) {
       throw new Error(response.data?.message || 'Failed to fetch recent reports');
     }
-    
+
     return response.data?.data || [];
   }
 
@@ -94,11 +94,11 @@ class FraudDetectionApiService {
    */
   async getUserStats(): Promise<UserStats> {
     const response = await apiClient.get<ApiResponse<UserStats>>(`${this.baseUrl}/stats`);
-    
+
     if (!response.data?.success) {
       throw new Error(response.data?.message || 'Failed to fetch user statistics');
     }
-    
+
     return response.data?.data || { propertiesScanned: 0, averageScanTime: 0, cleanRate: 0 };
   }
 
@@ -107,15 +107,15 @@ class FraudDetectionApiService {
    */
   async getReportDetails(reportId: string): Promise<DetailedReport> {
     const response = await apiClient.get<ApiResponse<DetailedReport>>(`${this.baseUrl}/reports/${reportId}`);
-    
+
     if (!response.data?.success) {
       throw new Error(response.data?.message || 'Failed to fetch report details');
     }
-    
+
     if (!response.data?.data) {
       throw new Error('Report not found');
     }
-    
+
     return response.data.data;
   }
 
@@ -124,7 +124,7 @@ class FraudDetectionApiService {
    */
   async downloadReport(reportId: string): Promise<Blob> {
     const response = await apiClient.get(`${this.baseUrl}/reports/${reportId}/download`);
-    
+
     return response.data as Blob;
   }
 
@@ -133,7 +133,7 @@ class FraudDetectionApiService {
    */
   async refreshScans(): Promise<void> {
     const response = await apiClient.post<ApiResponse<void>>(`${this.baseUrl}/scans/refresh`);
-    
+
     if (!response.data?.success) {
       throw new Error(response.data?.message || 'Failed to refresh scans');
     }
@@ -146,15 +146,15 @@ class FraudDetectionApiService {
     const response = await apiClient.post<ApiResponse<BackgroundScan>>(`${this.baseUrl}/scans/start`, {
       propertyId,
     });
-    
+
     if (!response.data?.success) {
       throw new Error(response.data?.message || 'Failed to start scan');
     }
-    
+
     if (!response.data?.data) {
       throw new Error('Invalid response from server');
     }
-    
+
     return response.data.data;
   }
 

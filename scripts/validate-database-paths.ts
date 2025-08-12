@@ -93,7 +93,7 @@ class DatabasePathValidator {
   private validateConfigFiles(): void {
     const configFiles = [
       'drizzle.config.ts',
-      'server/infrastructure/database/schemas/ndex.ts'
+      'server/infrastructure/database/schemas/consolidated'
     ];
 
     for (const configFile of configFiles) {
@@ -143,7 +143,7 @@ class DatabasePathValidator {
     } else if (hasDeprecated && hasCorrect) {
       status = 'warning';
       message = 'Contains both deprecated and correct paths';
-    } else if (filePath === 'server/infrastructure/database/schemas/ndex.ts') {
+    } else if (filePath === 'server/infrastructure/database/schemas/consolidated') {
       status = 'warning';
       message = 'This file is deprecated and should be removed after migration';
     }

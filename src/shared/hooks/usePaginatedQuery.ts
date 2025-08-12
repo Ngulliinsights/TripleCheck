@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+// Define proper types for better type safety
 interface PaginatedResponse<T> {
   items: T[];
   totalCount: number;
@@ -8,7 +9,7 @@ interface PaginatedResponse<T> {
   nextCursor?: string | number;
 }
 
-interface PaginatedQueryOptions<TFilters, TItem> {
+interface PaginatedQueryOptions<TFilters extends Record<string, unknown>, TItem> {
   queryKey: string;
   fetcher: (filters: TFilters, page: number, sort: string) => Promise<PaginatedResponse<TItem>>;
   filters: TFilters;
@@ -16,7 +17,7 @@ interface PaginatedQueryOptions<TFilters, TItem> {
   pageSize?: number;
   enabled?: boolean;
   staleTime?: number;
-  cacheTime?: number;
+  gcTime?: number;
 }
 
 interface PaginatedQueryReturn<TItem> {
@@ -35,14 +36,40 @@ interface PaginatedQueryReturn<TItem> {
   isRefetching: boolean;
 }
 
+// Define property types to replace 'any'
+interface PropertyFilters {
+  priceMin?: number;
+  priceMax?: number;
+  location?: string;
+  propertyType?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  [key: string]: unknown; // Allow additional properties
+}
+
+interface Property {
+  id: string;
+  title: string;
+  price: number;
+  location: string;
+  propertyType: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  [key: string]: unknown; // Allow additional properties for flexibility
+}
+
 /**
  * Generic paginated query hook for property listings
  * Provides unified data fetching with pagination, filtering, and sorting
+ * 
+ * This hook uses React Query's useInfiniteQuery under the hood to manage
+ * paginated data fetching. It automatically handles page concatenation,
+ * loading states, and provides a clean interface for infinite scrolling.
  */
-export function usePaginatedQuery<TFilters, TItem>(
+export function usePaginatedQuery<TFilters extends Record<string, unknown>, TItem>(
   options: PaginatedQueryOptions<TFilters, TItem>
 ): PaginatedQueryReturn<TItem> {
-  
+
   const {
     queryKey,
     fetcher,
@@ -50,11 +77,12 @@ export function usePaginatedQuery<TFilters, TItem>(
     sortBy,
     pageSize = 12,
     enabled = true,
-    staleTime = 5 * 60 * 1000, // 5 minutes
-    cacheTime = 10 * 60 * 1000, // 10 minutes
+    staleTime = 5 * 60 * 1000, // 5 minutes - reasonable cache time for property data
+    gcTime = 10 * 60 * 1000, // 10 minutes - garbage collection time
   } = options;
 
   // Create stable query key that includes filters and sort
+  // This ensures the query is properly invalidated when any dependency changes
   const stableQueryKey = useMemo(() => [
     queryKey,
     filters,
@@ -62,7 +90,7 @@ export function usePaginatedQuery<TFilters, TItem>(
     pageSize,
   ], [queryKey, filters, sortBy, pageSize]);
 
-  // Use infinite query for pagination
+  // Use infinite query for pagination with proper TypeScript configuration
   const {
     data,
     error,
@@ -72,33 +100,37 @@ export function usePaginatedQuery<TFilters, TItem>(
     isLoading,
     refetch,
     isRefetching,
-  } = useInfiniteQuery({
+  } = useInfiniteQuery<PaginatedResponse<TItem>, Error>({
     queryKey: stableQueryKey,
-    queryFn: ({ pageParam = 1 }) => fetcher(filters, pageParam as number, sortBy),
+    queryFn: ({ pageParam }) => fetcher(filters, pageParam as number, sortBy),
+    initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage.hasNextPage) return undefined;
       return allPages.length + 1;
     },
     enabled,
     staleTime,
-    cacheTime,
+    gcTime,
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
-      // Retry up to 3 times for network errors
-      if (failureCount < 3 && error.message.includes('fetch')) {
-        return true;
-      }
-      return false;
+      // Retry up to 3 times for network errors only
+      return failureCount < 3 && error.message.includes('fetch');
     },
   });
 
-  // Transform infinite query data to flat structure
+  // Transform infinite query data to flat structure with proper type safety
   const transformedData = useMemo(() => {
     if (!data?.pages?.length) return undefined;
 
+    // Safely extract all items from all pages
     const allItems = data.pages.flatMap(page => page.items);
-    const firstPage = data.pages[0];
-    const {totalCount} = firstPage;
+    
+    // Use array destructuring with proper null checking
+    // We add the non-null assertion since we've already verified pages.length > 0
+    const [firstPage] = data.pages;
+    if (!firstPage) return undefined;
+    
+    const { totalCount } = firstPage;
     const totalPages = Math.ceil(totalCount / pageSize);
     const currentPage = data.pages.length;
 
@@ -124,8 +156,11 @@ export function usePaginatedQuery<TFilters, TItem>(
 
 /**
  * Simple paginated query hook for single page results
+ * 
+ * This is useful when you need traditional page-based pagination
+ * instead of infinite scrolling. It fetches one page at a time.
  */
-export function useSimplePaginatedQuery<TFilters, TItem>(
+export function useSimplePaginatedQuery<TFilters extends Record<string, unknown>, TItem>(
   options: PaginatedQueryOptions<TFilters, TItem> & { page: number }
 ): {
   data: PaginatedResponse<TItem> | undefined;
@@ -134,7 +169,7 @@ export function useSimplePaginatedQuery<TFilters, TItem>(
   refetch: () => void;
   isRefetching: boolean;
 } {
-  
+
   const {
     queryKey,
     fetcher,
@@ -143,7 +178,7 @@ export function useSimplePaginatedQuery<TFilters, TItem>(
     page,
     enabled = true,
     staleTime = 5 * 60 * 1000,
-    cacheTime = 10 * 60 * 1000,
+    gcTime = 10 * 60 * 1000,
   } = options;
 
   const stableQueryKey = useMemo(() => [
@@ -159,18 +194,15 @@ export function useSimplePaginatedQuery<TFilters, TItem>(
     isLoading,
     refetch,
     isRefetching,
-  } = useQuery({
+  } = useQuery<PaginatedResponse<TItem>, Error>({
     queryKey: stableQueryKey,
     queryFn: () => fetcher(filters, page, sortBy),
     enabled,
     staleTime,
-    cacheTime,
+    gcTime,
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
-      if (failureCount < 3 && error.message.includes('fetch')) {
-        return true;
-      }
-      return false;
+      return failureCount < 3 && error.message.includes('fetch');
     },
   });
 
@@ -184,12 +216,18 @@ export function useSimplePaginatedQuery<TFilters, TItem>(
 }
 
 /**
- * Property-specific query hooks
+ * Property-specific query hooks with proper typing
+ * These hooks provide pre-configured fetchers for different property types
+ */
+
+/**
+ * Hook for fetching residential properties with infinite scrolling
+ * Handles apartments, houses, condos, and other residential listings
  */
 export function useResidentialPropertiesQuery(
-  filters: any,
+  filters: PropertyFilters,
   sortBy: string = 'date',
-  options?: Partial<PaginatedQueryOptions<any, any>>
+  options?: Partial<PaginatedQueryOptions<PropertyFilters, Property>>
 ) {
   return usePaginatedQuery({
     queryKey: 'residential-properties',
@@ -199,12 +237,12 @@ export function useResidentialPropertiesQuery(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filters, page, sort, pageSize: 12 }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch residential properties: ${response.statusText}`);
       }
-      
-      return response.json();
+
+      return response.json() as Promise<PaginatedResponse<Property>>;
     },
     filters,
     sortBy,
@@ -212,10 +250,14 @@ export function useResidentialPropertiesQuery(
   });
 }
 
+/**
+ * Hook for fetching commercial properties
+ * Handles offices, retail spaces, warehouses, and other commercial listings
+ */
 export function useCommercialPropertiesQuery(
-  filters: any,
+  filters: PropertyFilters,
   sortBy: string = 'date',
-  options?: Partial<PaginatedQueryOptions<any, any>>
+  options?: Partial<PaginatedQueryOptions<PropertyFilters, Property>>
 ) {
   return usePaginatedQuery({
     queryKey: 'commercial-properties',
@@ -225,12 +267,12 @@ export function useCommercialPropertiesQuery(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filters, page, sort, pageSize: 12 }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch commercial properties: ${response.statusText}`);
       }
-      
-      return response.json();
+
+      return response.json() as Promise<PaginatedResponse<Property>>;
     },
     filters,
     sortBy,
@@ -238,10 +280,14 @@ export function useCommercialPropertiesQuery(
   });
 }
 
+/**
+ * Hook for fetching land properties
+ * Handles vacant lots, agricultural land, and development opportunities
+ */
 export function useLandPropertiesQuery(
-  filters: any,
+  filters: PropertyFilters,
   sortBy: string = 'date',
-  options?: Partial<PaginatedQueryOptions<any, any>>
+  options?: Partial<PaginatedQueryOptions<PropertyFilters, Property>>
 ) {
   return usePaginatedQuery({
     queryKey: 'land-properties',
@@ -251,12 +297,12 @@ export function useLandPropertiesQuery(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filters, page, sort, pageSize: 12 }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch land properties: ${response.statusText}`);
       }
-      
-      return response.json();
+
+      return response.json() as Promise<PaginatedResponse<Property>>;
     },
     filters,
     sortBy,
@@ -264,10 +310,14 @@ export function useLandPropertiesQuery(
   });
 }
 
+/**
+ * Hook for fetching all property types together
+ * Useful for general property browsing and cross-category searches
+ */
 export function useAllPropertiesQuery(
-  filters: any,
+  filters: PropertyFilters,
   sortBy: string = 'date',
-  options?: Partial<PaginatedQueryOptions<any, any>>
+  options?: Partial<PaginatedQueryOptions<PropertyFilters, Property>>
 ) {
   return usePaginatedQuery({
     queryKey: 'all-properties',
@@ -277,12 +327,12 @@ export function useAllPropertiesQuery(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filters, page, sort, pageSize: 12 }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch properties: ${response.statusText}`);
       }
-      
-      return response.json();
+
+      return response.json() as Promise<PaginatedResponse<Property>>;
     },
     filters,
     sortBy,
@@ -291,12 +341,16 @@ export function useAllPropertiesQuery(
 }
 
 /**
- * Property search query hook
+ * Property search query hook with text-based searching
+ * 
+ * This hook enables full-text search across property titles, descriptions,
+ * and locations. It includes smart optimizations like minimum search length
+ * and relevance-based sorting.
  */
 export function usePropertySearchQuery(
   searchTerm: string,
-  filters: any = {},
-  options?: Partial<PaginatedQueryOptions<any, any>>
+  filters: PropertyFilters = {},
+  options?: Partial<PaginatedQueryOptions<PropertyFilters, Property>>
 ) {
   return usePaginatedQuery({
     queryKey: 'property-search',
@@ -312,16 +366,17 @@ export function usePropertySearchQuery(
           pageSize: 12,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to search properties: ${response.statusText}`);
       }
-      
-      return response.json();
+
+      return response.json() as Promise<PaginatedResponse<Property>>;
     },
     filters: { ...filters, search: searchTerm },
     sortBy: 'relevance',
-    enabled: searchTerm.length > 2, // Only search if term is longer than 2 characters
+    // Only search if term is longer than 2 characters to avoid excessive API calls
+    enabled: searchTerm.length > 2,
     ...options,
   });
 }

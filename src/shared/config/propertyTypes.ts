@@ -36,24 +36,44 @@ const AdaptivePropertyCard = React.lazy(() => import('../components/property/Ada
 async function fetchResidentialProperties(filters: ResidentialFilters, page: number, pageSize: number) {
   // Filter for residential properties only
   const residentialFilters = { ...filters, category: 'residential' as const };
-  return fetchMockProperties(residentialFilters, page, pageSize);
+  const result = await fetchMockProperties(residentialFilters, page, pageSize);
+  return {
+    items: result.items,
+    totalCount: result.totalCount,
+    hasNextPage: page < result.totalPages,
+  };
 }
 
 async function fetchCommercialProperties(filters: CommercialFilters, page: number, pageSize: number) {
   // Filter for commercial properties only
   const commercialFilters = { ...filters, category: 'commercial' as const };
-  return fetchMockProperties(commercialFilters, page, pageSize);
+  const result = await fetchMockProperties(commercialFilters, page, pageSize);
+  return {
+    items: result.items,
+    totalCount: result.totalCount,
+    hasNextPage: page < result.totalPages,
+  };
 }
 
 async function fetchLandProperties(filters: LandFilters, page: number, pageSize: number) {
   // Filter for land properties only
   const landFilters = { ...filters, category: 'land' as const };
-  return fetchMockProperties(landFilters, page, pageSize);
+  const result = await fetchMockProperties(landFilters, page, pageSize);
+  return {
+    items: result.items,
+    totalCount: result.totalCount,
+    hasNextPage: page < result.totalPages,
+  };
 }
 
 async function fetchAllProperties(filters: BasePropertyFilters, page: number, pageSize: number) {
-  // Fetch all property types
-  return fetchMockProperties(filters, page, pageSize);
+  // Fetch all property types using mock API
+  const result = await fetchMockProperties(filters, page, pageSize);
+  return {
+    items: result.items,
+    totalCount: result.totalCount,
+    hasNextPage: page < result.totalPages,
+  };
 }
 
 // Residential Properties Configuration

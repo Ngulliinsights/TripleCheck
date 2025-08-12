@@ -667,6 +667,240 @@ export class PropertyRepository {
         createdAt: new Date(),
         updatedAt: new Date(),
         landVerification: null
+      },
+      // Commercial Properties
+      {
+        id: 5,
+        title: "Modern Office Space in Westlands",
+        description: "Premium office space with modern amenities, perfect for growing businesses. Features open floor plan and excellent connectivity.",
+        price: "25000000",
+        location: "Westlands, Nairobi",
+        address: "Westlands Road, Nairobi, Kenya",
+        coordinates: { lat: -1.2676, lng: 36.8108 },
+        imageUrls: [
+          "/assets/Commercial/office-1.jpg",
+          "/assets/Commercial/office-2.jpg"
+        ],
+        verificationStatus: "verified",
+        features: {
+          propertyType: "Office",
+          size: 2500,
+          floors: 3,
+          parkingSpaces: 15,
+          yearBuilt: 2019,
+          amenities: ["High-Speed Internet", "Conference Rooms", "Reception Area", "24/7 Security"],
+          airConditioning: true,
+          elevator: true,
+        },
+        ownerId: 1,
+        viewCount: 0,
+        favoriteCount: 0,
+        isActive: true,
+        isFeatured: true,
+        availableFrom: null,
+        availableUntil: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        landVerification: null
+      },
+      {
+        id: 6,
+        title: "Retail Space in Sarit Centre",
+        description: "Prime retail location with high foot traffic. Perfect for fashion, electronics, or food businesses.",
+        price: "18000000",
+        location: "Westlands, Nairobi",
+        address: "Sarit Centre, Westlands, Nairobi, Kenya",
+        coordinates: { lat: -1.2676, lng: 36.8108 },
+        imageUrls: [
+          "/assets/Commercial/retail-1.jpg",
+          "/assets/Commercial/retail-2.jpg"
+        ],
+        verificationStatus: "verified",
+        features: {
+          propertyType: "Retail",
+          size: 800,
+          floors: 1,
+          parkingSpaces: 5,
+          yearBuilt: 2015,
+          amenities: ["Display Windows", "Storage Area", "Customer Parking", "Mall Security"],
+          airConditioning: true,
+          elevator: false,
+        },
+        ownerId: 1,
+        viewCount: 0,
+        favoriteCount: 0,
+        isActive: true,
+        isFeatured: false,
+        availableFrom: null,
+        availableUntil: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        landVerification: null
+      },
+      {
+        id: 7,
+        title: "Industrial Warehouse in Industrial Area",
+        description: "Large warehouse facility with loading docks and ample storage space. Ideal for distribution and manufacturing.",
+        price: "35000000",
+        location: "Industrial Area, Nairobi",
+        address: "Enterprise Road, Industrial Area, Nairobi, Kenya",
+        coordinates: { lat: -1.3197, lng: 36.8500 },
+        imageUrls: [
+          "/assets/Commercial/warehouse-1.jpg",
+          "/assets/Commercial/warehouse-2.jpg"
+        ],
+        verificationStatus: "verified",
+        features: {
+          propertyType: "Warehouse",
+          size: 5000,
+          floors: 1,
+          parkingSpaces: 20,
+          yearBuilt: 2017,
+          amenities: ["Loading Docks", "High Ceiling", "Security Fence", "Office Space"],
+          airConditioning: false,
+          elevator: false,
+        },
+        ownerId: 1,
+        viewCount: 0,
+        favoriteCount: 0,
+        isActive: true,
+        isFeatured: true,
+        availableFrom: null,
+        availableUntil: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        landVerification: null
+      },
+      // Land Properties
+      {
+        id: 8,
+        title: "Prime Residential Plot in Runda",
+        description: "Excellent residential plot in prestigious Runda estate. Perfect for building your dream home with all utilities available.",
+        price: "12000000",
+        location: "Runda, Nairobi",
+        address: "Runda Estate, Nairobi, Kenya",
+        coordinates: { lat: -1.2167, lng: 36.7833 },
+        imageUrls: [
+          "/assets/Land/residential-plot-1.jpg",
+          "/assets/Land/residential-plot-2.jpg"
+        ],
+        verificationStatus: "verified",
+        features: {
+          propertyType: "Residential Land",
+          size: "0.5 acres",
+          titleDeedStatus: "available",
+          soilType: "Clay loam",
+          zoning: "Residential",
+          waterAccess: true,
+          roadAccess: true,
+          electricityAccess: true,
+        },
+        ownerId: 1,
+        viewCount: 0,
+        favoriteCount: 0,
+        isActive: true,
+        isFeatured: true,
+        availableFrom: null,
+        availableUntil: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        landVerification: {
+          sessionId: "1",
+          status: "completed",
+          overallRiskScore: 15,
+          riskLevel: "low",
+          confidence: 0.95,
+          completedLayers: ["title_deed", "survey", "environmental", "legal"],
+          lastUpdated: new Date(),
+          badge: {
+            type: 'verified',
+            label: 'Land Verified',
+            color: 'green',
+            description: 'Property has completed comprehensive land verification with low risk'
+          }
+        }
+      },
+      {
+        id: 9,
+        title: "Commercial Plot in Kilimani",
+        description: "Strategic commercial plot suitable for office building or mixed-use development. Great investment opportunity.",
+        price: "28000000",
+        location: "Kilimani, Nairobi",
+        address: "Argwings Kodhek Road, Kilimani, Nairobi, Kenya",
+        coordinates: { lat: -1.2921, lng: 36.7833 },
+        imageUrls: [
+          "/assets/Land/commercial-plot-1.jpg",
+          "/assets/Land/commercial-plot-2.jpg"
+        ],
+        verificationStatus: "verified",
+        features: {
+          propertyType: "Commercial Land",
+          size: "0.25 acres",
+          titleDeedStatus: "available",
+          soilType: "Sandy clay",
+          zoning: "Commercial",
+          waterAccess: true,
+          roadAccess: true,
+          electricityAccess: true,
+        },
+        ownerId: 1,
+        viewCount: 0,
+        favoriteCount: 0,
+        isActive: true,
+        isFeatured: false,
+        availableFrom: null,
+        availableUntil: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        landVerification: {
+          sessionId: "2",
+          status: "completed",
+          overallRiskScore: 25,
+          riskLevel: "medium",
+          confidence: 0.88,
+          completedLayers: ["title_deed", "survey", "legal"],
+          lastUpdated: new Date(),
+          badge: {
+            type: 'verified',
+            label: 'Land Verified - Medium Risk',
+            color: 'blue',
+            description: 'Property has completed land verification with medium risk factors identified'
+          }
+        }
+      },
+      {
+        id: 10,
+        title: "Agricultural Land in Kiambu",
+        description: "Fertile agricultural land perfect for farming or future development. Good access roads and water availability.",
+        price: "8000000",
+        location: "Kiambu, Kenya",
+        address: "Kiambu Road, Kiambu, Kenya",
+        coordinates: { lat: -1.1667, lng: 36.8333 },
+        imageUrls: [
+          "/assets/Land/agricultural-1.jpg",
+          "/assets/Land/agricultural-2.jpg"
+        ],
+        verificationStatus: "verified",
+        features: {
+          propertyType: "Agricultural Land",
+          size: "2 acres",
+          titleDeedStatus: "available",
+          soilType: "Red volcanic",
+          zoning: "Agricultural",
+          waterAccess: true,
+          roadAccess: true,
+          electricityAccess: false,
+        },
+        ownerId: 1,
+        viewCount: 0,
+        favoriteCount: 0,
+        isActive: true,
+        isFeatured: false,
+        availableFrom: null,
+        availableUntil: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        landVerification: null
       }
     ];
 
@@ -689,9 +923,22 @@ export class PropertyRepository {
     }
 
     if (filters.propertyType) {
-      filtered = filtered.filter(property =>
-        property.features.propertyType.toLowerCase() === filters.propertyType.toLowerCase()
-      );
+      const targetType = filters.propertyType.toLowerCase();
+      filtered = filtered.filter(property => {
+        const propType = property.features.propertyType.toLowerCase();
+        
+        // Handle different property type mappings
+        if (targetType === 'residential') {
+          return propType === 'apartment' || propType === 'house' || propType === 'condo' || propType === 'townhouse';
+        } else if (targetType === 'commercial') {
+          return propType === 'office' || propType === 'retail' || propType === 'warehouse' || propType === 'industrial';
+        } else if (targetType === 'land') {
+          return propType.includes('land');
+        } else {
+          // Exact match for specific types
+          return propType === targetType;
+        }
+      });
     }
 
     if (filters.bedrooms) {

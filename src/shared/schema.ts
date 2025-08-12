@@ -8,7 +8,7 @@
  */
 
 console.warn(
-  '⚠️ DEPRECATION WARNING: You are importing from server/infrastructure/database/schemas/ndex.ts. ' +
+  '⚠️ DEPRECATION WARNING: You are importing from server/infrastructure/database/schemas/consolidated. ' +
   'Please update your imports to use: ' +
   'import { users, properties, reviews } from "server/infrastructure/database/schemas/consolidated"'
 );

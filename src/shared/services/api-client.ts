@@ -3,6 +3,9 @@
  * Provides interceptors, intelligent caching, request batching, and enhanced retry mechanisms
  */
 
+// Constants to avoid duplicate strings
+const UNKNOWN_ERROR = 'Unknown error';
+
 // Enhanced interface with better type safety for error responses
 export interface ApiResponse<T = unknown> {
   readonly success: boolean;
@@ -89,7 +92,7 @@ class ApiClient {
   private readonly timeout: number;
   private readonly retryAttempts: number;
   private readonly retryDelay: number;
-  
+
   // Advanced features
   private readonly requestInterceptors: RequestInterceptor[] = [];
   private readonly responseInterceptors: ResponseInterceptor[] = [];
@@ -110,7 +113,7 @@ class ApiClient {
     this.timeout = config.timeout ?? 10000;
     this.retryAttempts = config.retryAttempts ?? 3; // Enhanced default
     this.retryDelay = config.retryDelay ?? 1000;
-    
+
     // Initialize advanced features
     this.cacheStrategy = config.cacheStrategy ?? {
       type: 'LRU',
@@ -154,91 +157,153 @@ class ApiClient {
     endpoint: string,
     options: RequestOptions = {}
   ): Promise<ApiResponse<T>> {
-    const {
-      method = "GET",
-      headers = {},
-      body,
-      signal,
-      timeout = this.timeout,
-    } = options;
-
-    // Ensure endpoint starts with forward slash for proper URL construction
-    const normalizedEndpoint =
-      endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-    const url = `${this.baseUrl}${normalizedEndpoint}`;
+    const requestConfig = this.prepareRequestConfig(endpoint, options);
 
     // Check cache for GET requests
-    if (method === "GET") {
-      const cachedResponse = this.getCachedResponse<T>(url);
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+    const cachedResponse = this.checkCache<T>(requestConfig.method, requestConfig.url);
+    if (cachedResponse) {
+      return cachedResponse;
     }
 
     // Handle batching if enabled
-    if (this.enableBatching && method === "GET") {
+    if (this.shouldUseBatching(requestConfig.method)) {
       return this.handleBatchRequest<T>(endpoint, options);
     }
 
-    // Apply request interceptors
-    let requestConfig: RequestConfig = {
+    return this.executeRequest<T>(requestConfig, options.timeout ?? this.timeout);
+  }
+
+  /**
+   * Prepare request configuration with proper URL and headers
+   * @private
+   */
+  private prepareRequestConfig(endpoint: string, options: RequestOptions): RequestConfig {
+    const { method = "GET", headers = {}, body, signal } = options;
+
+    // Ensure endpoint starts with forward slash for proper URL construction
+    const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    const url = `${this.baseUrl}${normalizedEndpoint}`;
+
+    return {
       url,
       method,
       headers: { ...this.defaultHeaders, ...headers },
       body,
       ...(signal && { signal }),
     };
+  }
 
+  /**
+   * Check cache for GET requests
+   * @private
+   */
+  private checkCache<T>(method: string, url: string): ApiResponse<T> | null {
+    if (method === "GET") {
+      return this.getCachedResponse<T>(url);
+    }
+    return null;
+  }
+
+  /**
+   * Determine if batching should be used
+   * @private
+   */
+  private shouldUseBatching(method: string): boolean {
+    return this.enableBatching && method === "GET";
+  }
+
+  /**
+   * Execute the request with interceptors and error handling
+   * @private
+   */
+  private async executeRequest<T>(requestConfig: RequestConfig, timeout: number): Promise<ApiResponse<T>> {
+    // Apply request interceptors
+    let config = requestConfig;
     for (const interceptor of this.requestInterceptors) {
-      requestConfig = await interceptor(requestConfig);
+      config = await interceptor(config);
     }
 
-    // Create timeout signal if no signal provided and timeout is specified
-    const timeoutController = new AbortController();
-    const effectiveSignal = requestConfig.signal ?? timeoutController.signal;
+    // Set up timeout handling
+    const { timeoutController, timeoutId } = this.setupTimeout(timeout);
+    const effectiveSignal = config.signal ?? timeoutController.signal;
 
+    try {
+      let response = await this.executeRequestWithRetry<T>(config.url, {
+        method: config.method,
+        headers: config.headers,
+        body: config.body,
+        signal: effectiveSignal,
+      });
+
+      // Apply response interceptors
+      response = await this.applyResponseInterceptors(response);
+
+      // Cache successful GET responses
+      if (config.method === "GET" && response.success) {
+        this.setCachedResponse(config.url, response);
+      }
+
+      return response;
+    } catch (error) {
+      const processedError = await this.applyErrorInterceptors(error);
+      return this.createErrorResponse<T>(processedError);
+    } finally {
+      this.cleanupTimeout(timeoutId);
+    }
+  }
+
+  /**
+   * Set up timeout handling
+   * @private
+   */
+  private setupTimeout(timeout: number): { timeoutController: AbortController; timeoutId: number | NodeJS.Timeout | undefined } {
+    const timeoutController = new AbortController();
     let timeoutId: NodeJS.Timeout | number | undefined;
+
     if (timeout > 0) {
       timeoutId = setTimeout(() => {
         timeoutController.abort();
       }, timeout);
     }
 
-    try {
-      let response = await this.executeRequestWithRetry<T>(requestConfig.url, {
-        method: requestConfig.method,
-        headers: requestConfig.headers,
-        body: requestConfig.body,
-        signal: effectiveSignal,
-      });
+    return { timeoutController, timeoutId };
+  }
 
-      // Apply response interceptors
-      for (const interceptor of this.responseInterceptors) {
-        if (interceptor.onFulfilled) {
-          response = await interceptor.onFulfilled(response);
-        }
+  /**
+   * Apply response interceptors
+   * @private
+   */
+  private async applyResponseInterceptors<T>(response: ApiResponse<T>): Promise<ApiResponse<T>> {
+    let processedResponse = response;
+    for (const interceptor of this.responseInterceptors) {
+      if (interceptor.onFulfilled) {
+        processedResponse = await interceptor.onFulfilled(processedResponse);
       }
+    }
+    return processedResponse;
+  }
 
-      // Cache successful GET responses
-      if (method === "GET" && response.success) {
-        this.setCachedResponse(url, response);
+  /**
+   * Apply error interceptors
+   * @private
+   */
+  private async applyErrorInterceptors(error: unknown): Promise<Error> {
+    let processedError = error instanceof Error ? error : new Error(UNKNOWN_ERROR);
+    for (const interceptor of this.responseInterceptors) {
+      if (interceptor.onRejected) {
+        processedError = await interceptor.onRejected(processedError);
       }
+    }
+    return processedError;
+  }
 
-      return response;
-    } catch (error) {
-      // Apply error interceptors
-      let processedError = error instanceof Error ? error : new Error("Unknown error");
-      for (const interceptor of this.responseInterceptors) {
-        if (interceptor.onRejected) {
-          processedError = await interceptor.onRejected(processedError);
-        }
-      }
-      return this.createErrorResponse<T>(processedError);
-    } finally {
-      // Clean up timeout to prevent memory leaks
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
-      }
+  /**
+   * Clean up timeout to prevent memory leaks
+   * @private
+   */
+  private cleanupTimeout(timeoutId?: NodeJS.Timeout | number): void {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -251,8 +316,8 @@ class ApiClient {
     options: RequestOptions
   ): Promise<ApiResponse<T>> {
     return new Promise((resolve) => {
-      const requestId = `${Date.now()}-${Math.random()}`;
-      
+      const requestId = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Date.now().toString(36)}`;
+
       this.batchQueue.push({
         id: requestId,
         endpoint,
@@ -275,12 +340,12 @@ class ApiClient {
         this.processBatch();
       }
 
-      // Store resolver for this request
-      this.batchResolvers.set(requestId, resolve);
+      // Store resolver for this request with type assertion to handle generic compatibility
+      this.batchResolvers.set(requestId, resolve as (response: ApiResponse<unknown>) => void);
     });
   }
 
-  private batchResolvers = new Map<string, (response: ApiResponse<any>) => void>();
+  private batchResolvers = new Map<string, (response: ApiResponse<unknown>) => void>();
 
   /**
    * Process batched requests
@@ -334,7 +399,7 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
     const url = `${this.baseUrl}${normalizedEndpoint}`;
-    
+
     return this.executeRequestWithRetry<T>(url, {
       method: options.method ?? "GET",
       headers: { ...this.defaultHeaders, ...options.headers },
@@ -355,9 +420,9 @@ class ApiClient {
 
     for (let attempt = 0; attempt <= this.retryAttempts; attempt++) {
       try {
-        return await this.executeRequest<T>(url, options);
+        return await this.executeHttpRequest<T>(url, options);
       } catch (error) {
-        lastError = error instanceof Error ? error : new Error("Unknown error");
+        lastError = error instanceof Error ? error : new Error(UNKNOWN_ERROR);
 
         // Don't retry on client errors (4xx) or if this is the last attempt
         if (
@@ -381,7 +446,7 @@ class ApiClient {
    * Execute the actual HTTP request
    * @private
    */
-  private async executeRequest<T>(
+  private async executeHttpRequest<T>(
     url: string,
     options: Omit<RequestOptions, "timeout"> & { signal: AbortSignal }
   ): Promise<ApiResponse<T>> {
@@ -443,10 +508,11 @@ class ApiClient {
         data = (await response.blob()) as unknown as T;
       }
     } catch (parseError) {
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Parse error';
       return {
         success: false,
         error: "Failed to parse response",
-        message: "The server response could not be parsed",
+        message: `The server response could not be parsed: ${errorMessage}`,
         status: response.status,
         timestamp: new Date().toISOString(),
       };
@@ -496,7 +562,7 @@ class ApiClient {
     if (!error) {
       return {
         success: false,
-        error: "Unknown error",
+        error: UNKNOWN_ERROR,
         message: "An unknown error occurred",
         timestamp: new Date().toISOString(),
       };
@@ -524,7 +590,7 @@ class ApiClient {
    * @private
    */
   private isClientError(error: Error): boolean {
-    const {message} = error;
+    const { message } = error;
     return (
       message.includes("HTTP 4") ||
       message.includes("Bad Request") ||
@@ -612,8 +678,11 @@ class ApiClient {
       );
     } catch (storageError) {
       // Storage might be unavailable (incognito mode, disabled, etc.)
-      // Using a no-op for debugging instead of console to comply with no-console rule
-      // In production, consider using a proper logging service
+      // Log error in development mode for debugging
+      if (process.env.NODE_ENV === 'development' && storageError instanceof Error) {
+        // eslint-disable-next-line no-console
+        console.warn('Storage access failed:', storageError.message);
+      }
       return null;
     }
   }
@@ -633,7 +702,7 @@ class ApiClient {
    * Update default headers (merge with existing)
    */
   setDefaultHeaders(headers: Readonly<Record<string, string>>): void {
-    if (typeof headers !== "object" || headers === null) {
+    if (!headers || typeof headers !== "object") {
       throw new Error("Headers must be a valid object");
     }
     this.defaultHeaders = { ...this.defaultHeaders, ...headers };
@@ -654,13 +723,13 @@ class ApiClient {
    */
   private getCachedResponse<T>(url: string): ApiResponse<T> | null {
     const entry = this.cache.get(url) as CacheEntry<ApiResponse<T>> | undefined;
-    
+
     if (!entry) {
       return null;
     }
 
     const now = Date.now();
-    
+
     // Check if entry has expired
     if (now - entry.timestamp > entry.ttl) {
       this.cache.delete(url);
@@ -686,7 +755,7 @@ class ApiClient {
    */
   private setCachedResponse<T>(url: string, response: ApiResponse<T>): void {
     const now = Date.now();
-    
+
     // Enforce cache size limit
     if (this.cache.size >= this.cacheStrategy.maxSize) {
       this.evictCacheEntry();
@@ -710,54 +779,83 @@ class ApiClient {
   private evictCacheEntry(): void {
     if (this.cache.size === 0) return;
 
-    let keyToEvict: string | null = null;
-
-    switch (this.cacheStrategy.type) {
-      case 'LRU': {
-        let oldestAccess = Date.now();
-        for (const [key, entry] of this.cache.entries()) {
-          if (entry.lastAccessed < oldestAccess) {
-            oldestAccess = entry.lastAccessed;
-            keyToEvict = key;
-          }
-        }
-        break;
-      }
-      case 'FIFO': {
-        let oldestTimestamp = Date.now();
-        for (const [key, entry] of this.cache.entries()) {
-          if (entry.timestamp < oldestTimestamp) {
-            oldestTimestamp = entry.timestamp;
-            keyToEvict = key;
-          }
-        }
-        break;
-      }
-      case 'TTL': {
-        const now = Date.now();
-        for (const [key, entry] of this.cache.entries()) {
-          if (now - entry.timestamp > entry.ttl) {
-            keyToEvict = key;
-            break; // Remove first expired entry
-          }
-        }
-        // If no expired entries, fall back to FIFO
-        if (!keyToEvict) {
-          let oldestTimestamp = Date.now();
-          for (const [key, entry] of this.cache.entries()) {
-            if (entry.timestamp < oldestTimestamp) {
-              oldestTimestamp = entry.timestamp;
-              keyToEvict = key;
-            }
-          }
-        }
-        break;
-      }
-    }
-
+    const keyToEvict = this.findKeyToEvict();
     if (keyToEvict) {
       this.cache.delete(keyToEvict);
     }
+  }
+
+  /**
+   * Find the key to evict based on cache strategy
+   * @private
+   */
+  private findKeyToEvict(): string | null {
+    switch (this.cacheStrategy.type) {
+      case 'LRU':
+        return this.findLRUKey();
+      case 'FIFO':
+        return this.findFIFOKey();
+      case 'TTL':
+        return this.findTTLKey();
+      default:
+        return this.findFIFOKey(); // Default fallback
+    }
+  }
+
+  /**
+   * Find least recently used key
+   * @private
+   */
+  private findLRUKey(): string | null {
+    let oldestAccess = Date.now();
+    let keyToEvict: string | null = null;
+
+    Array.from(this.cache.entries()).forEach(([key, entry]) => {
+      if (entry.lastAccessed < oldestAccess) {
+        oldestAccess = entry.lastAccessed;
+        keyToEvict = key;
+      }
+    });
+
+    return keyToEvict;
+  }
+
+  /**
+   * Find first-in-first-out key
+   * @private
+   */
+  private findFIFOKey(): string | null {
+    let oldestTimestamp = Date.now();
+    let keyToEvict: string | null = null;
+
+    Array.from(this.cache.entries()).forEach(([key, entry]) => {
+      if (entry.timestamp < oldestTimestamp) {
+        oldestTimestamp = entry.timestamp;
+        keyToEvict = key;
+      }
+    });
+
+    return keyToEvict;
+  }
+
+  /**
+   * Find expired key or fall back to FIFO
+   * @private
+   */
+  private findTTLKey(): string | null {
+    const now = Date.now();
+
+    // First, look for expired entries
+    const expiredEntry = Array.from(this.cache.entries()).find(([_key, entry]) => {
+      return now - entry.timestamp > entry.ttl;
+    });
+
+    if (expiredEntry) {
+      return expiredEntry[0];
+    }
+
+    // If no expired entries, fall back to FIFO
+    return this.findFIFOKey();
   }
 
   /**

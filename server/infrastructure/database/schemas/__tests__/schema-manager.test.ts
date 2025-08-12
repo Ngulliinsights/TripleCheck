@@ -15,7 +15,8 @@ vi.mock('postgres', () => {
   mockSql.end = vi.fn().mockResolvedValue(undefined);
   
   const mockPostgres = vi.fn().mockReturnValue(mockSql);
-  return { default: mockPostgres };
+  mockPostgres.default = mockPostgres;
+  return mockPostgres;
 });
 
 // Mock the schema modules
@@ -59,7 +60,7 @@ describe('SchemaManager', () => {
   beforeEach(() => {
     schemaManager = new SchemaManager();
     const postgres = require('postgres');
-    mockSql = postgres.default();
+    mockSql = postgres();
     
     // Mock database queries for validation
     mockSql.mockImplementation((query: any) => {

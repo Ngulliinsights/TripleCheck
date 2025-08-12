@@ -18,6 +18,11 @@ import { ImageUtils } from "../../utils/images/unified-utils";
 
 const UNKNOWN_ERROR = "Unknown error";
 
+// Global Image constructor type for browser environments
+declare const Image: {
+  new(): HTMLImageElement;
+};
+
 export interface IPropertyImageValidationService {
   validateFile(
     file: File,
@@ -38,43 +43,42 @@ export interface IPropertyImageValidationService {
 
 export interface PropertyValidationDependencies {
   documentAuthService?:
-    | {
-        authenticateDocument: (
-          file: File,
-          documentType: DocumentType
-        ) => Promise<DocumentAuthResult>;
-      }
-    | undefined;
+  | {
+    authenticateDocument: (
+      file: File,
+      documentType: DocumentType
+    ) => Promise<DocumentAuthResult>;
+  }
+  | undefined;
   fraudDetectionService?:
-    | {
-        analyzeFraudRisk: (
-          file: File,
-          metadata: PropertyImageMetadata
-        ) => Promise<number>;
-      }
-    | undefined;
+  | {
+    analyzeFraudRisk: (
+      file: File,
+      metadata: PropertyImageMetadata
+    ) => Promise<number>;
+  }
+  | undefined;
   geoLocationService?:
-    | {
-        validateLocation: (
-          latitude: number,
-          longitude: number,
-          expectedRegion?: string
-        ) => Promise<boolean>;
-      }
-    | undefined;
+  | {
+    validateLocation: (
+      latitude: number,
+      longitude: number,
+      expectedRegion?: string
+    ) => Promise<boolean>;
+  }
+  | undefined;
   auditService?:
-    | {
-        logValidationEvent: (
-          event: string,
-          metadata: Record<string, unknown>
-        ) => Promise<void>;
-      }
-    | undefined;
+  | {
+    logValidationEvent: (
+      event: string,
+      metadata: Record<string, unknown>
+    ) => Promise<void>;
+  }
+  | undefined;
 }
 
 export class PropertyImageValidationService
-  implements IPropertyImageValidationService
-{
+  implements IPropertyImageValidationService {
   private config: ImageServiceConfig;
 
   constructor(
@@ -97,6 +101,14 @@ export class PropertyImageValidationService
     options?: ValidationOptions,
     documentType?: DocumentType
   ): Promise<ValidationResult> {
+    return this.validateFileInternal(file, options, documentType);
+  }
+
+  private async validateFileInternal(
+    file: File,
+    options?: ValidationOptions,
+    documentType?: DocumentType
+  ): Promise<ValidationResult> {
     const validationOptions =
       options || this.getValidationProfile(documentType || "other_document");
 
@@ -107,121 +119,163 @@ export class PropertyImageValidationService
     };
 
     try {
-      // Log validation start
-      if (this.dependencies.auditService) {
-        await this.dependencies.auditService.logValidationEvent(
-          "validation_started",
-          {
-            fileName: file.name,
-            fileSize: file.size,
-            documentType: documentType || "unknown",
-          }
-        );
-      }
+      await this.logValidationStart(file, documentType);
 
-      // Basic file validation
-      if (!file) {
-        result.isValid = false;
-        result.errors.push("No file provided");
+      // Basic validations
+      if (!this.performBasicValidations(file, validationOptions, result)) {
         return result;
       }
 
-      // File size validation
-      if (
-        validationOptions.maxFileSize &&
-        file.size > validationOptions.maxFileSize
-      ) {
-        result.isValid = false;
-        result.errors.push(
-          `File size (${ImageUtils.formatFileSize(file.size)}) exceeds maximum allowed size (${ImageUtils.formatFileSize(validationOptions.maxFileSize)})`
-        );
-      }
-
-      // File type validation
-      const fileExtension = ImageUtils.getFileExtension(file.name).toLowerCase();
-      if (
-        validationOptions.allowedFormats &&
-        !validationOptions.allowedFormats.includes(fileExtension)
-      ) {
-        result.isValid = false;
-        result.errors.push(
-          `File format '${fileExtension}' is not allowed. Allowed formats: ${validationOptions.allowedFormats.join(", ")}`
-        );
-      }
-
-      // MIME type validation
-      if (
-        !file.type.startsWith("image/") &&
-        !file.type.startsWith("application/pdf")
-      ) {
-        result.isValid = false;
-        result.errors.push("File is not a valid image or PDF document");
-        return result;
-      }
-
-      // Extract metadata for further validation
+      // Extract and validate metadata
       const metadata = await this.extractImageMetadata(file);
       result.metadata = metadata;
 
-      // Dimension validation (for images only)
-      if (file.type.startsWith("image/")) {
-        this.validateDimensions(metadata, validationOptions, result);
-        this.validateAspectRatio(metadata, validationOptions, result);
-      }
+      this.performMetadataValidations(file, metadata, validationOptions, result, documentType);
 
-      // Geo-location validation for property photos
-      if (
-        validationOptions.requireGeoLocation &&
-        documentType === "property_photo"
-      ) {
-        this.validateGeoLocation(metadata, result);
-      }
+      // Advanced validations
+      await this.performAdvancedValidations(file, metadata, result, documentType);
 
-      // Document authentication (if enabled and service available)
-      await this.performDocumentAuthentication(file, documentType, result);
-
-      // Fraud detection analysis (if enabled and service available)
-      await this.performFraudDetection(file, metadata, result);
-
-      // Performance and quality warnings
-      this.addPerformanceWarnings(file, metadata, result);
-
-      // Log validation completion
-      if (this.dependencies.auditService) {
-        await this.dependencies.auditService.logValidationEvent(
-          "validation_completed",
-          {
-            fileName: file.name,
-            isValid: result.isValid,
-            errorCount: result.errors.length,
-            warningCount: result.warnings.length,
-            documentType: documentType || "unknown",
-            fraudRiskScore: result.fraudRiskScore || 0,
-          }
-        );
-      }
+      await this.logValidationCompletion(file, documentType, result);
 
       return result;
     } catch (error) {
+      return this.handleValidationError(file, documentType, error, result);
+    }
+  }
+
+  private async logValidationStart(file: File, documentType?: DocumentType): Promise<void> {
+    if (this.dependencies.auditService) {
+      await this.dependencies.auditService.logValidationEvent(
+        "validation_started",
+        {
+          fileName: file.name,
+          fileSize: file.size,
+          documentType: documentType || "unknown",
+        }
+      );
+    }
+  }
+
+  private performBasicValidations(
+    file: File,
+    validationOptions: ValidationOptions,
+    result: ValidationResult
+  ): boolean {
+    // Basic file validation
+    if (!file) {
+      result.isValid = false;
+      result.errors.push("No file provided");
+      return false;
+    }
+
+    // File size validation
+    if (validationOptions.maxFileSize && file.size > validationOptions.maxFileSize) {
       result.isValid = false;
       result.errors.push(
-        `Validation failed: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
+        `File size (${ImageUtils.formatFileSize(file.size)}) exceeds maximum allowed size (${ImageUtils.formatFileSize(validationOptions.maxFileSize)})`
       );
-
-      // Log validation error
-      if (this.dependencies.auditService) {
-        await this.dependencies.auditService.logValidationEvent(
-          "validation_error",
-          {
-            fileName: file.name,
-            error: error instanceof Error ? error.message : UNKNOWN_ERROR,
-            documentType: documentType || "unknown",
-          }
-        );
-      }
-
-      return result;
     }
+
+    // File type validation
+    const fileExtension = ImageUtils.getFileExtension(file.name).toLowerCase();
+    if (validationOptions.allowedFormats && !validationOptions.allowedFormats.includes(fileExtension)) {
+      result.isValid = false;
+      result.errors.push(
+        `File format '${fileExtension}' is not allowed. Allowed formats: ${validationOptions.allowedFormats.join(", ")}`
+      );
+    }
+
+    // MIME type validation
+    if (!file.type.startsWith("image/") && !file.type.startsWith("application/pdf")) {
+      result.isValid = false;
+      result.errors.push("File is not a valid image or PDF document");
+      return false;
+    }
+
+    return true;
+  }
+
+  private performMetadataValidations(
+    file: File,
+    metadata: PropertyImageMetadata,
+    validationOptions: ValidationOptions,
+    result: ValidationResult,
+    documentType?: DocumentType
+  ): void {
+    // Dimension validation (for images only)
+    if (file.type.startsWith("image/")) {
+      this.validateDimensions(metadata, validationOptions, result);
+      this.validateAspectRatio(metadata, validationOptions, result);
+    }
+
+    // Geo-location validation for property photos
+    if (validationOptions.requireGeoLocation && documentType === "property_photo") {
+      this.validateGeoLocation(metadata, result);
+    }
+
+    // Performance and quality warnings
+    this.addPerformanceWarnings(file, metadata, result);
+  }
+
+  private async performAdvancedValidations(
+    file: File,
+    metadata: PropertyImageMetadata,
+    result: ValidationResult,
+    documentType?: DocumentType
+  ): Promise<void> {
+    // Document authentication (if enabled and service available)
+    await this.performDocumentAuthentication(file, documentType, result);
+
+    // Fraud detection analysis (if enabled and service available)
+    await this.performFraudDetection(file, metadata, result);
+  }
+
+  private async logValidationCompletion(
+    file: File,
+    documentType: DocumentType | undefined,
+    result: ValidationResult
+  ): Promise<void> {
+    if (this.dependencies.auditService) {
+      await this.dependencies.auditService.logValidationEvent(
+        "validation_completed",
+        {
+          fileName: file.name,
+          isValid: result.isValid,
+          errorCount: result.errors.length,
+          warningCount: result.warnings.length,
+          documentType: documentType || "unknown",
+          fraudRiskScore: result.fraudRiskScore || 0,
+        }
+      );
+    }
+  }
+
+  private handleValidationError(
+    file: File,
+    documentType: DocumentType | undefined,
+    error: unknown,
+    result: ValidationResult
+  ): ValidationResult {
+    result.isValid = false;
+    result.errors.push(
+      `Validation failed: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`
+    );
+
+    // Log validation error
+    if (this.dependencies.auditService) {
+      this.dependencies.auditService.logValidationEvent(
+        "validation_error",
+        {
+          fileName: file.name,
+          error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+          documentType: documentType || "unknown",
+        }
+      ).catch(() => {
+        // Ignore audit logging errors
+      });
+    }
+
+    return result;
   }
 
   private async performDocumentAuthentication(
@@ -255,7 +309,7 @@ export class PropertyImageValidationService
         }
       } catch (error) {
         const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
+          error instanceof Error ? error.message : UNKNOWN_ERROR;
         result.warnings.push(
           `Document authentication service unavailable: ${errorMessage}`
         );
@@ -292,7 +346,7 @@ export class PropertyImageValidationService
         }
       } catch (error) {
         const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
+          error instanceof Error ? error.message : UNKNOWN_ERROR;
         result.warnings.push(
           `Fraud detection service unavailable: ${errorMessage}`
         );
@@ -425,7 +479,7 @@ export class PropertyImageValidationService
   }
 
   getValidationProfile(documentType: DocumentType): ValidationOptions {
-    const profile = DOCUMENT_VALIDATION_PROFILES[documentType];
+    const profile = DOCUMENT_VALIDATION_PROFILES[documentType as keyof typeof DOCUMENT_VALIDATION_PROFILES];
     return profile || DOCUMENT_VALIDATION_PROFILES.other_document;
   }
 
@@ -520,11 +574,11 @@ export class PropertyImageValidationService
               canvas.width,
               canvas.height
             );
-            const {data} = imageData;
+            const { data } = imageData;
             let hasTransparency = false;
 
             for (let i = 3; i < data.length; i += 4) {
-              const alphaValue = data[i];
+              const alphaValue = data.at(i);
               if (alphaValue !== undefined && alphaValue < 255) {
                 hasTransparency = true;
                 break;
@@ -546,12 +600,11 @@ export class PropertyImageValidationService
               if (exifData.captureDate) {
                 metadata.captureDate = exifData.captureDate;
               }
-              resolve(metadata);
-              return metadata;
+              return resolve(metadata);
             })
             .catch(() => {
               // Continue without EXIF data
-              resolve(metadata);
+              return resolve(metadata);
             });
         } catch (error) {
           reject(error);
@@ -704,10 +757,11 @@ export class PropertyImageValidationService
               "Property location appears to be outside expected region"
             );
           }
+          return isValidLocation;
         })
         .catch((error) => {
           const errorMessage =
-            error instanceof Error ? error.message : "Unknown error";
+            error instanceof Error ? error.message : UNKNOWN_ERROR;
           result.warnings.push(
             `Could not validate geo-location: ${errorMessage}`
           );

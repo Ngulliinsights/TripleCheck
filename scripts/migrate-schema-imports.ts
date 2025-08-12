@@ -2,7 +2,7 @@
 /**
  * Migration Script: Update Schema Imports
  * 
- * This script helps migrate from deprecated server/infrastructure/database/schemas/ndex.ts imports
+ * This script helps migrate from deprecated server/infrastructure/database/schemas/consolidated imports
  * to the new consolidated database schema location.
  * 
  * Usage: npm run migrate:schema-imports
@@ -129,7 +129,7 @@ class SchemaImportMigrator {
     console.log('1. Review the updated files');
     console.log('2. Run tests to ensure everything works');
     console.log('3. Update any remaining manual references');
-    console.log('4. Consider removing server/infrastructure/database/schemas/ndex.ts after migration');
+    console.log('4. Consider removing server/infrastructure/database/schemas/consolidated after migration');
     
     if (totalChanges > 0) {
       console.log('\n🎉 Migration completed successfully!');

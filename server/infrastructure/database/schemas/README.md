@@ -6,7 +6,7 @@ This directory contains the consolidated database schemas for the TripleCheck ap
 
 ### Before Consolidation (Fragmented)
 ```
-server/infrastructure/database/schemas/ndex.ts                    # Mixed schemas
+server/infrastructure/database/schemas/consolidated                    # Mixed schemas
 server/infrastructure/database/schemas/ # Duplicate schemas
 database/schemas/                       # Incomplete schemas
 ```

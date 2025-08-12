@@ -84,7 +84,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
     landVerificationId?: string
   ): Promise<void> {
     const workflowId = ImageUtils.generateUniqueId();
-    
+
     const workflow: WorkflowStatus = {
       imageId,
       currentStep: 'validation',
@@ -113,7 +113,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
       // Process steps in order
       for (const step of processingSteps) {
         await this.processImage(imageId, step);
-        
+
         // Check if workflow was cancelled or paused
         const currentWorkflow = this.activeWorkflows.get(imageId);
         if (!currentWorkflow || currentWorkflow.status === 'paused') {
@@ -144,7 +144,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
 
       // Mark workflow as completed
       this.completeWorkflow(imageId, 'completed');
-      
+
     } catch (error) {
       this.completeWorkflow(imageId, 'failed', error instanceof Error ? error.message : UNKNOWN_ERROR);
     }
@@ -175,10 +175,10 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
 
     try {
       await this.executeProcessingStep(imageId, step);
-      
+
       // Mark step as completed
       workflow.completedSteps.push(step);
-      
+
       // Remove from failed steps if it was previously failed
       const failedIndex = workflow.failedSteps.indexOf(step);
       if (failedIndex > -1) {
@@ -199,7 +199,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
         step,
         progress: workflow.progress,
       });
-      
+
     } catch (error) {
       // Mark step as failed
       if (!workflow.failedSteps.includes(step)) {
@@ -377,7 +377,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
 
   private async executeValidation(imageId: string, fileReference: string): Promise<void> {
     const validationResult = await this.dependencies.validationService.validateUrl(fileReference);
-    
+
     await this.updateImageMetadata(imageId, {
       validationResult,
       status: validationResult.isValid ? 'processing' : 'error',
@@ -394,7 +394,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
 
   private async executeVirusScan(imageId: string, fileReference: string): Promise<void> {
     const scanResult = await this.dependencies.metadataService.performVirusScan(fileReference);
-    
+
     await this.updateImageMetadata(imageId, {
       virusScanResult: scanResult,
       status: scanResult.clean ? 'processing' : 'error',
@@ -480,7 +480,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
 
   private async executeComplianceCheck(imageId: string, fileReference: string): Promise<void> {
     const currentImage = await this.getCurrentImageMetadata(imageId);
-    
+
     if (!currentImage.metadata) {
       throw new ImageProcessingError(
         'Image metadata not available for compliance check',
@@ -569,7 +569,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
       }
 
       this.notifyStatusUpdate(imageId);
-      
+
       // Notify completion
       this.dependencies.notificationService?.notifyWorkflowComplete(
         imageId,
@@ -604,7 +604,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
   private notifyStatusUpdate(imageId: string): void {
     const callback = this.workflowCallbacks.get(imageId);
     const status = this.activeWorkflows.get(imageId);
-    
+
     if (callback && status) {
       callback(status);
     }
@@ -614,7 +614,7 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
     if (this.dependencies.storageService) {
       return await this.dependencies.storageService.getFileReference(imageId);
     }
-    
+
     // Fallback for testing/development
     return `mock://storage/${imageId}`;
   }

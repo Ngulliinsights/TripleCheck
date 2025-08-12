@@ -246,11 +246,12 @@ function setupProcessHandlers(): void {
 async function initializeDatabaseConnection(): Promise<void> {
   logger.info("Initializing database connection...");
 
-  const dbResult = await initializeDatabase();
-
-  if (!dbResult.success) {
+  try {
+    await initializeDatabase();
+    logger.info("Database initialized successfully");
+  } catch (error) {
     logger.warn("Database initialization failed, continuing with mock data", "DATABASE", {
-      error: dbResult.error instanceof Error ? dbResult.error.message : String(dbResult.error)
+      error: error instanceof Error ? error.message : String(error)
     });
     
     // Don't throw error - let server continue with mock data

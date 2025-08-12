@@ -22,7 +22,7 @@ Successfully removed all redundant directories and files from the server infrast
 - ✅ `server/infrastructure/database/QueryOptimizer.ts` (moved to database/utils/QueryOptimizer.ts)
 - ✅ `server/infrastructure/database/schemas/core/index.ts` (redundant, consolidated in database/schemas/core/)
 - ✅ `server/infrastructure/database/schemas/land-verification/index.ts` (redundant, consolidated in database/schemas/verification/)
-- ✅ `server/infrastructure/database/schemas/index.ts` (redundant, deprecated wrapper)
+- ✅ `server/infrastructure/database/schemas/consolidated` (redundant, deprecated wrapper)
 - ✅ `server/infrastructure/database/seeds/database-seeder.ts` (duplicate of database/seeds/database-seeder.ts)
 - ✅ `server/infrastructure/database/seeds/land-verification-seed.ts` (duplicate of database/seeds/land-verification-seed.ts)
 - ✅ `server/infrastructure/database/seeds/sample-ai-data.ts` (duplicate of database/seeds/sample-ai-data.ts)

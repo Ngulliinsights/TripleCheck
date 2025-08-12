@@ -49,7 +49,7 @@ database/schemas/
 
 **Status**: Well-organized structure but domain-specific schemas are mostly empty
 
-#### 2. Legacy Schema Location (`/server/infrastructure/database/schemas/ndex.ts`)
+#### 2. Legacy Schema Location (`/server/infrastructure/database/schemas/consolidated`)
 ```
 src/shared/
 ├── schema.ts               # ❌ DEPRECATED - Contains full schema definitions (2440 lines)
@@ -177,17 +177,17 @@ database/scripts/
 src/shared/schema-compat.ts
   └── imports from: ../../database/schemas/consolidated
       └── imports from: database/schemas/core (but core is empty!)
-          └── BROKEN CHAIN: Actual schemas in server/infrastructure/database/schemas/ndex.ts
+          └── BROKEN CHAIN: Actual schemas in server/infrastructure/database/schemas/consolidated
 ```
 
 ### Critical Dependency Issues
-1. **Circular Reference Risk**: `server/infrastructure/database/schemas/ndex.ts` re-exports from `database/schemas/consolidated`
+1. **Circular Reference Risk**: `server/infrastructure/database/schemas/consolidated` re-exports from `database/schemas/consolidated`
 2. **Broken Import Chain**: Consolidated schemas import from empty domain directories
 3. **Legacy Dependency**: Applications still importing from deprecated locations
 
 ## Schema Content Analysis
 
-### Current Schema Definitions (from `server/infrastructure/database/schemas/ndex.ts`)
+### Current Schema Definitions (from `server/infrastructure/database/schemas/consolidated`)
 
 #### Core Tables Identified:
 - ✅ **users** - User accounts with trust scoring (comprehensive)
@@ -239,7 +239,7 @@ src/shared/schema-compat.ts
 ### Immediate Actions Required (Phase 1)
 
 1. **Consolidate Schema Definitions**
-   - Move actual schema definitions from `server/infrastructure/database/schemas/ndex.ts` to domain-specific directories
+   - Move actual schema definitions from `server/infrastructure/database/schemas/consolidated` to domain-specific directories
    - Populate empty domain schema directories (`core/`, `verification/`, etc.)
    - Update import chains to use consolidated structure
 

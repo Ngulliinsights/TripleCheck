@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Response, NextFunction } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../middleware/auth.middleware';
 
@@ -6,6 +6,9 @@ import { PropertyService } from './property.service';
 
 const router = Router();
 const propertyService = new PropertyService();
+
+// Constants to avoid duplication
+const DEFAULT_ERROR_MESSAGE = 'Authentication required';
 
 // Get all properties with search and filters
 router.get('/', async (req, res, next) => {
@@ -17,11 +20,223 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// Get residential properties
+router.get('/residential', async (req, res, next) => {
+  try {
+    const filters = { ...req.query, propertyType: 'residential' };
+    const result = await propertyService.getProperties(filters);
+    res.json({
+      success: true,
+      items: result.data || [],
+      totalCount: result.total || 0,
+      hasNextPage: result.hasNext || false,
+      page: result.page || 1,
+      limit: result.limit || 20
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get residential properties (POST method for complex filters)
+router.post('/residential', async (req, res, next) => {
+  try {
+    const { filters = {}, page = 1, sort = 'createdAt', pageSize = 12 } = req.body;
+    const searchFilters = { ...filters, propertyType: 'residential' };
+    const result = await propertyService.getProperties({
+      ...searchFilters,
+      page,
+      limit: pageSize,
+      sortBy: sort
+    });
+    res.json({
+      success: true,
+      items: result.data || [],
+      totalCount: result.total || 0,
+      hasNextPage: result.hasNext || false,
+      page: result.page || 1,
+      limit: result.limit || pageSize
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get commercial properties
+router.get('/commercial', async (req, res, next) => {
+  try {
+    const filters = { ...req.query, propertyType: 'commercial' };
+    const result = await propertyService.getProperties(filters);
+    res.json({
+      success: true,
+      items: result.data || [],
+      totalCount: result.total || 0,
+      hasNextPage: result.hasNext || false,
+      page: result.page || 1,
+      limit: result.limit || 20
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get commercial properties (POST method for complex filters)
+router.post('/commercial', async (req, res, next) => {
+  try {
+    const { filters = {}, page = 1, sort = 'createdAt', pageSize = 12 } = req.body;
+    const searchFilters = { ...filters, propertyType: 'commercial' };
+    const result = await propertyService.getProperties({
+      ...searchFilters,
+      page,
+      limit: pageSize,
+      sortBy: sort
+    });
+    res.json({
+      success: true,
+      items: result.data || [],
+      totalCount: result.total || 0,
+      hasNextPage: result.hasNext || false,
+      page: result.page || 1,
+      limit: result.limit || pageSize
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get land properties
+router.get('/land', async (req, res, next) => {
+  try {
+    const filters = { ...req.query, propertyType: 'land' };
+    const result = await propertyService.getProperties(filters);
+    res.json({
+      success: true,
+      items: result.data || [],
+      totalCount: result.total || 0,
+      hasNextPage: result.hasNext || false,
+      page: result.page || 1,
+      limit: result.limit || 20
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get land properties (POST method for complex filters)
+router.post('/land', async (req, res, next) => {
+  try {
+    const { filters = {}, page = 1, sort = 'createdAt', pageSize = 12 } = req.body;
+    const searchFilters = { ...filters, propertyType: 'land' };
+    const result = await propertyService.getProperties({
+      ...searchFilters,
+      page,
+      limit: pageSize,
+      sortBy: sort
+    });
+    res.json({
+      success: true,
+      items: result.data || [],
+      totalCount: result.total || 0,
+      hasNextPage: result.hasNext || false,
+      page: result.page || 1,
+      limit: result.limit || pageSize
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get all properties (alternative endpoint)
+router.get('/all', async (req, res, next) => {
+  try {
+    const result = await propertyService.getProperties(req.query);
+    res.json({
+      success: true,
+      items: result.data || [],
+      totalCount: result.total || 0,
+      hasNextPage: result.hasNext || false,
+      page: result.page || 1,
+      limit: result.limit || 20
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get all properties (POST method for complex filters)
+router.post('/all', async (req, res, next) => {
+  try {
+    const { filters = {}, page = 1, sort = 'createdAt', pageSize = 12 } = req.body;
+    const result = await propertyService.getProperties({
+      ...filters,
+      page,
+      limit: pageSize,
+      sortBy: sort
+    });
+    res.json({
+      success: true,
+      items: result.data || [],
+      totalCount: result.total || 0,
+      hasNextPage: result.hasNext || false,
+      page: result.page || 1,
+      limit: result.limit || pageSize
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Property search endpoint
+router.post('/search', async (req, res, next) => {
+  try {
+    const { search, filters = {}, page = 1, sort = 'relevance', pageSize = 12 } = req.body;
+    const result = await propertyService.getProperties({
+      ...filters,
+      search,
+      page,
+      limit: pageSize,
+      sortBy: sort
+    });
+    res.json({
+      success: true,
+      items: result.data || [],
+      totalCount: result.total || 0,
+      hasNextPage: result.hasNext || false,
+      page: result.page || 1,
+      limit: result.limit || pageSize
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get similar properties (MUST be before /:id route to avoid conflicts)
 router.get('/similar', async (req, res, next) => {
   try {
-    const result = await propertyService.getSimilarProperties(req.query);
-    res.json(result);
+    const { location, propertyType, priceMin, priceMax, bedrooms, maxResults } = req.query;
+    
+    if (!location || !propertyType) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameters: location and propertyType'
+      });
+    }
+
+    const params = {
+      location: location as string,
+      propertyType: propertyType as string,
+      ...(priceMin && priceMax && {
+        priceRange: {
+          min: parseInt(priceMin as string),
+          max: parseInt(priceMax as string)
+        }
+      }),
+      ...(bedrooms && { bedrooms: parseInt(bedrooms as string) }),
+      ...(maxResults && { maxResults: parseInt(maxResults as string) })
+    };
+
+    const result = await propertyService.getSimilarProperties(params);
+    return res.json(result);
   } catch (error) {
     next(error);
   }
@@ -30,8 +245,16 @@ router.get('/similar', async (req, res, next) => {
 // Get properties by owner (MUST be before /:id route to avoid conflicts)
 router.get('/owner/:ownerId', async (req, res, next) => {
   try {
-    const result = await propertyService.getPropertiesByOwner(req.params.ownerId);
-    res.json(result);
+    const { ownerId } = req.params;
+    if (!ownerId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Owner ID is required'
+      });
+    }
+    
+    const result = await propertyService.getPropertiesByOwner(ownerId);
+    return res.json(result);
   } catch (error) {
     next(error);
   }
@@ -40,16 +263,24 @@ router.get('/owner/:ownerId', async (req, res, next) => {
 // Get single property
 router.get('/:id', async (req, res, next) => {
   try {
+    const propertyId = req.params.id;
+    if (!propertyId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Property ID is required'
+      });
+    }
+
     const includeMarketEstimate = req.query.includeMarketEstimate === 'true';
-    const result = await propertyService.getProperty(req.params.id, { includeMarketEstimate });
+    const result = await propertyService.getProperty(propertyId, { includeMarketEstimate });
     if (!result.data) {
       return res.status(404).json({
         success: false,
         error: 'Property not found',
-        message: `Property with ID ${req.params.id} was not found`
+        message: `Property with ID ${propertyId} was not found`
       });
     }
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     next(error);
   }
@@ -59,7 +290,7 @@ router.get('/:id', async (req, res, next) => {
 router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: DEFAULT_ERROR_MESSAGE });
     }
     const result = await propertyService.createProperty(req.body, req.user.id);
     res.status(201).json(result);
@@ -72,9 +303,18 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response, n
 router.patch('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: DEFAULT_ERROR_MESSAGE });
     }
-    const result = await propertyService.updateProperty(req.params.id, req.body, req.user.id);
+    
+    const propertyId = req.params.id;
+    if (!propertyId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Property ID is required'
+      });
+    }
+
+    const result = await propertyService.updateProperty(propertyId, req.body, req.user.id);
     res.json(result);
   } catch (error) {
     next(error);
@@ -85,10 +325,10 @@ router.patch('/:id', requireAuth, async (req: AuthenticatedRequest, res: Respons
 router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: DEFAULT_ERROR_MESSAGE });
     }
-    await propertyService.deleteProperty(req.params.id, req.user.id);
-    res.json({ success: true, message: 'Property deleted successfully' });
+    await propertyService.deleteProperty(req.params.id, String(req.user.id));
+    return res.json({ success: true, message: 'Property deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -100,10 +340,14 @@ router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res: Respon
 router.post('/:id/land-verification', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: DEFAULT_ERROR_MESSAGE });
+    }
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Property ID is required' });
     }
     const result = await propertyService.initiateLandVerification(
-      req.params.id, 
+      id, 
       req.user.id.toString(), 
       req.body.requestedLayers
     );
@@ -116,7 +360,11 @@ router.post('/:id/land-verification', requireAuth, async (req: AuthenticatedRequ
 // Get land verification status for a property
 router.get('/:id/land-verification/status', async (req, res, next) => {
   try {
-    const result = await propertyService.getLandVerificationStatus(req.params.id);
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Property ID is required' });
+    }
+    const result = await propertyService.getLandVerificationStatus(id);
     res.json(result);
   } catch (error) {
     next(error);
@@ -126,7 +374,11 @@ router.get('/:id/land-verification/status', async (req, res, next) => {
 // Get detailed land verification report for a property
 router.get('/:id/land-verification/report', async (req, res, next) => {
   try {
-    const result = await propertyService.getLandVerificationReport(req.params.id);
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Property ID is required' });
+    }
+    const result = await propertyService.getLandVerificationReport(id);
     res.json(result);
   } catch (error) {
     next(error);
@@ -137,10 +389,14 @@ router.get('/:id/land-verification/report', async (req, res, next) => {
 router.patch('/:id/land-verification', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: DEFAULT_ERROR_MESSAGE });
+    }
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Property ID is required' });
     }
     const result = await propertyService.updatePropertyLandVerification(
-      req.params.id, 
+      id, 
       req.body.landVerification, 
       req.user.id
     );
@@ -154,7 +410,7 @@ router.patch('/:id/land-verification', requireAuth, async (req: AuthenticatedReq
 router.post('/:id/documents', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user?.id) {
-      return res.status(401).json({ success: false, message: 'Authentication required' });
+      return res.status(401).json({ success: false, message: DEFAULT_ERROR_MESSAGE });
     }
     
     // Mock document upload response
@@ -176,23 +432,29 @@ router.post('/:id/documents', requireAuth, async (req: AuthenticatedRequest, res
 router.post('/:id/verify', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user?.id) {
-      return res.status(401).json({ success: false, message: 'Authentication required' });
+      return res.status(401).json({ success: false, message: DEFAULT_ERROR_MESSAGE });
     }
     
-    // Mock verification response
+    // Mock verification response with deterministic values for testing
+    const propertyIdHash = parseInt(req.params.id || '1', 10);
+    const riskScore = (propertyIdHash % 30) + 10; // Score between 10-40
+    const overallScore = (propertyIdHash % 20) + 80; // Score between 80-100
+    const suspiciousScore = propertyIdHash % 20; // Score between 0-20
+    const fraudOverallScore = ((propertyIdHash + 1) % 20) + 80;
+    
     res.json({
       success: true,
       data: {
         documentAuthenticity: 'verified',
         ownershipVerified: true,
-        riskScore: Math.floor(Math.random() * 30) + 10, // Random score between 10-40
+        riskScore,
         verifiedAt: new Date().toISOString(),
-        overallScore: Math.floor(Math.random() * 20) + 80, // Random score between 80-100
+        overallScore,
         verificationTimestamp: new Date().toISOString(),
         fraudDetection: {
           isSuspicious: false,
-          suspiciousScore: Math.floor(Math.random() * 20), // Random score between 0-20
-          overallScore: Math.floor(Math.random() * 20) + 80,
+          suspiciousScore,
+          overallScore: fraudOverallScore,
           verificationTimestamp: new Date().toISOString()
         }
       }

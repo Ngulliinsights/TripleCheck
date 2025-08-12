@@ -48,6 +48,29 @@ export interface ComplianceEngine {
 
 const UNKNOWN_ERROR = 'Unknown error';
 
+// Crypto-based random number generation utility
+const getSecureRandom = (): number => {
+  if (window?.crypto?.getRandomValues) {
+    const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
+    const [value] = array;
+    return value !== undefined ? value / (0xFFFFFFFF + 1) : 0.5;
+  }
+  // Fallback for non-browser environments or when crypto is unavailable
+  // Using a deterministic fallback for testing environments
+  return 0.5;
+};
+
+// Development logging utility
+const devLog = {
+  warn: (message: string, ...args: unknown[]) => {
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.warn(message, ...args);
+    }
+  }
+};
+
 export class ImageMetadataService implements IImageMetadataService {
   private config = imageServiceConfig;
 
@@ -58,7 +81,8 @@ export class ImageMetadataService implements IImageMetadataService {
   ) {
     // Validate configuration on initialization
     if (!this.config.processing.enableAITagging && aiVisionAPI) {
-      console.warn('AI Vision API provided but AI tagging is disabled in configuration');
+      // Log warning about configuration mismatch
+      devLog.warn('AI Vision API provided but AI tagging is disabled in configuration');
     }
   }
 
@@ -79,7 +103,7 @@ export class ImageMetadataService implements IImageMetadataService {
           };
         } catch (error) {
           // AI vision analysis failed - continue without AI metadata
-          // Continue without AI metadata
+          devLog.warn('AI vision analysis failed, continuing without AI metadata:', error instanceof Error ? error.message : UNKNOWN_ERROR);
         }
       }
 
@@ -155,6 +179,7 @@ export class ImageMetadataService implements IImageMetadataService {
       }
     } catch (error) {
       // AI tag extraction failed - return empty array
+      devLog.warn('AI tag extraction failed:', error instanceof Error ? error.message : UNKNOWN_ERROR);
       return []; // Return empty array instead of throwing, as AI tags are optional
     }
   }
@@ -172,7 +197,7 @@ export class ImageMetadataService implements IImageMetadataService {
     this.complianceEngine = engine;
   }
 
-  private async extractBasicMetadata(fileReference: string): Promise<AssetMetadata> {
+  private async extractBasicMetadata(_fileReference: string): Promise<AssetMetadata> {
     // In a real implementation, this would extract EXIF data and other metadata
     // For now, we'll simulate basic metadata extraction
     return new Promise((resolve) => {
@@ -195,14 +220,16 @@ export class ImageMetadataService implements IImageMetadataService {
 
   private mockVirusScan(scanStart: number): ScanResult {
     const scanDuration = Date.now() - scanStart;
-    const clean = Math.random() > 0.02; // 98% clean rate
+    const randomValue = getSecureRandom();
+    const clean = randomValue > 0.02; // 98% clean rate
 
+    const threatRandomValue = getSecureRandom();
     const threats = clean ? [] : [
       'suspicious-metadata',
       'potential-malware',
       'embedded-script',
       'steganography-detected',
-    ].slice(0, Math.floor(Math.random() * 2) + 1);
+    ].slice(0, Math.floor(threatRandomValue * 2) + 1);
 
     return {
       clean,
@@ -227,7 +254,8 @@ export class ImageMetadataService implements IImageMetadataService {
       regulatoryFlags.push('regulatory-review-required');
     }
 
-    if (Math.random() > 0.95) {
+    const randomValue = getSecureRandom();
+    if (randomValue > 0.95) {
       complianceFlags.push('manual-review-required');
     }
 
@@ -257,8 +285,10 @@ export class ImageMetadataService implements IImageMetadataService {
       { label: 'residential', confidence: 0.93, source: 'content' as const },
     ];
 
-    const shuffledTags = [...possibleTags].sort(() => Math.random() - 0.5);
-    const selectedTags = shuffledTags.slice(0, Math.floor(Math.random() * 4) + 3);
+    const shuffledTags = [...possibleTags].sort(() => getSecureRandom() - 0.5);
+    const selectionRandomValue = getSecureRandom();
+    
+    const selectedTags = shuffledTags.slice(0, Math.floor(selectionRandomValue * 4) + 3);
 
     return selectedTags.map(tag => ({
       ...tag,
@@ -270,7 +300,7 @@ export class ImageMetadataService implements IImageMetadataService {
     // Mock implementation - in reality, this would query the storage service
     return {
       name: fileReference.split('/').pop() || 'unknown',
-      size: Math.floor(Math.random() * 10 * 1024 * 1024), // Random size up to 10MB
+      size: Math.floor(getSecureRandom() * 10 * 1024 * 1024), // Random size up to 10MB
     };
   }
 }

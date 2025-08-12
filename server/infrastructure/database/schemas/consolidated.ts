@@ -163,6 +163,79 @@ export {
   selectAuditLogSchema
 } from './analytics';
 
+// Import core tables first
+import {
+  users,
+  properties,
+  reviews,
+  favorites,
+  propertyViews,
+  transactions,
+  statistics,
+  professionals,
+  // Relations
+  usersRelations,
+  propertiesRelations,
+  reviewsRelations,
+  favoritesRelations,
+  propertyViewsRelations,
+  transactionsRelations,
+  professionalsRelations,
+  // Validation schemas
+  insertUserSchema,
+  selectUserSchema,
+  insertPropertySchema,
+  selectPropertySchema,
+  insertReviewSchema,
+  selectReviewSchema,
+  insertTransactionSchema,
+  selectTransactionSchema,
+  insertProfessionalSchema,
+  selectProfessionalSchema,
+} from './core';
+
+// Import verification tables
+import {
+  landVerificationSessions,
+  verificationLayers,
+  riskFactors,
+  governmentDesignations,
+  communityFeedback,
+  expertAssignments,
+} from './verification';
+
+// Import trust tables
+import {
+  trustScores,
+  reputationEvents,
+  communityReferences,
+  trustDisputes,
+} from './trust';
+
+// Import fraud tables
+import {
+  fraudAlerts,
+  fraudCases,
+  fraudPatterns,
+  complianceReports,
+} from './fraud';
+
+// Import communication tables
+import {
+  communicationChannels,
+  messages,
+  notifications,
+  messageThreads,
+} from './communication';
+
+// Import analytics tables
+import {
+  analyticsEvents,
+  performanceMetrics,
+  businessReports,
+  auditLogs,
+} from './analytics';
+
 // Export all schemas as a single object for easy access
 export const allSchemas = {
   // Core tables
@@ -219,36 +292,37 @@ export const allRelations = {
   transactionsRelations,
   professionalsRelations,
   
+  // TODO: Import and add other relations when needed
   // Verification relations
-  landVerificationSessionsRelations,
-  verificationLayersRelations,
-  riskFactorsRelations,
-  governmentDesignationsRelations,
-  communityFeedbackRelations,
-  expertAssignmentsRelations,
+  // landVerificationSessionsRelations,
+  // verificationLayersRelations,
+  // riskFactorsRelations,
+  // governmentDesignationsRelations,
+  // communityFeedbackRelations,
+  // expertAssignmentsRelations,
   
   // Trust relations
-  trustScoresRelations,
-  reputationEventsRelations,
-  communityReferencesRelations,
-  trustDisputesRelations,
+  // trustScoresRelations,
+  // reputationEventsRelations,
+  // communityReferencesRelations,
+  // trustDisputesRelations,
   
   // Fraud relations
-  fraudAlertsRelations,
-  fraudCasesRelations,
-  fraudPatternsRelations,
-  complianceReportsRelations,
+  // fraudAlertsRelations,
+  // fraudCasesRelations,
+  // fraudPatternsRelations,
+  // complianceReportsRelations,
   
   // Communication relations
-  communicationChannelsRelations,
-  messagesRelations,
-  notificationsRelations,
-  messageThreadsRelations,
+  // communicationChannelsRelations,
+  // messagesRelations,
+  // notificationsRelations,
+  // messageThreadsRelations,
   
   // Analytics relations
-  analyticsEventsRelations,
-  businessReportsRelations,
-  auditLogsRelations,
+  // analyticsEventsRelations,
+  // businessReportsRelations,
+  // auditLogsRelations,
 };
 
 // Export all validation schemas
@@ -265,59 +339,60 @@ export const allValidationSchemas = {
   insertProfessionalSchema,
   selectProfessionalSchema,
   
+  // TODO: Add other validation schemas when needed
   // Verification validation schemas
-  insertLandVerificationSessionSchema,
-  selectLandVerificationSessionSchema,
-  insertVerificationLayerSchema,
-  selectVerificationLayerSchema,
-  insertRiskFactorSchema,
-  selectRiskFactorSchema,
-  insertGovernmentDesignationSchema,
-  selectGovernmentDesignationSchema,
-  insertCommunityFeedbackSchema,
-  selectCommunityFeedbackSchema,
-  insertExpertAssignmentSchema,
-  selectExpertAssignmentSchema,
+  // insertLandVerificationSessionSchema,
+  // selectLandVerificationSessionSchema,
+  // insertVerificationLayerSchema,
+  // selectVerificationLayerSchema,
+  // insertRiskFactorSchema,
+  // selectRiskFactorSchema,
+  // insertGovernmentDesignationSchema,
+  // selectGovernmentDesignationSchema,
+  // insertCommunityFeedbackSchema,
+  // selectCommunityFeedbackSchema,
+  // insertExpertAssignmentSchema,
+  // selectExpertAssignmentSchema,
   
   // Trust validation schemas
-  insertTrustScoreSchema,
-  selectTrustScoreSchema,
-  insertReputationEventSchema,
-  selectReputationEventSchema,
-  insertCommunityReferenceSchema,
-  selectCommunityReferenceSchema,
-  insertTrustDisputeSchema,
-  selectTrustDisputeSchema,
+  // insertTrustScoreSchema,
+  // selectTrustScoreSchema,
+  // insertReputationEventSchema,
+  // selectReputationEventSchema,
+  // insertCommunityReferenceSchema,
+  // selectCommunityReferenceSchema,
+  // insertTrustDisputeSchema,
+  // selectTrustDisputeSchema,
   
   // Fraud validation schemas
-  insertFraudAlertSchema,
-  selectFraudAlertSchema,
-  insertFraudCaseSchema,
-  selectFraudCaseSchema,
-  insertFraudPatternSchema,
-  selectFraudPatternSchema,
-  insertComplianceReportSchema,
-  selectComplianceReportSchema,
+  // insertFraudAlertSchema,
+  // selectFraudAlertSchema,
+  // insertFraudCaseSchema,
+  // selectFraudCaseSchema,
+  // insertFraudPatternSchema,
+  // selectFraudPatternSchema,
+  // insertComplianceReportSchema,
+  // selectComplianceReportSchema,
   
   // Communication validation schemas
-  insertCommunicationChannelSchema,
-  selectCommunicationChannelSchema,
-  insertMessageSchema,
-  selectMessageSchema,
-  insertNotificationSchema,
-  selectNotificationSchema,
-  insertMessageThreadSchema,
-  selectMessageThreadSchema,
+  // insertCommunicationChannelSchema,
+  // selectCommunicationChannelSchema,
+  // insertMessageSchema,
+  // selectMessageSchema,
+  // insertNotificationSchema,
+  // selectNotificationSchema,
+  // insertMessageThreadSchema,
+  // selectMessageThreadSchema,
   
   // Analytics validation schemas
-  insertAnalyticsEventSchema,
-  selectAnalyticsEventSchema,
-  insertPerformanceMetricSchema,
-  selectPerformanceMetricSchema,
-  insertBusinessReportSchema,
-  selectBusinessReportSchema,
-  insertAuditLogSchema,
-  selectAuditLogSchema,
+  // insertAnalyticsEventSchema,
+  // selectAnalyticsEventSchema,
+  // insertPerformanceMetricSchema,
+  // selectPerformanceMetricSchema,
+  // insertBusinessReportSchema,
+  // selectBusinessReportSchema,
+  // insertAuditLogSchema,
+  // selectAuditLogSchema,
 };
 
 // Table names for migration and validation purposes

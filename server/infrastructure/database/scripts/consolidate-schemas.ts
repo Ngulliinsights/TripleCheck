@@ -76,7 +76,7 @@ async function main() {
       console.log('\n🎉 Schema consolidation completed successfully!');
       console.log('\n📝 Next Steps:');
       console.log('1. Update your imports to use: import { users, properties } from "database/schemas/consolidated"');
-      console.log('2. Remove old schema imports from server/infrastructure/database/schemas/ndex.ts and server/infrastructure/database/schemas/');
+      console.log('2. Remove old schema imports from server/infrastructure/database/schemas/consolidated and server/infrastructure/database/schemas/');
       console.log('3. Run your application tests to ensure everything works correctly');
       console.log('4. Consider running the data generation scripts to populate the new tables');
     } else {

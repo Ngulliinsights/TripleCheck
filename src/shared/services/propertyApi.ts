@@ -72,18 +72,38 @@ const API_CONFIG = {
   retryAttempts: 3,
 } as const;
 
-// Helper function to handle API responses with better error handling
+// Constants to avoid string duplication (fixes sonarjs/no-duplicate-string)
+const ERROR_MESSAGES = {
+  FAILED_TO_FETCH: 'Failed to fetch residential properties',
+  FAILED_TO_ADD_FAVORITE: 'Failed to add property to favorites',
+  FAILED_TO_SHARE: 'Failed to share property',
+  FAILED_TO_REMOVE_FAVORITE: 'Failed to remove property from favorites',
+  UNKNOWN_ERROR: 'Unknown error',
+  PARSE_ERROR: 'Failed to parse response as JSON',
+} as const;
+
+// Helper function to handle API responses with improved error handling
+// Fixed: Eliminated useless assignment and improved exception handling
 async function handleApiResponse<T>(response: globalThis.Response): Promise<T> {
   if (!response.ok) {
-    let errorMessage = 'An error occurred';
+    // Directly declare the variable with the default value to avoid useless assignment
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
     
     try {
       // Try to parse error response as JSON
       const errorData: ApiError = await response.json();
-      errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-    } catch {
-      // Fallback to status text if JSON parsing fails
-      errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      // Only reassign if we successfully got a message from the API
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch (parseError) {
+      // Properly handle the exception by logging it for debugging purposes
+      // This addresses the sonarjs/no-ignored-exceptions rule
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to parse error response as JSON:', parseError);
+      }
+      // We keep the default errorMessage that was already set
     }
     
     throw new PropertyApiError(
@@ -95,9 +115,14 @@ async function handleApiResponse<T>(response: globalThis.Response): Promise<T> {
   
   try {
     return await response.json() as T;
-  } catch (error) {
+  } catch (parseError) {
+    // Handle JSON parsing error with proper error context
+    const errorMessage = parseError instanceof Error 
+      ? `${ERROR_MESSAGES.PARSE_ERROR}: ${parseError.message}`
+      : ERROR_MESSAGES.PARSE_ERROR;
+    
     throw new PropertyApiError(
-      'Failed to parse response as JSON',
+      errorMessage,
       response.status
     );
   }
@@ -120,31 +145,55 @@ function safeTransform(value: unknown): string {
 }
 
 // Helper function to build query parameters with improved type safety
+// Fixed: Addressed object injection vulnerability by using a safer approach
 function buildQueryParams(filters: ResidentialFilters): URLSearchParams {
   const params = new URLSearchParams();
   
-  // Define filter mappings with proper typing
-  // Using a more specific interface to ensure type safety
-  interface FilterMapping {
-    key: keyof ResidentialFilters;
-    paramName: string;
-    requiresTransform?: boolean;
-  }
-  
-  const filterMappings: FilterMapping[] = [
-    { key: 'query', paramName: 'search' },
-    { key: 'location', paramName: 'location' },
-    { key: 'propertyType', paramName: 'type' },
-    { key: 'priceMin', paramName: 'priceMin', requiresTransform: true },
-    { key: 'priceMax', paramName: 'priceMax', requiresTransform: true },
-    { key: 'bedrooms', paramName: 'bedrooms', requiresTransform: true },
-    { key: 'bathrooms', paramName: 'bathrooms', requiresTransform: true },
-  ];
+  // Define filter mappings with proper typing and safer object access pattern
+  // This approach is more secure than dynamic property access
+  const filterMappings = [
+    { 
+      getValue: () => filters.query,
+      paramName: 'search',
+      requiresTransform: false
+    },
+    { 
+      getValue: () => filters.location,
+      paramName: 'location',
+      requiresTransform: false
+    },
+    { 
+      getValue: () => filters.propertyType,
+      paramName: 'type',
+      requiresTransform: false
+    },
+    { 
+      getValue: () => filters.priceMin,
+      paramName: 'priceMin',
+      requiresTransform: true
+    },
+    { 
+      getValue: () => filters.priceMax,
+      paramName: 'priceMax',
+      requiresTransform: true
+    },
+    { 
+      getValue: () => filters.bedrooms,
+      paramName: 'bedrooms',
+      requiresTransform: true
+    },
+    { 
+      getValue: () => filters.bathrooms,
+      paramName: 'bathrooms',
+      requiresTransform: true
+    },
+  ] as const;
   
   // Apply standard mappings with type-safe transformation
-  filterMappings.forEach(({ key, paramName, requiresTransform }) => {
-    const value = filters[key];
-    if (value !== undefined && value !== null && value !== '') {
+  // This eliminates the security vulnerability by avoiding dynamic object property access
+  filterMappings.forEach(({ getValue, paramName, requiresTransform }) => {
+    const value = getValue();
+    if (value != null && value !== '') {
       // Use our type-safe transformation function
       const paramValue = requiresTransform ? safeTransform(value) : String(value);
       params.append(paramName, paramValue);
@@ -193,6 +242,13 @@ function validateShareMethod(method: ShareMethod): void {
   }
 }
 
+// Helper function to create consistent error messages
+// This reduces code duplication and provides better error handling consistency
+function createApiError(baseMessage: string, originalError: unknown): PropertyApiError {
+  const errorDetails = originalError instanceof Error ? originalError.message : ERROR_MESSAGES.UNKNOWN_ERROR;
+  return new PropertyApiError(`${baseMessage}: ${errorDetails}`);
+}
+
 // Main property API service with enhanced error handling and type safety
 export const propertyApi = {
   /**
@@ -213,13 +269,11 @@ export const propertyApi = {
       const result = await handleApiResponse<ApiResponse<ResidentialProperty>>(response);
       return result.data;
     } catch (error) {
-      // Re-throw PropertyApiError instances, wrap other errors
+      // Re-throw PropertyApiError instances, wrap other errors with consistent messaging
       if (error instanceof PropertyApiError) {
         throw error;
       }
-      throw new PropertyApiError(
-        `Failed to fetch residential properties: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      throw createApiError(ERROR_MESSAGES.FAILED_TO_FETCH, error);
     }
   },
 
@@ -244,9 +298,7 @@ export const propertyApi = {
       if (error instanceof PropertyApiError) {
         throw error;
       }
-      throw new PropertyApiError(
-        `Failed to add property to favorites: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      throw createApiError(ERROR_MESSAGES.FAILED_TO_ADD_FAVORITE, error);
     }
   },
 
@@ -275,9 +327,7 @@ export const propertyApi = {
       if (error instanceof PropertyApiError) {
         throw error;
       }
-      throw new PropertyApiError(
-        `Failed to share property: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      throw createApiError(ERROR_MESSAGES.FAILED_TO_SHARE, error);
     }
   },
 
@@ -302,9 +352,7 @@ export const propertyApi = {
       if (error instanceof PropertyApiError) {
         throw error;
       }
-      throw new PropertyApiError(
-        `Failed to remove property from favorites: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      throw createApiError(ERROR_MESSAGES.FAILED_TO_REMOVE_FAVORITE, error);
     }
   },
 } as const;

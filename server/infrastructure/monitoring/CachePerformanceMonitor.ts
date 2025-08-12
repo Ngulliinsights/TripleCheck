@@ -126,7 +126,11 @@ export class CachePerformanceMonitor {
   }
 
   getCurrentMetrics(): CacheMetrics | null {
-    return this.metrics.length > 0 ? this.metrics[this.metrics.length - 1] : null;
+    if (this.metrics.length === 0) {
+      return null;
+    }
+    const lastMetric = this.metrics[this.metrics.length - 1];
+    return lastMetric || null;
   }
 
   getHistoricalMetrics(hours = 24): CacheMetrics[] {
@@ -234,7 +238,10 @@ export class CachePerformanceMonitor {
     try {
       const now = Date.now();
       const recent = Array.from(this.requestTimes.entries()).filter(
-        ([k]) => now - parseInt(k.split('_')[1]!) < 60000 // non-null assertion
+        ([k]) => {
+          const [, timestamp] = k.split('_');
+          return Boolean(timestamp && now - parseInt(timestamp) < 60000);
+        }
       );
 
       const hits = recent.filter(([k]) => k.startsWith('hit_'));
@@ -351,8 +358,11 @@ export class CachePerformanceMonitor {
     const cutoff = Date.now() - 60000;
     const toDelete: string[] = [];
     for (const [key] of this.requestTimes) {
-      const ts = parseInt(key.split('_')[1]!); // non-null assertion
-      if (ts < cutoff) toDelete.push(key);
+      const [, timestamp] = key.split('_');
+      if (timestamp) {
+        const ts = parseInt(timestamp);
+        if (ts < cutoff) toDelete.push(key);
+      }
     }
     toDelete.forEach((k) => this.requestTimes.delete(k));
   }

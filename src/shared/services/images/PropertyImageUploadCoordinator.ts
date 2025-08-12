@@ -5,12 +5,7 @@
  */
 
 import { imageServiceConfig } from '../../config/image-system.config';
-import { generateUniqueId, calculateHash } from '../../utils/images/unified-utils';
-
-const UNKNOWN_ERROR = 'Unknown error';
-
 import type {
-  PropertyImage,
   UploadSession,
   UploadProgress,
   ImageChunk,
@@ -18,6 +13,53 @@ import type {
   ImageServiceConfig,
 } from '../../types/images';
 import { ImageProcessingError } from '../../types/images';
+import { generateUniqueId, calculateHash } from '../../utils/images/unified-utils';
+
+const UNKNOWN_ERROR = 'Unknown error';
+
+// Enhanced type definitions to replace 'any' types
+export interface ChunkUploadMetadata {
+  documentType?: DocumentType;
+  landVerificationId?: string;
+  chunkIndex?: number;
+  retryAttempt?: number;
+}
+
+export interface SessionCreationMetadata {
+  sessionId: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  documentType?: DocumentType;
+  landVerificationId?: string;
+  chunkCount: number;
+  timestamp: string;
+  userAgent: string;
+}
+
+export interface BackendSessionResponse {
+  sessionId: string;
+  uploadUrl?: string;
+  expiresAt?: string;
+  allowedOperations?: string[];
+}
+
+export interface AuditEventMetadata {
+  sessionId: string;
+  fileName?: string;
+  fileSize?: number;
+  documentType?: DocumentType;
+  landVerificationId?: string;
+  chunkIndex?: number;
+  chunkSize?: number;
+  uploadTime?: number;
+  error?: string;
+  retryCount?: number;
+  progress?: number;
+  totalTime?: number;
+  totalBytes?: number;
+  averageSpeed?: number;
+}
 
 export interface IPropertyImageUploadCoordinator {
   initiateUpload(file: File, documentType?: DocumentType, landVerificationId?: string): Promise<UploadSession>;
@@ -31,16 +73,16 @@ export interface IPropertyImageUploadCoordinator {
 
 export interface PropertyImageUploadDependencies {
   apiClient?: {
-    uploadChunk: (sessionId: string, chunk: ImageChunk, metadata?: any) => Promise<void>;
-    createUploadSession: (metadata: any) => Promise<{ sessionId: string; uploadUrl?: string }>;
+    uploadChunk: (sessionId: string, chunk: ImageChunk, metadata?: ChunkUploadMetadata) => Promise<void>;
+    createUploadSession: (metadata: SessionCreationMetadata) => Promise<BackendSessionResponse>;
     completeUpload: (sessionId: string) => Promise<void>;
   };
   storageService?: {
     uploadChunk: (sessionId: string, chunk: ImageChunk) => Promise<void>;
-    createSession: (metadata: any) => Promise<string>;
+    createSession: (metadata: SessionCreationMetadata) => Promise<string>;
   };
   auditService?: {
-    logUploadEvent: (event: string, metadata: any) => Promise<void>;
+    logUploadEvent: (event: string, metadata: AuditEventMetadata) => Promise<void>;
   };
 }
 
@@ -63,38 +105,41 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
     landVerificationId?: string
   ): Promise<UploadSession> {
     const sessionId = generateUniqueId();
-    
+
     try {
       // Create chunks for the file
       const chunks = await this.createChunks(file, sessionId);
-      
+
       // Create upload session metadata aligned with project's API structure
       const sessionMetadata = {
         sessionId,
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
-        documentType,
-        landVerificationId,
         chunkCount: chunks.length,
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
+        ...(documentType && { documentType }),
+        ...(landVerificationId && { landVerificationId }),
       };
 
       // Create session with backend API (following /api/v1/ pattern)
+      let finalSessionId = sessionId;
       if (this.dependencies.apiClient) {
-        const { sessionId: backendSessionId, uploadUrl } = await this.dependencies.apiClient.createUploadSession(sessionMetadata);
-        // Use backend session ID if provided
-        if (backendSessionId && backendSessionId !== sessionId) {
+        const backendResponse = await this.dependencies.apiClient.createUploadSession(sessionMetadata);
+
+        // Use backend session ID if provided and different from client-generated one
+        if (backendResponse.sessionId && backendResponse.sessionId !== sessionId) {
+          finalSessionId = backendResponse.sessionId;
           // Update chunks with new session ID
           chunks.forEach(chunk => {
-            chunk.id = chunk.id.replace(sessionId, backendSessionId);
+            chunk.id = chunk.id.replace(sessionId, finalSessionId);
           });
         }
       }
 
       const session: UploadSession = {
-        id: sessionId,
+        id: finalSessionId,
         imageId: generateUniqueId(),
         chunks,
         status: 'pending',
@@ -103,16 +148,17 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
         startTime: Date.now(),
       };
 
-      this.activeSessions.set(sessionId, session);
+      this.activeSessions.set(finalSessionId, session);
 
-      // Log audit event
-      await this.dependencies.auditService?.logUploadEvent('upload_initiated', {
-        sessionId,
+      // Log audit event with proper typing
+      const auditMetadata = {
+        sessionId: finalSessionId,
         fileName: file.name,
         fileSize: file.size,
-        documentType,
-        landVerificationId,
-      });
+        ...(documentType && { documentType }),
+        ...(landVerificationId && { landVerificationId }),
+      };
+      await this.dependencies.auditService?.logUploadEvent('upload_initiated', auditMetadata);
 
       return session;
 
@@ -144,12 +190,15 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
     const startTime = Date.now();
 
     try {
-      // Upload chunk using appropriate service
+      // Upload chunk using appropriate service with properly typed metadata
       if (this.dependencies.apiClient) {
-        await this.dependencies.apiClient.uploadChunk(sessionId, chunk, {
-          documentType: session.documentType,
-          landVerificationId: session.landVerificationId,
-        });
+        const metadata = {
+          chunkIndex: chunk.index,
+          retryAttempt: chunk.retryCount || 0,
+          ...(session.documentType && { documentType: session.documentType }),
+          ...(session.landVerificationId && { landVerificationId: session.landVerificationId }),
+        };
+        await this.dependencies.apiClient.uploadChunk(sessionId, chunk, metadata);
       } else if (this.dependencies.storageService) {
         await this.dependencies.storageService.uploadChunk(sessionId, chunk);
       } else {
@@ -164,7 +213,7 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
       // Update session progress
       this.updateSessionProgress(sessionId);
 
-      // Log successful chunk upload
+      // Log successful chunk upload with proper typing
       await this.dependencies.auditService?.logUploadEvent('chunk_uploaded', {
         sessionId,
         chunkIndex: chunk.index,
@@ -174,8 +223,8 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
 
     } catch (error) {
       chunk.retryCount = (chunk.retryCount || 0) + 1;
-      
-      // Log failed chunk upload
+
+      // Log failed chunk upload with proper typing
       await this.dependencies.auditService?.logUploadEvent('chunk_upload_failed', {
         sessionId,
         chunkIndex: chunk.index,
@@ -186,7 +235,7 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
       if (chunk.retryCount >= this.config.upload.maxRetries) {
         session.status = 'failed';
         session.error = `Chunk ${chunk.index} failed after ${chunk.retryCount} retries`;
-        
+
         throw new ImageProcessingError(
           `Chunk upload failed: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`,
           'CHUNK_UPLOAD_FAILED',
@@ -199,7 +248,7 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
       // Retry with exponential backoff
       const delay = this.config.upload.retryDelay * Math.pow(2, chunk.retryCount - 1);
       await new Promise(resolve => setTimeout(resolve, delay));
-      
+
       return this.uploadChunk(sessionId, chunk);
     }
   }
@@ -230,7 +279,7 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
       this.progressCallbacks.delete(sessionId);
       this.pausedSessions.delete(sessionId);
 
-      // Log cancellation
+      // Log cancellation with proper typing
       this.dependencies.auditService?.logUploadEvent('upload_cancelled', {
         sessionId,
         progress: session.progress,
@@ -248,47 +297,65 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
       .filter(chunk => chunk.uploaded)
       .reduce((sum, chunk) => sum + chunk.size, 0);
 
-    return {
+    const progressResult: UploadProgress = {
       sessionId,
       imageId: session.imageId,
       progress: session.progress,
       uploadSpeed: session.uploadSpeed,
-      estimatedTimeRemaining: session.estimatedTimeRemaining,
       status: session.status,
       chunksCompleted: completedChunks,
       totalChunks: session.chunks.length,
       bytesUploaded: uploadedBytes,
       totalBytes,
     };
+
+    if (session.estimatedTimeRemaining !== undefined) {
+      progressResult.estimatedTimeRemaining = session.estimatedTimeRemaining;
+    }
+
+    return progressResult;
   }
 
   onProgressUpdate(sessionId: string, callback: (progress: UploadProgress) => void): void {
     this.progressCallbacks.set(sessionId, callback);
   }
 
-  // Set dependencies (for dependency injection)
+  /**
+   * Dependency injection methods for runtime configuration
+   * These allow for flexible testing and different deployment environments
+   */
   setApiClient(apiClient: PropertyImageUploadDependencies['apiClient']): void {
-    this.dependencies.apiClient = apiClient;
+    if (apiClient) {
+      this.dependencies.apiClient = apiClient;
+    }
   }
 
   setStorageService(storageService: PropertyImageUploadDependencies['storageService']): void {
-    this.dependencies.storageService = storageService;
+    if (storageService) {
+      this.dependencies.storageService = storageService;
+    }
   }
 
   setAuditService(auditService: PropertyImageUploadDependencies['auditService']): void {
-    this.dependencies.auditService = auditService;
+    if (auditService) {
+      this.dependencies.auditService = auditService;
+    }
   }
 
+  /**
+   * Creates file chunks for upload with hash verification
+   * This enables reliable resumable uploads and integrity checking
+   */
   private async createChunks(file: File, sessionId: string): Promise<ImageChunk[]> {
     const chunks: ImageChunk[] = [];
-    const {chunkSize} = this.config.upload;
+    const { chunkSize } = this.config.upload;
     const totalChunks = Math.ceil(file.size / chunkSize);
 
     for (let i = 0; i < totalChunks; i++) {
       const start = i * chunkSize;
       const end = Math.min(start + chunkSize, file.size);
       const chunkData = file.slice(start, end);
-      
+
       const chunk: ImageChunk = {
         id: `${sessionId}-chunk-${i}`,
         index: i,
@@ -305,6 +372,10 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
     return chunks;
   }
 
+  /**
+   * Updates session progress metrics and handles completion
+   * Calculates upload speed, progress percentage, and estimated time remaining
+   */
   private updateSessionProgress(sessionId: string): void {
     const session = this.activeSessions.get(sessionId);
     if (!session) return;
@@ -313,7 +384,7 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
     const totalChunks = session.chunks.length;
     const progress = (completedChunks / totalChunks) * 100;
 
-    // Calculate upload speed
+    // Calculate upload speed based on actual data transferred
     const currentTime = Date.now();
     const elapsedTime = (currentTime - session.startTime) / 1000; // seconds
     const uploadedBytes = session.chunks
@@ -321,7 +392,7 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
       .reduce((sum, chunk) => sum + chunk.size, 0);
     const uploadSpeed = elapsedTime > 0 ? uploadedBytes / elapsedTime : 0;
 
-    // Calculate estimated time remaining
+    // Calculate estimated time remaining for user feedback
     const remainingBytes = session.chunks
       .filter(chunk => !chunk.uploaded)
       .reduce((sum, chunk) => sum + chunk.size, 0);
@@ -329,16 +400,18 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
 
     session.progress = progress;
     session.uploadSpeed = uploadSpeed;
-    session.estimatedTimeRemaining = estimatedTimeRemaining;
+    if (estimatedTimeRemaining !== undefined) {
+      session.estimatedTimeRemaining = estimatedTimeRemaining;
+    }
 
     if (completedChunks === totalChunks) {
       session.status = 'completed';
       session.endTime = currentTime;
 
-      // Complete upload with backend
+      // Complete upload with backend API
       this.dependencies.apiClient?.completeUpload(sessionId);
 
-      // Log completion
+      // Log completion with comprehensive metrics
       this.dependencies.auditService?.logUploadEvent('upload_completed', {
         sessionId,
         totalTime: elapsedTime,
@@ -352,24 +425,45 @@ export class PropertyImageUploadCoordinator implements IPropertyImageUploadCoord
     this.notifyProgress(sessionId);
   }
 
+  /**
+   * Notifies registered callbacks of progress updates
+   * Enables real-time UI updates during upload process
+   */
   private notifyProgress(sessionId: string): void {
     const callback = this.progressCallbacks.get(sessionId);
     const progress = this.getUploadProgress(sessionId);
-    
+
     if (callback && progress) {
       callback(progress);
     }
   }
 
+  /**
+   * Mock chunk upload for development and testing environments
+   * Simulates network conditions and occasional failures for robust testing
+   */
   private async mockChunkUpload(chunk: ImageChunk): Promise<void> {
-    // Simulate network delay based on chunk size
+    // Simulate network delay based on chunk size for realistic testing
     const delay = Math.min(chunk.size / 1024, 1000); // Max 1 second delay
     await new Promise(resolve => setTimeout(resolve, delay));
 
-    // Simulate occasional failures for testing
-    if (Math.random() < 0.02) { // 2% failure rate
-      throw new Error('Simulated network error');
+    // Use crypto.getRandomValues for better randomness when available
+    const getSecureRandom = (): number => {
+      if (window?.crypto?.getRandomValues) {
+        const array = new Uint32Array(1);
+        window.crypto.getRandomValues(array);
+        const [value] = array;
+        return value !== undefined ? value / (0xFFFFFFFF + 1) : 0.5;
+      }
+      // Fallback for non-browser environments or when crypto is unavailable
+      return 0.5;
+    };
+
+    const randomValue = getSecureRandom();
+
+    // Simulate occasional failures for testing resilience (1% failure rate)
+    if (randomValue < 0.01) {
+      throw new Error('Simulated network error for testing');
     }
   }
 }
-

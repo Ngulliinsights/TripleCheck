@@ -15,7 +15,8 @@ vi.mock('postgres', () => {
   mockSql.end = vi.fn().mockResolvedValue(undefined);
   
   const mockPostgres = vi.fn().mockReturnValue(mockSql);
-  return { default: mockPostgres };
+  mockPostgres.default = mockPostgres;
+  return mockPostgres;
 });
 
 describe('SchemaValidator', () => {
@@ -24,7 +25,7 @@ describe('SchemaValidator', () => {
 
   beforeEach(() => {
     const postgres = require('postgres');
-    mockSql = postgres.default();
+    mockSql = postgres();
     validator = new SchemaValidator(mockSql);
 
     // Default mock implementations

@@ -31,7 +31,8 @@ vi.mock('postgres', () => {
   mockSql.unsafe = vi.fn().mockResolvedValue(undefined);
   
   const mockPostgres = vi.fn().mockReturnValue(mockSql);
-  return { default: mockPostgres };
+  mockPostgres.default = mockPostgres;
+  return mockPostgres;
 });
 
 describe('DatabaseSeeder', () => {
@@ -40,7 +41,7 @@ describe('DatabaseSeeder', () => {
 
   beforeEach(() => {
     const postgres = require('postgres');
-    mockSql = postgres.default();
+    mockSql = postgres();
     
     // Reset mock implementations
     mockSql.mockClear();

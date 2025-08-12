@@ -43,7 +43,10 @@ export const UserRegistrationRequestSchema = z.object({
   lastName: z.string().min(1).max(50),
   phone: z.string().optional(),
   role: z.enum(['user', 'agent']).default('user'),
-});
+}).transform((data) => ({
+  ...data,
+  role: data.role as 'user' | 'agent',
+}));
 
 export type UserRegistrationRequest = z.infer<typeof UserRegistrationRequestSchema>;
 
@@ -52,7 +55,10 @@ export const UserLoginRequestSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
   rememberMe: z.boolean().default(false),
-});
+}).transform((data) => ({
+  ...data,
+  rememberMe: data.rememberMe as boolean,
+}));
 
 export type UserLoginRequest = z.infer<typeof UserLoginRequestSchema>;
 

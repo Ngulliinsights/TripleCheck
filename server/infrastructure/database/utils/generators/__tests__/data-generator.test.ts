@@ -17,7 +17,8 @@ vi.mock('postgres', () => {
   mockSql.unsafe = vi.fn().mockResolvedValue(undefined);
   
   const mockPostgres = vi.fn().mockReturnValue(mockSql);
-  return { default: mockPostgres };
+  mockPostgres.default = mockPostgres;
+  return mockPostgres;
 });
 
 // Mock faker to ensure consistent test results
@@ -66,7 +67,7 @@ describe('DataGenerator', () => {
 
   beforeEach(() => {
     const postgres = require('postgres');
-    mockSql = postgres.default();
+    mockSql = postgres();
     
     // Reset mock implementations
     mockSql.mockClear();

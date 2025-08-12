@@ -2,7 +2,7 @@
  * Core Database Schemas
  * 
  * Contains the main entities: users, properties, reviews, favorites, etc.
- * This is moved from server/infrastructure/database/schemas/ndex.ts to the consolidated database directory.
+ * This is moved from server/infrastructure/database/schemas/consolidated to the consolidated database directory.
  */
 
 import { relations } from "drizzle-orm";

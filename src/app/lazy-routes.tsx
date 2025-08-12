@@ -643,6 +643,7 @@ export const preloadRoutes = {
         import("../shared/pages/Features"),
         import("../shared/pages/Pricing"),
         import("../shared/pages/About"),
+        import("../shared/pages/Properties"),
       ]),
       "core"
     ),

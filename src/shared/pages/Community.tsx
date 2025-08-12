@@ -21,7 +21,12 @@ import { Link } from "react-router-dom";
 
 import FormField from "../components/forms/FormField";
 import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Textarea } from "../components/ui/textarea";
 import { useToast } from "../hooks/use-toast";
 import { useDebounce } from "../hooks/useDebounce";
@@ -32,11 +37,11 @@ import { ValidationRule } from "../utils/form-validation";
 const QUERY_DELAY = 500;
 const MUTATION_DELAY = 1000;
 const AMOUNT_REGEX = /^[A-Z]{3}\s*[\d,]+$/;
-const COMMUNITY_EXPERIENCES_KEY = 'community-experiences';
-const COMMUNITY_CATEGORIES_KEY = 'community-categories';
-const FRAUD_TYPE_LAND = 'Land Purchase';
-const FRAUD_TYPE_PROPERTY_DEV = 'Property Development';
-const FRAUD_TYPE_RENTAL = 'Rental Fraud';
+const COMMUNITY_EXPERIENCES_KEY = "community-experiences";
+const COMMUNITY_CATEGORIES_KEY = "community-categories";
+const FRAUD_TYPE_LAND = "Land Purchase";
+const FRAUD_TYPE_PROPERTY_DEV = "Property Development";
+const FRAUD_TYPE_RENTAL = "Rental Fraud";
 
 // Types for better TypeScript support
 interface ShareExperienceData {
@@ -48,7 +53,7 @@ interface ShareExperienceData {
   personalVulnerabilities: string;
   systemicChallenges: string;
   lessonsLearned: string;
-  resolutionStatus: 'resolved' | 'partial' | 'unresolved';
+  resolutionStatus: "resolved" | "partial" | "unresolved";
   resolutionDetails: string;
   anonymous: boolean;
 }
@@ -78,10 +83,12 @@ const RealEstateFraudCommunity = memo(() => {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Fetch experiences with React Query
-  const {
-    data: experiencesData,
-  } = useQuery({
-    queryKey: [COMMUNITY_EXPERIENCES_KEY, selectedCategory, debouncedSearchTerm],
+  const { data: experiencesData } = useQuery({
+    queryKey: [
+      COMMUNITY_EXPERIENCES_KEY,
+      selectedCategory,
+      debouncedSearchTerm,
+    ],
     queryFn: async ({ pageParam: _pageParam = 0 }) => {
       // In a real app, this would be an API call
       const mockData = {
@@ -138,9 +145,9 @@ const RealEstateFraudCommunity = memo(() => {
         hasMore: false,
         total: 3,
       };
-      
+
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, QUERY_DELAY));
+      await new Promise((resolve) => setTimeout(resolve, QUERY_DELAY));
       return mockData;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -167,16 +174,17 @@ const RealEstateFraudCommunity = memo(() => {
   const shareExperienceMutation = useMutation({
     mutationFn: async (_data: ShareExperienceData) => {
       // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, MUTATION_DELAY));
+      await new Promise((resolve) => setTimeout(resolve, MUTATION_DELAY));
       return { success: true, id: Date.now() };
     },
     onSuccess: () => {
       toast({
         title: "Experience Shared",
-        description: "Thank you for sharing your experience. It will help others stay safe.",
+        description:
+          "Thank you for sharing your experience. It will help others stay safe.",
       });
       queryClient.invalidateQueries({ queryKey: [COMMUNITY_EXPERIENCES_KEY] });
-      setActiveTab('browse');
+      setActiveTab("browse");
     },
     onError: () => {
       toast({
@@ -201,11 +209,18 @@ const RealEstateFraudCommunity = memo(() => {
 
   // Handlers
 
-  const handleShareExperience = useCallback((data: ShareExperienceData) => {
-    shareExperienceMutation.mutate(data);
-  }, [shareExperienceMutation]);
+  const handleShareExperience = useCallback(
+    (data: ShareExperienceData) => {
+      shareExperienceMutation.mutate(data);
+    },
+    [shareExperienceMutation]
+  );
 
-  const ExperienceCard = ({ experience }: { experience: ExperienceDisplayData }) => (
+  const ExperienceCard = ({
+    experience,
+  }: {
+    experience: ExperienceDisplayData;
+  }) => (
     <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow p-6 mb-4">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
@@ -292,56 +307,61 @@ const RealEstateFraudCommunity = memo(() => {
       title: {
         required: true,
         minLength: 10,
-        maxLength: 200
+        maxLength: 200,
       },
       location: {
         required: true,
         minLength: 2,
-        maxLength: 100
+        maxLength: 100,
       },
       fraudType: {
-        required: true
+        required: true,
       },
       amountLost: {
         pattern: AMOUNT_REGEX,
         custom: (value) => {
-          if (value && typeof value === 'string' && value.trim() !== '') {
-            const cleanValue = value.replace(/[^\d.]/g, '');
+          if (value && typeof value === "string" && value.trim() !== "") {
+            const cleanValue = value.replace(/[^\d.]/g, "");
             const numValue = parseFloat(cleanValue);
             if (isNaN(numValue) || numValue < 0) {
-              return 'Please enter a valid amount (e.g., KES 500,000)';
+              return "Please enter a valid amount (e.g., KES 500,000)";
             }
           }
           return null;
-        }
+        },
       },
       whatHappened: {
         required: true,
         minLength: 50,
-        maxLength: 2000
+        maxLength: 2000,
       },
       personalVulnerabilities: {
-        maxLength: 1000
+        maxLength: 1000,
       },
       systemicChallenges: {
-        maxLength: 1000
+        maxLength: 1000,
       },
       lessonsLearned: {
-        maxLength: 1000
+        maxLength: 1000,
       },
       resolutionStatus: {
-        required: true
+        required: true,
       },
       resolutionDetails: {
         custom: (value, formValues) => {
-          const resolutionStatus = (formValues as ShareExperienceData)?.resolutionStatus;
-          if (resolutionStatus && resolutionStatus !== 'unresolved' && (!value || value.toString().trim().length < 10)) {
-            return 'Please describe how the issue was resolved (minimum 10 characters)';
+          const resolutionStatus = (formValues as ShareExperienceData)
+            ?.resolutionStatus;
+          if (
+            resolutionStatus &&
+            resolutionStatus !== "unresolved" &&
+            (!value || value.toString().trim().length < 10)
+          ) {
+            return "Please describe how the issue was resolved (minimum 10 characters)";
           }
           return null;
         },
-        maxLength: 1000
-      }
+        maxLength: 1000,
+      },
     };
 
     const {
@@ -350,40 +370,44 @@ const RealEstateFraudCommunity = memo(() => {
       getFieldProps,
       getFieldError,
       handleSubmit: formHandleSubmit,
-      setValue
+      setValue,
     } = useForm({
       initialValues: {
-        title: '',
-        location: '',
-        fraudType: '',
-        amountLost: '',
-        whatHappened: '',
-        personalVulnerabilities: '',
-        systemicChallenges: '',
-        lessonsLearned: '',
-        resolutionStatus: 'unresolved',
-        resolutionDetails: '',
-        anonymous: false
+        title: "",
+        location: "",
+        fraudType: "",
+        amountLost: "",
+        whatHappened: "",
+        personalVulnerabilities: "",
+        systemicChallenges: "",
+        lessonsLearned: "",
+        resolutionStatus: "unresolved",
+        resolutionDetails: "",
+        anonymous: false,
       },
       validationRules,
       onSubmit: async (formData) => {
         await handleShareExperience(formData as ShareExperienceData);
       },
       validateOnChange: true,
-      validateOnBlur: true
+      validateOnBlur: true,
     });
 
     // Helper function for handling input changes
-    const handleInputChange = useCallback((field: string, value: string | boolean) => {
-      setValue(field, value);
-    }, [setValue]);
+    const handleInputChange = useCallback(
+      (field: string, value: string | boolean) => {
+        setValue(field, value);
+      },
+      [setValue]
+    );
 
     return (
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl">Share Your Experience</CardTitle>
           <p className="text-muted-foreground">
-            Help others by sharing your experience. Your story can prevent others from falling victim to similar scams.
+            Help others by sharing your experience. Your story can prevent
+            others from falling victim to similar scams.
           </p>
         </CardHeader>
         <CardContent>
@@ -392,9 +416,9 @@ const RealEstateFraudCommunity = memo(() => {
               label="Title"
               required
               placeholder="Brief description of what happened"
-              error={getFieldError('title')}
+              error={getFieldError("title")}
               touched={touched.title}
-              {...getFieldProps('title')}
+              {...getFieldProps("title")}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -402,44 +426,49 @@ const RealEstateFraudCommunity = memo(() => {
                 label="Location"
                 required
                 placeholder="City, Country"
-                error={getFieldError('location')}
+                error={getFieldError("location")}
                 touched={touched.location}
-                {...getFieldProps('location')}
+                {...getFieldProps("location")}
               />
-              
+
               <FormField
                 label="Fraud Type"
                 type="select"
                 required
                 options={[
-                  { value: 'land', label: FRAUD_TYPE_LAND },
-                  { value: 'rental', label: FRAUD_TYPE_RENTAL },
-                  { value: 'development', label: FRAUD_TYPE_PROPERTY_DEV },
-                  { value: 'investment', label: 'Investment Scam' },
-                  { value: 'other', label: 'Other' }
+                  { value: "land", label: FRAUD_TYPE_LAND },
+                  { value: "rental", label: FRAUD_TYPE_RENTAL },
+                  { value: "development", label: FRAUD_TYPE_PROPERTY_DEV },
+                  { value: "investment", label: "Investment Scam" },
+                  { value: "other", label: "Other" },
                 ]}
-                error={getFieldError('fraudType')}
+                error={getFieldError("fraudType")}
                 touched={touched.fraudType}
-                {...getFieldProps('fraudType')}
+                {...getFieldProps("fraudType")}
               />
-              
+
               <FormField
                 label="Amount Lost"
                 placeholder="e.g., KES 500,000"
-                error={getFieldError('amountLost')}
+                error={getFieldError("amountLost")}
                 touched={touched.amountLost}
-                {...getFieldProps('amountLost')}
+                {...getFieldProps("amountLost")}
               />
             </div>
 
             <div>
-              <label htmlFor="what-happened" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="what-happened"
+                className="block text-sm font-medium mb-2"
+              >
                 What Happened? *
               </label>
               <Textarea
                 id="what-happened"
                 value={formData.whatHappened}
-                onChange={(e) => handleInputChange('whatHappened', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("whatHappened", e.target.value)
+                }
                 placeholder="Describe the fraud incident in detail..."
                 rows={4}
                 required
@@ -447,39 +476,54 @@ const RealEstateFraudCommunity = memo(() => {
             </div>
 
             <div>
-              <label htmlFor="personal-vulnerabilities" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="personal-vulnerabilities"
+                className="block text-sm font-medium mb-2"
+              >
                 Personal Vulnerabilities
               </label>
               <Textarea
                 id="personal-vulnerabilities"
                 value={formData.personalVulnerabilities}
-                onChange={(e) => handleInputChange('personalVulnerabilities', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("personalVulnerabilities", e.target.value)
+                }
                 placeholder="What made you vulnerable? (e.g., time pressure, lack of verification, trust issues)"
                 rows={3}
               />
             </div>
 
             <div>
-              <label htmlFor="systemic-challenges" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="systemic-challenges"
+                className="block text-sm font-medium mb-2"
+              >
                 Systemic Challenges
               </label>
               <Textarea
                 id="systemic-challenges"
                 value={formData.systemicChallenges}
-                onChange={(e) => handleInputChange('systemicChallenges', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("systemicChallenges", e.target.value)
+                }
                 placeholder="What systemic issues enabled this fraud? (e.g., poor regulation, inadequate verification systems)"
                 rows={3}
               />
             </div>
 
             <div>
-              <label htmlFor="lessons-learned" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="lessons-learned"
+                className="block text-sm font-medium mb-2"
+              >
                 Lessons Learned
               </label>
               <Textarea
                 id="lessons-learned"
                 value={formData.lessonsLearned}
-                onChange={(e) => handleInputChange('lessonsLearned', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("lessonsLearned", e.target.value)
+                }
                 placeholder="What would you do differently? What advice would you give others?"
                 rows={3}
               />
@@ -491,21 +535,44 @@ const RealEstateFraudCommunity = memo(() => {
               </div>
               <div className="space-y-2">
                 {[
-                  { value: 'resolved', label: 'Resolved - I recovered my money/got justice' },
-                  { value: 'partial', label: 'Partially resolved - Some recovery/progress made' },
-                  { value: 'unresolved', label: 'Unresolved - No recovery or justice yet' }
+                  {
+                    value: "resolved",
+                    label: "Resolved - I recovered my money/got justice",
+                  },
+                  {
+                    value: "partial",
+                    label: "Partially resolved - Some recovery/progress made",
+                  },
+                  {
+                    value: "unresolved",
+                    label: "Unresolved - No recovery or justice yet",
+                  },
                 ].map((option) => (
-                  <div key={option.value} className="flex items-center space-x-2">
+                  <div
+                    key={option.value}
+                    className="flex items-center space-x-2"
+                  >
                     <input
                       type="radio"
                       id={`resolved-${option.value}`}
                       name="resolved"
                       value={option.value}
                       checked={formData.resolutionStatus === option.value}
-                      onChange={(e) => handleInputChange('resolutionStatus', e.target.value as 'resolved' | 'partial' | 'unresolved')}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "resolutionStatus",
+                          e.target.value as
+                            | "resolved"
+                            | "partial"
+                            | "unresolved"
+                        )
+                      }
                       className="w-4 h-4"
                     />
-                    <label htmlFor={`resolved-${option.value}`} className="text-sm">
+                    <label
+                      htmlFor={`resolved-${option.value}`}
+                      className="text-sm"
+                    >
                       {option.label}
                     </label>
                   </div>
@@ -513,15 +580,20 @@ const RealEstateFraudCommunity = memo(() => {
               </div>
             </div>
 
-            {formData.resolutionStatus !== 'unresolved' && (
+            {formData.resolutionStatus !== "unresolved" && (
               <div>
-                <label htmlFor="resolution-details" className="block text-sm font-medium mb-2">
+                <label
+                  htmlFor="resolution-details"
+                  className="block text-sm font-medium mb-2"
+                >
                   How was it resolved?
                 </label>
                 <Textarea
                   id="resolution-details"
                   value={formData.resolutionDetails}
-                  onChange={(e) => handleInputChange('resolutionDetails', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("resolutionDetails", e.target.value)
+                  }
                   placeholder="Describe the steps that led to resolution..."
                   rows={3}
                 />
@@ -533,7 +605,9 @@ const RealEstateFraudCommunity = memo(() => {
                 type="checkbox"
                 id="anonymous"
                 checked={formData.anonymous}
-                onChange={(e) => handleInputChange('anonymous', e.target.checked)}
+                onChange={(e) =>
+                  handleInputChange("anonymous", e.target.checked)
+                }
                 className="w-4 h-4"
               />
               <label htmlFor="anonymous" className="text-sm">
@@ -541,12 +615,14 @@ const RealEstateFraudCommunity = memo(() => {
               </label>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               disabled={shareExperienceMutation.isPending}
             >
-              {shareExperienceMutation.isPending ? 'Sharing...' : 'Share Your Experience'}
+              {shareExperienceMutation.isPending ?
+                "Sharing..."
+              : "Share Your Experience"}
             </Button>
           </form>
         </CardContent>
@@ -580,13 +656,17 @@ const RealEstateFraudCommunity = memo(() => {
               <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
                 Community Platform
               </h1>
-              <p className="text-primary font-semibold text-lg">Powered by TripleCheck</p>
+              <p className="text-primary font-semibold text-lg">
+                Powered by TripleCheck
+              </p>
             </div>
           </div>
-          
+
           <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            Share detailed experiences, connect with other victims and professionals, and access advanced community features. 
-            This is your dedicated space for in-depth community engagement and expert support.
+            Share detailed experiences, connect with other victims and
+            professionals, and access advanced community features. This is your
+            dedicated space for in-depth community engagement and expert
+            support.
           </p>
         </div>
 
@@ -597,43 +677,51 @@ const RealEstateFraudCommunity = memo(() => {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold mb-1">234</div>
-                  <div className="text-blue-100 font-medium">Stories Shared</div>
+                  <div className="text-blue-100 font-medium">
+                    Stories Shared
+                  </div>
                 </div>
                 <MessageSquare className="w-8 h-8 text-blue-200 group-hover:scale-110 transition-transform duration-300" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-gradient-to-br from-green-600 to-green-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold mb-1">89</div>
-                  <div className="text-green-100 font-medium">Cases Resolved</div>
+                  <div className="text-green-100 font-medium">
+                    Cases Resolved
+                  </div>
                 </div>
                 <CheckCircle className="w-8 h-8 text-green-200 group-hover:scale-110 transition-transform duration-300" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-gradient-to-br from-red-600 to-red-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold mb-1">KES 45M+</div>
-                  <div className="text-red-100 font-medium">Total Reported Losses</div>
+                  <div className="text-red-100 font-medium">
+                    Total Reported Losses
+                  </div>
                 </div>
                 <AlertTriangle className="w-8 h-8 text-red-200 group-hover:scale-110 transition-transform duration-300" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-gradient-to-br from-purple-600 to-purple-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold mb-1">12</div>
-                  <div className="text-purple-100 font-medium">Countries Covered</div>
+                  <div className="text-purple-100 font-medium">
+                    Countries Covered
+                  </div>
                 </div>
                 <Users className="w-8 h-8 text-purple-200 group-hover:scale-110 transition-transform duration-300" />
               </div>
@@ -648,9 +736,9 @@ const RealEstateFraudCommunity = memo(() => {
               <button
                 onClick={() => setActiveTab("browse")}
                 className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
-                  activeTab === "browse"
-                    ? "bg-primary text-white shadow-md transform scale-105"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  activeTab === "browse" ?
+                    "bg-primary text-white shadow-md transform scale-105"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 Browse Stories
@@ -658,9 +746,9 @@ const RealEstateFraudCommunity = memo(() => {
               <button
                 onClick={() => setActiveTab("share")}
                 className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
-                  activeTab === "share"
-                    ? "bg-primary text-white shadow-md transform scale-105"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  activeTab === "share" ?
+                    "bg-primary text-white shadow-md transform scale-105"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 Share Experience
@@ -669,110 +757,113 @@ const RealEstateFraudCommunity = memo(() => {
           </div>
         </div>
 
-      {activeTab === "browse" && (
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Sidebar */}
-          <div className="lg:w-1/4">
-            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Search & Filter
-              </h3>
+        {activeTab === "browse" && (
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Sidebar */}
+            <div className="lg:w-1/4">
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                <h3 className="font-semibold text-gray-900 mb-4">
+                  Search & Filter
+                </h3>
 
-              <div className="mb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search stories..."
-                    aria-label="Search stories"
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search stories..."
+                      aria-label="Search stories"
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">
+                    Categories
+                  </h4>
+                  <div className="space-y-2">
+                    {categories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-left rounded-md transition-colors ${
+                          selectedCategory === category.id ?
+                            "bg-blue-100 text-blue-700"
+                          : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        <span>{category.name}</span>
+                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                          {category.count}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <AlertTriangle className="h-5 w-5 text-yellow-400 mr-3 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-medium text-yellow-800">
+                      Safety Reminder
+                    </h4>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      Always verify property documents, use licensed
+                      professionals, and never make large payments without
+                      proper verification.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="lg:w-3/4">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Community Stories
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gray-400" />
+                  <select
+                    aria-label="Sort stories by"
+                    className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option>Most Recent</option>
+                    <option>Most Liked</option>
+                    <option>Most Commented</option>
+                    <option>Highest Amount</option>
+                  </select>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  Categories
-                </h4>
-                <div className="space-y-2">
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-left rounded-md transition-colors ${
-                        selectedCategory === category.id ?
-                          "bg-blue-100 text-blue-700"
-                        : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      <span>{category.name}</span>
-                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                        {category.count}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                {experiences.map((experience) => (
+                  <ExperienceCard key={experience.id} experience={experience} />
+                ))}
               </div>
-            </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <AlertTriangle className="h-5 w-5 text-yellow-400 mr-3 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-yellow-800">
-                    Safety Reminder
-                  </h4>
-                  <p className="text-xs text-yellow-700 mt-1">
-                    Always verify property documents, use licensed
-                    professionals, and never make large payments without proper
-                    verification.
-                  </p>
-                </div>
+              <div className="text-center mt-8">
+                <button className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                  Load More Stories
+                </button>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Main Content */}
-          <div className="lg:w-3/4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Community Stories
-              </h2>
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-gray-400" />
-                <select aria-label="Sort stories by" className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option>Most Recent</option>
-                  <option>Most Liked</option>
-                  <option>Most Commented</option>
-                  <option>Highest Amount</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              {experiences.map((experience) => (
-                <ExperienceCard key={experience.id} experience={experience} />
-              ))}
-            </div>
-
-            <div className="text-center mt-8">
-              <button className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                Load More Stories
-              </button>
-            </div>
+        {activeTab === "share" && (
+          <div className="max-w-3xl mx-auto">
+            <ShareExperienceForm />
           </div>
-        </div>
-      )}
-
-      {activeTab === "share" && (
-        <div className="max-w-3xl mx-auto">
-          <ShareExperienceForm />
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  </div>
   );
 });
 
