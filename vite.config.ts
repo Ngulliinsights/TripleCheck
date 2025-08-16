@@ -1,11 +1,11 @@
 /// <reference types="vitest" />
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
 import path, { dirname } from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { fileURLToPath } from "url";
-import os from "os";
+
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 // Calculate directory paths once at module level for better performance
 // This avoids repeated path calculations during configuration execution
@@ -14,14 +14,16 @@ const __dirname = dirname(__filename);
 
 // Pre-calculate commonly used paths to reduce redundant path.resolve calls
 const srcPath = path.resolve(__dirname, "src");
-const distPath = path.resolve(__dirname, "dist/public");
+
+// Backend server URL for proxy configuration
+const BACKEND_URL = 'http://localhost:3000';
 
 
 
 export default defineConfig({
   // Ensure correct root directory
   root: __dirname,
-  
+
   // Plugin configuration with optimized ordering for better build performance
   plugins: [
     // React plugin with basic configuration to avoid conflicts
@@ -37,9 +39,9 @@ export default defineConfig({
   // Enhanced server configuration for optimal development experience
   server: {
     port: 5173,
-    // Configure HMR with fallback port strategy
+    // Configure HMR to use the same port as the dev server
     hmr: {
-      port: 5174,
+      port: 5173,
       // Add overlay configuration for better error visibility
       overlay: true,
     },
@@ -48,17 +50,17 @@ export default defineConfig({
     // Proxy API requests to backend server
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false,
       },
       '/health': {
-        target: 'http://localhost:3000',
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false,
       },
       '/test': {
-        target: 'http://localhost:3000',
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false,
       },
@@ -95,13 +97,8 @@ export default defineConfig({
     minify: "esbuild", // Faster minification than terser
     sourcemap: false, // Disable source maps for production
 
-    // Simplified Rollup configuration to prevent module issues
-    rollupOptions: {
-      output: {
-        // Let Vite handle chunking automatically
-        manualChunks: undefined,
-      },
-    },
+    // Let Vite handle chunking automatically with default configuration
+    rollupOptions: {},
 
     // Increase chunk size warning limit for domain chunks which may be naturally larger
     chunkSizeWarningLimit: 500,

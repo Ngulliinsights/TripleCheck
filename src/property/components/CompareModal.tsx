@@ -14,16 +14,15 @@ import { useNavigate } from "react-router-dom";
 
 // Using basic img tag for simple image display
 import { Button } from "../../shared/components/ui/button";
-import type { CompareProperty } from "../../shared/types/compare";
-import { 
+import {
   formatComparePrice,
   formatCompareLocation,
   safeGetPropertyImage,
   getComparePropertyTitle,
   getVerificationBadge,
-  getFeatureValue
+  getFeatureValue,
 } from "../../shared/utils/compare-utils";
-import { useCompare } from "../contexts/CompareContext";
+import { usePropertyCompare, usePropertyCompareActions } from "../contexts";
 
 // Make props interface readonly as suggested by ESLint
 interface CompareModalProps {
@@ -32,7 +31,7 @@ interface CompareModalProps {
 }
 
 export function CompareModal({ isOpen, onClose }: CompareModalProps) {
-  const { selectedProperties } = useCompare();
+  const { selectedProperties } = usePropertyCompare();
   const navigate = useNavigate();
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -212,11 +211,6 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
 
         {/* Content - Scrollable area that doesn't interfere with footer */}
         <div className="flex-1 overflow-auto min-h-0" style={gridColumnsStyle}>
-          <style>{`
-            .comparison-grid {
-              grid-template-columns: var(--grid-columns);
-            }
-          `}</style>
           <div className="p-6">
             {/* Property Headers */}
             <div className="property-headers grid gap-4 mb-6 comparison-grid">
@@ -232,7 +226,6 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
                         height={200}
                         className="w-full h-full object-cover"
                         loading="lazy"
-                        useLandPlaceholder={false}
                       />
                     : <div className="w-full h-full flex items-center justify-center">
                         <Home className="w-12 h-12 text-gray-400" />
@@ -264,7 +257,9 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
               <ComparisonRow
                 label="Location"
                 icon={<MapPin className="w-4 h-4" />}
-                values={properties.map((p) => formatCompareLocation(p.location))}
+                values={properties.map((p) =>
+                  formatCompareLocation(p.location)
+                )}
               />
 
               <ComparisonRow
@@ -289,8 +284,8 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
                 label="Area"
                 icon={<Home className="w-4 h-4" />}
                 values={properties.map((p) => {
-                  const sqft = getFeatureValue(p, "squareFeet");
-                  return sqft ? `${Number(sqft).toLocaleString()} sq ft` : "—";
+                  const squareFeet = getFeatureValue(p, "squareFeet");
+                  return squareFeet ? `${Number(squareFeet).toLocaleString()} sq ft` : "—";
                 })}
               />
 
@@ -315,7 +310,9 @@ export function CompareModal({ isOpen, onClose }: CompareModalProps) {
               <ComparisonRow
                 label="Status"
                 icon={<Shield className="w-4 h-4" />}
-                values={properties.map((p) => getVerificationBadge(p.verificationStatus))}
+                values={properties.map((p) =>
+                  getVerificationBadge(p.verificationStatus)
+                )}
               />
             </div>
           </div>

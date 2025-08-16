@@ -12,10 +12,10 @@ import { BasePropertyFiltersComponent } from './BasePropertyFilters';
 
 
 interface CommercialFiltersProps {
-  filters: CommercialFilters;
-  onChange: (filters: CommercialFilters) => void;
-  onReset: () => void;
-  errors?: Record<string, string>;
+  readonly filters: CommercialFilters;
+  readonly onChange: (filters: CommercialFilters) => void;
+  readonly onReset: () => void;
+  readonly errors?: Record<string, string>;
 }
 
 const COMMERCIAL_TYPES = [
@@ -52,11 +52,13 @@ const BUSINESS_ZONES = [
   { value: 'kilimani', label: 'Kilimani', description: 'Mixed-use area' },
 ];
 
+const ERROR_BORDER_CLASS = 'border-red-500';
+
 /**
  * Commercial property filters component
  * Extends base filters with commercial-specific options
  */
-export function CommercialFilters({
+function CommercialFiltersComponent({
   filters,
   onChange,
   onReset,
@@ -89,7 +91,7 @@ export function CommercialFilters({
       {/* Base Filters */}
       <BasePropertyFiltersComponent
         filters={filters}
-        onChange={onChange}
+        onChange={(baseFilters) => onChange({ ...filters, ...baseFilters, category: "commercial" })}
         onReset={onReset}
         errors={errors}
       />
@@ -185,7 +187,7 @@ export function CommercialFilters({
                   placeholder="0"
                   value={filters.areaMin}
                   onChange={(e) => updateFilter('areaMin', e.target.value)}
-                  className={errors.areaMin ? 'border-red-500' : ''}
+                  className={errors.areaMin ? ERROR_BORDER_CLASS : ''}
                 />
                 {errors.areaMin && (
                   <p className="text-sm text-red-600">{errors.areaMin}</p>
@@ -201,7 +203,7 @@ export function CommercialFilters({
                   placeholder="No limit"
                   value={filters.areaMax}
                   onChange={(e) => updateFilter('areaMax', e.target.value)}
-                  className={errors.areaMax ? 'border-red-500' : ''}
+                  className={errors.areaMax ? ERROR_BORDER_CLASS : ''}
                 />
                 {errors.areaMax && (
                   <p className="text-sm text-red-600">{errors.areaMax}</p>
@@ -241,7 +243,7 @@ export function CommercialFilters({
                   placeholder="1"
                   value={filters.floorsMin}
                   onChange={(e) => updateFilter('floorsMin', e.target.value)}
-                  className={errors.floorsMin ? 'border-red-500' : ''}
+                  className={errors.floorsMin ? ERROR_BORDER_CLASS : ''}
                 />
                 {errors.floorsMin && (
                   <p className="text-sm text-red-600">{errors.floorsMin}</p>
@@ -257,7 +259,7 @@ export function CommercialFilters({
                   placeholder="No limit"
                   value={filters.floorsMax}
                   onChange={(e) => updateFilter('floorsMax', e.target.value)}
-                  className={errors.floorsMax ? 'border-red-500' : ''}
+                  className={errors.floorsMax ? ERROR_BORDER_CLASS : ''}
                 />
                 {errors.floorsMax && (
                   <p className="text-sm text-red-600">{errors.floorsMax}</p>
@@ -278,6 +280,8 @@ export function CommercialFilters({
                   checked={filters.parking}
                   onChange={() => toggleAmenity('parking')}
                   className="rounded border-gray-300 text-primary focus:ring-primary"
+                  aria-label="Parking available"
+                  title="Parking available"
                 />
                 <Label htmlFor="parking" className="flex items-center gap-2 cursor-pointer flex-1">
                   <Car className="w-4 h-4 text-blue-500" />
@@ -296,6 +300,8 @@ export function CommercialFilters({
                   checked={filters.elevator}
                   onChange={() => toggleAmenity('elevator')}
                   className="rounded border-gray-300 text-primary focus:ring-primary"
+                  aria-label="Elevator available"
+                  title="Elevator available"
                 />
                 <Label htmlFor="elevator" className="flex items-center gap-2 cursor-pointer flex-1">
                   <Users className="w-4 h-4 text-gray-600" />
@@ -314,6 +320,8 @@ export function CommercialFilters({
                   checked={filters.airConditioning}
                   onChange={() => toggleAmenity('airConditioning')}
                   className="rounded border-gray-300 text-primary focus:ring-primary"
+                  aria-label="Air conditioning available"
+                  title="Air conditioning available"
                 />
                 <Label htmlFor="air-conditioning" className="flex items-center gap-2 cursor-pointer flex-1">
                   <Zap className="w-4 h-4 text-cyan-500" />
@@ -332,6 +340,8 @@ export function CommercialFilters({
                   checked={filters.security}
                   onChange={() => toggleAmenity('security')}
                   className="rounded border-gray-300 text-primary focus:ring-primary"
+                  aria-label="Security available"
+                  title="Security available"
                 />
                 <Label htmlFor="security" className="flex items-center gap-2 cursor-pointer flex-1">
                   <Shield className="w-4 h-4 text-red-500" />
@@ -350,6 +360,8 @@ export function CommercialFilters({
                   checked={filters.wifi}
                   onChange={() => toggleAmenity('wifi')}
                   className="rounded border-gray-300 text-primary focus:ring-primary"
+                  aria-label="WiFi available"
+                  title="WiFi available"
                 />
                 <Label htmlFor="wifi" className="flex items-center gap-2 cursor-pointer flex-1">
                   <Wifi className="w-4 h-4 text-purple-500" />
@@ -368,6 +380,8 @@ export function CommercialFilters({
                   checked={filters.generator}
                   onChange={() => toggleAmenity('generator')}
                   className="rounded border-gray-300 text-primary focus:ring-primary"
+                  aria-label="Generator available"
+                  title="Generator available"
                 />
                 <Label htmlFor="generator" className="flex items-center gap-2 cursor-pointer flex-1">
                   <Zap className="w-4 h-4 text-yellow-500" />
@@ -506,5 +520,6 @@ export function CommercialFilters({
   );
 }
 
-// Export as default for lazy loading
-export default CommercialFilters;
+// Export as named and default for lazy loading
+export { CommercialFiltersComponent as CommercialFilters };
+export default CommercialFiltersComponent;

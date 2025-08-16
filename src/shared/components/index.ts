@@ -23,7 +23,7 @@ export {
   useReviewListVirtualization,
   useTenantListVirtualization,
   useTeamGridVirtualization,
-} from "../hooks/useVirtualizationHelpers";
+} from "../hooks/useMemoryOptimization";
 
 // Export property components and utilities
 export * from "./property";

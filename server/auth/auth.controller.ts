@@ -81,4 +81,46 @@ router.post('/reset-password', async (req, res, next) => {
   }
 });
 
+// Check email availability
+router.get('/check-email', async (req, res, next) => {
+  try {
+    const { email } = req.query;
+    
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Email parameter is required'
+      });
+    }
+    
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.json({
+        success: true,
+        available: false,
+        message: 'Invalid email format'
+      });
+    }
+    
+    // Mock email availability check
+    // In real implementation, this would check the database
+    const unavailableEmails = [
+      'admin@example.com',
+      'test@test.com',
+      'user@demo.com'
+    ];
+    
+    const isAvailable = !unavailableEmails.includes(email.toLowerCase());
+    
+    res.json({
+      success: true,
+      available: isAvailable,
+      message: isAvailable ? 'Email is available' : 'Email is already registered'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export { router as authRouter };

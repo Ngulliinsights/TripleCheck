@@ -3,9 +3,13 @@ import { render, screen } from '@testing-library/react';
 import ListingCard from '../ListingCard';
 import { Property } from '../../../shared/types/property';
 
-// Mock the CompareContext
-jest.mock('../../contexts/CompareContext', () => ({
-  useCompare: () => ({
+// Mock the PropertyContext comparison hooks
+jest.mock('../../contexts', () => ({
+  usePropertyCompare: () => ({
+    selectedProperties: [],
+    canAddMore: true,
+  }),
+  usePropertyCompareActions: () => ({
     addToCompare: jest.fn(),
     removeFromCompare: jest.fn(),
     isSelected: jest.fn(() => false),

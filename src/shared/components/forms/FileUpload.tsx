@@ -1,7 +1,7 @@
 import { Upload, X, FileText, Image, AlertCircle, CheckCircle } from 'lucide-react';
 import React, { useRef, useState, useCallback } from 'react';
 
-import { useFileUpload } from '../../hooks/useForm';
+import { useFileUpload } from '../../hooks/useFormValidation';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';

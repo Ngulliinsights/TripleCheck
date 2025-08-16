@@ -22,6 +22,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onToggle }) => {
         onClick={onToggle}
         className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
         aria-label="Toggle mobile menu"
+        title="Toggle mobile menu"
       >
         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </button>
@@ -36,6 +37,8 @@ const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onToggle }) => {
               <button
                 onClick={onToggle}
                 className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                aria-label="Close menu"
+                title="Close navigation menu"
               >
                 <X className="h-6 w-6" />
               </button>

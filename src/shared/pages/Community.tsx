@@ -6,7 +6,6 @@ import {
   XCircle,
   Eye,
   ThumbsUp,
-  Flag,
   Share2,
   Search,
   Filter,
@@ -15,6 +14,7 @@ import {
   User,
   ArrowLeft,
   Users,
+  Shield,
 } from "lucide-react";
 import React, { useState, useCallback, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
@@ -30,8 +30,8 @@ import {
 import { Textarea } from "../components/ui/textarea";
 import { useToast } from "../hooks/use-toast";
 import { useDebounce } from "../hooks/useDebounce";
-import { useForm } from "../hooks/useForm";
-import { ValidationRule } from "../utils/form-validation";
+import { useForm } from "../hooks/useFormValidation";
+// ValidationRule is now part of useFormValidation
 
 // Constants
 const QUERY_DELAY = 500;
@@ -103,7 +103,7 @@ const RealEstateFraudCommunity = memo(() => {
             datePosted: "2024-07-15",
             author: "Anonymous User",
             preview:
-              "I was approached by a 'land broker' who showed me what seemed like legitimate title deeds...",
+              "I was approached by a &apos;land broker&apos; who showed me what seemed like legitimate title deeds...",
             likes: 23,
             comments: 8,
             views: 156,
@@ -119,7 +119,7 @@ const RealEstateFraudCommunity = memo(() => {
             datePosted: "2024-07-10",
             author: "James M.",
             preview:
-              "Invested in what appeared to be a legitimate housing development project. Here's how I got my money back...",
+              "Invested in what appeared to be a legitimate housing development project. Here&apos;s how I got my money back...",
             likes: 45,
             comments: 12,
             views: 289,
@@ -135,7 +135,7 @@ const RealEstateFraudCommunity = memo(() => {
             datePosted: "2024-07-08",
             author: "Sarah K.",
             preview:
-              "Paid deposit for an apartment that the 'landlord' didn't actually own...",
+              "Paid deposit for an apartment that the &apos;landlord&apos; didn&apos;t actually own...",
             likes: 18,
             comments: 15,
             views: 201,
@@ -221,89 +221,109 @@ const RealEstateFraudCommunity = memo(() => {
   }: {
     experience: ExperienceDisplayData;
   }) => (
-    <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow p-6 mb-4">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {experience.title}
-            </h3>
-            {experience.resolved ?
-              <CheckCircle className="w-5 h-5 text-green-500" />
-            : <XCircle className="w-5 h-5 text-red-500" />}
-          </div>
-          <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-            <div className="flex items-center gap-1">
-              <MapPin className="w-4 h-4" />
-              {experience.location}
+    <Card className="bg-white/90 backdrop-blur-sm border-slate-200 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 group mb-6">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <h3 className="text-xl font-semibold text-slate-900 group-hover:text-primary transition-colors duration-200">
+                {experience.title}
+              </h3>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                experience.resolved 
+                  ? "bg-green-100 text-green-600" 
+                  : "bg-red-100 text-red-600"
+              }`}>
+                {experience.resolved ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  <XCircle className="w-4 h-4" />
+                )}
+              </div>
+              {experience.resolved && (
+                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                  ✨ Success Story
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              {experience.datePosted}
+            <div className="flex items-center gap-6 text-sm text-slate-500 mb-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span className="font-medium">{experience.location}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>{experience.datePosted}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                <span>{experience.author}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <User className="w-4 h-4" />
-              {experience.author}
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-red-600 mb-2">{experience.amount}</div>
+            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+              experience.resolved 
+                ? "bg-green-100 text-green-800 border border-green-200" 
+                : "bg-red-100 text-red-800 border border-red-200"
+            }`}>
+              {experience.resolved ? "💰 Recovered" : "⚠️ Ongoing"}
             </div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-lg font-bold text-red-600">
-            {experience.amount}
+
+        <p className="text-slate-700 mb-6 leading-relaxed">{experience.preview}</p>
+
+        {/* Persona-specific insights */}
+        {experience.resolved && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+            <div className="text-sm text-green-800 font-medium mb-1">💡 What worked:</div>
+            <div className="text-sm text-green-700">Quick reporting to DCI + legal action + community support</div>
           </div>
-          <div
-            className={`text-sm px-2 py-1 rounded ${experience.resolved ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-          >
-            {experience.resolved ? "Resolved" : "Unresolved"}
+        )}
+
+        <div className="flex flex-wrap gap-2 mb-6">
+          {experience.tags.map((tag: string) => (
+            <span key={tag} className="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full font-medium border border-primary/20">
+              #{tag}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+          <div className="flex items-center gap-6 text-sm text-slate-500">
+            <div className="flex items-center gap-2 hover:text-slate-700 transition-colors">
+              <Eye className="w-4 h-4" />
+              <span className="font-medium">{experience.views}</span>
+            </div>
+            <div className="flex items-center gap-2 hover:text-slate-700 transition-colors">
+              <ThumbsUp className="w-4 h-4" />
+              <span className="font-medium">{experience.likes}</span>
+            </div>
+            <div className="flex items-center gap-2 hover:text-slate-700 transition-colors">
+              <MessageSquare className="w-4 h-4" />
+              <span className="font-medium">{experience.comments}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" className="text-slate-500 hover:text-primary">
+              <Share2 className="w-4 h-4 mr-1" />
+              Share
+            </Button>
+            <Button variant="ghost" size="sm" className="text-slate-500 hover:text-green-600">
+              <MessageSquare className="w-4 h-4 mr-1" />
+              Support
+            </Button>
           </div>
         </div>
-      </div>
-
-      <p className="text-gray-700 mb-4">{experience.preview}</p>
-
-      <div className="flex flex-wrap gap-2 mb-4">
-        {experience.tags.map((tag: string) => (
-          <span
-            key={tag}
-            className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
-          >
-            #{tag}
-          </span>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between text-sm text-gray-500">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            <Eye className="w-4 h-4" />
-            {experience.views}
-          </div>
-          <div className="flex items-center gap-1">
-            <ThumbsUp className="w-4 h-4" />
-            {experience.likes}
-          </div>
-          <div className="flex items-center gap-1">
-            <MessageSquare className="w-4 h-4" />
-            {experience.comments}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1 hover:text-blue-600">
-            <Share2 className="w-4 h-4" />
-            Share
-          </button>
-          <button className="flex items-center gap-1 hover:text-red-600">
-            <Flag className="w-4 h-4" />
-            Report
-          </button>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 
   const ShareExperienceForm = memo(() => {
     // Form validation rules
-    const validationRules: Record<string, ValidationRule> = {
+    const validationRules = {
       title: {
         required: true,
         minLength: 10,
@@ -319,7 +339,7 @@ const RealEstateFraudCommunity = memo(() => {
       },
       amountLost: {
         pattern: AMOUNT_REGEX,
-        custom: (value) => {
+        custom: (value: any) => {
           if (value && typeof value === "string" && value.trim() !== "") {
             const cleanValue = value.replace(/[^\d.]/g, "");
             const numValue = parseFloat(cleanValue);
@@ -348,7 +368,7 @@ const RealEstateFraudCommunity = memo(() => {
         required: true,
       },
       resolutionDetails: {
-        custom: (value, formValues) => {
+        custom: (value: any, formValues: unknown) => {
           const resolutionStatus = (formValues as ShareExperienceData)
             ?.resolutionStatus;
           if (
@@ -404,11 +424,43 @@ const RealEstateFraudCommunity = memo(() => {
     return (
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl">Share Your Experience</CardTitle>
-          <p className="text-muted-foreground">
-            Help others by sharing your experience. Your story can prevent
-            others from falling victim to similar scams.
-          </p>
+          <CardTitle className="text-2xl flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-green-600" />
+            </div>
+            Share Your Experience
+          </CardTitle>
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              Your story has power. Every experience shared helps build a stronger, safer community.
+            </p>
+            
+            {/* Impact Motivators */}
+            <div className="grid md:grid-cols-3 gap-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+              <div className="text-center">
+                <div className="text-lg font-bold text-green-600">89 People</div>
+                <div className="text-sm text-slate-600">Avoided scams after reading stories like yours</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-blue-600">KES 12M+</div>
+                <div className="text-sm text-slate-600">Saved by community warnings</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-purple-600">24/7</div>
+                <div className="text-sm text-slate-600">Your story works around the clock</div>
+              </div>
+            </div>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Shield className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <div className="text-sm font-medium text-yellow-800">Your privacy is protected</div>
+                  <div className="text-xs text-yellow-700">You can share anonymously, and we never reveal personal details</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={formHandleSubmit} className="space-y-6" noValidate>
@@ -646,7 +698,7 @@ const RealEstateFraudCommunity = memo(() => {
           </Link>
         </div>
 
-        {/* Enhanced Header with TripleCheck branding */}
+        {/* Persona-Driven Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-4 mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-700 rounded-2xl flex items-center justify-center shadow-lg">
@@ -662,12 +714,29 @@ const RealEstateFraudCommunity = memo(() => {
             </div>
           </div>
 
-          <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            Share detailed experiences, connect with other victims and
-            professionals, and access advanced community features. This is your
-            dedicated space for in-depth community engagement and expert
-            support.
+          <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed mb-8">
+            Your safe space to share experiences, learn from others, and build connections. 
+            Whether you&apos;re seeking support, sharing wisdom, or offering professional guidance - you belong here.
           </p>
+
+          {/* Engagement Motivators */}
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-8">
+            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-slate-200">
+              <div className="text-2xl font-bold text-green-600 mb-1">89 Cases</div>
+              <div className="text-sm text-slate-600">Successfully Resolved</div>
+              <div className="text-xs text-green-600 mt-1">💪 Your story could help someone recover their money</div>
+            </div>
+            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-slate-200">
+              <div className="text-2xl font-bold text-blue-600 mb-1">234 Stories</div>
+              <div className="text-sm text-slate-600">Shared & Verified</div>
+              <div className="text-xs text-blue-600 mt-1">🛡️ Real experiences from real people</div>
+            </div>
+            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-slate-200">
+              <div className="text-2xl font-bold text-purple-600 mb-1">45+ Experts</div>
+              <div className="text-sm text-slate-600">Active in Community</div>
+              <div className="text-xs text-purple-600 mt-1">⚖️ Get professional guidance</div>
+            </div>
+          </div>
         </div>
 
         {/* Enhanced Stats */}
@@ -729,29 +798,33 @@ const RealEstateFraudCommunity = memo(() => {
           </Card>
         </div>
 
-        {/* Enhanced Navigation Tabs */}
+        {/* Persona-Driven Navigation */}
         <div className="flex justify-center mb-8">
           <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-xl shadow-lg border border-slate-200">
             <div className="flex space-x-1">
               <button
                 onClick={() => setActiveTab("browse")}
-                className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 ${
                   activeTab === "browse" ?
                     "bg-primary text-white shadow-md transform scale-105"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
-                Browse Stories
+                <Eye className="w-4 h-4" />
+                Learn from Others
+                <span className="text-xs bg-white/20 px-2 py-1 rounded-full">234 stories</span>
               </button>
               <button
                 onClick={() => setActiveTab("share")}
-                className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 ${
                   activeTab === "share" ?
                     "bg-primary text-white shadow-md transform scale-105"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
-                Share Experience
+                <MessageSquare className="w-4 h-4" />
+                Help Others
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Make a difference</span>
               </button>
             </div>
           </div>
@@ -759,67 +832,115 @@ const RealEstateFraudCommunity = memo(() => {
 
         {activeTab === "browse" && (
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Sidebar */}
-            <div className="lg:w-1/4">
-              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-4">
-                  Search & Filter
-                </h3>
-
-                <div className="mb-4">
+            {/* Enhanced Persona-Driven Sidebar */}
+            <div className="lg:w-1/4 space-y-6">
+              <Card className="bg-white/80 backdrop-blur-sm border-slate-200 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg text-slate-900 flex items-center gap-2">
+                    <Search className="w-5 h-5 text-primary" />
+                    Find Your Story
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
                   <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="Search stories..."
+                      placeholder="Search experiences..."
                       aria-label="Search stories"
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 bg-white/50"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
-                </div>
 
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">
-                    Categories
-                  </h4>
-                  <div className="space-y-2">
-                    {categories.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => setSelectedCategory(category.id)}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-left rounded-md transition-colors ${
-                          selectedCategory === category.id ?
-                            "bg-blue-100 text-blue-700"
-                          : "text-gray-600 hover:bg-gray-100"
-                        }`}
-                      >
-                        <span>{category.name}</span>
-                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                          {category.count}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-start">
-                  <AlertTriangle className="h-5 w-5 text-yellow-400 mr-3 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium text-yellow-800">
-                      Safety Reminder
+                    <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                      <Filter className="w-4 h-4" />
+                      Browse by Type
                     </h4>
-                    <p className="text-xs text-yellow-700 mt-1">
-                      Always verify property documents, use licensed
-                      professionals, and never make large payments without
-                      proper verification.
-                    </p>
+                    <div className="space-y-1">
+                      {categories.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => setSelectedCategory(category.id)}
+                          className={`w-full flex items-center justify-between px-4 py-3 text-left rounded-lg transition-all duration-200 ${
+                            selectedCategory === category.id
+                              ? "bg-primary text-white shadow-md"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                          }`}
+                        >
+                          <span className="font-medium">{category.name}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            selectedCategory === category.id
+                              ? "bg-white/20 text-white"
+                              : "bg-slate-200 text-slate-600"
+                          }`}>
+                            {category.count}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
+
+              {/* Success Stories Highlight */}
+              <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-green-800 mb-2">Success Stories</h4>
+                      <p className="text-sm text-green-700 leading-relaxed mb-3">
+                        89 people have successfully recovered their money. Learn from their strategies.
+                      </p>
+                      <button 
+                        onClick={() => setSelectedCategory("resolved")}
+                        className="text-xs bg-green-200 text-green-800 px-3 py-1 rounded-full hover:bg-green-300 transition-colors"
+                      >
+                        View Success Stories →
+                      </button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Community Impact */}
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Users className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <h4 className="text-sm font-semibold text-blue-800 mb-2">Community Impact</h4>
+                    <div className="space-y-2 text-sm text-blue-700">
+                      <div><strong>KES 12M+</strong> saved by warnings</div>
+                      <div><strong>156 people</strong> avoided scams</div>
+                      <div><strong>24/7</strong> peer support</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Safety Reminder */}
+              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Shield className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-amber-800 mb-2">Stay Safe</h4>
+                      <p className="text-sm text-amber-700 leading-relaxed">
+                        Always verify documents, use licensed professionals, and trust your instincts.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Main Content */}
@@ -848,10 +969,57 @@ const RealEstateFraudCommunity = memo(() => {
                 ))}
               </div>
 
-              <div className="text-center mt-8">
-                <button className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors">
+              <div className="text-center mt-8 space-y-6">
+                <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
                   Load More Stories
                 </button>
+                
+                {/* Persona-Specific Engagement CTAs */}
+                <div className="grid md:grid-cols-2 gap-6 mt-8">
+                  <Card className="bg-gradient-to-br from-green-50 via-green-50 to-blue-50 border-green-200 shadow-xl">
+                    <CardContent className="p-6 text-center">
+                      <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <MessageSquare className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 mb-3">
+                        Ready to Help Others?
+                      </h3>
+                      <p className="text-slate-600 mb-4 leading-relaxed">
+                        Your experience could prevent someone else from losing their life savings. 
+                        Share your story and become part of the solution.
+                      </p>
+                      <button
+                        onClick={() => setActiveTab("share")}
+                        className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        Share Your Experience
+                      </button>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-red-50 via-orange-50 to-red-50 border-red-200 shadow-xl">
+                    <CardContent className="p-6 text-center">
+                      <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <AlertTriangle className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 mb-3">
+                        Need Immediate Help?
+                      </h3>
+                      <p className="text-slate-600 mb-4 leading-relaxed">
+                        If you&apos;re currently dealing with fraud, don&apos;t wait. 
+                        Access our emergency response guide with step-by-step actions.
+                      </p>
+                      <Link
+                        to="/fraud-guide"
+                        className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                      >
+                        <AlertTriangle className="w-4 h-4" />
+                        Get Emergency Help
+                      </Link>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
           </div>

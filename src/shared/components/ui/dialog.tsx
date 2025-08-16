@@ -6,7 +6,19 @@ export const Dialog = ({ children, open, onOpenChange }: {
   open?: boolean; 
   onOpenChange?: (open: boolean) => void; 
 }) => {
-  return <div>{children}</div>
+  if (!open) return null;
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50" 
+        onClick={() => onOpenChange?.(false)}
+      />
+      <div className="relative z-10">
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export const DialogTrigger = ({ children, asChild }: { 
@@ -24,11 +36,11 @@ export const DialogContent = ({ children, className = "" }: {
   children: React.ReactNode; 
   className?: string; 
 }) => {
-  return <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className={`bg-white p-6 rounded-lg max-w-md w-full mx-4 ${className}`}>
+  return (
+    <div className={`bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4 ${className}`}>
       {children}
     </div>
-  </div>
+  );
 }
 
 export const DialogHeader = ({ children }: { children: React.ReactNode }) => {

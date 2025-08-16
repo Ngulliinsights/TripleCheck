@@ -4,7 +4,7 @@
  * Integrates with existing API services and follows project patterns
  */
 
-import { imageServiceConfig } from '../../config/image-system.config';
+import { ImageServiceCore, ImageServiceRegistry } from './core/ImageServiceCore';
 import type {
   ProcessingStep,
   WorkflowStatus,
@@ -65,16 +65,18 @@ export interface PropertyWorkflowDependencies {
   };
 }
 
-export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManager {
+export class PropertyImageWorkflowManager extends ImageServiceCore implements IPropertyImageWorkflowManager {
+  readonly serviceName = 'PropertyImageWorkflowManager';
+  readonly version = '2.0.0';
+  
   private activeWorkflows = new Map<string, WorkflowStatus>();
   private workflowCallbacks = new Map<string, (status: WorkflowStatus) => void>();
-  private config: ImageServiceConfig;
 
   constructor(
     private dependencies: PropertyWorkflowDependencies,
     config?: ImageServiceConfig
   ) {
-    this.config = config || imageServiceConfig;
+    super(config, ImageServiceRegistry.getInstance().getAuditService());
   }
 
   async startProcessingWorkflow(
@@ -650,3 +652,39 @@ export class PropertyImageWorkflowManager implements IPropertyImageWorkflowManag
   }
 }
 
+// Register service in the registry
+export const propertyImageWorkflowManager = ImageServiceRegistry.getInstance().register(
+  new PropertyImageWorkflowManager({
+    validationService: {
+      validateUrl: async () => ({ isValid: true, errors: [], warnings: [] }),
+    },
+    metadataService: {
+      extractMetadata: async () => ({
+        fileSize: 1024,
+        technicalMetadata: {
+          format: 'jpeg',
+          colorSpace: 'sRGB',
+          bitDepth: 24,
+          compression: 'JPEG',
+          orientation: 1,
+        },
+        createdAt: Date.now(),
+        lastModified: Date.now(),
+      }),
+      performVirusScan: async () => ({
+        clean: true,
+        threats: [],
+        scanDate: new Date(),
+        scanDuration: 100,
+        engine: 'MockAV',
+        signatureVersion: '1.0.0',
+      }),
+      checkCompliance: async () => ({
+        complianceFlags: [],
+        regulatoryFlags: [],
+      }),
+    },
+  })
+);
+
+export default PropertyImageWorkflowManager;

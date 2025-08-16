@@ -7,6 +7,17 @@ import App from "./app/App";
 import { AppProviders } from "./app/providers";
 import "./shared/styles/globals.css";
 
+// Initialize MSW for development (non-blocking)
+if (import.meta.env.DEV) {
+  import('./shared/test-utils/msw-browser').then(({ startMswWorker }) => {
+    startMswWorker().catch(error => {
+      console.warn('MSW worker failed to start:', error);
+    });
+  }).catch(error => {
+    console.warn('Failed to load MSW:', error);
+  });
+}
+
 // Development logging
 if (import.meta.env.DEV) {
   // eslint-disable-next-line no-console

@@ -47,10 +47,10 @@ export const PropertyListRequestSchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 }).transform((data) => ({
   ...data,
-  sortBy: data.sortBy as 'price' | 'createdAt' | 'trustScore',
-  sortOrder: data.sortOrder as 'asc' | 'desc',
-  page: data.page as number,
-  limit: data.limit as number,
+  sortBy: data.sortBy || 'createdAt' as 'price' | 'createdAt' | 'trustScore',
+  sortOrder: data.sortOrder || 'desc' as 'asc' | 'desc',
+  page: data.page || 1 as number,
+  limit: data.limit || 10 as number,
 }));
 
 export type PropertyListRequest = z.infer<typeof PropertyListRequestSchema>;
@@ -62,7 +62,7 @@ export const PropertyCreateRequestSchema = z.object({
   price: z.number().positive(),
   location: z.string().min(1).max(100),
   type: z.enum(['residential', 'commercial', 'land']),
-  images: z.array(z.string().url()).default([]),
+  images: z.array(z.string().url()).default([]).transform(arr => arr.length > 0 ? arr : []),
   features: z.object({
     bedrooms: z.number().int().nonnegative().optional(),
     bathrooms: z.number().int().nonnegative().optional(),
@@ -78,9 +78,9 @@ export const PropertyCreateRequestSchema = z.object({
 export type PropertyCreateRequest = z.infer<typeof PropertyCreateRequestSchema>;
 
 // Property Update Request Schema
-export const PropertyUpdateRequestSchema = PropertyCreateRequestSchema.partial().extend({
+export const PropertyUpdateRequestSchema = PropertyCreateRequestSchema.extend({
   status: z.enum(['available', 'sold', 'pending', 'withdrawn']).optional(),
-});
+}).partial();
 
 export type PropertyUpdateRequest = z.infer<typeof PropertyUpdateRequestSchema>;
 

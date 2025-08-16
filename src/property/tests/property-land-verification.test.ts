@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 import { PropertyBusinessLogic } from '../services/property-validation';
 import { Property, LandVerificationStatus } from '../types/property.types';
-import { propertyApi } from '../services/property-api';
+import { PropertyApi } from '../services/property-api';
 
 // Mock the API request function
 vi.mock('../../infrastructure/api/queryClient', () => ({
@@ -253,7 +253,7 @@ describe('Property Land Verification Integration', () => {
       const { apiRequest } = await import('../../infrastructure/api/queryClient');
       (apiRequest as Mock).mockResolvedValue(mockResponse);
 
-      const result = await propertyApi.initiateLandVerification('property123', ['registry', 'physical']);
+      const result = await PropertyApi.initiateLandVerification('property123', ['registry', 'physical']);
 
       expect(apiRequest).toHaveBeenCalledWith(
         'POST',
@@ -277,7 +277,7 @@ describe('Property Land Verification Integration', () => {
       const { apiRequest } = await import('../../infrastructure/api/queryClient');
       (apiRequest as Mock).mockResolvedValue(mockResponse);
 
-      const result = await propertyApi.getLandVerificationStatus('property123');
+      const result = await PropertyApi.getLandVerificationStatus('property123');
 
       expect(apiRequest).toHaveBeenCalledWith(
         'GET',

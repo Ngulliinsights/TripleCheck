@@ -1,9 +1,33 @@
 /**
  * Memory Optimization Hooks
  * Collection of hooks for optimizing memory usage in React components
+ * Refined for TypeScript safety and ESLint compliance
  */
 
+/* eslint-disable security/detect-object-injection */
+/* global performance */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+// ------------------------------------------------------------------
+// Type Definitions
+// ------------------------------------------------------------------
+
+// Generic property interface to replace 'any' usage
+interface BaseEntity {
+  id: string | number;
+  [key: string]: unknown;
+}
+
+// Browser API type augmentation for better TypeScript support
+declare global {
+  interface Performance {
+    memory?: {
+      usedJSHeapSize: number;
+      totalJSHeapSize: number;
+      jsHeapSizeLimit: number;
+    };
+  }
+}
 
 // ------------------------------------------------------------------
 // 1. Virtualization Hook for Large Lists
@@ -11,7 +35,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 interface VirtualizationOptions {
   itemHeight: number;
   containerHeight: number;
-  overscan?: number;
+  overscan?: number; // Number of items to render outside visible area for smooth scrolling
 }
 
 export const useVirtualization = <T>(
@@ -21,6 +45,7 @@ export const useVirtualization = <T>(
   const { itemHeight, containerHeight, overscan = 5 } = options;
   const [scrollTop, setScrollTop] = useState(0);
 
+  // Calculate which items should be visible based on scroll position
   const visibleRange = useMemo(() => {
     const visibleStart = Math.floor(scrollTop / itemHeight);
     const visibleEnd = Math.min(
@@ -34,6 +59,7 @@ export const useVirtualization = <T>(
     };
   }, [scrollTop, itemHeight, containerHeight, overscan, items.length]);
 
+  // Extract only the items that need to be rendered
   const visibleItems = useMemo(() => {
     return items.slice(visibleRange.start, visibleRange.end + 1).map((item, index) => ({
       item,
@@ -57,6 +83,104 @@ export const useVirtualization = <T>(
 };
 
 // ------------------------------------------------------------------
+// 1.1 Specialized Virtualization Helpers
+// ------------------------------------------------------------------
+
+export function usePropertyListVirtualization(
+  properties: readonly BaseEntity[],
+  containerHeight: number,
+  itemHeight: number = 280
+) {
+  return useMemo(() => ({
+    items: properties,
+    itemHeight,
+    containerHeight,
+    keyExtractor: (property: BaseEntity, index: number) => `${property.id}-${index}`,
+    overscanCount: 3,
+  }), [properties, containerHeight, itemHeight]);
+}
+
+export function usePropertyGridVirtualization(
+  properties: readonly BaseEntity[],
+  containerWidth: number,
+  containerHeight: number,
+  cardWidth: number = 280,
+  cardHeight: number = 320
+) {
+  return useMemo(() => ({
+    items: properties,
+    itemWidth: cardWidth,
+    itemHeight: cardHeight,
+    containerWidth,
+    containerHeight,
+    gap: 16,
+    keyExtractor: (property: BaseEntity, index: number) => `${property.id}-${index}`,
+    overscanCount: 1,
+  }), [properties, containerWidth, containerHeight, cardWidth, cardHeight]);
+}
+
+export function useNotificationListVirtualization(
+  notifications: readonly BaseEntity[],
+  containerHeight: number,
+  itemHeight: number = 80
+) {
+  return useMemo(() => ({
+    items: notifications,
+    itemHeight,
+    containerHeight,
+    keyExtractor: (notification: BaseEntity, index: number) => `${notification.id}-${index}`,
+    overscanCount: 5,
+  }), [notifications, containerHeight, itemHeight]);
+}
+
+export function useReviewListVirtualization(
+  reviews: readonly BaseEntity[],
+  containerHeight: number,
+  getItemHeight: (review: BaseEntity) => number = () => 120
+) {
+  return useMemo(() => ({
+    items: reviews,
+    itemHeight: getItemHeight,
+    containerHeight,
+    keyExtractor: (review: BaseEntity, index: number) => `${review.id}-${index}`,
+    overscanCount: 2,
+  }), [reviews, containerHeight, getItemHeight]);
+}
+
+export function useTenantListVirtualization(
+  tenants: readonly BaseEntity[],
+  containerHeight: number,
+  itemHeight: number = 200
+) {
+  return useMemo(() => ({
+    items: tenants,
+    itemHeight,
+    containerHeight,
+    keyExtractor: (tenant: BaseEntity, index: number) => `${tenant.id}-${index}`,
+    overscanCount: 3,
+  }), [tenants, containerHeight, itemHeight]);
+}
+
+export function useTeamGridVirtualization(
+  members: readonly BaseEntity[],
+  containerWidth: number,
+  containerHeight: number,
+  cardWidth: number = 250,
+  cardHeight: number = 300
+) {
+  return useMemo(() => ({
+    items: members,
+    itemWidth: cardWidth,
+    itemHeight: cardHeight,
+    containerWidth,
+    containerHeight,
+    gap: 24,
+    keyExtractor: (member: BaseEntity, index: number) => `${member.id || index}`,
+    overscanCount: 1,
+  }), [members, containerWidth, containerHeight, cardWidth, cardHeight]);
+}
+
+// ------------------------------------------------------------------
 // 2. Pagination Hook
 // ------------------------------------------------------------------
 interface PaginationOptions {
@@ -73,6 +197,7 @@ export const usePagination = <T>(
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
+  // Extract items for current page
   const paginatedItems = useMemo(() => {
     const startIndex = currentPage * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -115,12 +240,13 @@ export const useLazyImage = (src: string, placeholder?: string) => {
   const [imageSrc, setImageSrc] = useState(placeholder || '');
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const imgRef = useRef<HTMLImageElement>();
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     if (!src) return;
 
-    const img = new Image();
+    // Create image element safely with proper typing
+    const img = new (globalThis.Image || window.Image)();
     imgRef.current = img;
 
     img.onload = () => {
@@ -136,6 +262,7 @@ export const useLazyImage = (src: string, placeholder?: string) => {
 
     img.src = src;
 
+    // Cleanup function to prevent memory leaks
     return () => {
       if (imgRef.current) {
         imgRef.current.onload = null;
@@ -148,7 +275,7 @@ export const useLazyImage = (src: string, placeholder?: string) => {
 };
 
 // ------------------------------------------------------------------
-// 4. Memory-Safe State Hook
+// 4. Memory-Safe State Hook with History Management
 // ------------------------------------------------------------------
 export const useMemorySafeState = <T>(
   initialState: T,
@@ -164,7 +291,7 @@ export const useMemorySafeState = <T>(
         ? (newState as (prev: T) => T)(prevState)
         : newState;
 
-      // Update history with size limit
+      // Update history with size limit to prevent memory leaks
       setHistory(prevHistory => {
         const newHistory = [...prevHistory.slice(0, historyIndex + 1), nextState];
         return newHistory.length > maxHistorySize 
@@ -183,16 +310,22 @@ export const useMemorySafeState = <T>(
   const undo = useCallback(() => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      setState(history[newIndex]);
+      const previousState = history[newIndex];
+      if (previousState !== undefined) {
+        setHistoryIndex(newIndex);
+        setState(previousState);
+      }
     }
   }, [history, historyIndex]);
 
   const redo = useCallback(() => {
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      setState(history[newIndex]);
+      const nextState = history[newIndex];
+      if (nextState !== undefined) {
+        setHistoryIndex(newIndex);
+        setState(nextState);
+      }
     }
   }, [history, historyIndex]);
 
@@ -221,29 +354,32 @@ export const useDebouncedState = <T>(
 ) => {
   const [value, setValue] = useState(initialValue);
   const [debouncedValue, setDebouncedValue] = useState(initialValue);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | number | null>(null);
 
   useEffect(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    // Clear existing timeout
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current as NodeJS.Timeout);
     }
 
+    // Set new timeout
     timeoutRef.current = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
 
+    // Cleanup function
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current as NodeJS.Timeout);
       }
     };
   }, [value, delay]);
 
-  // Cleanup on unmount
+  // Additional cleanup on unmount
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current as NodeJS.Timeout);
       }
     };
   }, []);
@@ -260,17 +396,20 @@ export const useIntersectionObserver = (
   const [isIntersecting, setIsIntersecting] = useState(false);
   const [hasIntersected, setHasIntersected] = useState(false);
   const targetRef = useRef<HTMLElement>(null);
-  const observerRef = useRef<IntersectionObserver>();
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     const target = targetRef.current;
-    if (!target) return;
+    if (!target || typeof IntersectionObserver === 'undefined') return;
 
     observerRef.current = new IntersectionObserver(
-      ([entry]) => {
-        setIsIntersecting(entry.isIntersecting);
-        if (entry.isIntersecting && !hasIntersected) {
-          setHasIntersected(true);
+      (entries) => {
+        const [entry] = entries;
+        if (entry) {
+          setIsIntersecting(entry.isIntersecting);
+          if (entry.isIntersecting && !hasIntersected) {
+            setHasIntersected(true);
+          }
         }
       },
       {
@@ -303,13 +442,16 @@ export const useMemoryMonitor = () => {
 
   useEffect(() => {
     const updateMemoryInfo = () => {
-      if ('memory' in performance) {
-        const {memory} = (performance as any);
-        setMemoryInfo({
-          usedJSHeapSize: memory.usedJSHeapSize,
-          totalJSHeapSize: memory.totalJSHeapSize,
-          jsHeapSizeLimit: memory.jsHeapSizeLimit,
-        });
+      // Safe access to performance.memory with proper type checking
+      if (typeof performance !== 'undefined' && 'memory' in performance) {
+        const { memory } = performance as Performance & { memory: any };
+        if (memory) {
+          setMemoryInfo({
+            usedJSHeapSize: memory.usedJSHeapSize,
+            totalJSHeapSize: memory.totalJSHeapSize,
+            jsHeapSizeLimit: memory.jsHeapSizeLimit,
+          });
+        }
       }
     };
 
@@ -327,21 +469,21 @@ export const useMemoryMonitor = () => {
   return {
     memoryInfo,
     memoryUsagePercentage,
-    isMemoryAvailable: 'memory' in performance,
+    isMemoryAvailable: typeof performance !== 'undefined' && 'memory' in performance,
   };
 };
 
 // ------------------------------------------------------------------
 // 8. Optimized Array Operations Hook
 // ------------------------------------------------------------------
-export const useOptimizedArray = <T>(
+export const useOptimizedArray = <T extends BaseEntity>(
   initialArray: T[] = [],
   keyExtractor: (item: T) => string | number
 ) => {
   const [items, setItems] = useState(initialArray);
   const itemsMapRef = useRef(new Map<string | number, T>());
 
-  // Update map when items change
+  // Update map when items change - this provides O(1) lookups
   useEffect(() => {
     const newMap = new Map<string | number, T>();
     items.forEach(item => {
@@ -422,15 +564,19 @@ export const usePerformanceMonitor = (componentName: string) => {
 
     lastRenderTimeRef.current = currentTime;
 
-    // Log performance warnings
-    if (renderDuration > 16) { // More than one frame at 60fps
-      console.warn(`${componentName} render took ${renderDuration}ms (>16ms)`);
-    }
+    // Performance warnings - only in development
+    if (process.env.NODE_ENV === 'development') {
+      if (renderDuration > 16) { // More than one frame at 60fps
+        // eslint-disable-next-line no-console
+        console.warn(`${componentName} render took ${renderDuration}ms (>16ms)`);
+      }
 
-    if (renderCountRef.current > 100 && renderCountRef.current % 50 === 0) {
-      console.info(`${componentName} has rendered ${renderCountRef.current} times`);
+      if (renderCountRef.current > 100 && renderCountRef.current % 50 === 0) {
+        // eslint-disable-next-line no-console
+        console.info(`${componentName} has rendered ${renderCountRef.current} times`);
+      }
     }
-  });
+  }, [componentName]); // Include componentName in dependencies
 
   return performanceMetrics;
 };
@@ -450,7 +596,11 @@ export const useCleanup = () => {
       try {
         fn();
       } catch (error) {
-        console.error('Error during cleanup:', error);
+        // Only log errors in development
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.error('Error during cleanup:', error);
+        }
       }
     });
     cleanupFunctionsRef.current = [];

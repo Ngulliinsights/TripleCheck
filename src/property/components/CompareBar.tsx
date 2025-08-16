@@ -18,14 +18,15 @@ import {
   safeGetPropertyImage,
   getComparePropertyTitle
 } from "../../shared/utils/compare-utils";
-import { useCompare } from "../contexts/CompareContext";
+import { usePropertyCompare, usePropertyCompareActions } from "../contexts";
 
 interface CompareBarProps {
   onQuickCompare?: () => void;
 }
 
 export function CompareBar({ onQuickCompare }: CompareBarProps = {}) {
-  const { selectedProperties, removeFromCompare, clearCompare } = useCompare();
+  const { selectedProperties } = usePropertyCompare();
+  const { removeFromCompare, clearCompare } = usePropertyCompareActions();
   const navigate = useNavigate();
 
   // Don't render if no properties selected
@@ -75,7 +76,6 @@ export function CompareBar({ onQuickCompare }: CompareBarProps = {}) {
                           height={48}
                           className="w-full h-full object-cover"
                           loading="lazy"
-                          useLandPlaceholder={false}
                         />
                       ) : (
                         <div className="w-full h-full bg-muted flex items-center justify-center">
@@ -98,7 +98,7 @@ export function CompareBar({ onQuickCompare }: CompareBarProps = {}) {
 
               {/* Property details preview */}
               <div className="hidden md:flex gap-4 text-xs text-muted-foreground">
-                {selectedProperties.slice(0, 2).map((property, index) => (
+                {selectedProperties.slice(0, 2).map((property, _index) => (
                   <div key={property.id} className="flex flex-col">
                     <span className="font-medium text-foreground truncate max-w-32">
                       {getComparePropertyTitle(property)}

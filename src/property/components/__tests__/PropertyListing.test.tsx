@@ -3,10 +3,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import { renderWithProviders, userEventInstance } from '../../../shared/test-utils';
 import { TestDataFactory } from '../../../shared/test-utils/fixtures';
-import { PropertyCard } from '../PropertyCard';
+import { PropertyCard } from '../../../shared/components/property/PropertyCard';
 
 // Mock the PropertyCard component for isolated testing
-vi.mock('../PropertyCard', () => ({
+vi.mock('../../../shared/components/property/PropertyCard', () => ({
   PropertyCard: vi.fn(({ property, onSave, onShare, onViewDetails }) => (
     <div data-testid={`property-card-${property.id}`}>
       <h3>{property.title}</h3>

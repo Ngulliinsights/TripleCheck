@@ -1,5 +1,67 @@
 import type { Property, BasePropertyFilters } from '../types/property';
 
+// Enhanced seeded random number generator for consistent, predictable results
+class SeededRandom {
+  private seed: number;
+
+  constructor(seed: number = 12345) {
+    this.seed = seed;
+  }
+
+  /**
+   * Generate a pseudorandom number between 0 and 1
+   * Uses a simple linear congruential generator for predictability
+   */
+  next(): number {
+    this.seed = (this.seed * 9301 + 49297) % 233280;
+    return this.seed / 233280;
+  }
+
+  /**
+   * Generate random integer between min (inclusive) and max (exclusive)
+   */
+  nextInt(min: number, max: number): number {
+    return Math.floor(this.next() * (max - min)) + min;
+  }
+
+  /**
+   * Select random element from array with proper type safety
+   * Returns undefined if array is empty to maintain type safety
+   */
+  choice<T>(array: T[]): T | undefined {
+    if (array.length === 0) {
+      return undefined;
+    }
+    return array[this.nextInt(0, array.length)];
+  }
+
+  /**
+   * Select random element from array with guarantee of non-empty array
+   * Use this when you're certain the array has elements
+   */
+  safeChoice<T>(array: T[]): T {
+    if (array.length === 0) {
+      throw new Error('Cannot select from empty array');
+    }
+    const index = this.nextInt(0, array.length);
+    const result = array[index];
+    if (result === undefined) {
+      throw new Error(`Array access failed at index ${index}`);
+    }
+    return result;
+  }
+
+  /**
+   * Public method to reset seed for testing scenarios
+   */
+  setSeed(newSeed: number): void {
+    this.seed = newSeed;
+  }
+}
+
+// Create instance for consistent mock data generation
+const random = new SeededRandom();
+
 // Mock property data for demonstration
 const MOCK_PROPERTIES: Property[] = [
   {
@@ -106,7 +168,58 @@ const MOCK_PROPERTIES: Property[] = [
   },
 ];
 
-// Mock API function that simulates server response
+/**
+ * Safely extracts location string from property location field
+ * Handles both string and object location formats with proper type safety
+ */
+function getLocationString(location: string | { address: string } | unknown): string {
+  if (typeof location === 'string') {
+    return location;
+  }
+  // Use optional chaining and type guard for safer object access
+  if (location && typeof location === 'object' && 'address' in location) {
+    const locationObj = location as { address: string };
+    return locationObj.address;
+  }
+  return '';
+}
+
+/**
+ * Safely converts price to number for comparison operations
+ * Handles both string and number price formats with validation
+ */
+function getPriceAsNumber(price: string | number): number {
+  if (typeof price === 'number') {
+    return price;
+  }
+  const parsed = parseFloat(price);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+/**
+ * Determines property category based on type
+ * Provides consistent categorization logic with fallback handling
+ */
+function getPropertyCategory(property: Property): string {
+  const type = property.type || property.propertyType || '';
+  
+  if (['apartment', 'house', 'villa', 'duplex', 'penthouse'].includes(type)) {
+    return 'residential';
+  }
+  if (['office', 'retail', 'warehouse', 'industrial'].includes(type)) {
+    return 'commercial';
+  }
+  if (type === 'land') {
+    return 'land';
+  }
+  
+  return 'other';
+}
+
+/**
+ * Mock API function that simulates server response with enhanced filtering
+ * Provides consistent pagination and filtering capabilities with proper null handling
+ */
 export async function fetchMockProperties(
   filters: BasePropertyFilters,
   page: number = 1,
@@ -116,116 +229,206 @@ export async function fetchMockProperties(
   totalCount: number;
   totalPages: number;
 }> {
-  // Simulate network delay
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.log("📊 fetchMockProperties called with:", { filters, page, pageSize });
+    // eslint-disable-next-line no-console
+    console.log("📊 Available mock properties:", MOCK_PROPERTIES.length);
+  }
+  
+  // Simulate realistic network delay
   await new Promise(resolve => setTimeout(resolve, 800));
 
-  // Filter properties based on criteria
-  let filteredProperties = MOCK_PROPERTIES;
+  // Start with all properties and apply filters progressively
+  let filteredProperties = [...MOCK_PROPERTIES];
 
-  // Apply query filter
-  if (filters.query) {
-    const query = filters.query.toLowerCase();
-    filteredProperties = filteredProperties.filter(property =>
-      property.title.toLowerCase().includes(query) ||
-      property.description.toLowerCase().includes(query) ||
-      (typeof property.location === 'string' ? property.location : property.location.address)
-        .toLowerCase().includes(query)
-    );
-  }
-
-  // Apply location filter
-  if (filters.location) {
-    const location = filters.location.toLowerCase();
-    filteredProperties = filteredProperties.filter(property =>
-      (typeof property.location === 'string' ? property.location : property.location.address)
-        .toLowerCase().includes(location)
-    );
-  }
-
-  // Apply price filters
-  if (filters.priceMin !== null) {
+  // Apply text-based query filter across multiple fields
+  if (filters.query?.trim()) {
+    const query = filters.query.toLowerCase().trim();
     filteredProperties = filteredProperties.filter(property => {
-      const price = typeof property.price === 'string' ? parseFloat(property.price) : property.price;
-      return price >= filters.priceMin!;
+      const searchableText = [
+        property.title,
+        property.description,
+        getLocationString(property.location)
+      ].join(' ').toLowerCase();
+      
+      return searchableText.includes(query);
     });
   }
 
-  if (filters.priceMax !== null) {
+  // Apply location-specific filtering
+  if (filters.location?.trim()) {
+    const location = filters.location.toLowerCase().trim();
     filteredProperties = filteredProperties.filter(property => {
-      const price = typeof property.price === 'string' ? parseFloat(property.price) : property.price;
-      return price <= filters.priceMax!;
+      const propertyLocation = getLocationString(property.location).toLowerCase();
+      return propertyLocation.includes(location);
     });
   }
 
-  // Apply verification filter
-  if (filters.verified) {
+  // Apply minimum price filter with safe number conversion
+  // Use != for null/undefined check as recommended by ESLint
+  if (filters.priceMin != null) {
+    filteredProperties = filteredProperties.filter(property => {
+      const price = getPriceAsNumber(property.price);
+      return price >= (filters.priceMin ?? 0);
+    });
+  }
+
+  // Apply maximum price filter with safe number conversion
+  if (filters.priceMax != null) {
+    filteredProperties = filteredProperties.filter(property => {
+      const price = getPriceAsNumber(property.price);
+      return price <= (filters.priceMax ?? Infinity);
+    });
+  }
+
+  // Filter by verification status when requested
+  if (filters.verified === true) {
     filteredProperties = filteredProperties.filter(property =>
       property.verificationStatus === 'verified'
     );
   }
 
-  // Apply category filter
-  if (filters.category) {
+  // Apply category-based filtering with enhanced logic
+  if (filters.category?.trim()) {
+    const targetCategory = filters.category.toLowerCase().trim();
     filteredProperties = filteredProperties.filter(property => {
-      const type = property.type || property.propertyType || '';
-      switch (filters.category) {
-        case 'residential':
-          return ['apartment', 'house', 'villa', 'duplex', 'penthouse'].includes(type);
-        case 'commercial':
-          return ['office', 'retail', 'warehouse', 'industrial'].includes(type);
-        case 'land':
-          return type === 'land';
-        default:
-          return true;
-      }
+      const propertyCategory = getPropertyCategory(property);
+      return propertyCategory === targetCategory;
     });
   }
 
-  // Calculate pagination
+  // Calculate pagination metrics
   const totalCount = filteredProperties.length;
-  const totalPages = Math.ceil(totalCount / pageSize);
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const currentPage = Math.max(1, Math.min(page, totalPages));
+  
+  // Apply pagination with bounds checking
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalCount);
   const paginatedProperties = filteredProperties.slice(startIndex, endIndex);
 
-  return {
+  const result = {
     items: paginatedProperties,
     totalCount,
     totalPages,
   };
+
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.log("📊 fetchMockProperties returning:", { 
+      itemsCount: result.items.length, 
+      totalCount: result.totalCount, 
+      totalPages: result.totalPages,
+      currentPage 
+    });
+  }
+
+  return result;
 }
 
-// Enhanced mock data generator for testing
+/**
+ * Enhanced mock data generator with consistent, reproducible results
+ * Generates realistic property data for testing and development
+ */
 export function generateMockProperties(count: number): Property[] {
+  // Reset random generator for consistent results
+  const generator = new SeededRandom(42); // Fixed seed for reproducibility
+  
+  // Expanded location data for more variety
+  const locations = [
+    'Westlands', 'Karen', 'Kilimani', 'CBD', 
+    'Kileleshwa', 'Lavington', 'Runda', 'Muthaiga'
+  ];
+  
+  // Property types with associated metadata
+  const propertyTypeData = [
+    { type: 'apartment', category: 'residential', basePrice: 8000000 },
+    { type: 'house', category: 'residential', basePrice: 20000000 },
+    { type: 'office', category: 'commercial', basePrice: 15000000 },
+    { type: 'land', category: 'land', basePrice: 10000000 }
+  ];
+
   const properties: Property[] = [];
-  const locations = ['Westlands', 'Karen', 'Kilimani', 'CBD', 'Kileleshwa', 'Lavington'];
-  const propertyTypes = ['apartment', 'house', 'office', 'land'];
   
   for (let i = 0; i < count; i++) {
-    const type = propertyTypes[Math.floor(Math.random() * propertyTypes.length)];
-    const location = locations[Math.floor(Math.random() * locations.length)];
+    // Select property type and location using seeded randomization
+    const typeData = generator.safeChoice(propertyTypeData);
+    const location = generator.safeChoice(locations);
     
-    properties.push({
+    // Generate realistic price variation (±50% of base price)
+    const priceVariation = generator.nextInt(-50, 51) / 100;
+    const finalPrice = Math.round(typeData.basePrice * (1 + priceVariation));
+    
+    // Create property object with all required fields
+    const property: Property = {
       id: `mock-${i + 1}`,
-      title: `${type === 'land' ? 'Prime Land' : 'Modern Property'} in ${location}`,
-      description: `Beautiful ${type} with excellent features and great location.`,
+      title: `${typeData.type === 'land' ? 'Prime Land' : 'Modern Property'} in ${location}`,
+      description: `Beautiful ${typeData.type} with excellent features and great location. Perfect for ${typeData.category === 'residential' ? 'families' : 'business'}.`,
       location: `${location}, Nairobi`,
-      price: Math.floor(Math.random() * 50000000) + 5000000,
-      images: [`/assets/placeholder-${type}.jpg`],
+      price: finalPrice,
+      images: [`/assets/placeholder-${typeData.type}.jpg`],
       features: {
-        bedrooms: type === 'apartment' || type === 'house' ? Math.floor(Math.random() * 5) + 1 : undefined,
-        bathrooms: type === 'apartment' || type === 'house' ? Math.floor(Math.random() * 3) + 1 : undefined,
-        squareFeet: type !== 'land' ? Math.floor(Math.random() * 3000) + 500 : undefined,
-        size: type === 'land' ? `${Math.floor(Math.random() * 5) + 1} acres` : undefined,
-        propertyType: type,
+        // Add residential-specific features
+        ...(typeData.category === 'residential' && {
+          bedrooms: generator.nextInt(1, 6),
+          bathrooms: generator.nextInt(1, 4),
+          squareFeet: generator.nextInt(500, 3500),
+        }),
+        // Add land-specific features
+        ...(typeData.type === 'land' && {
+          size: `${generator.nextInt(1, 6)} acres`,
+        }),
+        // Add commercial-specific features
+        ...(typeData.category === 'commercial' && {
+          squareFeet: generator.nextInt(1000, 5000),
+          parkingSpaces: generator.nextInt(5, 25),
+        }),
+        propertyType: typeData.type,
       },
-      verificationStatus: Math.random() > 0.2 ? 'verified' : 'pending',
-      type,
-      createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      trustScore: Math.floor(Math.random() * 40) + 60,
-      viewCount: Math.floor(Math.random() * 500) + 10,
-    });
+      verificationStatus: generator.next() > 0.2 ? 'verified' : 'pending',
+      type: typeData.type,
+      createdAt: new Date(
+        Date.now() - generator.nextInt(0, 30) * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      trustScore: generator.nextInt(60, 101),
+      viewCount: generator.nextInt(10, 501),
+    };
+    
+    properties.push(property);
   }
   
   return properties;
+}
+
+/**
+ * Mock API function to fetch a single property by ID
+ * Simulates server response for individual property details
+ */
+export async function fetchMockProperty(id: string): Promise<Property | null> {
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.log("🏠 fetchMockProperty called with ID:", id);
+  }
+  
+  // Simulate realistic network delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  // Find property in mock data
+  const property = MOCK_PROPERTIES.find(p => p.id === id);
+  
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.log("🏠 fetchMockProperty result:", property ? "Found" : "Not found");
+  }
+
+  return property || null;
+}
+
+/**
+ * Utility function to reset the random generator seed
+ * Useful for testing scenarios requiring specific data patterns
+ */
+export function resetMockDataSeed(seed: number = 12345): void {
+  random.setSeed(seed);
 }

@@ -1,7 +1,10 @@
 /**
- * Unified Image Service Factory
- * Centralized service creation with proper dependency injection
- * Enhanced for complete type safety and real-world compatibility
+ * Unified Image Service Factory - Refactored
+ * 
+ * DEPRECATED: This factory is being replaced by the new modular architecture.
+ * Use ImageServiceOrchestrator for new implementations.
+ * 
+ * This file is maintained for backward compatibility during migration.
  */
 
 import { imageServiceConfig } from '../../config/image-system.config';

@@ -38,23 +38,19 @@ export default function ContactSales() {
         });
       }
 
-      // Submit to your sales endpoint
-      const response = await fetch('/api/b2b/sales-inquiry', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          timestamp: new Date().toISOString(),
-          source: 'contact_sales_page'
-        }),
-      });
+      // Import FormService dynamically
+      const { formService } = await import('../services/FormService');
+      
+      // Submit form using FormService
+      const result = await formService.submitSalesInquiry({
+        ...formData,
+        source: 'contact_sales_page'
+      } as any);
 
-      if (response.ok) {
+      if (result.success) {
         setIsSubmitted(true);
       } else {
-        throw new Error('Failed to submit');
+        throw new Error(result.message);
       }
     } catch (error) {
       console.error('Sales inquiry failed:', error);

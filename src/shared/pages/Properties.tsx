@@ -2,7 +2,6 @@ import React, { useState, useCallback } from "react";
 
 import { CompareBar } from "../../property/components/CompareBar";
 import { CompareModal } from "../../property/components/CompareModal";
-import { CompareProvider } from "../../property/contexts/CompareContext";
 import { PropertyListingPage } from "../components/property/PropertyListingPage";
 import { allPropertiesConfig } from "../config/propertyTypes";
 
@@ -31,7 +30,7 @@ export default function Properties(): React.ReactElement {
   }, []);
 
   return (
-    <CompareProvider>
+    <>
       <PropertyListingPage
         config={allPropertiesConfig}
         enableCompare={true}
@@ -50,6 +49,6 @@ export default function Properties(): React.ReactElement {
         isOpen={showCompareModal}
         onClose={handleCloseCompareModal}
       />
-    </CompareProvider>
+    </>
   );
 }

@@ -1,79 +1,98 @@
 import React from 'react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 
-import { cn } from '../../lib/utils';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { cn } from '../../utils/cn';
 
 export interface FormFieldProps {
-  name: string;
   label: string;
-  type?: 'text' | 'email' | 'password' | 'tel' | 'url' | 'number' | 'textarea' | 'select' | 'file';
-  value?: any;
-  placeholder?: string;
+  name: string;
+  type?: 'text' | 'email' | 'tel' | 'password' | 'number' | 'textarea' | 'select';
+  value: string | number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onBlur?: () => void;
+  error?: string;
+  touched?: boolean;
   required?: boolean;
+  placeholder?: string;
   disabled?: boolean;
-  error?: string | undefined;
-  touched?: boolean | undefined;
-  options?: Array<{ value: string; label: string }>;
-  accept?: string; // for file inputs
-  multiple?: boolean; // for file inputs
-  rows?: number; // for textarea
-  min?: number; // for number inputs
-  max?: number; // for number inputs
-  step?: number; // for number inputs
-  helpText?: string; // for additional help text
-  onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   className?: string;
-  'aria-describedby'?: string | undefined;
+  inputClassName?: string;
+  labelClassName?: string;
+  errorClassName?: string;
+  helpText?: string;
+  options?: Array<{ value: string; label: string }>;
+  rows?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  autoComplete?: string;
+  'aria-describedby'?: string;
   'aria-invalid'?: boolean;
 }
 
-export function FormField({
-  name,
+export const FormField: React.FC<FormFieldProps> = ({
   label,
+  name,
   type = 'text',
-  value = '',
-  placeholder,
-  required = false,
-  disabled = false,
-  error,
-  touched = false,
-  options = [],
-  accept,
-  multiple = false,
-  rows = 4,
+  value,
   onChange,
   onBlur,
+  error,
+  touched,
+  required = false,
+  placeholder,
+  disabled = false,
   className,
+  inputClassName,
+  labelClassName,
+  errorClassName,
+  helpText,
+  options,
+  rows = 4,
+  min,
+  max,
+  step,
+  autoComplete,
   'aria-describedby': ariaDescribedBy,
   'aria-invalid': ariaInvalid,
-  ...props
-}: FormFieldProps) {
+}) => {
+  const hasError = touched && error;
+  const isValid = touched && !error && value;
   const fieldId = `field-${name}`;
   const errorId = `${fieldId}-error`;
-  const hasError = touched && !!error;
+  const helpId = `${fieldId}-help`;
 
-  const commonProps = {
-    id: fieldId,
-    name,
-    value: type === 'file' ? undefined : value,
-    placeholder,
-    required,
-    disabled,
-    onChange,
-    onBlur,
-    'aria-invalid': ariaInvalid ?? hasError,
-    'aria-describedby': ariaDescribedBy ?? (hasError ? errorId : undefined),
-    className: cn(
-      hasError && 'border-red-500 focus:border-red-500 focus:ring-red-500',
-      className
-    ),
-    ...props
-  };
+  const baseInputClasses = cn(
+    'transition-colors duration-200',
+    hasError && 'border-red-500 focus:border-red-500 focus:ring-red-500',
+    isValid && 'border-green-500 focus:border-green-500 focus:ring-green-500',
+    disabled && 'opacity-50 cursor-not-allowed',
+    inputClassName
+  );
 
   const renderInput = () => {
+    const commonProps = {
+      id: fieldId,
+      name,
+      value: value || '',
+      onChange,
+      onBlur,
+      disabled,
+      required,
+      placeholder,
+      className: baseInputClasses,
+      'aria-invalid': ariaInvalid || hasError,
+      'aria-describedby': cn(
+        ariaDescribedBy,
+        hasError && errorId,
+        helpText && helpId
+      ).trim() || undefined,
+      autoComplete,
+    };
+
     switch (type) {
       case 'textarea':
         return (
@@ -89,12 +108,15 @@ export function FormField({
             {...commonProps}
             className={cn(
               'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-              hasError && 'border-red-500 focus:border-red-500 focus:ring-red-500',
-              className
+              baseInputClasses
             )}
           >
-            {!required && <option value="">Select an option</option>}
-            {options.map((option) => (
+            {placeholder && (
+              <option value="" disabled>
+                {placeholder}
+              </option>
+            )}
+            {options?.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -102,14 +124,14 @@ export function FormField({
           </select>
         );
 
-      case 'file':
+      case 'number':
         return (
           <Input
             {...commonProps}
-            type="file"
-            accept={accept}
-            multiple={multiple}
-            value={undefined} // File inputs don't use value prop
+            type="number"
+            min={min}
+            max={max}
+            step={step}
           />
         );
 
@@ -124,25 +146,63 @@ export function FormField({
   };
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor={fieldId} className={cn(required && 'after:content-["*"] after:ml-0.5 after:text-red-500')}>
+    <div className={cn('space-y-2', className)}>
+      <Label
+        htmlFor={fieldId}
+        className={cn(
+          'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
+          hasError && 'text-red-600',
+          isValid && 'text-green-600',
+          labelClassName
+        )}
+      >
         {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
       </Label>
-      
-      {renderInput()}
-      
+
+      <div className="relative">
+        {renderInput()}
+        
+        {/* Validation icons */}
+        {(hasError || isValid) && (
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            {hasError && (
+              <AlertCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
+            )}
+            {isValid && (
+              <CheckCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Help text */}
+      {helpText && !hasError && (
+        <p
+          id={helpId}
+          className="text-xs text-muted-foreground"
+        >
+          {helpText}
+        </p>
+      )}
+
+      {/* Error message */}
       {hasError && (
         <p
           id={errorId}
-          className="text-sm text-red-600"
+          className={cn(
+            'text-xs text-red-600 flex items-center gap-1',
+            errorClassName
+          )}
           role="alert"
           aria-live="polite"
         >
+          <AlertCircle className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
           {error}
         </p>
       )}
     </div>
   );
-}
+};
 
 export default FormField;

@@ -2,27 +2,82 @@
 // This file contains all TypeScript interfaces and types for the Kenya Land Verification System
 
 import type {
-  Property,
-  User,
-  landVerificationSessions,
-  verificationLayers,
-  riskFactors,
-  governmentDesignations,
-  communityFeedback,
-  expertAssignments,
-  propertyMonitoring,
-  monitoringAlerts,
-} from '../shared/schema';
+  users,
+  properties,
+} from '@server/infrastructure/database/schemas/consolidated';
 
-// Create proper types from the table schemas
-export type LandVerificationSession = typeof landVerificationSessions.$inferSelect;
-export type VerificationLayer = typeof verificationLayers.$inferSelect;
-export type RiskFactor = typeof riskFactors.$inferSelect;
-export type GovernmentDesignation = typeof governmentDesignations.$inferSelect;
-export type CommunityFeedback = typeof communityFeedback.$inferSelect;
-export type ExpertAssignment = typeof expertAssignments.$inferSelect;
-export type PropertyMonitoring = typeof propertyMonitoring.$inferSelect;
-export type MonitoringAlert = typeof monitoringAlerts.$inferSelect;
+// Create types from the schema tables
+export type User = typeof users.$inferSelect;
+export type Property = typeof properties.$inferSelect;
+
+// Mock the missing table types for now - these should be implemented in the verification schema
+export type LandVerificationSession = {
+  id: string;
+  propertyId: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// Risk level type aliases
+export type RiskTolerance = 'low' | 'medium' | 'high';
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type SensitivityLevel = 'low' | 'medium' | 'high';
+
+export type VerificationLayer = {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+};
+
+export type RiskFactor = {
+  id: string;
+  type: string;
+  severity: string;
+  description: string;
+};
+
+export type GovernmentDesignation = {
+  id: string;
+  type: string;
+  authority: string;
+  status: string;
+};
+
+export type CommunityFeedback = {
+  id: string;
+  propertyId: string;
+  userId: string;
+  feedback: string;
+  createdAt: Date;
+};
+
+export type ExpertAssignment = {
+  id: string;
+  sessionId: string;
+  expertId: string;
+  specialization: string;
+  status: string;
+};
+
+export type PropertyMonitoring = {
+  id: string;
+  propertyId: string;
+  status: string;
+  lastChecked: Date;
+};
+
+export type MonitoringAlert = {
+  id: string;
+  propertyId: string;
+  alertType: string;
+  severity: string;
+  message: string;
+  createdAt: Date;
+};
+
+
 
 // Core verification session types
 export interface VerificationSessionRequest {
@@ -48,7 +103,7 @@ export interface VerificationSessionResponse extends LandVerificationSession {
 export interface VerificationLayerWithResults extends VerificationLayer {
   session?: LandVerificationSession;
   expertAssignments?: ExpertAssignment[];
-  completionStatus: 'not_started' | 'in_progress' | 'completed' | 'failed';
+  completionStatus: CompletionStatus;
   progressPercentage: number;
   blockers?: string[];
   nextSteps?: string[];
@@ -64,8 +119,8 @@ export interface LayerExecutionRequest {
 
 export interface LayerExecutionResult {
   layerId: number;
-  status: 'completed' | 'failed' | 'requires_attention';
-  results: Record<string, any>;
+  status: LayerExecutionStatus;
+  results: Record<string, unknown>;
   duration: number;
   findings: string[];
   recommendations: string[];
@@ -84,13 +139,13 @@ export interface RiskFactorWithContext extends RiskFactor {
 export interface RiskAssessmentRequest {
   sessionId: number;
   includeProjections?: boolean;
-  riskTolerance?: 'low' | 'medium' | 'high';
+  riskTolerance?: RiskTolerance;
 }
 
 export interface RiskAssessmentResponse {
   sessionId: number;
   overallRiskScore: number;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: RiskLevel;
   confidence: number;
   riskFactors: RiskFactorWithContext[];
   riskInteractions: RiskInteraction[];
@@ -112,7 +167,7 @@ export interface RiskInteraction {
 
 export interface Recommendation {
   id: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: Priority;
   category: 'immediate_action' | 'investigation' | 'monitoring' | 'mitigation';
   title: string;
   description: string;
@@ -290,7 +345,7 @@ export interface InterviewQuestion {
   type: 'open_ended' | 'yes_no' | 'multiple_choice' | 'rating';
   options?: string[];
   followUpQuestions?: string[];
-  sensitivityLevel: 'low' | 'medium' | 'high';
+  sensitivityLevel: SensitivityLevel;
   legalImplications?: string;
 }
 
@@ -403,8 +458,8 @@ export interface MonitoringConfiguration {
 export interface MonitoringType {
   type: 'government_changes' | 'legal_disputes' | 'market_changes' | 'ownership_changes';
   enabled: boolean;
-  parameters: Record<string, any>;
-  priority: 'low' | 'medium' | 'high';
+  parameters: Record<string, unknown>;
+  priority: RiskTolerance;
 }
 
 export interface AlertThreshold {
@@ -412,7 +467,7 @@ export interface AlertThreshold {
   metric: string;
   threshold: number;
   comparison: 'greater_than' | 'less_than' | 'equals' | 'not_equals';
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: RiskLevel;
 }
 
 export interface NotificationPreference {
@@ -429,7 +484,7 @@ export interface PropertyUpdate {
   updateType: string;
   source: string;
   description: string;
-  impact: 'low' | 'medium' | 'high' | 'critical';
+  impact: RiskLevel;
   detectedAt: Date;
   verificationRequired: boolean;
   relatedDocuments?: string[];
@@ -437,7 +492,7 @@ export interface PropertyUpdate {
 }
 
 // API response types
-export interface LandVerificationApiResponse<T = any> {
+export interface LandVerificationApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -455,19 +510,44 @@ export interface ApiError {
   code: string;
   message: string;
   field?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 // Utility types
 export type VerificationStatus = 'not_started' | 'in_progress' | 'completed' | 'suspended' | 'failed';
 export type LayerType = 'registry' | 'physical' | 'community' | 'government' | 'legal' | 'expert';
-export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type RiskCategory = 'ownership' | 'government' | 'legal' | 'physical' | 'community';
+
+// Additional type aliases for union types
+export type CompletionStatus = 'not_started' | 'in_progress' | 'completed' | 'failed';
+export type LayerExecutionStatus = 'completed' | 'failed' | 'requires_attention';
+export type MitigationStatus = 'none' | 'planned' | 'in_progress' | 'completed';
+export type Priority = RiskLevel;
+export type RecommendationCategory = 'immediate_action' | 'investigation' | 'monitoring' | 'mitigation';
+export type OwnershipType = 'individual' | 'company' | 'government' | 'trust';
+export type TransferType = 'sale' | 'inheritance' | 'gift' | 'court_order' | 'government_acquisition';
+export type InstrumentType = 'charge' | 'mortgage' | 'caveat' | 'restriction' | 'easement';
+export type InstrumentStatus = 'active' | 'discharged' | 'expired';
+export type BeaconType = 'concrete' | 'iron' | 'stone' | 'wooden';
+export type BeaconCondition = 'good' | 'damaged' | 'missing' | 'moved';
+export type ComplianceStatus = 'compliant' | 'non_compliant' | 'unknown';
+export type CaseStatus = 'active' | 'settled' | 'dismissed' | 'withdrawn' | 'pending';
+export type TargetAudience = 'local_admin' | 'neighbor' | 'community_leader' | 'resident';
+export type QuestionType = 'open_ended' | 'yes_no' | 'multiple_choice' | 'rating';
+export type ConfidentialityLevel = 'public' | 'restricted' | 'confidential';
+export type ExpertType = 'surveyor' | 'lawyer' | 'appraiser' | 'environmental' | 'valuer';
+export type MonitoringFrequency = 'daily' | 'weekly' | 'monthly';
+export type MonitoringTypeValue = 'government_changes' | 'legal_disputes' | 'market_changes' | 'ownership_changes';
+export type ComparisonOperator = 'greater_than' | 'less_than' | 'equals' | 'not_equals';
+export type NotificationMethod = 'email' | 'sms' | 'push' | 'in_app';
+export type DigestFrequency = 'daily' | 'weekly';
+export type ImpactLevel = RiskLevel;
+export type InteractionType = 'amplifies' | 'mitigates' | 'triggers' | 'compounds';
 
 // Constants
 export const VERIFICATION_LAYER_NAMES: Record<LayerType, string> = {
   registry: 'Land Registry Verification',
-  physical: 'Physical Ground-Truthing',
+  physical: 'Physical Ground-Verification',
   community: 'Community Intelligence',
   government: 'Government Designations',
   legal: 'Legal History Investigation',

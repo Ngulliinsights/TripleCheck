@@ -5,7 +5,8 @@ import { queryKeys } from "../../infrastructure/api/queryClient";
 import { useDebounce } from "../../shared/hooks/useDebounce";
 import { useOptimisticMutation } from "../../shared/hooks/useOptimisticMutation";
 import { useSafeQuery } from "../../shared/hooks/useSafeQuery";
-import { Property, PropertySearchParams } from "../../shared/types/api.types";
+import { Property as ApiProperty, PropertySearchParams as ApiPropertySearchParams } from "../../shared/types/api.types";
+import { Property } from "../../shared/types/property";
 import { propertyApi } from "../services/property-api";
 
 // Enhanced type definitions that properly handle optional properties with exactOptionalPropertyTypes
@@ -23,7 +24,7 @@ interface LocationData {
 }
 
 interface PropertiesResponse {
-  data: Property[];
+  data: ApiProperty[];
   total: number;
   page: number;
   limit: number;
@@ -32,7 +33,7 @@ interface PropertiesResponse {
 }
 
 interface OwnerPropertiesResponse {
-  data: Property[];
+  data: ApiProperty[];
   total?: number | undefined; // Explicitly handle undefined for exactOptionalPropertyTypes
 }
 
@@ -247,9 +248,21 @@ function createValidatedPropertyResponse(
 /**
  * Enhanced hook for fetching properties with advanced search and pagination capabilities
  * Features: debouncing, intelligent caching, error recovery, and optimistic loading states
+ * 
+ * @deprecated This hook is deprecated in favor of useUnifiedProperty from useUnifiedProperty.ts
+ * Please migrate to useUnifiedProperty().useProperties for better error handling, caching, and performance.
+ * Migration guide: Replace useProperties(params) with useUnifiedProperty().useProperties(params)
  */
-export function useProperties(params: PropertySearchParams = {}) {
+export function useProperties(params: Partial<ApiPropertySearchParams> = {}) {
   const logger = createDebugLogger("useProperties");
+  
+  // Add deprecation warning in development
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[DEPRECATED] useProperties is deprecated. Please migrate to useUnifiedProperty().useProperties from useUnifiedProperty.ts for better error handling and performance."
+    );
+  }
 
   // Enhanced debouncing with variable delay based on search complexity
   const searchComplexity = Object.keys(params).length;
@@ -316,9 +329,21 @@ export function useProperties(params: PropertySearchParams = {}) {
 /**
  * Enhanced hook for fetching detailed property information
  * Features: comprehensive validation, location data transformation, and enhanced caching
+ * 
+ * @deprecated This hook is deprecated in favor of useUnifiedProperty from useUnifiedProperty.ts
+ * Please migrate to useUnifiedProperty().usePropertyDetail for better error handling, caching, and performance.
+ * Migration guide: Replace useProperty(id) with useUnifiedProperty().usePropertyDetail(id)
  */
 export function useProperty(id: string) {
   const logger = createDebugLogger("useProperty");
+  
+  // Add deprecation warning in development
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[DEPRECATED] useProperty is deprecated. Please migrate to useUnifiedProperty().usePropertyDetail from useUnifiedProperty.ts for better error handling and performance."
+    );
+  }
 
   return useSafeQuery<PropertyDetailResponse | null>({
     endpoint: ENDPOINTS.PROPERTY_DETAIL(id),
@@ -359,9 +384,21 @@ export function useProperty(id: string) {
 /**
  * Enhanced hook for fetching owner properties with improved pagination and filtering
  * Features: owner-specific caching strategies and enhanced error handling
+ * 
+ * @deprecated This hook is deprecated in favor of useSafeQuery with custom configuration
+ * Please migrate to useSafeQuery with owner-specific endpoint configuration.
+ * Migration guide: Use useSafeQuery({ endpoint: `/api/properties/owner/${ownerId}`, ... })
  */
 export function useOwnerProperties(ownerId: string, includeTotal = false) {
   const logger = createDebugLogger("useOwnerProperties");
+  
+  // Add deprecation warning in development
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[DEPRECATED] useOwnerProperties is deprecated. Please migrate to useSafeQuery with custom configuration for better error handling and performance."
+    );
+  }
 
   return useSafeQuery<OwnerPropertiesResponse>({
     endpoint: ENDPOINTS.OWNER_PROPERTIES(ownerId),
@@ -411,7 +448,7 @@ export function useCreateProperty() {
   const logger = createDebugLogger("useCreateProperty");
 
   return useOptimisticMutation({
-    mutationFn: propertyApi.createProperty,
+    mutationFn: (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) => propertyApi.createProperty(propertyData),
     queryKey: [CACHE_KEYS.PROPERTIES, "list"],
     optimisticUpdate: (oldData: unknown, newProperty: Property) => {
       const currentData = oldData as PropertiesResponse | undefined;
@@ -448,8 +485,8 @@ export function useCreateProperty() {
     onSuccess: (data, variables) => {
       // Handle the data properly - extract property from API response
       const property =
-        (data as unknown as { data?: Property })?.data ||
-        (data as unknown as Property);
+        (data as unknown as { data?: ApiProperty })?.data ||
+        (data as unknown as ApiProperty);
       const propertyId = property?.id || "unknown";
       logger("Property created successfully", {
         propertyId,
@@ -508,7 +545,7 @@ export function useUpdateProperty() {
       // Following sonarjs/prefer-immediate-return by returning directly
       return {
         ...currentData,
-        data: currentData.data.map((property: Property) => {
+        data: currentData.data.map((property: ApiProperty) => {
           if (property.id === variables.id) {
             const updatedProperty = { ...property, ...variables.updates };
             logger("Applied optimistic update", {
@@ -590,7 +627,7 @@ export function useDeleteProperty() {
       return {
         ...currentData,
         data: currentData.data.filter(
-          (property: Property) => property.id !== variables.id
+          (property: ApiProperty) => property.id !== variables.id
         ),
         total: Math.max(0, currentData.total - 1),
       };

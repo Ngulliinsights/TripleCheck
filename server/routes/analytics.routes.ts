@@ -1,10 +1,10 @@
 import { Router } from 'express';
 
 import { analyticsController } from '../controllers/analytics.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { requireAuth } from '../middleware/auth.middleware';
 import { createDeduplicationMiddleware } from '../middleware/deduplication.middleware';
 import { createRateLimitingMiddleware } from '../middleware/rate-limiting.middleware';
-import { validationMiddleware } from '../middleware/validation.middleware';
+import validateRequest from '../middleware/validation.middleware';
 
 const router = Router();
 
@@ -80,9 +80,9 @@ router.get('/health', analyticsController.getHealth);
  * @rateLimit 100 requests per minute per user
  */
 router.post('/events',
-  authMiddleware,
+  requireAuth,
   eventTrackingRateLimit,
-  validationMiddleware,
+  validateRequest({}),
   analyticsController.trackEvent
 );
 
@@ -93,9 +93,9 @@ router.post('/events',
  * @rateLimit 20 requests per minute per user
  */
 router.post('/events/batch',
-  authMiddleware,
+  requireAuth,
   batchTrackingRateLimit,
-  validationMiddleware,
+  validateRequest({}),
   analyticsController.batchTrackEvents
 );
 
@@ -106,9 +106,9 @@ router.post('/events/batch',
  * @rateLimit 100 requests per minute per user
  */
 router.post('/users/:userId(\\d+)/actions',
-  authMiddleware,
+  requireAuth,
   eventTrackingRateLimit,
-  validationMiddleware,
+  validateRequest({}),
   analyticsController.trackUserAction
 );
 
@@ -121,9 +121,9 @@ router.post('/users/:userId(\\d+)/actions',
  * @rateLimit 200 requests per minute per user
  */
 router.post('/performance',
-  authMiddleware,
+  requireAuth,
   performanceRateLimit,
-  validationMiddleware,
+  validateRequest({}),
   analyticsController.recordPerformanceMetric
 );
 
@@ -136,7 +136,7 @@ router.post('/performance',
  * @rateLimit 60 requests per minute per user
  */
 router.get('/metrics',
-  authMiddleware,
+  requireAuth,
   metricsRateLimit,
   metricsDeduplication,
   analyticsController.getMetrics
@@ -149,7 +149,7 @@ router.get('/metrics',
  * @rateLimit 60 requests per minute per user
  */
 router.get('/metrics/:metricName/timeseries',
-  authMiddleware,
+  requireAuth,
   metricsRateLimit,
   timeSeriesDeduplication,
   analyticsController.getTimeSeriesData
@@ -162,7 +162,7 @@ router.get('/metrics/:metricName/timeseries',
  * @rateLimit 60 requests per minute per user
  */
 router.get('/users/:userId(\\d+)',
-  authMiddleware,
+  requireAuth,
   metricsRateLimit,
   metricsDeduplication,
   analyticsController.getUserAnalytics
@@ -175,7 +175,7 @@ router.get('/users/:userId(\\d+)',
  * @rateLimit 60 requests per minute per user
  */
 router.get('/properties/:propertyId(\\d+)',
-  authMiddleware,
+  requireAuth,
   metricsRateLimit,
   metricsDeduplication,
   analyticsController.getPropertyAnalytics
@@ -190,7 +190,7 @@ router.get('/properties/:propertyId(\\d+)',
  * @rateLimit 60 requests per minute per user
  */
 router.get('/performance/core-web-vitals',
-  authMiddleware,
+  requireAuth,
   metricsRateLimit,
   metricsDeduplication,
   analyticsController.getCoreWebVitals
@@ -203,7 +203,7 @@ router.get('/performance/core-web-vitals',
  * @rateLimit 60 requests per minute per user
  */
 router.get('/performance/bundle-metrics',
-  authMiddleware,
+  requireAuth,
   metricsRateLimit,
   metricsDeduplication,
   analyticsController.getBundleMetrics
@@ -218,14 +218,13 @@ router.get('/performance/bundle-metrics',
  * @rateLimit 60 requests per minute per user
  */
 router.get('/dashboard',
-  authMiddleware,
+  requireAuth,
   metricsRateLimit,
   metricsDeduplication,
   analyticsController.getDashboardData
 );
 
 // Admin routes (admin authentication required)
-// TODO: Add admin middleware when implemented
 
 /**
  * @route GET /api/analytics/admin/stats

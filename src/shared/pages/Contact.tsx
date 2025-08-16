@@ -18,8 +18,8 @@ import { useState } from "react";
 import FormField from "../components/forms/FormField";
 import { Button } from "../components/ui/button";
 import { useToast } from "../hooks/use-toast";
-import { useForm } from "../hooks/useForm";
-import { ValidationRule } from "../utils/form-validation";
+import { useForm } from "../hooks/useFormValidation";
+// ValidationRule is now part of useFormValidation
 import { useNavigationTracking } from "../utils/navigation";
 
 // Constants
@@ -31,7 +31,7 @@ export default function Contact() {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Form validation rules
-  const validationRules: Record<string, ValidationRule> = {
+  const validationRules = {
     name: {
       required: true,
       minLength: 2,
@@ -42,6 +42,7 @@ export default function Contact() {
       email: true,
     },
     phone: {
+      required: false,
       phone: true, // Optional but validated if provided
     },
     subject: {
@@ -84,43 +85,21 @@ export default function Contact() {
         // Track form submission
         trackNavigation("/contact", "/contact", "form_submission");
 
-        // Simulate API call
-        await new Promise((resolve, reject) => {
-          setTimeout(() => {
-            // Simulate occasional failures for testing
-            // Note: Using Math.random() for demo purposes only
-            // In production, use proper error handling
-            // eslint-disable-next-line sonarjs/pseudo-random
-            if (Math.random() > 0.9) {
-              reject(
-                new Error("Server temporarily unavailable. Please try again.")
-              );
-            } else {
-              resolve(formData);
-            }
-          }, 2000);
-        });
+        // Import FormService dynamically to avoid circular dependencies
+        const { formService } = await import('../services/FormService');
+        
+        // Submit form using FormService
+        const result = await formService.submitContactForm(formData);
 
-        setIsSubmitted(true);
-        trackNavigation("/contact", "/contact", "form_success");
-
-        toast({
-          title: "Message sent successfully!",
-          description: `We'll get back to you within 4 hours during business hours.`,
-        });
+        if (result.success) {
+          setIsSubmitted(true);
+          trackNavigation("/contact", "/contact", "form_success");
+        } else {
+          throw new Error(result.message);
+        }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ?
-            error.message
-          : "Failed to send message. Please try again.";
-
-        toast({
-          title: "Failed to send message",
-          description: errorMessage,
-          variant: "destructive",
-        });
-
-        throw error; // Re-throw to let form handle it
+        // Error handling is done in FormService, but we re-throw for form state
+        throw error;
       }
     },
     validateOnChange: true,
@@ -189,7 +168,7 @@ export default function Contact() {
             Thank You for Contacting Us!
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            We\u2019ve received your message and will get back to you within 4
+            We&apos;ve received your message and will get back to you within 4
             hours during business hours.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -259,7 +238,7 @@ export default function Contact() {
               ].map((stat, index) => {
                 const IconComponent = stat.icon;
                 return (
-                  <div key={index} className="glass-base bg-white/10 rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300 enhance-hover-subtle animate-slide-up" style={{animationDelay: `${200 + index * 100}ms`}}>
+                  <div key={index} className="glass-base bg-white/10 rounded-2xl p-6 text-center hover:bg-white/15 transition-all duration-300 enhance-hover-subtle animate-slide-up">
                     <IconComponent className="h-8 w-8 text-white/80 mx-auto mb-3" />
                     <div className="text-3xl font-bold text-white mb-2">{stat.value}</div>
                     <div className="text-white/70 text-sm font-medium">{stat.label}</div>
@@ -283,7 +262,6 @@ export default function Contact() {
                   className={`group card p-8 text-center cursor-pointer layer-depth-2 enhance-hover animate-slide-up ${
                     method.primary ? "border-secondary/30 bg-gradient-to-br from-secondary/5 to-secondary/10" : ""
                   }`}
-                  style={{animationDelay: `${index * 150}ms`}}
                 >
                   <div className={`inline-flex items-center justify-center w-24 h-24 rounded-3xl mb-8 transition-all duration-300 ${
                     method.primary 
@@ -329,7 +307,7 @@ export default function Contact() {
                   Send Us a Message
                 </h2>
                 <p className="text-high-contrast-muted text-lg leading-relaxed">
-                  Fill out the form below and we'll get back to you as soon as possible. 
+                  Fill out the form below and we&apos;ll get back to you as soon as possible. 
                   Our expert team is ready to help with your property verification needs.
                 </p>
               </div>
@@ -551,8 +529,8 @@ export default function Contact() {
               Ready to Verify Your Property?
             </h2>
             <p className="text-fluid-lg mb-12 text-enhanced-subtle max-w-3xl mx-auto leading-relaxed">
-              Don't wait for problems to arise. Start your property verification today 
-              and invest with confidence in Kenya's real estate market.
+              Don&apos;t wait for problems to arise. Start your property verification today 
+              and invest with confidence in Kenya&apos;s real estate market.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">

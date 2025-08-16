@@ -16,8 +16,19 @@ interface UseLandPropertyResult {
 
 /**
  * Hook for fetching land property details with mock data fallback
+ * 
+ * @deprecated This hook is deprecated in favor of useUnifiedProperty
+ * Please migrate to useUnifiedProperty().useLandProperty for better error handling and consistency.
+ * Migration guide: Replace useLandProperty(id) with useUnifiedProperty().useLandProperty(id)
  */
 export function useLandProperty(id: string): UseLandPropertyResult {
+  // Add deprecation warning in development
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[DEPRECATED] useLandProperty is deprecated. Please migrate to useUnifiedProperty().useLandProperty for better error handling and consistency."
+    );
+  }
   const {
     data,
     isLoading,

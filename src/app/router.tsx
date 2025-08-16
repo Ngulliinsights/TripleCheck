@@ -49,6 +49,7 @@ export const AppRouter: React.FC = () => {
         <Route path="/settings" element={<LazyRoutes.UserSettings />} />
         <Route path="/team" element={<LazyRoutes.Team />} />
         <Route path="/tenants" element={<LazyRoutes.Tenants />} />
+        <Route path="/activity" element={<LazyRoutes.Activity />} />
 
         {/* ==========================================
             PROPERTY MANAGEMENT ROUTES
@@ -59,7 +60,8 @@ export const AppRouter: React.FC = () => {
         <Route path="/properties/land" element={<LazyRoutes.Lands />} />
         <Route path="/property/:id" element={<LazyRoutes.PropertyDetails />} />
         <Route path="/property/:id/edit" element={<LazyRoutes.PropertyEdit />} />
-        <Route path="/land/:id" element={<LazyRoutes.LandDetails />} />
+        {/* Redirect legacy land routes to unified property route */}
+        <Route path="/land/:id" element={<LazyRoutes.LandRedirect />} />
         <Route path="/compare" element={<LazyRoutes.PropertyCompare />} />
         <Route path="/list-property" element={<LazyRoutes.ListProperty />} />
         <Route path="/property/wizard" element={<LazyRoutes.PropertyWizard />} />
@@ -67,7 +69,7 @@ export const AppRouter: React.FC = () => {
         <Route path="/property/photos" element={<LazyRoutes.PropertyPhotos />} />
         <Route path="/property/optimize" element={<LazyRoutes.PropertyOptimize />} />
         <Route path="/property/verification" element={<LazyRoutes.PropertyVerification />} />
-        <Route path="/verify-property" element={<LazyRoutes.VerifyProperty />} />
+        <Route path="/verify-property" element={<LazyRoutes.PropertyVerification />} />
 
         {/* ==========================================
             LAND VERIFICATION ROUTES (Kenya-specific)
@@ -196,6 +198,14 @@ export const AppRouter: React.FC = () => {
             LOCATION SERVICES ROUTES
             ========================================== */}
         <Route path="/location" element={<LazyRoutes.LocationServices />} />
+
+        {/* ==========================================
+            MISSING ROUTE REDIRECTS & FIXES
+            ========================================== */}
+        <Route path="/activity" element={<LazyRoutes.ComingSoon />} />
+        <Route path="/services/list-property" element={<LazyRoutes.ListProperty />} />
+        <Route path="/services/basic-checks" element={<LazyRoutes.BasicChecks />} />
+        <Route path="/land" element={<LazyRoutes.Lands />} />
 
         {/* ==========================================
             CATCH-ALL ROUTE

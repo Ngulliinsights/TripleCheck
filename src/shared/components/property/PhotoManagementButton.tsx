@@ -1,19 +1,23 @@
-import { Camera, Image, Upload, Edit3 } from 'lucide-react';
-import React, { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Camera, Image, Upload, Edit3 } from "lucide-react";
+import React, { useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+
+type PropertyType = "land" | "residential" | "commercial";
+type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost";
+type ButtonSize = "default" | "sm" | "lg" | "icon";
 
 interface PhotoManagementButtonProps {
-  propertyId: string;
-  propertyType: 'land' | 'residential' | 'commercial';
-  variant?: 'primary' | 'secondary' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
-  photoCount?: number;
-  showPhotoCount?: boolean;
-  disabled?: boolean;
+  readonly propertyId: string;
+  readonly propertyType: PropertyType;
+  readonly variant?: ButtonVariant;
+  readonly size?: ButtonSize;
+  readonly className?: string;
+  readonly photoCount?: number;
+  readonly showPhotoCount?: boolean;
+  readonly disabled?: boolean;
 }
 
 /**
@@ -23,20 +27,19 @@ interface PhotoManagementButtonProps {
 export function PhotoManagementButton({
   propertyId,
   propertyType,
-  variant = 'outline',
-  size = 'md',
-  className = '',
+  variant = "outline",
+  size = "default",
+  className = "",
   photoCount = 0,
   showPhotoCount = true,
   disabled = false,
 }: PhotoManagementButtonProps): React.ReactElement {
-  
   const navigate = useNavigate();
 
   // Navigate to property photos page
   const handlePhotoManagement = useCallback(() => {
     if (disabled) return;
-    
+
     // Navigate to the appropriate photo management page based on property type
     const photoPath = `/property/${propertyId}/photos`;
     navigate(photoPath, {
@@ -44,7 +47,7 @@ export function PhotoManagementButton({
         propertyType,
         propertyId,
         returnPath: window.location.pathname,
-      }
+      },
     });
   }, [propertyId, propertyType, navigate, disabled]);
 
@@ -62,18 +65,30 @@ export function PhotoManagementButton({
   // Get button text based on photo count and property type
   const getButtonText = () => {
     if (photoCount === 0) {
-      return 'Add Photos';
+      return "Add Photos";
     } else {
-      return 'Manage Photos';
+      return "Manage Photos";
     }
   };
 
   // Get variant styling based on photo status
-  const getVariant = () => {
+  const getVariant = (): ButtonVariant => {
     if (photoCount === 0) {
-      return 'default'; // Encourage photo upload
+      return "default"; // Encourage photo upload
     }
-    return variant;
+    return variant || "outline";
+  };
+
+  // Helper function to get icon size based on button size
+  const getIconSize = (buttonSize: ButtonSize): string => {
+    switch (buttonSize) {
+      case "sm":
+        return "w-3 h-3";
+      case "lg":
+        return "w-5 h-5";
+      default:
+        return "w-4 h-4";
+    }
   };
 
   const Icon = getIcon();
@@ -89,21 +104,21 @@ export function PhotoManagementButton({
         disabled={disabled}
         className={`flex items-center gap-2 ${className}`}
       >
-        <Icon className={`${size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-5 h-5' : 'w-4 h-4'}`} />
+        <Icon className={getIconSize(size)} />
         <span>{buttonText}</span>
       </Button>
-      
+
       {/* Photo count badge */}
       {showPhotoCount && photoCount > 0 && (
-        <Badge 
-          variant={photoCount >= 5 ? 'default' : 'secondary'}
+        <Badge
+          variant={photoCount >= 5 ? "default" : "secondary"}
           className="flex items-center gap-1"
         >
           <Image className="w-3 h-3" />
           {photoCount}
         </Badge>
       )}
-      
+
       {/* Photo status indicator */}
       {photoCount === 0 && (
         <Badge variant="outline" className="text-muted-foreground">
@@ -117,20 +132,21 @@ export function PhotoManagementButton({
 /**
  * Enhanced photo management button with additional features
  */
+interface EnhancedPhotoManagementButtonProps {
+  readonly propertyId: string;
+  readonly propertyType: PropertyType;
+  readonly photoCount?: number;
+  readonly maxPhotos?: number;
+  readonly className?: string;
+}
+
 export function EnhancedPhotoManagementButton({
   propertyId,
   propertyType,
   photoCount = 0,
   maxPhotos = 20,
-  className = '',
-}: {
-  propertyId: string;
-  propertyType: 'land' | 'residential' | 'commercial';
-  photoCount?: number;
-  maxPhotos?: number;
-  className?: string;
-}): React.ReactElement {
-
+  className = "",
+}: EnhancedPhotoManagementButtonProps): React.ReactElement {
   const navigate = useNavigate();
 
   const handlePhotoManagement = useCallback(() => {
@@ -139,7 +155,7 @@ export function EnhancedPhotoManagementButton({
         propertyType,
         propertyId,
         returnPath: window.location.pathname,
-      }
+      },
     });
   }, [propertyId, propertyType, navigate]);
 
@@ -152,22 +168,21 @@ export function EnhancedPhotoManagementButton({
     <div className={`space-y-2 ${className}`}>
       {/* Main button */}
       <Button
-        variant={photoCount === 0 ? 'default' : 'outline'}
+        variant={photoCount === 0 ? "default" : "outline"}
         onClick={handlePhotoManagement}
         className="w-full flex items-center gap-2"
         disabled={isFull}
       >
-        {photoCount === 0 ? (
+        {photoCount === 0 ?
           <>
             <Upload className="w-4 h-4" />
             Add Property Photos
           </>
-        ) : (
-          <>
+        : <>
             <Edit3 className="w-4 h-4" />
             Manage Photos ({photoCount})
           </>
-        )}
+        }
       </Button>
 
       {/* Progress indicator */}
@@ -180,7 +195,7 @@ export function EnhancedPhotoManagementButton({
           <div className="w-full bg-muted rounded-full h-2">
             <div
               className={`h-2 rounded-full transition-all duration-300 ${
-                isComplete ? 'bg-green-500' : 'bg-blue-500'
+                isComplete ? "bg-green-500" : "bg-blue-500"
               }`}
               style={{ width: `${completionPercentage}%` }}
             />
@@ -211,30 +226,34 @@ export function EnhancedPhotoManagementButton({
 /**
  * Compact photo management button for list views
  */
+interface CompactPhotoManagementButtonProps {
+  readonly propertyId: string;
+  readonly propertyType: PropertyType;
+  readonly photoCount?: number;
+}
+
 export function CompactPhotoManagementButton({
   propertyId,
   propertyType,
   photoCount = 0,
-}: {
-  propertyId: string;
-  propertyType: 'land' | 'residential' | 'commercial';
-  photoCount?: number;
-}): React.ReactElement {
-
+}: CompactPhotoManagementButtonProps): React.ReactElement {
   const navigate = useNavigate();
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    navigate(`/property/${propertyId}/photos`, {
-      state: {
-        propertyType,
-        propertyId,
-        returnPath: window.location.pathname,
-      }
-    });
-  }, [propertyId, propertyType, navigate]);
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      navigate(`/property/${propertyId}/photos`, {
+        state: {
+          propertyType,
+          propertyId,
+          returnPath: window.location.pathname,
+        },
+      });
+    },
+    [propertyId, propertyType, navigate]
+  );
 
   return (
     <Button
@@ -243,17 +262,16 @@ export function CompactPhotoManagementButton({
       onClick={handleClick}
       className="flex items-center gap-1 text-xs"
     >
-      {photoCount === 0 ? (
+      {photoCount === 0 ?
         <>
           <Upload className="w-3 h-3" />
           Add
         </>
-      ) : (
-        <>
+      : <>
           <Image className="w-3 h-3" />
           {photoCount}
         </>
-      )}
+      }
     </Button>
   );
 }
@@ -261,34 +279,25 @@ export function CompactPhotoManagementButton({
 /**
  * Property type specific photo management buttons
  */
-export function LandPhotoManagementButton(props: Omit<PhotoManagementButtonProps, 'propertyType'>) {
-  return (
-    <PhotoManagementButton
-      {...props}
-      propertyType="land"
-    />
-  );
+export function LandPhotoManagementButton(
+  props: Readonly<Omit<PhotoManagementButtonProps, "propertyType">>
+) {
+  return <PhotoManagementButton {...props} propertyType="land" />;
 }
 
-export function ResidentialPhotoManagementButton(props: Omit<PhotoManagementButtonProps, 'propertyType'>) {
-  return (
-    <PhotoManagementButton
-      {...props}
-      propertyType="residential"
-    />
-  );
+export function ResidentialPhotoManagementButton(
+  props: Readonly<Omit<PhotoManagementButtonProps, "propertyType">>
+) {
+  return <PhotoManagementButton {...props} propertyType="residential" />;
 }
 
-export function CommercialPhotoManagementButton(props: Omit<PhotoManagementButtonProps, 'propertyType'>) {
-  return (
-    <PhotoManagementButton
-      {...props}
-      propertyType="commercial"
-    />
-  );
+export function CommercialPhotoManagementButton(
+  props: Readonly<Omit<PhotoManagementButtonProps, "propertyType">>
+) {
+  return <PhotoManagementButton {...props} propertyType="commercial" />;
 }
 
 // Export with display name for debugging
-PhotoManagementButton.displayName = 'PhotoManagementButton';
+PhotoManagementButton.displayName = "PhotoManagementButton";
 
 export default PhotoManagementButton;

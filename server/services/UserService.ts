@@ -26,7 +26,7 @@ type User = typeof users.$inferSelect;
 const INVALID_USER_ID = 'Invalid user ID';
 const USER_NOT_FOUND = 'User not found';
 const UNKNOWN_ERROR = 'Unknown error';
-const INVALID_PASSWORD_HASH = 'Invalid password hash';
+const INVALID_HASH_FORMAT = 'Invalid hash format provided';
 
 
 
@@ -92,14 +92,14 @@ export class UserService {
       if (!userId || userId <= 0) {
         return {
           success: false,
-          error: 'Invalid user ID'
+          error: INVALID_USER_ID
         };
       }
 
       if (!hashedPassword || hashedPassword.trim().length === 0) {
         return {
           success: false,
-          error: INVALID_PASSWORD_HASH
+          error: INVALID_HASH_FORMAT
         };
       }
 
@@ -136,7 +136,7 @@ export class UserService {
       if (!userId || userId <= 0) {
         return {
           success: false,
-          error: 'Invalid user ID'
+          error: INVALID_USER_ID
         };
       }
 
@@ -144,7 +144,7 @@ export class UserService {
       if (!user) {
         return {
           success: false,
-          error: 'User not found'
+          error: USER_NOT_FOUND
         };
       }
 
@@ -314,7 +314,7 @@ export class UserService {
       if (!user) {
         return {
           success: false,
-          error: 'User not found'
+          error: USER_NOT_FOUND
         };
       }
 
@@ -373,7 +373,7 @@ export class UserService {
       if (!user) {
         return {
           success: false,
-          error: 'User not found'
+          error: USER_NOT_FOUND
         };
       }
 
@@ -467,7 +467,7 @@ export class UserService {
       if (!user) {
         return {
           success: false,
-          error: 'User not found'
+          error: USER_NOT_FOUND
         };
       }
 
@@ -553,11 +553,13 @@ export class UserService {
       }
 
       if (filters.trustScoreMin !== undefined) {
-        filteredUsers = filteredUsers.filter(user => user.trustScore >= filters.trustScoreMin!);
+        const minScore = filters.trustScoreMin;
+        filteredUsers = filteredUsers.filter(user => user.trustScore >= minScore);
       }
 
       if (filters.trustScoreMax !== undefined) {
-        filteredUsers = filteredUsers.filter(user => user.trustScore <= filters.trustScoreMax!);
+        const maxScore = filters.trustScoreMax;
+        filteredUsers = filteredUsers.filter(user => user.trustScore <= maxScore);
       }
 
       if (filters.joinedAfter) {
@@ -677,7 +679,7 @@ export class UserService {
       if (!user) {
         return {
           success: false,
-          error: 'User not found'
+          error: USER_NOT_FOUND
         };
       }
 
@@ -876,7 +878,8 @@ export class UserService {
 
     if (updates.email !== undefined) {
       // Simple email validation - more robust validation should be done on frontend
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // Using a safer regex pattern to avoid backtracking issues
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(updates.email)) {
         return {
           success: false,

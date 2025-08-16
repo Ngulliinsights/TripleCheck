@@ -1,75 +1,80 @@
-import { Home, Bed, Bath, Star, Heart, PawPrint } from 'lucide-react';
-import React, { useCallback } from 'react';
+import { Home, Bed, Bath, Star, Heart, PawPrint } from "lucide-react";
+import React, { useCallback } from "react";
 
-import type { ResidentialFilters } from '../../../types/property';
-import { Badge } from '../../ui/badge';
-import { Button } from '../../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { Label } from '../../ui/label';
+import type { ResidentialFilters } from "../../../types/property";
+import { Badge } from "../../ui/badge";
+import { Button } from "../../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
+import { Label } from "../../ui/label";
 
-import { BasePropertyFiltersComponent } from './BasePropertyFilters';
-
+import { BasePropertyFiltersComponent } from "./BasePropertyFilters";
 
 interface ResidentialFiltersProps {
-  filters: ResidentialFilters;
-  onChange: (filters: ResidentialFilters) => void;
-  onReset: () => void;
-  errors?: Record<string, string>;
+  readonly filters: ResidentialFilters;
+  readonly onChange: (filters: ResidentialFilters) => void;
+  readonly onReset: () => void;
+  readonly errors?: Record<string, string>;
 }
 
 const PROPERTY_TYPES = [
-  { value: 'apartment', label: 'Apartment', icon: '🏢' },
-  { value: 'house', label: 'House', icon: '🏠' },
-  { value: 'duplex', label: 'Duplex', icon: '🏘️' },
-  { value: 'penthouse', label: 'Penthouse', icon: '🏙️' },
-  { value: 'studio', label: 'Studio', icon: '🏠' },
-  { value: 'townhouse', label: 'Townhouse', icon: '🏘️' },
-  { value: 'villa', label: 'Villa', icon: '🏛️' },
+  { value: "apartment", label: "Apartment", icon: "🏢" },
+  { value: "house", label: "House", icon: "🏠" },
+  { value: "duplex", label: "Duplex", icon: "🏘️" },
+  { value: "penthouse", label: "Penthouse", icon: "🏙️" },
+  { value: "studio", label: "Studio", icon: "🏠" },
+  { value: "townhouse", label: "Townhouse", icon: "🏘️" },
+  { value: "villa", label: "Villa", icon: "🏛️" },
 ];
 
 const POPULAR_AMENITIES = [
-  'Swimming Pool',
-  'Gym',
-  'Parking',
-  'Security',
-  'Garden',
-  'Balcony',
-  'Elevator',
-  'Generator',
-  'Water Tank',
-  'Internet',
-  'Air Conditioning',
-  'Fireplace',
+  "Swimming Pool",
+  "Gym",
+  "Parking",
+  "Security",
+  "Garden",
+  "Balcony",
+  "Elevator",
+  "Generator",
+  "Water Tank",
+  "Internet",
+  "Air Conditioning",
+  "Fireplace",
 ];
 
 /**
  * Residential property filters component
  * Extends base filters with residential-specific options
  */
-export function ResidentialFilters({
+export function ResidentialFiltersComponent({
   filters,
   onChange,
   onReset,
   errors = {},
 }: ResidentialFiltersProps): React.ReactElement {
-  
-  const updateFilter = useCallback(<K extends keyof ResidentialFilters>(
-    key: K,
-    value: ResidentialFilters[K]
-  ) => {
-    onChange({ ...filters, [key]: value });
-  }, [filters, onChange]);
+  const updateFilter = useCallback(
+    <K extends keyof ResidentialFilters>(
+      key: K,
+      value: ResidentialFilters[K]
+    ) => {
+      onChange({ ...filters, [key]: value });
+    },
+    [filters, onChange]
+  );
 
-  const toggleAmenity = useCallback((amenity: string) => {
-    const currentAmenities = filters.amenities || [];
-    const newAmenities = currentAmenities.includes(amenity)
-      ? currentAmenities.filter(a => a !== amenity)
-      : [...currentAmenities, amenity];
-    updateFilter('amenities', newAmenities);
-  }, [filters.amenities, updateFilter]);
+  const toggleAmenity = useCallback(
+    (amenity: string) => {
+      const currentAmenities = filters.amenities || [];
+      const newAmenities =
+        currentAmenities.includes(amenity) ?
+          currentAmenities.filter((a) => a !== amenity)
+        : [...currentAmenities, amenity];
+      updateFilter("amenities", newAmenities);
+    },
+    [filters.amenities, updateFilter]
+  );
 
   const clearAmenities = useCallback(() => {
-    updateFilter('amenities', []);
+    updateFilter("amenities", []);
   }, [updateFilter]);
 
   return (
@@ -77,7 +82,9 @@ export function ResidentialFilters({
       {/* Base Filters */}
       <BasePropertyFiltersComponent
         filters={filters}
-        onChange={onChange}
+        onChange={(baseFilters) =>
+          onChange({ ...filters, ...baseFilters, category: "residential" })
+        }
         onReset={onReset}
         errors={errors}
       />
@@ -98,11 +105,16 @@ export function ResidentialFilters({
               {PROPERTY_TYPES.map((type) => (
                 <Button
                   key={type.value}
-                  variant={filters.propertyType === type.value ? 'default' : 'outline'}
+                  variant={
+                    filters.propertyType === type.value ? "default" : "outline"
+                  }
                   size="sm"
-                  onClick={() => updateFilter('propertyType', 
-                    filters.propertyType === type.value ? '' : type.value
-                  )}
+                  onClick={() =>
+                    updateFilter(
+                      "propertyType",
+                      filters.propertyType === type.value ? "" : type.value
+                    )
+                  }
                   className="justify-start"
                 >
                   <span className="mr-2">{type.icon}</span>
@@ -124,11 +136,14 @@ export function ResidentialFilters({
                 {[1, 2, 3, 4, 5, 6].map((num) => (
                   <Button
                     key={num}
-                    variant={filters.bedrooms === num ? 'default' : 'outline'}
+                    variant={filters.bedrooms === num ? "default" : "outline"}
                     size="sm"
-                    onClick={() => updateFilter('bedrooms', 
-                      filters.bedrooms === num ? null : num
-                    )}
+                    onClick={() =>
+                      updateFilter(
+                        "bedrooms",
+                        filters.bedrooms === num ? null : num
+                      )
+                    }
                     className="aspect-square"
                   >
                     {num}
@@ -152,11 +167,14 @@ export function ResidentialFilters({
                 {[1, 2, 3, 4, 5].map((num) => (
                   <Button
                     key={num}
-                    variant={filters.bathrooms === num ? 'default' : 'outline'}
+                    variant={filters.bathrooms === num ? "default" : "outline"}
                     size="sm"
-                    onClick={() => updateFilter('bathrooms', 
-                      filters.bathrooms === num ? null : num
-                    )}
+                    onClick={() =>
+                      updateFilter(
+                        "bathrooms",
+                        filters.bathrooms === num ? null : num
+                      )
+                    }
                     className="aspect-square"
                   >
                     {num}
@@ -191,11 +209,12 @@ export function ResidentialFilters({
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {POPULAR_AMENITIES.map((amenity) => {
-                const isSelected = filters.amenities?.includes(amenity) || false;
+                const isSelected =
+                  filters.amenities?.includes(amenity) || false;
                 return (
                   <Button
                     key={amenity}
-                    variant={isSelected ? 'default' : 'outline'}
+                    variant={isSelected ? "default" : "outline"}
                     size="sm"
                     onClick={() => toggleAmenity(amenity)}
                     className="justify-start text-xs"
@@ -219,7 +238,9 @@ export function ResidentialFilters({
 
           {/* Additional Options */}
           <div className="space-y-4">
-            <Label className="text-sm font-medium">Additional Preferences</Label>
+            <Label className="text-sm font-medium">
+              Additional Preferences
+            </Label>
             <div className="space-y-3">
               {/* Furnished */}
               <div className="flex items-center space-x-2">
@@ -227,10 +248,20 @@ export function ResidentialFilters({
                   id="furnished"
                   type="checkbox"
                   checked={filters.furnished === true}
-                  onChange={(e) => updateFilter('furnished', e.target.checked ? true : undefined)}
+                  onChange={(e) =>
+                    updateFilter(
+                      "furnished",
+                      e.target.checked ? true : undefined
+                    )
+                  }
                   className="rounded border-gray-300 text-primary focus:ring-primary"
+                  aria-label="Furnished properties only"
+                  title="Furnished properties only"
                 />
-                <Label htmlFor="furnished" className="flex items-center gap-2 cursor-pointer">
+                <Label
+                  htmlFor="furnished"
+                  className="flex items-center gap-2 cursor-pointer"
+                >
                   <Heart className="w-4 h-4" />
                   Furnished properties only
                 </Label>
@@ -242,10 +273,20 @@ export function ResidentialFilters({
                   id="pet-friendly"
                   type="checkbox"
                   checked={filters.petFriendly === true}
-                  onChange={(e) => updateFilter('petFriendly', e.target.checked ? true : undefined)}
+                  onChange={(e) =>
+                    updateFilter(
+                      "petFriendly",
+                      e.target.checked ? true : undefined
+                    )
+                  }
                   className="rounded border-gray-300 text-primary focus:ring-primary"
+                  aria-label="Pet-friendly properties only"
+                  title="Pet-friendly properties only"
                 />
-                <Label htmlFor="pet-friendly" className="flex items-center gap-2 cursor-pointer">
+                <Label
+                  htmlFor="pet-friendly"
+                  className="flex items-center gap-2 cursor-pointer"
+                >
                   <PawPrint className="w-4 h-4" />
                   Pet-friendly properties only
                 </Label>
@@ -259,4 +300,7 @@ export function ResidentialFilters({
 }
 
 // Export as default for lazy loading
-export default ResidentialFilters;
+export default ResidentialFiltersComponent;
+
+// Also export with the original name for backward compatibility
+export { ResidentialFiltersComponent as ResidentialFilters };

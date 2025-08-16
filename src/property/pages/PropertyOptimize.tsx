@@ -1,523 +1,653 @@
-import { useSafePropertiesQuery } from "@shared/hooks/useSafeQuery";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  TrendingUp, 
-  Eye, 
-  Search, 
+import React, { useState, useCallback, useMemo } from "react";
+import {
+  TrendingUp,
   Target,
+  Camera,
+  FileText,
+  DollarSign,
+  MapPin,
+  Star,
+  AlertCircle,
+  CheckCircle,
   Lightbulb,
   BarChart3,
-  Edit,
-  Wand2,
-  MessageSquare,
-  Clock,
-  Home,
-  Users,
+  Eye,
+  Share2,
+  Zap,
   Award,
-  Sparkles
+  Users,
+  Clock,
+  type LucideIcon,
 } from "lucide-react";
-import { useState, useCallback } from "react";
 
-import { apiRequest } from "../../infrastructure/api/queryClient";
-import { Badge } from "../../shared/components/ui/badge";
 import { Button } from "../../shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { Input } from "../../shared/components/ui/input";
-import { Label } from "../../shared/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../shared/components/ui/card";
+import { Badge } from "../../shared/components/ui/badge";
 import { Progress } from "../../shared/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../shared/components/ui/tabs";
-import { Textarea } from "../../shared/components/ui/textarea";
 import { useToast } from "../../shared/hooks/use-toast";
-import type { Property } from "../../shared/schema";
 
+// Enhanced type definitions with better TypeScript safety
+interface OptimizationScore {
+  overall: number;
+  categories: {
+    photos: number;
+    description: number;
+    pricing: number;
+    location: number;
+    features: number;
+  };
+}
 
-interface OptimizationSuggestion {
+interface Recommendation {
   id: string;
-  type: 'title' | 'description' | 'pricing' | 'photos' | 'features' | 'keywords';
-  priority: 'high' | 'medium' | 'low';
+  category: "photos" | "description" | "pricing" | "location" | "features";
+  priority: "high" | "medium" | "low";
   title: string;
   description: string;
-  currentValue?: string;
-  suggestedValue?: string;
   impact: string;
-  effort: 'easy' | 'medium' | 'hard';
-  estimatedImprovement: number;
+  effort: "easy" | "medium" | "hard";
+  completed: boolean;
 }
 
-interface PropertyAnalytics {
-  views: number;
-  inquiries: number;
-  conversionRate: number;
-  averageTimeOnPage: number;
-  searchRanking: number;
-  competitorComparison: {
-    averagePrice: number;
-    averageViews: number;
-    yourPosition: number;
-  };
+// Updated interface using LucideIcon type for better compatibility
+interface MarketInsight {
+  type: "price" | "demand" | "competition" | "trend";
+  title: string;
+  value: string;
+  change: number;
+  description: string;
+  icon: LucideIcon; // This resolves the TypeScript error
 }
 
-export default function PropertyOptimizePage() {
-  const [selectedProperty, setSelectedProperty] = useState<string>("");
-  const [activeTab, setActiveTab] = useState("analysis");
-  const [optimizingProperty, setOptimizingProperty] = useState(false);
+// Type-safe constants with proper typing
+const categoryIcons: Record<Recommendation["category"], LucideIcon> = {
+  photos: Camera,
+  description: FileText,
+  pricing: DollarSign,
+  location: MapPin,
+  features: Star,
+} as const;
+
+const priorityColors: Record<Recommendation["priority"], string> = {
+  high: "bg-red-100 text-red-800",
+  medium: "bg-yellow-100 text-yellow-800",
+  low: "bg-green-100 text-green-800",
+} as const;
+
+const effortLabels: Record<Recommendation["effort"], string> = {
+  easy: "Quick Fix",
+  medium: "Some Work",
+  hard: "Major Update",
+} as const;
+
+// Mock data with proper typing
+const mockScore: OptimizationScore = {
+  overall: 72,
+  categories: {
+    photos: 85,
+    description: 60,
+    pricing: 75,
+    location: 90,
+    features: 65,
+  },
+};
+
+const mockRecommendations: Recommendation[] = [
+  {
+    id: "1",
+    category: "photos",
+    priority: "high",
+    title: "Add more high-quality photos",
+    description:
+      "Properties with 10+ photos get 40% more views. You currently have 6 photos.",
+    impact: "+40% more views",
+    effort: "easy",
+    completed: false,
+  },
+  {
+    id: "2",
+    category: "description",
+    priority: "high",
+    title: "Improve property description",
+    description:
+      "Your description is missing key details about amenities and neighborhood features.",
+    impact: "+25% engagement",
+    effort: "easy",
+    completed: false,
+  },
+  {
+    id: "3",
+    category: "pricing",
+    priority: "medium",
+    title: "Consider price adjustment",
+    description:
+      "Your property is priced 8% above similar properties in the area.",
+    impact: "+30% inquiries",
+    effort: "easy",
+    completed: false,
+  },
+  {
+    id: "4",
+    category: "features",
+    priority: "medium",
+    title: "Highlight unique features",
+    description:
+      "Emphasize your property's unique selling points like the garden view and modern kitchen.",
+    impact: "+15% interest",
+    effort: "easy",
+    completed: false,
+  },
+  {
+    id: "5",
+    category: "location",
+    priority: "low",
+    title: "Add neighborhood information",
+    description:
+      "Include details about nearby schools, shopping centers, and transport links.",
+    impact: "+10% relevance",
+    effort: "medium",
+    completed: true,
+  },
+];
+
+const mockInsights: MarketInsight[] = [
+  {
+    type: "price",
+    title: "Average Price",
+    value: "KES 18.5M",
+    change: 5.2,
+    description: "Similar properties in your area",
+    icon: DollarSign,
+  },
+  {
+    type: "demand",
+    title: "Market Demand",
+    value: "High",
+    change: 12.3,
+    description: "Properties like yours are in high demand",
+    icon: TrendingUp,
+  },
+  {
+    type: "competition",
+    title: "Competition",
+    value: "23 listings",
+    change: -8.1,
+    description: "Similar properties currently listed",
+    icon: Target,
+  },
+  {
+    type: "trend",
+    title: "Price Trend",
+    value: "+3.2%",
+    change: 3.2,
+    description: "Price change in the last 3 months",
+    icon: BarChart3,
+  },
+];
+
+export default function PropertyOptimize() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [recommendations, setRecommendations] = useState(mockRecommendations);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  // Fetch user's properties with enhanced safety
-  const { data: properties, isLoading, hasValidData } = useSafePropertiesQuery(
-    undefined,
-    {
-      context: 'property-optimize',
-      staleTime: 5 * 60 * 1000
-  });
+  // Optimized filtering with proper memoization
+  const filteredRecommendations = useMemo(() => {
+    if (selectedCategory === "all") return recommendations;
+    return recommendations.filter((rec) => rec.category === selectedCategory);
+  }, [recommendations, selectedCategory]);
 
-  // Mock analytics data
-  const mockAnalytics: PropertyAnalytics = {
-    views: 1247,
-    inquiries: 23,
-    conversionRate: 1.8,
-    averageTimeOnPage: 145,
-    searchRanking: 7,
-    competitorComparison: {
-      averagePrice: 95000,
-      averageViews: 890,
-      yourPosition: 3
-    }
-  };
-
-  // Mock optimization suggestions
-  const mockSuggestions: OptimizationSuggestion[] = [
-    {
-      id: "1",
-      type: "title",
-      priority: "high",
-      title: "Optimize Property Title",
-      description: "Your title could be more descriptive and include key search terms",
-      currentValue: "Modern Apartment in Westlands",
-      suggestedValue: "Luxury 2BR Modern Apartment in Westlands - Prime Location, Gym & Pool",
-      impact: "Could increase search visibility by 40%",
-      effort: "easy",
-      estimatedImprovement: 40
-    },
-    {
-      id: "2",
-      type: "pricing",
-      priority: "high",
-      title: "Price Positioning",
-      description: "Your property is priced 12% above market average for similar properties",
-      currentValue: "KES 85,000",
-      suggestedValue: "KES 78,000 - 82,000",
-      impact: "Could increase inquiries by 60%",
-      effort: "easy",
-      estimatedImprovement: 60
-    },
-    {
-      id: "3",
-      type: "description",
-      priority: "medium",
-      title: "Enhance Description",
-      description: "Add more details about amenities, neighborhood, and unique features",
-      impact: "Could improve conversion rate by 25%",
-      effort: "medium",
-      estimatedImprovement: 25
-    },
-    {
-      id: "4",
-      type: "photos",
-      priority: "medium",
-      title: "Add More Photos",
-      description: "Properties with 8+ photos get 3x more inquiries",
-      currentValue: "4 photos",
-      suggestedValue: "8-12 photos including exterior, all rooms, and amenities",
-      impact: "Could triple your inquiries",
-      effort: "medium",
-      estimatedImprovement: 200
-    },
-    {
-      id: "5",
-      type: "keywords",
-      priority: "low",
-      title: "SEO Keywords",
-      description: "Include trending search terms in your listing",
-      suggestedValue: "Add: 'furnished', 'parking', 'security', 'modern kitchen'",
-      impact: "Could improve search ranking by 15%",
-      effort: "easy",
-      estimatedImprovement: 15
-    }
-  ];
-
-  const optimizeMutation = useMutation({
-    mutationFn: async (data: { propertyId: string; suggestions: string[] }) => {
-      // Mock API call
-      return new Promise((resolve) => {
-        setTimeout(() => resolve({ success: true }), 3000);
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Property optimized successfully",
-        description: "Your property listing has been updated with AI suggestions",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
-      setOptimizingProperty(false);
-    },
-  });
-
-  const handleOptimize = useCallback((suggestionIds: string[]) => {
-    if (!selectedProperty) return;
+  // Enhanced completion tracking with derived state
+  const completionStats = useMemo(() => {
+    const completedCount = recommendations.filter((rec) => rec.completed).length;
+    const totalCount = recommendations.length;
+    const completionRate = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
     
-    setOptimizingProperty(true);
-    optimizeMutation.mutate({
-      propertyId: selectedProperty,
-      suggestions: suggestionIds
-    });
-  }, [selectedProperty, optimizeMutation]);
+    return { completedCount, totalCount, completionRate };
+  }, [recommendations]);
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'text-red-600 bg-red-50 border-red-200';
-      case 'medium':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'low':
-        return 'text-green-600 bg-green-50 border-green-200';
-      default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+  // Optimized recommendation completion handler with better UX feedback
+  const handleCompleteRecommendation = useCallback(
+    (id: string) => {
+      setRecommendations((prev) =>
+        prev.map((rec) =>
+          rec.id === id ? { ...rec, completed: !rec.completed } : rec
+        )
+      );
+
+      const recommendation = recommendations.find((rec) => rec.id === id);
+      if (recommendation) {
+        toast({
+          title: recommendation.completed
+            ? "Recommendation unmarked"
+            : "Recommendation completed!",
+          description: recommendation.completed
+            ? "You can always mark it as complete again later."
+            : "Great job! This should help improve your listing performance.",
+        });
+      }
+    },
+    [recommendations, toast]
+  );
+
+  // Enhanced utility functions for better code organization
+  const getScoreColor = useCallback((score: number): string => {
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
+  }, []);
+
+  const getScoreBgColor = useCallback((score: number): string => {
+    if (score >= 80) return "bg-green-100";
+    if (score >= 60) return "bg-yellow-100";
+    return "bg-red-100";
+  }, []);
+
+  // Helper function to get performance level description
+  const getPerformanceDescription = useCallback((score: number): { title: string; description: string } => {
+    if (score >= 90) {
+      return {
+        title: "Excellent Performance",
+        description: "Your listing is performing exceptionally well! Keep up the great work and maintain your current standards."
+      };
     }
-  };
-
-  const getEffortBadge = (effort: string) => {
-    switch (effort) {
-      case 'easy':
-        return <Badge variant="default" className="bg-green-500">Easy</Badge>;
-      case 'medium':
-        return <Badge variant="secondary">Medium</Badge>;
-      case 'hard':
-        return <Badge variant="destructive">Hard</Badge>;
-      default:
-        return null;
+    if (score >= 80) {
+      return {
+        title: "Very Good Performance", 
+        description: "Your listing is performing very well. A few small improvements could make it even better."
+      };
     }
-  };
+    if (score >= 70) {
+      return {
+        title: "Good Performance",
+        description: "Your listing is performing well, but there's room for improvement. Complete the recommendations below to boost your score."
+      };
+    }
+    if (score >= 60) {
+      return {
+        title: "Fair Performance",
+        description: "Your listing has potential but needs some attention. Focus on the high-priority recommendations first."
+      };
+    }
+    return {
+      title: "Needs Improvement",
+      description: "Your listing needs significant improvements to compete effectively. Start with the high-priority recommendations."
+    };
+  }, []);
 
-  const selectedPropertyData = properties?.find(p => p.id.toString() === selectedProperty);
+  const performanceInfo = useMemo(() => getPerformanceDescription(mockScore.overall), [getPerformanceDescription]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4 flex items-center justify-center gap-2">
-            <Sparkles className="w-8 h-8 text-primary" />
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        {/* Enhanced header with better visual hierarchy */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+            <Zap className="w-8 h-8 text-yellow-500" />
             Property Optimization
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Use AI-powered insights to optimize your property listings for maximum visibility, 
-            engagement, and conversion rates.
+          <p className="text-muted-foreground">
+            Improve your listing performance with AI-powered recommendations and real-time market insights
           </p>
         </div>
 
-        {/* Property Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Property to Optimize</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {isLoading ? (
-                <div className="col-span-full text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-muted-foreground mt-2">Loading properties...</p>
-                </div>
-              ) : properties && properties.length > 0 ? (
-                properties.map((property) => (
-                  <Card 
-                    key={property.id} 
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedProperty === property.id.toString() ? 'ring-2 ring-primary' : ''
-                    }`}
-                    onClick={() => setSelectedProperty(property.id.toString())}
-                  >
-                    <CardContent className="p-4">
-                      <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                        {(Array.isArray(property.imageUrls) && property.imageUrls[0]) || (Array.isArray(property.images) && property.images[0]) ? (
-                          <img 
-                            src={(Array.isArray(property.imageUrls) && property.imageUrls[0]) || (Array.isArray(property.images) && property.images[0]) || ''} 
-                            alt={property.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Home className="w-8 h-8 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
-                      <h3 className="font-medium mb-1">{property.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {typeof property.location === 'string' ? property.location : (property.location as any)?.address || 'Location not specified'}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-primary">
-                          KES {property.price.toLocaleString()}
-                        </span>
-                        <Badge variant="outline">
-                          <TrendingUp className="w-3 h-3 mr-1" />
-                          Optimize
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <div className="col-span-full text-center py-8">
-                  <Home className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No properties found</h3>
-                  <p className="text-muted-foreground">
-                    You need to list a property before you can optimize it.
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {selectedProperty && selectedPropertyData && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="analysis">Performance Analysis</TabsTrigger>
-              <TabsTrigger value="suggestions">AI Suggestions</TabsTrigger>
-              <TabsTrigger value="optimize">Quick Optimize</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="analysis" className="space-y-6">
-              {/* Performance Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Eye className="w-4 h-4 text-blue-500" />
-                      <span className="text-sm font-medium">Total Views</span>
-                    </div>
-                    <div className="text-2xl font-bold">{mockAnalytics.views.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">+12% from last month</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MessageSquare className="w-4 h-4 text-green-500" />
-                      <span className="text-sm font-medium">Inquiries</span>
-                    </div>
-                    <div className="text-2xl font-bold">{mockAnalytics.inquiries}</div>
-                    <p className="text-xs text-muted-foreground">{mockAnalytics.conversionRate}% conversion rate</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock className="w-4 h-4 text-yellow-500" />
-                      <span className="text-sm font-medium">Avg. Time</span>
-                    </div>
-                    <div className="text-2xl font-bold">{mockAnalytics.averageTimeOnPage}s</div>
-                    <p className="text-xs text-muted-foreground">Time on page</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Search className="w-4 h-4 text-purple-500" />
-                      <span className="text-sm font-medium">Search Rank</span>
-                    </div>
-                    <div className="text-2xl font-bold">#{mockAnalytics.searchRanking}</div>
-                    <p className="text-xs text-muted-foreground">In search results</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Competitive Analysis */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5" />
-                    Competitive Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
-                        KES {mockAnalytics.competitorComparison.averagePrice.toLocaleString()}
-                      </div>
-                      <p className="text-sm text-muted-foreground">Market Average Price</p>
-                      <p className="text-xs text-blue-600 mt-1">
-                        You're {((selectedPropertyData.price / mockAnalytics.competitorComparison.averagePrice - 1) * 100).toFixed(0)}% above average
-                      </p>
-                    </div>
-                    
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">
-                        {mockAnalytics.competitorComparison.averageViews.toLocaleString()}
-                      </div>
-                      <p className="text-sm text-muted-foreground">Average Views</p>
-                      <p className="text-xs text-green-600 mt-1">
-                        You're {((mockAnalytics.views / mockAnalytics.competitorComparison.averageViews - 1) * 100).toFixed(0)}% above average
-                      </p>
-                    </div>
-                    
-                    <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                      <div className="text-2xl font-bold text-yellow-600">
-                        #{mockAnalytics.competitorComparison.yourPosition}
-                      </div>
-                      <p className="text-sm text-muted-foreground">Your Position</p>
-                      <p className="text-xs text-yellow-600 mt-1">
-                        In similar properties
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="suggestions" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Lightbulb className="w-5 h-5" />
-                    AI-Powered Optimization Suggestions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {mockSuggestions.map((suggestion) => (
-                      <div 
-                        key={suggestion.id}
-                        className={`p-4 rounded-lg border-l-4 ${getPriorityColor(suggestion.priority)}`}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content with enhanced layout */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Enhanced Overall Score Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="w-5 h-5" />
+                  Optimization Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-6 mb-6">
+                  <div className="relative">
+                    <div
+                      className={`w-24 h-24 rounded-full flex items-center justify-center ${getScoreBgColor(mockScore.overall)}`}
+                    >
+                      <span
+                        className={`text-3xl font-bold ${getScoreColor(mockScore.overall)}`}
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium">{suggestion.title}</h3>
-                            <Badge variant="outline" className="text-xs">
-                              {suggestion.priority} priority
-                            </Badge>
-                            {getEffortBadge(suggestion.effort)}
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium text-green-600">
-                              +{suggestion.estimatedImprovement}%
-                            </div>
-                            <div className="text-xs text-muted-foreground">improvement</div>
-                          </div>
-                        </div>
-                        
-                        <p className="text-sm text-muted-foreground mb-3">{suggestion.description}</p>
-                        
-                        {suggestion.currentValue && (
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <span className="font-medium">Current: </span>
-                              <span className="text-muted-foreground">{suggestion.currentValue}</span>
-                            </div>
-                            {suggestion.suggestedValue && (
-                              <div>
-                                <span className="font-medium">Suggested: </span>
-                                <span className="text-green-600">{suggestion.suggestedValue}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        
-                        <div className="mt-3 flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">{suggestion.impact}</span>
-                          <Button size="sm" variant="outline">
-                            <Edit className="w-3 h-3 mr-1" />
-                            Apply
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="optimize" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wand2 className="w-5 h-5" />
-                    Quick Optimization
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="text-center">
-                    <div className="w-20 h-20 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Target className="w-10 h-10 text-primary" />
+                        {mockScore.overall}
+                      </span>
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">AI-Powered Optimization</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                      Let our AI automatically optimize your property listing based on market data, 
-                      competitor analysis, and proven best practices.
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold mb-2">
+                      {performanceInfo.title}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {performanceInfo.description}
                     </p>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <TrendingUp className="w-8 h-8 mx-auto text-blue-600 mb-2" />
-                      <h4 className="font-medium mb-1">Increase Visibility</h4>
-                      <p className="text-sm text-muted-foreground">Optimize for search algorithms</p>
-                    </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <Users className="w-8 h-8 mx-auto text-green-600 mb-2" />
-                      <h4 className="font-medium mb-1">Boost Engagement</h4>
-                      <p className="text-sm text-muted-foreground">Improve title and description</p>
-                    </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <Award className="w-8 h-8 mx-auto text-purple-600 mb-2" />
-                      <h4 className="font-medium mb-1">Competitive Edge</h4>
-                      <p className="text-sm text-muted-foreground">Beat similar listings</p>
-                    </div>
-                  </div>
-
-                  {optimizingProperty && (
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                        <p className="text-sm text-muted-foreground">Optimizing your property...</p>
-                      </div>
-                      <Progress value={66} className="h-2" />
-                    </div>
+                {/* Enhanced Category Breakdown with better accessibility */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-medium">Category Breakdown</h4>
+                  {Object.entries(mockScore.categories).map(
+                    ([category, score]) => {
+                      const IconComponent = categoryIcons[category as keyof typeof categoryIcons];
+                      return (
+                        <div key={category} className="flex items-center gap-4">
+                          <div className="flex items-center gap-2 w-32">
+                            <IconComponent className="w-4 h-4" />
+                            <span className="text-sm font-medium capitalize">
+                              {category}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <Progress 
+                              value={score} 
+                              className="h-2" 
+                              aria-label={`${category} score: ${score} out of 100`}
+                            />
+                          </div>
+                          <span
+                            className={`text-sm font-semibold w-8 ${getScoreColor(score)}`}
+                          >
+                            {score}
+                          </span>
+                        </div>
+                      );
+                    }
                   )}
+                </div>
+              </CardContent>
+            </Card>
 
-                  <div className="flex justify-center">
-                    <Button 
-                      size="lg" 
-                      onClick={() => handleOptimize(mockSuggestions.map(s => s.id))}
-                      disabled={optimizingProperty}
-                      className="px-8"
-                    >
-                      {optimizingProperty ? (
-                        <>Optimizing...</>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Optimize Property Now
-                        </>
-                      )}
-                    </Button>
+            {/* Enhanced Recommendations Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Lightbulb className="w-5 h-5" />
+                    Recommendations
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {completionStats.completedCount}/{completionStats.totalCount} completed
+                    </span>
+                    <Progress value={completionStats.completionRate} className="w-20 h-2" />
                   </div>
+                </div>
 
-                  <div className="text-center text-sm text-muted-foreground">
-                    <p>This will automatically apply high-priority optimizations to your listing.</p>
-                    <p>You can review and modify changes afterwards.</p>
+                {/* Enhanced Category Filter */}
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <Button
+                    variant={selectedCategory === "all" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setSelectedCategory("all")}
+                  >
+                    All ({recommendations.length})
+                  </Button>
+                  {Object.entries(categoryIcons).map(([category, IconComponent]) => {
+                    const categoryCount = recommendations.filter(rec => rec.category === category).length;
+                    return (
+                      <Button
+                        key={category}
+                        variant={selectedCategory === category ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setSelectedCategory(category)}
+                        className="capitalize"
+                      >
+                        <IconComponent className="w-4 h-4 mr-1" />
+                        {category} ({categoryCount})
+                      </Button>
+                    );
+                  })}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {filteredRecommendations.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Lightbulb className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No recommendations found for the selected category.</p>
+                    </div>
+                  ) : (
+                    filteredRecommendations.map((recommendation) => {
+                      const IconComponent = categoryIcons[recommendation.category];
+                      return (
+                        <div
+                          key={recommendation.id}
+                          className={`p-4 rounded-lg border transition-all hover:shadow-md ${
+                            recommendation.completed
+                              ? "bg-green-50 border-green-200"
+                              : "bg-white border-gray-200"
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div
+                              className={`p-2 rounded-full ${
+                                recommendation.completed ? "bg-green-100" : "bg-gray-100"
+                              }`}
+                            >
+                              {recommendation.completed ? (
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                              ) : (
+                                <IconComponent className="w-5 h-5 text-gray-600" />
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between mb-2">
+                                <h3
+                                  className={`font-semibold ${
+                                    recommendation.completed
+                                      ? "text-green-800 line-through"
+                                      : "text-gray-900"
+                                  }`}
+                                >
+                                  {recommendation.title}
+                                </h3>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <Badge
+                                    className={priorityColors[recommendation.priority]}
+                                  >
+                                    {recommendation.priority}
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {effortLabels[recommendation.effort]}
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              <p className="text-sm text-muted-foreground mb-3">
+                                {recommendation.description}
+                              </p>
+
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4 text-sm">
+                                  <span className="text-green-600 font-medium">
+                                    {recommendation.impact}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {effortLabels[recommendation.effort]} required
+                                  </span>
+                                </div>
+
+                                <Button
+                                  size="sm"
+                                  variant={recommendation.completed ? "outline" : "default"}
+                                  onClick={() =>
+                                    handleCompleteRecommendation(recommendation.id)
+                                  }
+                                >
+                                  {recommendation.completed
+                                    ? "Mark Incomplete"
+                                    : "Mark Complete"}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Enhanced Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Enhanced Performance Stats */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Performance Stats
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm">Views</span>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        )}
+                  <span className="font-semibold">1,247</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-green-500" />
+                    <span className="text-sm">Inquiries</span>
+                  </div>
+                  <span className="font-semibold">23</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Share2 className="w-4 h-4 text-purple-500" />
+                    <span className="text-sm">Shares</span>
+                  </div>
+                  <span className="font-semibold">8</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-orange-500" />
+                    <span className="text-sm">Avg. Time on Page</span>
+                  </div>
+                  <span className="font-semibold">2m 34s</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Enhanced Market Insights */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Market Insights
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {mockInsights.map((insight, index) => {
+                  const IconComponent = insight.icon;
+                  return (
+                    <div key={index} className="flex items-center gap-3">
+                      <div className="p-2 bg-muted rounded-full">
+                        <IconComponent className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            {insight.title}
+                          </span>
+                          <span className="font-semibold">{insight.value}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            {insight.description}
+                          </span>
+                          <span
+                            className={`text-xs font-medium ${
+                              insight.change > 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {insight.change > 0 ? "+" : ""}
+                            {insight.change}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            {/* Enhanced Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="outline" className="w-full justify-start">
+                  <Camera className="w-4 h-4 mr-2" />
+                  Upload More Photos
+                </Button>
+
+                <Button variant="outline" className="w-full justify-start">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Edit Description
+                </Button>
+
+                <Button variant="outline" className="w-full justify-start">
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Adjust Pricing
+                </Button>
+
+                <Button variant="outline" className="w-full justify-start">
+                  <Eye className="w-4 h-4 mr-2" />
+                  Preview Listing
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Enhanced Pro Tips */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5" />
+                  Pro Tips
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Best Time to Post:</strong> Properties posted on
+                    Tuesday-Thursday get 25% more views.
+                  </p>
+                </div>
+
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <strong>Photo Tip:</strong> Include photos of the
+                    neighborhood and nearby amenities to increase interest.
+                  </p>
+                </div>
+
+                <div className="p-3 bg-purple-50 rounded-lg">
+                  <p className="text-sm text-purple-800">
+                    <strong>Response Time:</strong> Responding to inquiries
+                    within 1 hour increases conversion by 60%.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -352,10 +352,27 @@ export const landPropertyAdapter: PropertyAdapter<Property> = (property: Propert
 
   combinedFeatures = { ...combinedFeatures, ...additionalFeatures };
 
+  // Determine land type from zoning or property type
+  const landType = (() => {
+    const zoning = property.features?.zoning?.toLowerCase();
+    if (zoning === 'commercial') return 'commercial';
+    if (zoning === 'industrial') return 'industrial';
+    if (zoning === 'agricultural' || zoning === 'farming') return 'agricultural';
+    
+    // Fallback to property type if available
+    const propType = property.type?.toLowerCase();
+    if (propType === 'commercial' || propType === 'industrial' || propType === 'agricultural') {
+      return propType as LandProperty['type'];
+    }
+    
+    // Default to residential
+    return 'residential';
+  })();
+
   return {
     ...base,
     category: 'land',
-    type: (property.type as LandProperty['type']) || 'residential',
+    type: landType,
     features: combinedFeatures,
   };
 };

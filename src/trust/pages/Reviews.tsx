@@ -9,8 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../shared/component
 import { Label } from "../../shared/components/ui/label";
 import { Progress } from "../../shared/components/ui/progress";
 import { useToast } from "../../shared/hooks/use-toast";
-import { useForm } from "../../shared/hooks/useForm";
-import { useReviewListVirtualization } from "../../shared/hooks/useVirtualizationHelpers";
+import { useForm } from "../../shared/hooks/useFormValidation";
+import { useReviewListVirtualization } from "../../shared/hooks/useMemoryOptimization";
 import { formatDate } from "../../shared/utils/date-utils";
 
 interface Review {
@@ -177,25 +177,26 @@ export default function ReviewsPage() {
         maxLength: 500
       }
     },
-    onSubmit: async (_formData) => {
+    onSubmit: async (formData) => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Import FormService dynamically
+        const { formService } = await import('../../shared/services/FormService');
         
-        toast({
-          title: "Review submitted successfully!",
-          description: "Thank you for your feedback.",
+        // Submit review using FormService
+        const result = await formService.submitReview({
+          ...formData,
+          reviewType: 'service' // Default to service review
         });
-        
-        // Reset form after successful submission
-        setValue('rating', 0);
-        setValue('comment', '');
+
+        if (result.success) {
+          // Reset form after successful submission
+          setValue('rating', 0);
+          setValue('comment', '');
+        } else {
+          throw new Error(result.message);
+        }
       } catch (error) {
-        toast({
-          title: "Failed to submit review",
-          description: "Please try again.",
-          variant: "destructive",
-        });
+        // Error handling is done in FormService, but we re-throw for form state
         throw error;
       }
     }

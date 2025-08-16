@@ -291,7 +291,7 @@ export class CommunityResourcesService {
       if (!experienceResult) {
         return null;
       }
-      
+
       const experience = this.transformExperienceResult({
         ...experienceResult,
         views: (experienceResult.views ?? 0) + 1 // Include the incremented view count
@@ -445,7 +445,7 @@ export class CommunityResourcesService {
   /**
    * Get categories with counts and proper error handling
    */
-  async getCategories(): Promise<Array<{ id: string; name: string | 'All Stories'; count: number }>> {
+  async getCategories(): Promise<Array<{ id: string; name: "Land Purchase" | "Rental Fraud" | "Property Development" | "Investment Scams" | "Other" | "All Stories"; count: number }>> {
     try {
       const categories = await db
         .select({
@@ -463,15 +463,15 @@ export class CommunityResourcesService {
         'other': 'Other'
       } as const;
 
-      const result = categories.map(cat => ({
+      const result: Array<{ id: string; name: "Land Purchase" | "Rental Fraud" | "Property Development" | "Investment Scams" | "Other" | "All Stories"; count: number }> = categories.map(cat => ({
         id: cat.fraudType,
-        name: categoryMap[cat.fraudType as keyof typeof categoryMap] || cat.fraudType,
+        name: (categoryMap[cat.fraudType as keyof typeof categoryMap] || cat.fraudType) as "Land Purchase" | "Rental Fraud" | "Property Development" | "Investment Scams" | "Other",
         count: cat.count
       }));
 
       // Add "all" category with total count
       const totalCount = result.reduce((sum, cat) => sum + cat.count, 0);
-      result.unshift({ id: 'all', name: 'All Stories' as const, count: totalCount });
+      result.unshift({ id: 'all', name: 'All Stories', count: totalCount });
 
       return result;
 
@@ -614,7 +614,7 @@ export class CommunityResourcesService {
     return conditions;
   }
 
-  private buildOrderBy(sortBy?: string): unknown[] {
+  private buildOrderBy(sortBy?: string) {
     switch (sortBy) {
       case 'popular':
         return [desc(communityExperiences.likes)];

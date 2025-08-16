@@ -3,8 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { renderWithProviders } from '../render';
-import { useForm } from '../../hooks/useForm';
-import { ValidationRule } from '../../utils/form-validation';
+import { useForm } from '../../hooks/useFormValidation';
+// ValidationRule is now part of useFormValidation
 import FormField from '../../components/forms/FormField';
 import FileUpload from '../../components/forms/FileUpload';
 
@@ -22,7 +22,7 @@ const TestForm = ({
   initialValues = {}
 }: {
   onSubmit?: (data: any) => Promise<void>;
-  validationRules?: Record<string, ValidationRule>;
+  validationRules?: Record<string, any>;
   initialValues?: Record<string, any>;
 }) => {
   const {

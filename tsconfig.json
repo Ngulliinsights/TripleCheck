@@ -3,7 +3,14 @@
     "src/**/*",
     "server/**/*",
     "scripts/**/*",
-    "database/**/*"
+    "database/**/*",
+    "vite.config.ts",
+    "vite.*.config.ts",
+    "vitest.*.config.ts",
+    "playwright.config.ts",
+    "tailwind.config.ts",
+    "postcss.config.js",
+    "eslint.config.js"
   ],
   "exclude": [
     "node_modules",
@@ -81,7 +88,7 @@
     },
     
     // Type Definitions (uncomment when packages are installed)
-    "types": ["node"],
+    // "types": ["node"],
     "typeRoots": ["./node_modules/@types", "./types"]
   },
   

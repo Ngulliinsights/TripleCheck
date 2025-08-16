@@ -35,6 +35,7 @@ export class AuthService {
    * Helper method to exclude password from user object
    */
   private excludePassword(user: User): Omit<User, 'password'> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
@@ -69,6 +70,7 @@ export class AuthService {
       const user = await this.storage.createUser(newUser);
 
       // Return user without password
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...userWithoutPassword } = user;
 
       return {
@@ -221,7 +223,7 @@ export class AuthService {
       return this.excludePassword(user);
     } catch (error) {
       // Log error for debugging but don't expose details to client
-      
+      console.error('Error in getUserById:', error);
       return null;
     }
   }

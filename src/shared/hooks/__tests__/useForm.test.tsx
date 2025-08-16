@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useForm, useFileUpload } from '../useForm';
+import { useForm, useFileUpload } from '../useFormValidation';
 
 // Mock the toast hook
 vi.mock('../use-toast', () => ({

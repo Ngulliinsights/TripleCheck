@@ -20,6 +20,8 @@ export { default as PropertyImageVault } from './components/images/PropertyImage
 export { default as ImageGallery } from './components/images/ImageGallery';
 export { default as PropertyImageGallery } from './components/images/ImageGallery';
 export { PropertyImageValidationService } from './services/images/PropertyImageValidationService';
+export { PropertyImageUploadService } from './services/images/PropertyImageUploadService';
+// Legacy export for backward compatibility
 export { PropertyImageUploadCoordinator } from './services/images/PropertyImageUploadCoordinator';
 export { PropertyImageWorkflowManager } from './services/images/PropertyImageWorkflowManager';
 export { Logo } from './components/ui/logo';
@@ -40,18 +42,25 @@ export { Pagination } from './components/Pagination';
 
 // Hooks
 export { useDebounce } from './hooks/useDebounce';
-export { useComponentPerformance } from './hooks/useComponentPerformance';
-export { usePropertyListVirtualization, usePropertyGridVirtualization } from './hooks/useVirtualizationHelpers';
+export { 
+  useComponentPerformance, 
+  withPerformanceMonitor 
+} from './hooks/useComponentPerformance';
+export { usePropertyListVirtualization, usePropertyGridVirtualization } from './hooks/useMemoryOptimization';
+export { usePageSpacing, useNavigationSpacing } from './hooks/useNavigationSpacing';
+export { useSafePropertiesQuery, useSafeQuery } from './hooks/useSafeQuery';
 
 // Property Management Hooks
 export * from './hooks/useFilterState';
-export * from './hooks/usePaginatedQuery';
+export * from './hooks/usePagination';
 
 // Property Components
 export * from './components/property';
-export { PropertyDataGrid } from './components/PropertyDataGrid';
-export { PropertySkeletonGrid } from './components/PropertySkeletonGrid';
-export { ResidentialFilters } from './components/ResidentialFilters';
+export { PropertyDataGrid } from './components/property/PropertyDataGrid';
+export { PropertySkeletonGrid, PropertyDetailsSkeleton } from './components/property/PropertySkeletonGrid';
+export { ResidentialFilters, ResidentialFiltersComponent } from './components/property/filters/ResidentialFilters';
+export { BasePropertyFiltersComponent as BasePropertyFilters } from './components/property/filters/BasePropertyFilters';
+export { EnhancedPhotoManagementButton } from './components/property/PhotoManagementButton';
 
 // Property Utilities
 export * from './utils/property-mapper';

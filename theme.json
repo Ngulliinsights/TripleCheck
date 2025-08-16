@@ -1,6 +1,10 @@
 {
   "name": "TripleCheck Dark Glassmorphism",
   "type": "registry:theme",
+  "variant": "dark",
+  "appearance": "dark",
+  "primary": "180 84% 25%",
+  "radius": 0.75,
   "cssVars": {
     "light": {
       "background": "0 0% 100%",

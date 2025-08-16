@@ -15,11 +15,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 // Fixed import order to satisfy eslint import/order rule
 import { CompareBar } from "../../property/components/CompareBar";
 import { CompareModal } from "../../property/components/CompareModal";
-import ListingCard from "../../property/components/ListingCard";
-import { CompareProvider } from "../../property/contexts/CompareContext";
 import FraudIntelligence from "../components/CommunityInsights";
 import { EnhancedHero } from "../components/hero/EnhancedHero";
 import { NewsBlog } from "../components/NewsBlog";
+import { PropertyCard } from "../components/property";
+import { ServiceCategories } from "../components/ServiceCategories";
+import { EnhancedTestimonials as Testimonials } from "../components/Testimonials";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import {
@@ -32,8 +33,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { VideoModal } from "../components/VideoModal";
 import { usePageSpacing } from "../hooks/useNavigationSpacing";
 import { useSafePropertiesQuery } from "../hooks/useSafeQuery";
-import { ServiceCategories, Testimonials } from "../index";
-import type { Property } from "../types/property";
+import type { Property, NormalizedProperty } from "../types/property";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -57,12 +57,133 @@ interface PropertyGridProps {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Utility Functions                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Transform Property to NormalizedProperty with exact type safety
+ * This function carefully handles optional properties to satisfy exactOptionalPropertyTypes
+ */
+const transformToNormalizedProperty = (
+  property: Property
+): NormalizedProperty => {
+  // Extract location string safely
+  const locationString =
+    typeof property.location === "string" ?
+      property.location
+    : property.location?.address || "Location not specified";
+
+  // Determine category safely with explicit type assertion
+  let category: "residential" | "commercial" | "land" = "residential";
+  if (property.type === "commercial") {
+    category = "commercial";
+  } else if (property.type === "land") {
+    category = "land";
+  }
+
+  // Handle date conversion safely
+  const getDateString = (date: Date | string | undefined): string => {
+    if (!date) return new Date().toISOString();
+    return date instanceof Date ? date.toISOString() : date;
+  };
+
+  // Handle status conversion with better type safety
+  const normalizeStatus = (
+    status: string | undefined
+  ): "available" | "under-offer" | "sold" | "rented" | "pending" => {
+    if (!status) return "available";
+    const validStatuses = [
+      "available",
+      "under-offer",
+      "sold",
+      "rented",
+      "pending",
+    ] as const;
+    return validStatuses.includes(status as (typeof validStatuses)[number]) ?
+        (status as (typeof validStatuses)[number])
+      : "available";
+  };
+
+  // Handle verification status with improved type safety
+  const normalizeVerificationStatus = (
+    status: string | undefined
+  ): "verified" | "pending" | "unverified" | "flagged" | undefined => {
+    if (!status) return undefined;
+    if (status === "draft") return "pending";
+    const validStatuses = [
+      "verified",
+      "pending",
+      "unverified",
+      "flagged",
+    ] as const;
+    return validStatuses.includes(status as (typeof validStatuses)[number]) ?
+        (status as (typeof validStatuses)[number])
+      : "unverified";
+  };
+
+  // Build the base object with required properties
+  const baseProperties: NormalizedProperty = {
+    id: String(property.id),
+    title: property.title,
+    description: property.description,
+    price:
+      typeof property.price === "string" ?
+        parseFloat(property.price) || 0
+      : property.price,
+    location: locationString,
+    images: property.images || property.imageUrls || [],
+    verified: property.verificationStatus === "verified",
+    type: property.type || property.propertyType || "property",
+    category,
+    features: {
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      squareFeet: property.size || property.area,
+      propertyType: property.propertyType || property.type,
+      ...property.features,
+    },
+    createdAt: getDateString(property.createdAt),
+    status: normalizeStatus(property.status),
+  };
+
+  // Add optional properties only if they have valid values
+  // This approach satisfies exactOptionalPropertyTypes by not setting undefined values
+  const result = { ...baseProperties };
+
+  if (property.updatedAt) {
+    result.updatedAt = getDateString(property.updatedAt);
+  }
+
+  if (property.viewCount !== undefined) {
+    result.views = property.viewCount;
+  }
+
+  if (property.trustScore !== undefined) {
+    result.trustScore = property.trustScore;
+  }
+
+  const verificationStatus = normalizeVerificationStatus(
+    property.verificationStatus
+  );
+  if (verificationStatus !== undefined) {
+    result.verificationStatus = verificationStatus;
+  }
+
+  // Handle coordinates properly - only add if they exist
+  if (property.coordinates) {
+    result.coordinates = property.coordinates;
+  }
+
+  return result;
+};
+
+/* ------------------------------------------------------------------ */
 /*  Constants                                                         */
 /* ------------------------------------------------------------------ */
 const APP = {
   DEMO_VIDEO_URL: "https://youtu.be/IjhSHyfQpaQ",
   SKELETON_COUNT: 6,
-  STALE_TIME: 5 * 60 * 1000, // 5 min
+  STALE_TIME: 5 * 60 * 1000, // 5 minutes
 } as const;
 
 const TRUST_METRICS = [
@@ -109,8 +230,10 @@ const DELAY_MAP = [
   "animation-delay-500",
 ] as const;
 
-// Secure route mapping to prevent object injection
-// Define allowed action types for type safety
+/**
+ * Secure route mapping using Map to prevent object injection attacks
+ * Maps predefined actions to their corresponding routes safely
+ */
 type RouteAction =
   | "primary_cta"
   | "premium_access"
@@ -118,7 +241,6 @@ type RouteAction =
   | "search_properties"
   | "check_fraud";
 
-// Using Map instead of object to prevent prototype pollution and injection attacks
 const ROUTE_MAPPING = new Map<RouteAction, string>([
   ["primary_cta", "/land-verification"],
   ["premium_access", "/pricing"],
@@ -128,37 +250,55 @@ const ROUTE_MAPPING = new Map<RouteAction, string>([
 ]);
 
 /* ------------------------------------------------------------------ */
-/*  Pure Utilities                                                    */
+/*  Pure Utility Functions                                            */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Safely parse search query from URL parameters
+ */
 const parseSearchQuery = (search: string): string =>
   new URLSearchParams(search.startsWith("?") ? search.slice(1) : search).get(
     "search"
   ) ?? "";
 
-const getDelayClass = (idx: number) => DELAY_MAP[idx % DELAY_MAP.length];
+/**
+ * Get animation delay class with safe array bounds checking
+ */
+const getDelayClass = (idx: number): string => {
+  const index = Math.max(
+    0,
+    Math.min(idx % DELAY_MAP.length, DELAY_MAP.length - 1)
+  );
+  return DELAY_MAP[index] ?? DELAY_MAP[0];
+};
 
-// Type guard function to check if a string is a valid route action
+/**
+ * Type guard to validate route actions and prevent injection
+ */
 const isValidRouteAction = (action: string): action is RouteAction => {
   return ROUTE_MAPPING.has(action as RouteAction);
 };
 
-// Safe route getter that prevents object injection by using Map.get() instead of bracket notation
+/**
+ * Secure route getter that prevents object injection by using Map.get()
+ */
 const getSecureRoute = (action: string): string => {
-  // First check if the action is valid using our type guard
   if (isValidRouteAction(action)) {
     return ROUTE_MAPPING.get(action) ?? "/";
   }
-  // Return default route for invalid actions, preventing any injection attempts
-  return "/";
+  return "/"; // Safe fallback for invalid actions
 };
 
 /* ------------------------------------------------------------------ */
-/*  Memoised Sub-Components                                           */
+/*  Memoized Sub-Components                                           */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Optimized pricing card component with improved accessibility
+ */
 const PricingCard = memo(
   ({ plan, index }: { plan: PricingPlan; index: number }) => {
-    // Removed unused hovered state and simplified hover handling
-    const cn = useMemo(
+    const cardClassName = useMemo(
       () =>
         `h-full relative transition-all duration-300 hover:scale-[1.02] group ${
           plan.isPopular ?
@@ -170,7 +310,7 @@ const PricingCard = memo(
 
     return (
       <Card
-        className={cn}
+        className={cardClassName}
         role="article"
         aria-label={`${plan.name} pricing plan`}
       >
@@ -199,31 +339,42 @@ const PricingCard = memo(
         </CardHeader>
         <CardContent>
           <ul className="space-y-3 text-sm mb-6">
-            {plan.features.map((f) => (
-              <li key={f} className="flex gap-3">
-                <CheckCircle className="w-4 h-4 text-status-success mt-0.5" />
-                <span className="text-muted-foreground">{f}</span>
+            {plan.features.map((feature) => (
+              <li key={feature} className="flex gap-3">
+                <CheckCircle
+                  className="w-4 h-4 text-status-success mt-0.5"
+                  aria-hidden="true"
+                />
+                <span className="text-muted-foreground">{feature}</span>
               </li>
             ))}
           </ul>
           {plan.africanFocus && (
             <div className="mb-6 p-3 bg-muted/30 rounded-lg">
               <h4 className="text-xs font-semibold mb-2 flex items-center gap-1">
-                <Globe className="w-3 h-3" /> African Focus
+                <Globe className="w-3 h-3" aria-hidden="true" />
+                African Focus
               </h4>
               <ul className="space-y-1 text-xs">
-                {plan.africanFocus.map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <div className="w-1 h-1 bg-secondary rounded-full" />
-                    <span>{f}</span>
+                {plan.africanFocus.map((focus) => (
+                  <li key={focus} className="flex items-center gap-2">
+                    <div
+                      className="w-1 h-1 bg-secondary rounded-full"
+                      aria-hidden="true"
+                    />
+                    <span>{focus}</span>
                   </li>
                 ))}
               </ul>
             </div>
           )}
-          <Button variant={plan.buttonVariant} className="w-full font-semibold">
+          <Button
+            variant={plan.buttonVariant}
+            className="w-full font-semibold"
+            aria-label={`Get started with ${plan.name} plan`}
+          >
             {plan.buttonText ?? "Get Started"}
-            <ArrowRight className="w-4 h-4 ml-2" />
+            <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
           </Button>
         </CardContent>
       </Card>
@@ -232,22 +383,30 @@ const PricingCard = memo(
 );
 PricingCard.displayName = "PricingCard";
 
+/**
+ * Optimized property grid with better error handling and accessibility
+ */
 const PropertyGrid = memo(
   ({ properties, isLoading, error }: PropertyGridProps) => {
-    const skeletons = useMemo(
+    // Memoize skeleton array to prevent unnecessary re-renders
+    const skeletonItems = useMemo(
       () => Array.from({ length: APP.SKELETON_COUNT }, (_, i) => i),
       []
     );
 
     if (isLoading) {
       return (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {skeletons.map((i) => (
-            <Card key={i} className="overflow-hidden">
+        <div
+          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+          role="status"
+          aria-label="Loading properties"
+        >
+          {skeletonItems.map((i) => (
+            <Card key={`skeleton-${i}`} className="overflow-hidden">
               <Skeleton className="h-48 w-full rounded-lg" />
               <div className="p-4">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2 mt-2" />
+                <Skeleton className="h-4 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2" />
               </div>
             </Card>
           ))}
@@ -257,11 +416,13 @@ const PropertyGrid = memo(
 
     if (error) {
       return (
-        <div className="text-center py-16" role="alert">
+        <div className="text-center py-16" role="alert" aria-live="polite">
           <div className="w-16 h-16 mx-auto mb-4 bg-destructive/10 rounded-full flex items-center justify-center">
-            <Search className="w-8 h-8 text-destructive" aria-hidden />
+            <Search className="w-8 h-8 text-destructive" aria-hidden="true" />
           </div>
-          <h3 className="text-xl font-semibold">Unable to Load Properties</h3>
+          <h3 className="text-xl font-semibold mb-2">
+            Unable to Load Properties
+          </h3>
           <p className="text-muted-foreground mb-6">
             {error.message ||
               "We're having trouble loading properties. Please try again."}
@@ -278,13 +439,16 @@ const PropertyGrid = memo(
 
     if (!properties?.length) {
       return (
-        <div className="text-center py-16">
+        <div className="text-center py-16" role="status">
           <div className="w-16 h-16 mx-auto mb-4 bg-muted/50 rounded-full flex items-center justify-center">
-            <Search className="w-8 h-8 text-muted-foreground" aria-hidden />
+            <Search
+              className="w-8 h-8 text-muted-foreground"
+              aria-hidden="true"
+            />
           </div>
-          <h3 className="text-xl font-semibold">No Properties Found</h3>
+          <h3 className="text-xl font-semibold mb-2">No Properties Found</h3>
           <p className="text-muted-foreground">
-            Adjust your filters or browse all.
+            Adjust your filters or browse all available properties.
           </p>
         </div>
       );
@@ -292,9 +456,12 @@ const PropertyGrid = memo(
 
     return (
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {properties.map((p, i) => (
-          <div key={p.id} className={`animate-fade-in ${getDelayClass(i)}`}>
-            <ListingCard property={p} />
+        {properties.map((property, index) => (
+          <div
+            key={property.id}
+            className={`animate-fade-in ${getDelayClass(index)}`}
+          >
+            <PropertyCard property={transformToNormalizedProperty(property)} />
           </div>
         ))}
       </div>
@@ -303,6 +470,9 @@ const PropertyGrid = memo(
 );
 PropertyGrid.displayName = "PropertyGrid";
 
+/**
+ * Trust metric display component with enhanced accessibility
+ */
 const TrustMetric = memo(
   ({
     metric,
@@ -315,6 +485,7 @@ const TrustMetric = memo(
       <div className="glass-card p-6 hover:glass-card-hover transition-all duration-300">
         <div
           className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-glass-secondary mb-4 transition-transform duration-300 group-hover:scale-110 ${metric.color}`}
+          aria-hidden="true"
         >
           {metric.icon}
         </div>
@@ -330,17 +501,26 @@ const TrustMetric = memo(
 TrustMetric.displayName = "TrustMetric";
 
 /* ------------------------------------------------------------------ */
-/*  Page Component                                                    */
+/*  Main Page Component                                               */
 /* ------------------------------------------------------------------ */
 export default function HomePage() {
   const { search } = useLocation();
   const navigate = useNavigate();
   const { pageClassName } = usePageSpacing();
 
-  const [modals, setModals] = useState({ video: false, compare: false });
+  // State for modal visibility with better typing
+  const [modals, setModals] = useState<{
+    video: boolean;
+    compare: boolean;
+  }>({
+    video: false,
+    compare: false,
+  });
 
+  // Memoize search query parsing to prevent unnecessary re-computations
   const searchQuery = useMemo(() => parseSearchQuery(search), [search]);
 
+  // Query properties with proper error handling
   const {
     data: properties,
     isLoading,
@@ -351,39 +531,54 @@ export default function HomePage() {
     enabled: true,
   });
 
+  /**
+   * Handle hero search with improved URL parameter handling
+   */
   const handleHeroSearch = useCallback(
-    (q: string, loc?: string) => {
+    (query: string, location?: string) => {
       const params = new URLSearchParams();
-      if (q.trim()) params.set("search", q.trim());
-      if (loc?.trim()) params.set("location", loc.trim());
+      if (query.trim()) params.set("search", query.trim());
+      if (location?.trim()) params.set("location", location.trim());
       navigate(`/?${params}`, { replace: true });
     },
     [navigate]
   );
 
+  /**
+   * Handle hero CTA clicks with secure routing
+   */
   const handleHeroCta = useCallback(
     (_: string, action: string) => {
       if (action === "watch_demo") {
-        setModals((m) => ({ ...m, video: true }));
+        setModals((prevModals) => ({ ...prevModals, video: true }));
         return;
       }
-      // Use secure route mapping to prevent object injection
+      // Use secure route mapping to prevent injection attacks
       const route = getSecureRoute(action);
       navigate(route);
     },
     [navigate]
   );
 
-  // Remove unused handleService since ServiceCategories doesn't need it
-
+  /**
+   * Optimized modal toggle with better type safety
+   */
   const toggleModal = useCallback((key: keyof typeof modals) => {
-    setModals((prevModals) => ({ ...prevModals, [key]: !prevModals[key] }));
+    setModals((prevModals) => {
+      if (key === "video") {
+        return { ...prevModals, video: !prevModals.video };
+      } else if (key === "compare") {
+        return { ...prevModals, compare: !prevModals.compare };
+      }
+      return prevModals;
+    });
   }, []);
 
+  // Determine if search results should be shown
   const showResults = Boolean(searchQuery);
 
   return (
-    <CompareProvider>
+    <>
       <div className={`min-h-screen bg-dark-gradient-primary ${pageClassName}`}>
         <EnhancedHero
           variant="A"
@@ -418,8 +613,8 @@ export default function HomePage() {
               Launching Soon Across Africa
             </h2>
             <div className="grid md:grid-cols-4 gap-8 max-w-5xl mx-auto">
-              {TRUST_METRICS.map((m, i) => (
-                <TrustMetric key={m.id} metric={m} idx={i} />
+              {TRUST_METRICS.map((metric, index) => (
+                <TrustMetric key={metric.id} metric={metric} idx={index} />
               ))}
             </div>
           </div>
@@ -444,26 +639,38 @@ export default function HomePage() {
               error={error}
             />
             <div className="text-center mt-12">
-              <Button size="lg" onClick={() => navigate("/properties")}>
+              <Button
+                size="lg"
+                onClick={() => navigate("/properties")}
+                aria-label="View all available properties"
+              >
                 View All Properties
-                <ArrowRight className="w-4 h-5 ml-2" />
+                <ArrowRight className="w-4 h-5 ml-2" aria-hidden="true" />
               </Button>
             </div>
           </div>
         </section>
 
-        <section className="py-24 bg-dark-gradient-accent">
-          <div className="text-center max-w-3xl mx-auto">
+        <section
+          className="py-24 bg-dark-gradient-accent"
+          aria-label="Call to action"
+        >
+          <div className="text-center max-w-3xl mx-auto px-4">
             <h2 className="text-4xl font-bold mb-4">
               Ready to Secure Your Investment?
             </h2>
-            <Button size="lg" onClick={() => navigate("/demo")}>
+            <Button
+              size="lg"
+              onClick={() => navigate("/demo")}
+              aria-label="Try our live demo"
+            >
               Try Live Demo
             </Button>
           </div>
         </section>
       </div>
 
+      {/* Modal components */}
       <CompareBar onQuickCompare={() => toggleModal("compare")} />
       <CompareModal
         isOpen={modals.compare}
@@ -475,6 +682,6 @@ export default function HomePage() {
         videoUrl={APP.DEMO_VIDEO_URL}
         title="TripleCheck Demo"
       />
-    </CompareProvider>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 // Unified API response types for consistent frontend-backend communication
+import { Property, PropertyFeatures } from './property';
 
 export interface ApiResponse<T = unknown> {
   success: boolean;
@@ -36,47 +37,6 @@ export interface SinglePropertyResponse {
   cached?: boolean;
 }
 
-// Property types that match the database schema
-export interface Property {
-  id: string | number;
-  title: string;
-  description: string;
-  price: string | number;
-  location: string;
-  address?: string;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
-  imageUrls: string[];
-  verificationStatus: 'verified' | 'pending' | 'unverified' | 'draft';
-  features?: PropertyFeatures;
-  ownerId: number;
-  viewCount: number;
-  favoriteCount: number;
-  isActive: boolean;
-  isFeatured: boolean;
-  availableFrom?: Date | string | null;
-  availableUntil?: Date | string | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  landVerification?: LandVerificationData | null;
-}
-
-export interface PropertyFeatures {
-  bedrooms?: number | undefined;
-  bathrooms?: number | undefined;
-  squareFeet?: number | undefined;
-  parkingSpaces?: number | undefined;
-  yearBuilt?: number | undefined;
-  propertyType?: string | undefined;
-  petFriendly?: boolean | undefined;
-  furnished?: boolean | undefined;
-  amenities?: string[] | undefined;
-  // Allow additional dynamic properties from API
-  [key: string]: unknown;
-}
-
 export interface LandVerificationData {
   sessionId?: string;
   status: 'not_started' | 'in_progress' | 'completed' | 'suspended' | 'failed';
@@ -95,7 +55,7 @@ export interface LandVerificationData {
 
 export interface PropertySearchParams {
   query: string;
-  location?: string | undefined;
+  location?: string;
   priceMin?: number | undefined;
   priceMax?: number | undefined;
   propertyType?: string | undefined;

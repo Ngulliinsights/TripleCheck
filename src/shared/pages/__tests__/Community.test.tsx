@@ -9,7 +9,7 @@ vi.mock('../hooks/useDebounce', () => ({
   useDebounce: vi.fn((value) => ({ debouncedValue: value })),
 }));
 
-vi.mock('../hooks/useInfiniteScroll', () => ({
+vi.mock('../hooks/usePagination', () => ({
   useInfiniteScroll: vi.fn(() => ({ targetRef: { current: null } })),
 }));
 

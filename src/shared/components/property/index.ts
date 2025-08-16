@@ -1,32 +1,16 @@
-/**
- * Shared Property Components Index
- * Exports all shared property-related components and utilities
- */
+// Unified exports for all property components
 
-// Core property components
-export { default as PropertyDataGrid } from './PropertyDataGrid';
-export { default as PropertySkeletonGrid } from './PropertySkeletonGrid';
-export { default as PhotoManagementButton } from './PhotoManagementButton';
+// Core property card
+export { PropertyCard, AdaptivePropertyCard } from "./PropertyCard";
 
-// Specialized skeleton components
-export {
-  ResidentialPropertySkeleton,
-  CommercialPropertySkeleton,
-  LandPropertySkeleton,
-  PropertyDetailsSkeleton,
-} from './PropertySkeletonGrid';
+// Skeletons
+export { PropertySkeletonGrid, PropertySkeleton } from "./PropertySkeletonGrid";
 
-// Enhanced photo management components
-export {
-  EnhancedPhotoManagementButton,
-  CompactPhotoManagementButton,
-  LandPhotoManagementButton,
-  ResidentialPhotoManagementButton,
-  CommercialPhotoManagementButton,
-} from './PhotoManagementButton';
+// Property listing page
+export { PropertyListingPage } from "./PropertyListingPage";
 
-// Filter components
-export * from './filters';
+// Shared property card components
+export * from './shared';
 
-// Re-export types for convenience
-export type { NormalizedProperty } from '../../utils/property-mapper';
+// Types
+export type { NormalizedProperty, ViewMode, SortOption } from "../../types/property";

@@ -1,21 +1,33 @@
-import { Search, MapPin, Home, DollarSign, X, Loader2, AlertCircle } from "lucide-react";
+import {
+  Search,
+  MapPin,
+  Home,
+  DollarSign,
+  X,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import { useState, useCallback, useEffect, useMemo } from "react";
 
 import { Alert, AlertDescription } from "../../shared/components/ui/alert";
 import { Badge } from "../../shared/components/ui/badge";
 import { Button } from "../../shared/components/ui/button";
 import { Input } from "../../shared/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../shared/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../shared/components/ui/select";
 import { useDebounce } from "../../shared/hooks/useDebounce";
 
-interface SearchFilters {
-  location: string;
-  propertyType: string;
-  priceRange: string;
-}
+import { SearchBarFilters } from "../../shared/types/search";
+
+// SearchBarFilters is now imported from unified types
 
 interface SearchBarProps {
-  onSearch: (query: string, filters?: SearchFilters) => void;
+  onSearch: (query: string, filters?: SearchBarFilters) => void;
   onSuggestionSelect?: (suggestion: string) => void;
   isLoading?: boolean;
   error?: string | null;
@@ -46,21 +58,23 @@ const PRICE_RANGES = [
   { value: "over-50m", label: "Over KES 50M" },
 ] as const;
 
-export default function SearchBar({ 
-  onSearch, 
+export default function SearchBar({
+  onSearch,
   onSuggestionSelect,
   isLoading = false,
   error = null,
   suggestions = [],
   placeholder = "Search properties (e.g., 3 bedroom house in Westlands...)",
-  className = ""
+  className = "",
 }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [location, setLocation] = useState("");
   const [propertyType, setPropertyType] = useState("");
   const [priceRange, setPriceRange] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
 
   // Debounce search query for auto-search functionality
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -75,11 +89,11 @@ export default function SearchBar({
   // Validate search inputs
   const validateInputs = useCallback(() => {
     const errors: Record<string, string> = {};
-    
+
     if (searchQuery.trim().length > 0 && searchQuery.trim().length < 2) {
       errors.searchQuery = "Search query must be at least 2 characters";
     }
-    
+
     if (location.trim().length > 0 && location.trim().length < 2) {
       errors.location = "Location must be at least 2 characters";
     }
@@ -89,41 +103,55 @@ export default function SearchBar({
   }, [searchQuery, location]);
 
   // Enhanced search handler with validation and structured data
-  const handleSearch = useCallback((isAutoSearch = false) => {
-    if (!isAutoSearch && !validateInputs()) {
-      return;
-    }
+  const handleSearch = useCallback(
+    (isAutoSearch = false) => {
+      if (!isAutoSearch && !validateInputs()) {
+        return;
+      }
 
-    const trimmedQuery = searchQuery.trim();
-    const filters: SearchFilters = {
-      location: location.trim(),
-      propertyType,
-      priceRange
-    };
+      const trimmedQuery = searchQuery.trim();
+      const filters: SearchBarFilters = {
+        location: location.trim(),
+        propertyType,
+        priceRange,
+      };
 
-    // Only call onSearch if we have a meaningful query or filters
-    if (trimmedQuery || filters.location || filters.propertyType || filters.priceRange) {
-      onSearch(trimmedQuery, filters);
-    }
-  }, [searchQuery, location, propertyType, priceRange, onSearch, validateInputs]);
+      // Only call onSearch if we have a meaningful query or filters
+      if (
+        trimmedQuery ||
+        filters.location ||
+        filters.propertyType ||
+        filters.priceRange
+      ) {
+        onSearch(trimmedQuery, filters);
+      }
+    },
+    [searchQuery, location, propertyType, priceRange, onSearch, validateInputs]
+  );
 
   // Handle Enter key press for better user experience
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSearch();
-      setShowSuggestions(false);
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false);
-    }
-  }, [handleSearch]);
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleSearch();
+        setShowSuggestions(false);
+      } else if (e.key === "Escape") {
+        setShowSuggestions(false);
+      }
+    },
+    [handleSearch]
+  );
 
   // Handle suggestion selection
-  const handleSuggestionClick = useCallback((suggestion: string) => {
-    setSearchQuery(suggestion);
-    setShowSuggestions(false);
-    onSuggestionSelect?.(suggestion);
-  }, [onSuggestionSelect]);
+  const handleSuggestionClick = useCallback(
+    (suggestion: string) => {
+      setSearchQuery(suggestion);
+      setShowSuggestions(false);
+      onSuggestionSelect?.(suggestion);
+    },
+    [onSuggestionSelect]
+  );
 
   // Clear all search filters
   const handleClear = useCallback(() => {
@@ -149,12 +177,16 @@ export default function SearchBar({
 
   // Memoize search preview text
   const searchPreviewText = useMemo(() => {
-    const terms = [searchQuery, location, propertyType, priceRange].filter(Boolean);
+    const terms = [searchQuery, location, propertyType, priceRange].filter(
+      Boolean
+    );
     return terms.length > 0 ? terms.join(" • ") : "No search terms entered";
   }, [searchQuery, location, propertyType, priceRange]);
 
   return (
-    <div className={`w-full max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg ${className}`}>
+    <div
+      className={`w-full max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg ${className}`}
+    >
       <div className="space-y-4">
         {/* Error Alert */}
         {error && (
@@ -172,15 +204,19 @@ export default function SearchBar({
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setShowSuggestions(e.target.value.length >= 2 && suggestions.length > 0);
+              setShowSuggestions(
+                e.target.value.length >= 2 && suggestions.length > 0
+              );
             }}
             onKeyPress={handleKeyPress}
             onFocus={handleInputFocus}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay to allow suggestion clicks
-            className={`pl-10 h-12 text-lg ${validationErrors.searchQuery ? 'border-red-500' : ''}`}
-            aria-describedby={validationErrors.searchQuery ? 'search-error' : undefined}
+            className={`pl-10 h-12 text-lg ${validationErrors.searchQuery ? "border-red-500" : ""}`}
+            aria-describedby={
+              validationErrors.searchQuery ? "search-error" : undefined
+            }
           />
-          
+
           {/* Loading indicator */}
           {isLoading && (
             <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 animate-spin" />
@@ -233,8 +269,10 @@ export default function SearchBar({
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               onKeyPress={handleKeyPress}
-              className={`pl-10 ${validationErrors.location ? 'border-red-500' : ''}`}
-              aria-describedby={validationErrors.location ? 'location-error' : undefined}
+              className={`pl-10 ${validationErrors.location ? "border-red-500" : ""}`}
+              aria-describedby={
+                validationErrors.location ? "location-error" : undefined
+              }
             />
             {validationErrors.location && (
               <p id="location-error" className="text-sm text-red-600 mt-1">
@@ -299,7 +337,7 @@ export default function SearchBar({
             {propertyType && (
               <Badge variant="secondary" className="flex items-center gap-1">
                 <Home className="h-3 w-3" />
-                {PROPERTY_TYPES.find(t => t.value === propertyType)?.label}
+                {PROPERTY_TYPES.find((t) => t.value === propertyType)?.label}
                 <button
                   type="button"
                   onClick={() => setPropertyType("")}
@@ -313,7 +351,7 @@ export default function SearchBar({
             {priceRange && (
               <Badge variant="secondary" className="flex items-center gap-1">
                 <DollarSign className="h-3 w-3" />
-                {PRICE_RANGES.find(r => r.value === priceRange)?.label}
+                {PRICE_RANGES.find((r) => r.value === priceRange)?.label}
                 <button
                   type="button"
                   onClick={() => setPriceRange("")}
@@ -329,20 +367,18 @@ export default function SearchBar({
 
         {/* Action buttons */}
         <div className="flex gap-3 pt-2">
-          <Button 
+          <Button
             type="button"
             onClick={() => handleSearch()}
             disabled={isLoading || Object.keys(validationErrors).length > 0}
             className="flex-1 h-12 text-lg font-medium bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? (
+            {isLoading ?
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Search className="mr-2 h-4 w-4" />
-            )}
-            {isLoading ? 'Searching...' : 'Search Properties'}
+            : <Search className="mr-2 h-4 w-4" />}
+            {isLoading ? "Searching..." : "Search Properties"}
           </Button>
-          <Button 
+          <Button
             type="button"
             onClick={handleClear}
             variant="outline"
@@ -362,7 +398,8 @@ export default function SearchBar({
             </p>
             {activeFiltersCount > 0 && (
               <p className="text-xs text-gray-500 mt-1">
-                {activeFiltersCount} filter{activeFiltersCount !== 1 ? 's' : ''} applied
+                {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""}{" "}
+                applied
               </p>
             )}
           </div>

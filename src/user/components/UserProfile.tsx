@@ -4,8 +4,9 @@ import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shared/components/ui/dialog';
-import { User, Edit, Mail, Phone, MapPin, Calendar, Camera } from 'lucide-react';
-import React, { useState } from 'react';
+import { PropertyImage } from '@shared/types/images';
+import { User, Edit, Mail, Phone, Calendar, Camera } from 'lucide-react';
+import { useState } from 'react';
 
 import { formatDate } from '../../shared/utils/date-utils';
 
@@ -13,14 +14,15 @@ import { User as UserType } from '@/auth/types/auth.types';
 
 
 interface UserProfileProps {
-  user: UserType;
-  onEdit?: () => void;
-  isEditable?: boolean;
-  onAvatarUpdate?: (avatarUrl: string) => void;
+  readonly user: UserType;
+  readonly onEdit?: () => void;
+  readonly isEditable?: boolean;
+  readonly onAvatarUpdate?: (avatarUrl: string) => void;
 }
 
-export function UserProfile({ user, onEdit, isEditable = false, onAvatarUpdate }: UserProfileProps) {
+export function UserProfile({ user, onEdit, isEditable = false, onAvatarUpdate }: Readonly<UserProfileProps>) {
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+  
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
@@ -34,11 +36,22 @@ export function UserProfile({ user, onEdit, isEditable = false, onAvatarUpdate }
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
-  const handleAvatarUpload = (files: File[]) => {
-    if (files.length > 0) {
+  const getTrustScoreLabel = (score: number) => {
+    if (score >= 900) return 'Excellent';
+    if (score >= 750) return 'Very Good';
+    if (score >= 500) return 'Good';
+    return 'Needs Improvement';
+  };
+
+  const getTrustScoreWidth = (score: number) => {
+    return Math.min((score / 1000) * 100, 100);
+  };
+
+  const handleAvatarUpload = (images: PropertyImage[]) => {
+    if (images.length > 0 && images[0]?.file) {
       // In a real implementation, you would upload the file to your server
       // and get back the URL. For now, we'll create a local URL for demo
-      const avatarUrl = URL.createObjectURL(files[0]);
+      const avatarUrl = URL.createObjectURL(images[0].file);
       onAvatarUpdate?.(avatarUrl);
       setShowAvatarUpload(false);
     }
@@ -121,14 +134,12 @@ export function UserProfile({ user, onEdit, isEditable = false, onAvatarUpdate }
               <div className="flex-1">
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${(user.trustScore / 1000) * 100}%` }}
-                  ></div>
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${getTrustScoreWidth(user.trustScore)}%` }}
+                  />
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
-                  {user.trustScore >= 900 ? 'Excellent' :
-                   user.trustScore >= 750 ? 'Very Good' :
-                   user.trustScore >= 500 ? 'Good' : 'Needs Improvement'}
+                  {getTrustScoreLabel(user.trustScore)}
                 </p>
               </div>
             </div>
@@ -186,15 +197,16 @@ export function UserProfile({ user, onEdit, isEditable = false, onAvatarUpdate }
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <PropertyImageVault
-              maxFiles={1}
-              maxFileSize={5 * 1024 * 1024} // 5MB
-              acceptedFormats={['image/jpeg', 'image/png', 'image/webp']}
-              allowAnnotation={false}
-              allowReorder={false}
-              onChange={handleAvatarUpload}
-              className="min-h-[200px]"
-            />
+            <div className="min-h-[200px]">
+              <PropertyImageVault
+                maxFiles={1}
+                maxFileSize={5 * 1024 * 1024} // 5MB
+                acceptedFormats={['image/jpeg', 'image/png', 'image/webp']}
+                allowAnnotation={false}
+                allowReorder={false}
+                onChange={handleAvatarUpload}
+              />
+            </div>
             <p className="text-sm text-muted-foreground">
               Upload a profile picture (JPEG, PNG, or WebP, max 5MB)
             </p>

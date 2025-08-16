@@ -1,9 +1,16 @@
-import React, { forwardRef, memo, useMemo, useCallback, useState, useEffect } from 'react';
-import { FixedSizeGrid as Grid, FixedSizeList as List } from 'react-window';
+import React, {
+  forwardRef,
+  memo,
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+} from "react";
+import { FixedSizeGrid as Grid, FixedSizeList as List } from "react-window";
 
-import type { NormalizedProperty, ViewMode } from '../types/property';
+import type { NormalizedProperty, ViewMode } from "../types/property";
 
-import { GridVirtualizedList, EnterpriseVirtualizedList, EnterpriseVirtualizedListHandle } from './VirtualizedList';
+import { EnterpriseVirtualizedListHandle } from "./VirtualizedList";
 
 interface EnhancedVirtualizedPropertyListProps {
   properties: readonly NormalizedProperty[];
@@ -14,8 +21,7 @@ interface EnhancedVirtualizedPropertyListProps {
   onEndReached?: () => void;
   loading?: boolean;
   className?: string;
-  enableCompare?: boolean;
-  enablePhotoManagement?: boolean;
+
   CardComponent: React.ComponentType<{
     property: NormalizedProperty;
     onClick?: (property: NormalizedProperty) => void;
@@ -34,7 +40,7 @@ interface PropertyItemProps {
   index: number;
   style: React.CSSProperties;
   viewMode: ViewMode;
-  onPropertyClick?: (property: NormalizedProperty) => void;
+  onPropertyClick?: ((property: NormalizedProperty) => void) | undefined;
   CardComponent: React.ComponentType<{
     property: NormalizedProperty;
     onClick?: (property: NormalizedProperty) => void;
@@ -43,31 +49,27 @@ interface PropertyItemProps {
 }
 
 // Memoized property item component that works for both grid and list modes
-const PropertyItem = memo<PropertyItemProps>(({
-  property,
-  style,
-  viewMode,
-  onPropertyClick,
-  CardComponent,
-}) => {
-  const handleClick = useCallback(() => {
-    onPropertyClick?.(property);
-  }, [property, onPropertyClick]);
+const PropertyItem = memo<PropertyItemProps>(
+  ({ property, style, viewMode, onPropertyClick, CardComponent }) => {
+    const handleClick = useCallback(() => {
+      onPropertyClick?.(property);
+    }, [property, onPropertyClick]);
 
-  return (
-    <div style={style} className="property-item-container">
-      <div className={`p-2 ${viewMode === 'list' ? 'w-full' : ''}`}>
-        <CardComponent
-          property={property}
-          onClick={handleClick}
-          className={viewMode === 'list' ? 'flex flex-row w-full' : ''}
-        />
+    return (
+      <div style={style} className="property-item-container">
+        <div className={`p-2 ${viewMode === "list" ? "w-full" : ""}`}>
+          <CardComponent
+            property={property}
+            onClick={handleClick}
+            className={viewMode === "list" ? "flex flex-row w-full" : ""}
+          />
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
-PropertyItem.displayName = 'PropertyItem';
+PropertyItem.displayName = "PropertyItem";
 
 // Grid item component for react-window Grid
 interface GridItemProps {
@@ -77,7 +79,7 @@ interface GridItemProps {
   data: {
     properties: readonly NormalizedProperty[];
     itemsPerRow: number;
-    onPropertyClick?: (property: NormalizedProperty) => void;
+    onPropertyClick?: ((property: NormalizedProperty) => void) | undefined;
     CardComponent: React.ComponentType<{
       property: NormalizedProperty;
       onClick?: (property: NormalizedProperty) => void;
@@ -86,28 +88,30 @@ interface GridItemProps {
   };
 }
 
-const GridItem = memo<GridItemProps>(({ columnIndex, rowIndex, style, data }) => {
-  const { properties, itemsPerRow, onPropertyClick, CardComponent } = data;
-  const index = rowIndex * itemsPerRow + columnIndex;
-  const property = properties[index];
+const GridItem = memo<GridItemProps>(
+  ({ columnIndex, rowIndex, style, data }) => {
+    const { properties, itemsPerRow, onPropertyClick, CardComponent } = data;
+    const index = rowIndex * itemsPerRow + columnIndex;
+    const property = properties[index];
 
-  if (!property) {
-    return <div style={style} />;
+    if (!property) {
+      return <div style={style} />;
+    }
+
+    return (
+      <PropertyItem
+        property={property}
+        index={index}
+        style={style}
+        viewMode="grid"
+        onPropertyClick={onPropertyClick}
+        CardComponent={CardComponent}
+      />
+    );
   }
+);
 
-  return (
-    <PropertyItem
-      property={property}
-      index={index}
-      style={style}
-      viewMode="grid"
-      onPropertyClick={onPropertyClick}
-      CardComponent={CardComponent}
-    />
-  );
-});
-
-GridItem.displayName = 'GridItem';
+GridItem.displayName = "GridItem";
 
 // List item component for react-window List
 interface ListItemProps {
@@ -115,7 +119,7 @@ interface ListItemProps {
   style: React.CSSProperties;
   data: {
     properties: readonly NormalizedProperty[];
-    onPropertyClick?: (property: NormalizedProperty) => void;
+    onPropertyClick?: ((property: NormalizedProperty) => void) | undefined;
     CardComponent: React.ComponentType<{
       property: NormalizedProperty;
       onClick?: (property: NormalizedProperty) => void;
@@ -144,7 +148,7 @@ const ListItem = memo<ListItemProps>(({ index, style, data }) => {
   );
 });
 
-ListItem.displayName = 'ListItem';
+ListItem.displayName = "ListItem";
 
 // Hook to calculate responsive grid dimensions
 function useResponsiveGrid(
@@ -160,7 +164,7 @@ function useResponsiveGrid(
       Math.min(maxItemsPerRow, Math.floor(availableWidth / itemWidth))
     );
     const actualItemWidth = Math.floor(availableWidth / itemsPerRow);
-    
+
     return {
       itemsPerRow,
       actualItemWidth,
@@ -170,32 +174,33 @@ function useResponsiveGrid(
 
 // Main enhanced virtualized property list component
 export const EnhancedVirtualizedPropertyList = memo(
-  forwardRef<EnterpriseVirtualizedListHandle, EnhancedVirtualizedPropertyListProps>(
+  forwardRef<
+    EnterpriseVirtualizedListHandle,
+    EnhancedVirtualizedPropertyListProps
+  >(
     (
       {
         properties,
         viewMode,
         height,
-        width = '100%',
+        width = "100%",
         onPropertyClick,
-        onEndReached,
         loading = false,
-        className = '',
-        enableCompare = true,
-        enablePhotoManagement = true,
+        className = "",
+
         CardComponent,
         itemsPerRow: propItemsPerRow,
         gridItemWidth = 320,
         gridItemHeight = 400,
         listItemHeight = 200,
       },
-      ref
+      _ref
     ) => {
       const [containerWidth, setContainerWidth] = useState(1200);
 
       // Calculate responsive grid dimensions
       const { itemsPerRow, actualItemWidth } = useResponsiveGrid(
-        typeof width === 'number' ? width : containerWidth,
+        typeof width === "number" ? width : containerWidth,
         gridItemWidth,
         1,
         6
@@ -205,46 +210,44 @@ export const EnhancedVirtualizedPropertyList = memo(
 
       // Update container width when it changes
       useEffect(() => {
-        if (typeof width === 'number') {
+        if (typeof width === "number") {
           setContainerWidth(width);
         }
       }, [width]);
 
       // Memoized data for grid mode
-      const gridData = useMemo(() => ({
-        properties,
-        itemsPerRow: finalItemsPerRow,
-        onPropertyClick,
-        CardComponent,
-      }), [properties, finalItemsPerRow, onPropertyClick, CardComponent]);
+      const gridData = useMemo(
+        () => ({
+          properties,
+          itemsPerRow: finalItemsPerRow,
+          onPropertyClick: onPropertyClick || undefined,
+          CardComponent,
+        }),
+        [properties, finalItemsPerRow, onPropertyClick, CardComponent]
+      );
 
       // Memoized data for list mode
-      const listData = useMemo(() => ({
-        properties,
-        onPropertyClick,
-        CardComponent,
-      }), [properties, onPropertyClick, CardComponent]);
+      const listData = useMemo(
+        () => ({
+          properties,
+          onPropertyClick: onPropertyClick || undefined,
+          CardComponent,
+        }),
+        [properties, onPropertyClick, CardComponent]
+      );
 
       // Calculate grid dimensions
       const rowCount = Math.ceil(properties.length / finalItemsPerRow);
       const columnCount = finalItemsPerRow;
-
-      // Handle end reached for grid mode
-      const handleGridEndReached = useCallback(() => {
-        onEndReached?.();
-      }, [onEndReached]);
-
-      // Handle end reached for list mode
-      const handleListEndReached = useCallback(() => {
-        onEndReached?.();
-      }, [onEndReached]);
 
       // Loading component
       const loadingComponent = useMemo(
         () => (
           <div className="flex items-center justify-center h-full">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="ml-3 text-sm text-muted-foreground">Loading properties...</span>
+            <span className="ml-3 text-sm text-muted-foreground">
+              Loading properties...
+            </span>
           </div>
         ),
         []
@@ -255,8 +258,18 @@ export const EnhancedVirtualizedPropertyList = memo(
         () => (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <div className="w-24 h-24 mb-4 bg-muted rounded-full flex items-center justify-center">
-              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <svg
+                className="w-12 h-12"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
               </svg>
             </div>
             <p className="font-medium text-base mb-2">No properties found</p>
@@ -275,19 +288,19 @@ export const EnhancedVirtualizedPropertyList = memo(
       }
 
       // Render grid mode
-      if (viewMode === 'grid') {
+      if (viewMode === "grid") {
         return (
           <div className={`${className} w-full`} style={{ height }}>
             <Grid
               columnCount={columnCount}
               columnWidth={actualItemWidth}
-              height={typeof height === 'number' ? height : 600}
+              height={typeof height === "number" ? height : 600}
               rowCount={rowCount}
               rowHeight={gridItemHeight}
-              width={typeof width === 'number' ? width : containerWidth}
+              width={typeof width === "number" ? width : containerWidth}
               itemData={gridData}
-              overscanRowCount={2}
-              overscanColumnCount={1}
+              overscanRowCount={2} // cspell:disable-line
+              overscanColumnCount={1} // cspell:disable-line
             >
               {GridItem}
             </Grid>
@@ -299,12 +312,12 @@ export const EnhancedVirtualizedPropertyList = memo(
       return (
         <div className={`${className} w-full`} style={{ height }}>
           <List
-            height={typeof height === 'number' ? height : 600}
+            height={typeof height === "number" ? height : 600}
             itemCount={properties.length}
             itemSize={listItemHeight}
-            width={typeof width === 'number' ? width : containerWidth}
+            width={typeof width === "number" ? width : containerWidth}
             itemData={listData}
-            overscanCount={5}
+            overscanCount={5} // cspell:disable-line
           >
             {ListItem}
           </List>
@@ -314,7 +327,7 @@ export const EnhancedVirtualizedPropertyList = memo(
   )
 );
 
-EnhancedVirtualizedPropertyList.displayName = 'EnhancedVirtualizedPropertyList';
+EnhancedVirtualizedPropertyList.displayName = "EnhancedVirtualizedPropertyList";
 
 // Hook for managing virtualized property list state
 export function useVirtualizedPropertyList(
@@ -331,7 +344,8 @@ export function useVirtualizedPropertyList(
     if (!containerRef?.current) return;
 
     const updateDimensions = () => {
-      const rect = containerRef.current!.getBoundingClientRect();
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
       setDimensions({
         width: rect.width,
         height: Math.max(400, window.innerHeight - rect.top - 100),
@@ -339,13 +353,13 @@ export function useVirtualizedPropertyList(
     };
 
     updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
+    window.addEventListener("resize", updateDimensions);
+    return () => window.removeEventListener("resize", updateDimensions);
   }, [containerRef]);
 
   const itemsPerRow = useMemo(() => {
-    if (viewMode === 'list') return 1;
-    
+    if (viewMode === "list") return 1;
+
     const itemWidth = 320;
     const availableWidth = dimensions.width - 32;
     return Math.max(1, Math.min(6, Math.floor(availableWidth / itemWidth)));

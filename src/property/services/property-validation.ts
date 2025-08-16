@@ -96,7 +96,9 @@ export class PropertyBusinessLogic {
   // Validate search parameters
   static validateSearchParams(params: unknown): PropertySearchParams {
     try {
-      return PropertySearchSchema.parse(params);
+      const parsed = PropertySearchSchema.parse(params);
+      // Type assertion to ensure compatibility with PropertySearchParams
+      return parsed as PropertySearchParams;
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errorMessages = error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
@@ -208,7 +210,7 @@ export class PropertyBusinessLogic {
   }
 
   // Generate land verification badge based on status
-  static generateLandVerificationBadge(landVerification: Property['landVerification']): any {
+  static generateLandVerificationBadge(landVerification: Property['landVerification']): Record<string, unknown> | undefined {
     if (!landVerification) return undefined;
 
     switch (landVerification.status) {
@@ -366,11 +368,7 @@ export class PropertyBusinessLogic {
         }
 
         // Status filter
-        if (property.isActive !== true) {
-          return false;
-        }
-
-        return true;
+        return property.isActive === true;
       })
       .map(property => ({
         ...property,
@@ -382,19 +380,21 @@ export class PropertyBusinessLogic {
 
   private static calculateMatchScore(
     property: Property, 
-    preferences: any
+    preferences: Record<string, unknown>
   ): number {
     let score = 0;
 
     // Amenity matching
+    const preferredAmenities = Array.isArray(preferences.preferredAmenities) ? preferences.preferredAmenities : [];
     const matchingAmenities = (property.features?.amenities || []).filter((amenity: string) =>
-      preferences.preferredAmenities.includes(amenity)
+      preferredAmenities.includes(amenity)
     );
     score += matchingAmenities.length * 10;
 
     // Location matching (simple string matching for now)
-    if (preferences.location && 
-        (typeof property.location === 'string' ? property.location : property.location.city || '').toLowerCase().includes(preferences.location.toLowerCase())) {
+    const preferredLocation = typeof preferences.location === 'string' ? preferences.location : '';
+    if (preferredLocation && 
+        (typeof property.location === 'string' ? property.location : (property.location as { city?: string })?.city || '').toLowerCase().includes(preferredLocation.toLowerCase())) {
       score += 20;
     }
 

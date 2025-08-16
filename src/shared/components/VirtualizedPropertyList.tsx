@@ -1,7 +1,8 @@
 import React, { forwardRef, memo, useMemo, useCallback } from "react";
 
-import ListingCard from "../../property/components/ListingCard";
-import { Property } from "../types/property";
+import type { NormalizedProperty } from "../types/property";
+
+import { PropertyCard } from "./property/PropertyCard";
 
 import {
   EnterpriseVirtualizedList,
@@ -26,12 +27,12 @@ type AnalyticsTracker = (
 // Props interface for the property-specific list component
 // This extends the generic virtualized list with property-specific features
 export interface EnterprisePropertyListProps {
-  properties: readonly Property[];
+  properties: readonly NormalizedProperty[];
   height: number | string;
   width?: number | string;
   itemHeight?: number; // Defaults to 280px for property cards
   overscanCount?: number;
-  onPropertyClick?: (property: Property) => void;
+  onPropertyClick?: (property: NormalizedProperty) => void;
   onEndReached?: () => void;
   loading?: boolean;
   className?: string | undefined;
@@ -44,10 +45,10 @@ export interface EnterprisePropertyListProps {
 
 // Props interface for PropertyRow - explicitly handling optional properties
 interface PropertyRowProps {
-  property: Property;
+  property: NormalizedProperty;
   index: number;
   style: React.CSSProperties; // Positioning styles from react-window
-  onPropertyClick: ((property: Property) => void) | undefined; // Explicitly allow undefined
+  onPropertyClick: ((property: NormalizedProperty) => void) | undefined; // Explicitly allow undefined
   onAnalyticsTrack: AnalyticsTracker;
   viewMode?: "grid" | "list"; // Layout mode for proper styling
 }
@@ -104,10 +105,11 @@ const PropertyRow = memo<PropertyRowProps>(
           tabIndex={0}
           aria-label={`View details for ${property.title}`}
         >
-          <ListingCard
+          <PropertyCard
             property={property}
-            onClick={() => {}}
+            {...(onPropertyClick && { onClick: onPropertyClick })}
             viewMode={viewMode}
+            showQuickActions={false}
           />
         </div>
       </PositionedWrapper>
@@ -153,7 +155,7 @@ export const EnterprisePropertyList = memo(
       // Memoized key extractor - this tells React how to identify each property
       // Using both ID and index ensures uniqueness even if properties have duplicate IDs
       const keyExtractor = useCallback(
-        (property: Property, index: number) => `${property.id}-${index}`,
+        (property: NormalizedProperty, index: number) => `${property.id}-${index}`,
         [] // Empty dependency array since this logic never changes
       );
 
@@ -174,7 +176,7 @@ export const EnterprisePropertyList = memo(
       // Optimized render function that creates each property row
       // This is where the magic happens - each property gets wrapped in our PropertyRow
       const renderProperty = useCallback(
-        (property: Property, index: number, style: React.CSSProperties) => (
+        (property: NormalizedProperty, index: number, style: React.CSSProperties) => (
           <PropertyRow
             property={property}
             index={index}
@@ -260,7 +262,7 @@ export const EnterprisePropertyList = memo(
         ...(scrollToAlignment != undefined && { scrollToAlignment }),
       };
 
-      return <EnterpriseVirtualizedList<Property> {...listProps} />;
+      return <EnterpriseVirtualizedList<NormalizedProperty> {...listProps} />;
     }
   )
 );

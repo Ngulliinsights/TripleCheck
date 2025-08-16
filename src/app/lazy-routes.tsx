@@ -267,9 +267,9 @@ export const LazyRoutes = {
     routePath: "/auth/register",
     preloadPriority: "high",
   }),
-  ForgotPassword: createComingSoonRoute(
-    "Forgot Password",
-    "Reset your password securely with email verification."
+  ForgotPassword: createLazyRoute(
+    () => import("../auth/pages/ForgotPassword"),
+    { routePath: "/forgot-password", preloadPriority: "high" }
   ),
 
   /* --- User --- */
@@ -291,6 +291,10 @@ export const LazyRoutes = {
   }),
   Tenants: createLazyRoute(() => import("../user/pages/Tenants"), {
     routePath: "/tenants",
+    preloadPriority: "normal",
+  }),
+  Activity: createLazyRoute(() => import("../user/pages/Activity"), {
+    routePath: "/activity",
     preloadPriority: "normal",
   }),
 
@@ -338,10 +342,6 @@ export const LazyRoutes = {
     () => import("../property/pages/PropertyVerification"),
     { routePath: "/property/verification", preloadPriority: "normal" }
   ),
-  VerifyProperty: createLazyRoute(
-    () => import("../property/pages/VerifyProperty"),
-    { routePath: "/verify-property", preloadPriority: "normal" }
-  ),
   PropertiesResidential: createLazyRoute(
     () => import("../property/pages/PropertiesResidential"),
     { routePath: "/properties/residential", preloadPriority: "normal" }
@@ -357,6 +357,10 @@ export const LazyRoutes = {
   LandDetails: createLazyRoute(() => import("../property/pages/LandDetails"), {
     routePath: "/land/:id",
     preloadPriority: "normal",
+  }),
+  LandRedirect: createLazyRoute(() => import("../property/pages/LandRedirect"), {
+    routePath: "/land/:id",
+    preloadPriority: "high",
   }),
   // PropertyImageGallery removed - it's a shared component, not a route component
 
@@ -469,13 +473,13 @@ export const LazyRoutes = {
     () => import("../shared/pages/DeveloperDashboard"),
     { routePath: "/dev", preloadPriority: "low" }
   ),
-  AdminDashboard: createComingSoonRoute(
-    "Admin Dashboard",
-    "Administrative tools for system management and oversight."
+  AdminDashboard: createLazyRoute(
+    () => import("../shared/pages/AdminDashboard"),
+    { routePath: "/admin", preloadPriority: "low" }
   ),
-  SystemMonitoring: createComingSoonRoute(
-    "System Monitoring",
-    "Real-time system health and performance monitoring."
+  SystemMonitoring: createLazyRoute(
+    () => import("../shared/pages/SystemMonitoring"),
+    { routePath: "/monitoring", preloadPriority: "low" }
   ),
 
   /* --- Demo & Utility --- */
@@ -504,23 +508,23 @@ export const LazyRoutes = {
   }),
 
   /* --- Documents & File Handling --- */
-  DocumentsPage: createComingSoonRoute(
-    "Documents",
-    "Manage and organize your property documents securely."
+  DocumentsPage: createLazyRoute(
+    () => import("../shared/pages/DocumentsPage"),
+    { routePath: "/documents", preloadPriority: "normal" }
   ),
-  DocumentUpload: createComingSoonRoute(
-    "Document Upload",
-    "Upload and verify property documents with AI assistance."
+  DocumentUpload: createLazyRoute(
+    () => import("../shared/pages/DocumentUpload"),
+    { routePath: "/documents/upload", preloadPriority: "normal" }
   ),
-  DocumentViewer: createComingSoonRoute(
-    "Document Viewer",
-    "View and analyze property documents with advanced tools."
+  DocumentViewer: createLazyRoute(
+    () => import("../shared/pages/DocumentViewer"),
+    { routePath: "/documents/:id", preloadPriority: "normal" }
   ),
 
   /* --- Location Services --- */
-  LocationServices: createComingSoonRoute(
-    "Location Services",
-    "Advanced location-based property services and mapping."
+  LocationServices: createLazyRoute(
+    () => import("../shared/pages/LocationServices"),
+    { routePath: "/location", preloadPriority: "normal" }
   ),
 
   /* --- Error & Fallback --- */
@@ -538,25 +542,25 @@ export const LazyRoutes = {
     () => import("../search/pages/AdvancedSearch"),
     { routePath: "/advanced-search", preloadPriority: "normal" }
   ),
-  Notifications: createComingSoonRoute(
-    "Notifications Center",
-    "Manage all your notifications in one place."
+  Notifications: createLazyRoute(
+    () => import("../communication/pages/Notifications"),
+    { routePath: "/notifications", preloadPriority: "normal" }
   ),
-  MessageCenter: createComingSoonRoute(
-    "Message Center",
-    "Secure messaging platform for property stakeholders."
+  MessageCenter: createLazyRoute(
+    () => import("../communication/pages/MessageCenter"),
+    { routePath: "/messages", preloadPriority: "normal" }
   ),
-  ExpertCoordination: createComingSoonRoute(
-    "Expert Coordination",
-    "Connect with legal experts, surveyors, and local authorities."
+  ExpertCoordination: createLazyRoute(
+    () => import("../shared/pages/ExpertCoordination"),
+    { routePath: "/expert-coordination", preloadPriority: "normal" }
   ),
-  PhysicalVerification: createComingSoonRoute(
-    "Physical Verification",
-    "Schedule on-ground property inspections with certified experts."
+  PhysicalVerification: createLazyRoute(
+    () => import("../shared/pages/PhysicalVerification"),
+    { routePath: "/physical-verification", preloadPriority: "normal" }
   ),
-  CommunityIntelligence: createComingSoonRoute(
-    "Community Intelligence",
-    "Leverage community insights for better verification decisions."
+  CommunityIntelligence: createLazyRoute(
+    () => import("../shared/pages/CommunityIntelligence"),
+    { routePath: "/community-intelligence", preloadPriority: "normal" }
   ),
   FindProfessionals: createLazyRoute(
     () => import("../shared/pages/FindProfessionals"),

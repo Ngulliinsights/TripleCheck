@@ -1,12 +1,16 @@
 /**
  * Accessibility Hook for Enhanced User Experience
  * 
+ * This is the consolidated accessibility hook that replaces the basic useAccessibility.ts
+ * 
  * This hook provides comprehensive accessibility features including:
  * - Keyboard navigation management
  * - Focus management
  * - Screen reader announcements
  * - Reduced motion preferences
  * - High contrast mode detection
+ * - Enhanced keyboard navigation helpers
+ * - Skip link component
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';

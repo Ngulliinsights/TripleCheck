@@ -16,7 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@shared/components/ui/tabs";
-import { usePropertyGridVirtualization } from "@shared/hooks/useVirtualizationHelpers";
+import { usePropertyGridVirtualization } from "@shared/hooks/useMemoryOptimization";
 import {
   Bell,
   Settings,
@@ -31,8 +31,8 @@ import {
 import React, { useMemo, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 import { formatDate } from "../../shared/utils/date-utils";
+import { Property } from "../../shared/types/property";
 
 /* ---------- TYPES ---------- */
 type MembershipTier = "basic" | "premium" | "enterprise";
@@ -46,7 +46,7 @@ interface User {
   readonly joinDate: string;
 }
 
-interface Property {
+interface DashboardProperty {
   readonly id: number;
   readonly title: string;
   readonly location: string;
@@ -67,7 +67,7 @@ interface ActivityItem {
 interface StatItem {
   readonly title: string;
   readonly value: number;
-  readonly icon: React.ComponentType<any>;
+  readonly icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   readonly color: string;
   readonly bg: string;
 }
@@ -82,7 +82,7 @@ const USER_DATA: User = Object.freeze({
   joinDate: "2024-01-15",
 });
 
-const PROPERTIES_DATA: readonly Property[] = Object.freeze([
+const PROPERTIES_DATA: readonly DashboardProperty[] = Object.freeze([
   Object.freeze({
     id: 1,
     title: "Modern 3-Bedroom Apartment",
@@ -137,46 +137,50 @@ const RECENT_ACTIVITY: readonly ActivityItem[] = Object.freeze([
 ]);
 
 // Dynamic stats based on actual data
-const getStatsData = (properties: readonly Property[]): readonly StatItem[] => Object.freeze([
-  Object.freeze({
-    title: "Properties Verified",
-    value: properties.filter(p => p.status === "verified").length,
-    icon: Shield,
-    color: "text-green-600",
-    bg: "bg-green-100",
-  }),
-  Object.freeze({
-    title: "Saved Properties",
-    value: properties.length,
-    icon: Heart,
-    color: "text-red-600",
-    bg: "bg-red-100",
-  }),
-  Object.freeze({
-    title: "Property Views",
-    value: 156, // This would come from analytics in real app
-    icon: Eye,
-    color: "text-blue-600",
-    bg: "bg-blue-100",
-  }),
-  Object.freeze({
-    title: "Messages",
-    value: RECENT_ACTIVITY.filter(a => a.type === "message").length,
-    icon: MessageSquare,
-    color: "text-purple-600",
-    bg: "bg-purple-100",
-  }),
-]);
+const getStatsData = (properties: readonly DashboardProperty[]): readonly StatItem[] =>
+  Object.freeze([
+    Object.freeze({
+      title: "Properties Verified",
+      value: properties.filter((p) => p.status === "verified").length,
+      icon: Shield,
+      color: "text-green-600",
+      bg: "bg-green-100",
+    }),
+    Object.freeze({
+      title: "Saved Properties",
+      value: properties.length,
+      icon: Heart,
+      color: "text-red-600",
+      bg: "bg-red-100",
+    }),
+    Object.freeze({
+      title: "Property Views",
+      value: 156, // This would come from analytics in real app
+      icon: Eye,
+      color: "text-blue-600",
+      bg: "bg-blue-100",
+    }),
+    Object.freeze({
+      title: "Messages",
+      value: RECENT_ACTIVITY.filter((a) => a.type === "message").length,
+      icon: MessageSquare,
+      color: "text-purple-600",
+      bg: "bg-purple-100",
+    }),
+  ]);
 
 /* ---------- OPTIMIZED SUB-COMPONENTS ---------- */
-const StatCard = React.memo<StatItem & { onClick?: () => void }>(
+const StatCard = React.memo<StatItem & { onClick?: (() => void) | undefined }>(
   ({ title, value, icon: Icon, color, bg, onClick }) => {
-    const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-      if (onClick && (event.key === "Enter" || event.key === " ")) {
-        event.preventDefault();
-        onClick();
-      }
-    }, [onClick]);
+    const handleKeyDown = useCallback(
+      (event: React.KeyboardEvent) => {
+        if (onClick && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onClick();
+        }
+      },
+      [onClick]
+    );
 
     const handleClick = useCallback(() => {
       onClick?.();
@@ -206,22 +210,26 @@ const StatCard = React.memo<StatItem & { onClick?: () => void }>(
     );
   }
 );
-StatCard.displayName = 'StatCard';
+StatCard.displayName = "StatCard";
 
 const PropertyCard = React.memo<{
-  property: Property;
+  property: DashboardProperty;
   onNavigate: (path: string) => void;
 }>(({ property, onNavigate }) => {
   const handleViewDetails = useCallback(() => {
     onNavigate(`/property/${property.id}`);
   }, [property.id, onNavigate]);
 
-  const getBadgeVariant = useCallback((status: Property['status']) => {
+  const getBadgeVariant = useCallback((status: DashboardProperty["status"]) => {
     switch (status) {
-      case "verified": return "default";
-      case "pending": return "secondary";
-      case "draft": return "outline";
-      default: return "secondary";
+      case "verified":
+        return "default";
+      case "pending":
+        return "secondary";
+      case "draft":
+        return "outline";
+      default:
+        return "secondary";
     }
   }, []);
 
@@ -244,57 +252,78 @@ const PropertyCard = React.memo<{
         <p className="text-lg font-bold text-blue-600 mb-3">
           KES {property.price.toLocaleString()}
         </p>
-        <Button
-          size="sm"
-          className="w-full"
-          onClick={handleViewDetails}
-        >
+        <Button size="sm" className="w-full" onClick={handleViewDetails}>
           View Details
         </Button>
       </div>
     </div>
   );
 });
-PropertyCard.displayName = 'PropertyCard';
+PropertyCard.displayName = "PropertyCard";
 
-const ActivityRow = React.memo<ActivityItem & { onClick?: () => void }>(
+const ActivityRow = React.memo<ActivityItem & { onClick?: (() => void) | undefined }>(
   ({ type, title, description, time, status, onClick }) => {
-    const iconMap = useMemo(() => ({
-      verification: <Shield className="w-4 h-4 text-green-600" />,
-      message: <MessageSquare className="w-4 h-4 text-blue-600" />,
-      save: <Heart className="w-4 h-4 text-red-600" />,
-    }), []);
+    const iconMap = useMemo(
+      () => ({
+        verification: <Shield className="w-4 h-4 text-green-600" />,
+        message: <MessageSquare className="w-4 h-4 text-blue-600" />,
+        save: <Heart className="w-4 h-4 text-red-600" />,
+      }),
+      []
+    );
 
-    const bgMap = useMemo(() => ({
-      success: "bg-green-100",
-      info: "bg-blue-100",
-    }), []);
+    const bgMap = useMemo(
+      () => ({
+        success: "bg-green-100",
+        info: "bg-blue-100",
+      }),
+      []
+    );
 
-    const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-      if (onClick && (event.key === "Enter" || event.key === " ")) {
-        event.preventDefault();
-        onClick();
-      }
-    }, [onClick]);
+    const handleKeyDown = useCallback(
+      (event: React.KeyboardEvent) => {
+        if (onClick && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onClick();
+        }
+      },
+      [onClick]
+    );
 
     const handleClick = useCallback(() => {
       onClick?.();
     }, [onClick]);
 
     // Safe access to prevent object injection
-    const getIcon = useCallback((activityType: ActivityItem["type"]) => {
-      const validTypes = ["verification", "message", "save"] as const;
-      return validTypes.includes(activityType) ?
-          iconMap[activityType]
-        : iconMap.verification;
-    }, [iconMap]);
+    const getIcon = useCallback(
+      (activityType: ActivityItem["type"]) => {
+        switch (activityType) {
+          case "verification":
+            return iconMap.verification;
+          case "message":
+            return iconMap.message;
+          case "save":
+            return iconMap.save;
+          default:
+            return iconMap.verification;
+        }
+      },
+      [iconMap]
+    );
 
-    const getBgClass = useCallback((activityStatus: ActivityItem["status"]) => {
-      const validStatuses = ["success", "info"] as const;
-      return validStatuses.includes(activityStatus) ?
-          bgMap[activityStatus]
-        : bgMap.info;
-    }, [bgMap]);
+    const getBgClass = useCallback(
+      (activityStatus: ActivityItem["status"]) => {
+        switch (activityStatus) {
+          case "success":
+            return bgMap.success;
+          case "info":
+            return bgMap.info;
+          default:
+            return bgMap.info;
+        }
+      },
+      [bgMap]
+    );
 
     return (
       <div
@@ -319,11 +348,11 @@ const ActivityRow = React.memo<ActivityItem & { onClick?: () => void }>(
     );
   }
 );
-ActivityRow.displayName = 'ActivityRow';
+ActivityRow.displayName = "ActivityRow";
 
 /* ---------- VIRTUALIZED PROPERTY GRID ---------- */
 const VirtualizedPropertyGrid: React.FC<{
-  properties: any[];
+  properties: readonly DashboardProperty[];
   onNavigate: (path: string) => void;
 }> = ({ properties, onNavigate }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -339,8 +368,8 @@ const VirtualizedPropertyGrid: React.FC<{
     };
 
     updateHeight();
-    window.addEventListener('resize', updateHeight);
-    return () => window.removeEventListener('resize', updateHeight);
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
   const gridProps = usePropertyGridVirtualization(
@@ -348,27 +377,27 @@ const VirtualizedPropertyGrid: React.FC<{
     containerRef.current?.clientWidth || 1200,
     containerHeight,
     350, // card width
-    280  // card height
+    280 // card height
   );
 
-  const renderPropertyItem = useCallback((property: any, index: number, style: React.CSSProperties) => {
-    return (
-      <div style={style} className="p-2">
-        <PropertyCard
-          key={property.id}
-          property={property}
-          onNavigate={onNavigate}
-        />
-      </div>
-    );
-  }, [onNavigate]);
+  const renderPropertyItem = useCallback(
+    (property: DashboardProperty, _index: number, style: React.CSSProperties) => {
+      return (
+        <div style={style} className="p-2">
+          <PropertyCard
+            key={property.id}
+            property={property}
+            onNavigate={onNavigate}
+          />
+        </div>
+      );
+    },
+    [onNavigate]
+  );
 
   return (
     <div ref={containerRef} className="w-full">
-      <GridVirtualizedList
-        {...gridProps}
-        renderItem={renderPropertyItem}
-      />
+      <GridVirtualizedList {...gridProps} renderItem={renderPropertyItem} />
     </div>
   );
 };
@@ -385,31 +414,40 @@ const DashboardPage: React.FC = () => {
 
   // Memoized filtered properties
   const filteredProperties = useMemo(() => {
-    return filter === "all" ? 
-      PROPERTIES_DATA : 
-      PROPERTIES_DATA.filter((p) => p.status === filter);
+    return filter === "all" ? PROPERTIES_DATA : (
+        PROPERTIES_DATA.filter((p) => p.status === filter)
+      );
   }, [filter]);
 
   // Memoized navigation handlers
-  const handleNavigate = useCallback((path: string) => {
-    navigate(path);
-  }, [navigate]);
+  const handleNavigate = useCallback(
+    (path: string) => {
+      navigate(path);
+    },
+    [navigate]
+  );
 
   const handleFilterChange = useCallback((newFilter: typeof filter) => {
     setFilter(newFilter);
   }, []);
 
-  const handleStatClick = useCallback((title: string) => {
-    if (title === "Messages") {
-      navigate("/inbox");
-    }
-  }, [navigate]);
+  const handleStatClick = useCallback(
+    (title: string) => {
+      if (title === "Messages") {
+        navigate("/inbox");
+      }
+    },
+    [navigate]
+  );
 
-  const handleActivityClick = useCallback((type: ActivityItem["type"]) => {
-    if (type === "message") {
-      navigate("/inbox");
-    }
-  }, [navigate]);
+  const handleActivityClick = useCallback(
+    (type: ActivityItem["type"]) => {
+      if (type === "message") {
+        navigate("/inbox");
+      }
+    },
+    [navigate]
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -418,7 +456,9 @@ const DashboardPage: React.FC = () => {
         <header className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Welcome back, {USER_DATA.name}!</h1>
+              <h1 className="text-3xl font-bold">
+                Welcome back, {USER_DATA.name}!
+              </h1>
               <p className="text-gray-600">
                 {USER_DATA.membershipTier.charAt(0).toUpperCase() +
                   USER_DATA.membershipTier.slice(1)}{" "}
@@ -426,11 +466,17 @@ const DashboardPage: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={() => handleNavigate("/notifications")}>
+              <Button
+                variant="outline"
+                onClick={() => handleNavigate("/notifications")}
+              >
                 <Bell className="w-4 h-4 mr-2" />
                 Notifications
               </Button>
-              <Button variant="outline" onClick={() => handleNavigate("/settings")}>
+              <Button
+                variant="outline"
+                onClick={() => handleNavigate("/settings")}
+              >
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </Button>
@@ -445,7 +491,9 @@ const DashboardPage: React.FC = () => {
               key={stat.title}
               {...stat}
               onClick={
-                stat.title === "Messages" ? () => handleStatClick(stat.title) : undefined
+                stat.title === "Messages" ?
+                  () => handleStatClick(stat.title)
+                : undefined
               }
             />
           ))}
@@ -483,8 +531,8 @@ const DashboardPage: React.FC = () => {
                     }
                   />
                 ))}
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full"
                   onClick={() => handleNavigate("/activity")}
                 >
@@ -502,7 +550,7 @@ const DashboardPage: React.FC = () => {
                 <Button
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => handleNavigate("/services/list-property")}
+                  onClick={() => handleNavigate("/list-property")}
                 >
                   <Home className="w-4 h-4 mr-2" />
                   List New Property
@@ -518,7 +566,7 @@ const DashboardPage: React.FC = () => {
                 <Button
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => handleNavigate("/services/basic-checks")}
+                  onClick={() => handleNavigate("/trust/basic-checks")}
                 >
                   <Shield className="w-4 h-4 mr-2" />
                   Verify Property
@@ -574,10 +622,9 @@ const DashboardPage: React.FC = () => {
                       No properties found
                     </h3>
                     <p className="text-gray-600">
-                      {filter === "all" 
-                        ? "You haven't added any properties yet."
-                        : `No ${filter} properties found.`
-                      }
+                      {filter === "all" ?
+                        "You haven't added any properties yet."
+                      : `No ${filter} properties found.`}
                     </p>
                   </div>
                 }

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { setupMswServer, mockApiSuccess, mockApiError , server } from '../../test-utils/msw-server';
 import { ApiClient } from '../api-client';
-import { propertyApi, type ResidentialProperty, type ResidentialFilters } from '../propertyApi';
+import { PropertyApi, type ResidentialProperty, type ResidentialFilters } from '../../property/services/property-api';
 import { http, HttpResponse } from 'msw';
 
 
@@ -300,7 +300,7 @@ describe('Data Transformation and Validation Tests', () => {
         verified: true,
       };
 
-      await propertyApi.fetchResidentialProperties(filters);
+      await PropertyApi.getProperties(filters);
       
       expect(receivedParams?.get('search')).toBe('modern apartment');
       expect(receivedParams?.get('location')).toBe('Westlands');
@@ -344,7 +344,7 @@ describe('Data Transformation and Validation Tests', () => {
         verified: undefined,
       };
 
-      await propertyApi.fetchResidentialProperties(filters);
+      await PropertyApi.getProperties(filters);
       
       expect(receivedParams?.has('search')).toBe(false);
       expect(receivedParams?.has('location')).toBe(false);
@@ -383,7 +383,7 @@ describe('Data Transformation and Validation Tests', () => {
         })
       );
 
-      const properties = await propertyApi.fetchResidentialProperties({});
+      const properties = await PropertyApi.getProperties({});
       
       expect(properties).toHaveLength(1);
       expect(properties[0]).toEqual(mockPropertyData);

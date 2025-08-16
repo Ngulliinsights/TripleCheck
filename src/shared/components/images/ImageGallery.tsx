@@ -6,7 +6,7 @@ import {
   ZoomOut,
   RotateCw,
   Search,
-  Grid,
+  Grid as GridIcon,
   List,
   Layers,
   Download,
@@ -36,7 +36,10 @@ import React, {
   useCallback,
   memo,
   type FC,
+  useRef,
+  Suspense,
 } from "react";
+import { FixedSizeGrid as Grid } from "react-window";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 import { ImageUtils } from "../../utils/images/unified-utils";
@@ -44,6 +47,78 @@ import { ImageUtils } from "../../utils/images/unified-utils";
 /* ------------------------------------------------------------------ */
 /* 1. TYPES AND INTERFACES                                           */
 /* ------------------------------------------------------------------ */
+
+// Lazy loading image component for performance optimization
+const LazyImage = memo<{
+  src: string;
+  alt: string;
+  className?: string;
+  onLoad?: () => void;
+  onError?: () => void;
+}>(({ src, alt, className, onLoad, onError }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const image = entry.target as HTMLImageElement;
+            if (image.dataset.src) {
+              image.src = image.dataset.src;
+              image.removeAttribute('data-src');
+              observer.unobserve(image);
+            }
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(img);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleLoad = useCallback(() => {
+    setIsLoaded(true);
+    onLoad?.();
+  }, [onLoad]);
+
+  const handleError = useCallback(() => {
+    setHasError(true);
+    onError?.();
+  }, [onError]);
+
+  return (
+    <div className="relative">
+      {!isLoaded && !hasError && (
+        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded" />
+      )}
+      {hasError ? (
+        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+          <FileImage className="w-8 h-8" />
+        </div>
+      ) : (
+        <img
+          ref={imgRef}
+          data-src={src}
+          alt={alt}
+          className={className}
+          onLoad={handleLoad}
+          onError={handleError}
+          loading="lazy"
+        />
+      )}
+    </div>
+  );
+});
+
+LazyImage.displayName = 'LazyImage';
 
 export interface BaseImage {
   id: string;
@@ -180,7 +255,7 @@ const VIEW_MODES = {
   grid: {
     gridClass:
       "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4",
-    icon: Grid,
+    icon: GridIcon,
     label: "Grid",
   },
   list: {
@@ -1346,15 +1421,26 @@ const Lightbox = memo<{
                 )}
               </div>
 
-              {/* Close button */}
-              <button
-                onClick={onClose}
-                className="absolute top-4 right-4 z-40 p-2 bg-black/80 text-white rounded-full hover:bg-black/90 transition-colors"
-                aria-label="Close lightbox"
-                title="Close (Esc)"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              {/* Close button - positioned at top center, below navbar, fully responsive */}
+              <div className="absolute top-12 xs:top-14 sm:top-16 md:top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="relative group">
+                  <button
+                    onClick={onClose}
+                    className="p-2.5 xs:p-3 sm:p-4 bg-black/90 backdrop-blur-sm text-white rounded-full hover:bg-red-600 transition-all duration-200 shadow-xl border-2 border-white/20 hover:border-red-400 hover:shadow-red-400/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-black active:scale-95"
+                    aria-label="Close lightbox"
+                    title="Close (Esc)"
+                  >
+                    <X className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-200" />
+                  </button>
+                  {/* Hover tooltip with keyboard hint */}
+                  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/90 backdrop-blur-sm text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none border border-white/20">
+                    <div className="text-center">
+                      <div className="font-medium">Close Gallery</div>
+                      <div className="text-white/70 text-[10px] mt-0.5">Press Esc or click</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Navigation */}
               {images.length > 1 && (

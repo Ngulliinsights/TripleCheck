@@ -8,7 +8,7 @@ import { Input } from "../../shared/components/ui/input";
 import { Label } from "../../shared/components/ui/label";
 import { Switch } from "../../shared/components/ui/switch";
 import { useToast } from "../../shared/hooks/use-toast";
-import { useForm } from "../../shared/hooks/useForm";
+import { useForm } from "../../shared/hooks/useFormValidation";
 
 interface AlertPreference {
   id: string;

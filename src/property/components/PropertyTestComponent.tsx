@@ -3,8 +3,8 @@ import React from 'react';
 
 import { Button } from '../../shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
-import { useProperties, useProperty } from '../hooks/useProperty';
-import { usePropertySearch } from '../hooks/usePropertySearch';
+import { useUnifiedProperty } from '../hooks/useUnifiedProperty';
+import { useConsolidatedPropertySearch } from '../hooks/useConsolidatedPropertySearch';
 
 /**
  * Test component to verify that infinite API calls are resolved
@@ -13,30 +13,33 @@ import { usePropertySearch } from '../hooks/usePropertySearch';
 export function PropertyTestComponent() {
   const [testPropertyId, setTestPropertyId] = React.useState<string>('');
   
-  // Test the property search hook with debouncing
+  // Get unified property hooks
+  const { usePropertyDetail, useProperties } = useUnifiedProperty();
+  
+  // Test the consolidated property search hook with debouncing
   const {
     searchParams,
-    searchResults,
+    properties: searchResults,
     isLoading: searchLoading,
     updateSearch,
     clearSearch,
     hasActiveFilters
-  } = usePropertySearch();
+  } = useConsolidatedPropertySearch();
 
   // Test individual property fetch
   const {
     data: singleProperty,
     isLoading: propertyLoading,
-    error: propertyError,
-    hasValidData
-  } = useProperty(testPropertyId);
+    error: propertyError
+  } = usePropertyDetail(testPropertyId);
 
   // Test properties list
   const {
     data: propertiesList,
-    isLoading: listLoading,
-    cancelRequest
+    isLoading: listLoading
   } = useProperties({ limit: 5 });
+
+  const hasValidData = Boolean(singleProperty);
 
   const handleSearchUpdate = (field: string, value: string) => {
     updateSearch({ [field]: value });
@@ -48,7 +51,8 @@ export function PropertyTestComponent() {
   };
 
   const handleCancelRequests = () => {
-    cancelRequest();
+    // Cancel functionality is now handled internally by the unified hooks
+    console.log('Cancel requests - handled internally by unified hooks');
   };
 
   return (
@@ -87,7 +91,7 @@ export function PropertyTestComponent() {
             <div className="text-xs text-gray-500">
               Active filters: {hasActiveFilters ? 'Yes' : 'No'} | 
               Loading: {searchLoading ? 'Yes' : 'No'} | 
-              Results: {searchResults?.data?.length || 0}
+              Results: {searchResults?.length || 0}
             </div>
           </div>
 

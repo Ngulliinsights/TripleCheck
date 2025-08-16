@@ -5,10 +5,15 @@ import { EnterpriseVirtualizedList } from "../../shared/components";
 import { Badge } from "../../shared/components/ui/badge";
 import { Button } from "../../shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { useNotificationListVirtualization } from "../../shared/hooks/useVirtualizationHelpers";
+import { useNotificationListVirtualization } from "../../shared/hooks/useMemoryOptimization";
 
-interface Notification {
-  id: string;
+// Use the BaseEntity interface that matches the virtualization hook
+interface BaseEntity {
+  id: string | number;
+  [key: string]: unknown;
+}
+
+interface Notification extends BaseEntity {
   type: 'info' | 'success' | 'warning' | 'error';
   title: string;
   message: string;
@@ -17,10 +22,10 @@ interface Notification {
 }
 
 interface UserNotificationsProps {
-  notifications?: Notification[];
-  onMarkAsRead?: (id: string) => void;
-  onMarkAllAsRead?: () => void;
-  onDismiss?: (id: string) => void;
+  readonly notifications?: Notification[];
+  readonly onMarkAsRead?: (id: string) => void;
+  readonly onMarkAllAsRead?: () => void;
+  readonly onDismiss?: (id: string) => void;
 }
 
 const getNotificationIcon = (type: Notification['type']) => {
@@ -72,17 +77,18 @@ const VirtualizedNotificationsList: React.FC<{
   }, []);
 
   const listProps = useNotificationListVirtualization(
-    notifications,
+    notifications as readonly BaseEntity[],
     containerHeight,
     90 // notification item height
   );
 
-  const renderNotificationItem = useCallback((notification: Notification, index: number, style: React.CSSProperties) => {
+  const renderNotificationItem = useCallback((item: BaseEntity, _index: number, style: React.CSSProperties) => {
+    const notification = item as Notification;
     const Icon = getNotificationIcon(notification.type);
     const iconColor = getNotificationColor(notification.type);
     
     return (
-      <div style={style} className="p-1">
+      <div className="notification-item p-1" style={style}>
         <div
           className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
             notification.read ? 'bg-muted/30' : 'bg-background border-primary/20'
@@ -101,13 +107,13 @@ const VirtualizedNotificationsList: React.FC<{
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onMarkAsRead(notification.id)}
+                    onClick={() => onMarkAsRead(String(notification.id))}
                     className="h-8 w-8 p-0"
                   >
                     <Check className="h-4 w-4" />
                   </Button>
                 )}
-                <div className="w-2 h-2 rounded-full bg-primary" style={{ opacity: notification.read ? 0 : 1 }} />
+                <div className={`w-2 h-2 rounded-full bg-primary ${notification.read ? 'notification-read-indicator' : 'notification-unread-indicator'}`} />
               </div>
             </div>
           </div>
@@ -130,7 +136,7 @@ export function UserNotifications({
   notifications = [], 
   onMarkAsRead, 
   onMarkAllAsRead, 
-  onDismiss 
+  onDismiss: _onDismiss 
 }: UserNotificationsProps) {
   const [localNotifications, setLocalNotifications] = useState(notifications);
   
@@ -150,12 +156,7 @@ export function UserNotifications({
     onMarkAllAsRead?.();
   };
 
-  const handleDismiss = (id: string) => {
-    setLocalNotifications(prev => 
-      Array.isArray(prev) ? prev.filter(n => n && n.id !== id) : []
-    );
-    onDismiss?.(id);
-  };
+
 
   return (
     <Card>

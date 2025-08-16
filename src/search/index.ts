@@ -1,13 +1,43 @@
-// Search Domain Exports
-export * from './hooks/useSearch';
+/**
+ * Search Module Index
+ * Consolidated exports for the search functionality
+ */
 
 // Components
+export { default as ConsolidatedSearch } from './components/ConsolidatedSearch';
+export { default as SearchResults } from './pages/SearchResults';
+
+// Legacy components (deprecated)
 export { default as SearchBar } from './components/SearchBar';
 export { default as SearchFilters } from './components/SearchFilters';
-export { default as AdvancedSearch } from './components/AdvancedSearch';
-export { SearchDebug } from './components/SearchDebug';
-export { default as SearchDebugger } from './components/SearchDebugger';
-export { default as PropertySearch } from './components/PropertySearch';
 
-// Pages
-export { default as SearchResultsPage } from './pages/SearchResults';
+// Hooks
+export { useSearch } from './hooks/useSearch';
+
+// Types (re-exported from shared)
+export type {
+  PropertySearchFilters,
+  SearchOptions,
+  SearchResult,
+  SearchSuggestion,
+  LocationSuggestion,
+  SearchBarFilters,
+  SortOption
+} from '../shared/types/search';
+
+// Services
+export { searchService } from '../shared/services/SearchService';
+
+/**
+ * Recommended Usage:
+ * 
+ * For new implementations:
+ * import { ConsolidatedSearch, useSearch } from '@/search';
+ * 
+ * For search results pages:
+ * import { SearchResults } from '@/search';
+ * 
+ * For custom search implementations:
+ * import { useSearch, searchService } from '@/search';
+ * import type { PropertySearchFilters } from '@/search';
+ */

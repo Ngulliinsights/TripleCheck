@@ -11,7 +11,11 @@ api/
 │   │   ├── status.js
 │   │   ├── verify.js
 │   │   ├── webhook.js
-COMPARE_CONSISTENCY_IMPLEMENTATION.md
+AUDIT_SYSTEM_SUMMARY.md
+broken-links-analysis.md
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+COMPLETE_FUNCTIONAL_PAGES_SUMMARY.md
 config/
 ├── app.config.ts
 ├── database.config.ts
@@ -29,316 +33,17 @@ config/
 │   ├── vitest.security.config.ts
 │   ├── vitest.server.config.ts
 │   ├── vitest.unit.config.ts
-CONSOLIDATION_IMPLEMENTATION_SUMMARY.md
+CONTRIBUTING.md
 cspell.json
-database/
-├── __tests__/
-│   ├── config.test.ts
-│   ├── service.test.ts
-├── audit/
-│   ├── comprehensive-database-audit.md
-│   ├── database-inventory.json
-│   ├── database-structure-audit.md
-│   ├── dependency-map.md
-├── config/
-│   ├── database.config.ts
-│   ├── index.ts
-├── connection/
-│   ├── __tests__/
-│   │   ├── connection-pool.test.ts
-│   ├── DatabaseCircuitBreaker.ts
-│   ├── index.ts
-│   ├── ProductionConnectionPool.ts
-│   ├── production-pool.ts
-├── data-generation/
-│   ├── __tests__/
-│   │   ├── production-demo-generator.test.ts
-│   ├── cli/
-│   │   ├── demo-generator-cli.ts
-│   │   ├── demo-scenario-cli.ts
-│   │   ├── unified-data-generation.ts
-│   ├── core/
-│   │   ├── checkpoint-manager.ts
-│   │   ├── data-validator.ts
-│   │   ├── KenyanDataGenerator.ts
-│   │   ├── UnifiedDataGenerator.ts
-│   ├── docs/
-│   │   ├── examples/
-│   ├── examples/
-│   │   ├── demo-generation-example.ts
-│   ├── generators/
-│   │   ├── index.ts
-│   │   ├── python/
-│   │   │   ├── runner.ts
-│   │   ├── typescript/
-│   ├── index.ts
-│   ├── integrations/
-│   ├── output/
-│   │   ├── checkpoints/
-│   │   ├── datasets/
-│   │   ├── reports/
-│   │   ├── statistics/
-│   ├── README.md
-│   ├── scenarios/
-│   │   ├── demo-data-validator.ts
-│   │   ├── production-demo-generator.ts
-│   │   ├── production-demo-scenarios.ts
-│   │   ├── README.md
-│   │   ├── scenario-generator.ts
-│   ├── templates/
-├── deployment/
-│   ├── BlueGreenDeploymentManager.ts
-│   ├── deployment-cli.ts
-│   ├── deployment-utils.ts
-│   ├── DeploymentValidator.ts
-│   ├── examples/
-│   │   ├── complete-deployment-example.ts
-│   ├── index.ts
-│   ├── README.md
-│   ├── ZeroDowntimeMigrationManager.ts
-├── disaster-recovery/
-│   ├── __tests__/
-│   │   ├── ComprehensiveDisasterRecovery.test.ts
-│   │   ├── disaster-recovery-integration.test.ts
-│   ├── BackupManager.ts
-│   ├── ComprehensiveDisasterRecovery.ts
-│   ├── config.json
-│   ├── disaster-recovery-cli.ts
-│   ├── DisasterRecoveryManager.ts
-│   ├── IMPLEMENTATION_COMPLETE.md
-│   ├── index.ts
-│   ├── package-scripts.json
-│   ├── README.md
-│   ├── scripts/
-│   │   ├── activate-replica.sh
-│   │   ├── restore-config.sh
-│   │   ├── restore-original-db.sh
-│   │   ├── restore-pre-recovery-backup.sh
-│   │   ├── restore-primary-region.sh
-├── docs/
-│   ├── kenya-land-verification.md
-│   ├── operational-excellence-guide.md
-│   ├── production-deployment-checklist.md
-├── examples/
-│   ├── production-setup.ts
-├── health/
-│   ├── DatabaseHealthMonitor.ts
-│   ├── health-monitor.ts
-│   ├── index.ts
-├── index.ts
-├── integration/
-│   ├── integration-cli.ts
-│   ├── integration-test-runner.ts
-│   ├── ProductionReadinessAssessment.ts
-│   ├── run-production-assessment.ts
-│   ├── simple-assessment.cjs
-│   ├── SystemIntegrationValidator.ts
-├── MIGRATION_SUMMARY.md
-├── migration-plan.md
-├── migrations/
-│   ├── __tests__/
-│   │   ├── integration.test.ts
-│   │   ├── migration-manager.test.ts
-│   │   ├── migrations/
-│   │   │   ├── meta/
-│   │   ├── test-migration.ts
-│   │   ├── test-scripts.test.ts
-│   ├── _legacy_backup/
-│   ├── 0000_daffy_skrulls.sql
-│   ├── analytics/
-│   │   ├── 001_create_analytics_tables.sql
-│   │   ├── index.ts
-│   ├── communication/
-│   │   ├── 001_create_communication_tables.sql
-│   │   ├── index.ts
-│   ├── core/
-│   │   ├── 001_create_comprehensive_tables.sql
-│   │   ├── files/
-│   │   │   ├── 001_initial_schema.sql
-│   │   ├── meta/
-│   │   │   ├── _journal.json
-│   │   │   ├── 0000_snapshot.json
-│   │   ├── README.md
-│   ├── fraud/
-│   │   ├── 001_create_fraud_detection_tables.sql
-│   │   ├── index.ts
-│   ├── index.ts
-│   ├── migration-cli.ts
-│   ├── migration-executor.ts
-│   ├── migration-loader.ts
-│   ├── migration-manager.ts
-│   ├── migration-registry.ts
-│   ├── performance/
-│   │   ├── 001_create_performance_indexes.sql
-│   ├── README.md
-│   ├── trust/
-│   │   ├── 001_create_trust_system_tables.sql
-│   │   ├── index.ts
-│   ├── update-package-scripts.ts
-│   ├── verification/
-│   │   ├── 001_create_land_verification_tables.sql
-│   │   ├── index.ts
-├── OPTIMIZED_STRUCTURE.md
-├── performance/
-│   ├── index.ts
-│   ├── LoadTestingFramework.ts
-│   ├── PerformanceCertificationSystem.ts
-│   ├── performance-cli.ts
-│   ├── PerformanceMonitoringDashboard.ts
-├── PRODUCTION_DEPLOYMENT_GUIDE.md
-├── README.md
-├── replication/
-│   ├── ConnectionRouter.ts
-│   ├── docker-compose.ha.yml
-│   ├── FailoverManager.ts
-│   ├── haproxy.cfg
-│   ├── pg_hba.conf
-│   ├── postgresql-primary.conf
-│   ├── postgresql-replica.conf
-│   ├── ReplicationManager.ts
-│   ├── scripts/
-│   │   ├── 01-setup-replication.sh
-│   ├── setup-ha.ts
-├── schemas/
-│   ├── __tests__/
-│   │   ├── schema-manager.test.ts
-│   │   ├── validation.test.ts
-│   ├── analytics/
-│   │   ├── index.ts
-│   ├── communication/
-│   │   ├── index.ts
-│   ├── consolidated.ts
-│   ├── core/
-│   │   ├── index.ts
-│   ├── fraud/
-│   │   ├── index.ts
-│   ├── index.ts
-│   ├── README.md
-│   ├── trust/
-│   │   ├── index.ts
-│   ├── validation.ts
-│   ├── verification/
-│   │   ├── index.ts
-├── scripts/
-│   ├── cleanup-redundant-files.ts
-│   ├── consolidate-database-files.ts
-│   ├── consolidate-database-infrastructure.ts
-│   ├── consolidate-schemas.ts
-│   ├── database-setup/
-│   │   ├── initialize-database.ts
-│   ├── data-pipeline.ts
-│   ├── deploy.ts
-│   ├── deploy-land-verification.ts
-│   ├── execute-production-deployment.ts
-│   ├── load-data.ts
-│   ├── remove-empty-dirs.ts
-│   ├── reset.ts
-│   ├── run-disaster-recovery-test.ts
-│   ├── run-performance-certification.ts
-│   ├── run-production-readiness-assessment.ts
-│   ├── run-security-validation.ts
-│   ├── seed-data.ts
-│   ├── setup-database.ts
-│   ├── status.ts
-│   ├── test-connection.ts
-│   ├── test-migration-system.ts
-│   ├── test-schema-management.ts
-│   ├── test-setup.ts
-│   ├── unified-data-generation.ts
-│   ├── validate.ts
-│   ├── validate-consolidation.ts
-├── scripts-evaluation.md
-├── security/
-│   ├── __tests__/
-│   │   ├── SecuritySystem.test.ts
-│   ├── ComplianceManager.ts
-│   ├── index.ts
-│   ├── security-cli.ts
-│   ├── SecurityMonitor.ts
-│   ├── SecurityReporting.ts
-│   ├── SecuritySystem.ts
-│   ├── VulnerabilityScanner.ts
-├── seeds/
-│   ├── __tests__/
-│   │   ├── database-seeder.test.ts
-│   │   ├── UnifiedDataGenerator.test.ts
-│   ├── database-seeder.ts
-│   ├── generators/
-│   │   ├── checkpoint-manager.ts
-│   │   ├── community-insights-generator.py
-│   │   ├── fraud_analysis_report.json
-│   │   ├── fraud-reports-generator.py
-│   │   ├── fraud-simulator.py
-│   │   ├── fraudulent_property_dataset.json
-│   │   ├── fraudulent_transaction_dataset.json
-│   │   ├── fraudulent_user_dataset.json
-│   │   ├── index.ts
-│   │   ├── integrate-data.ts
-│   │   ├── KenyanDataGenerator.ts
-│   │   ├── land-verification-generator.py
-│   │   ├── optimized_land_dataset.json
-│   │   ├── optimized_land_dataset_statistics.json
-│   │   ├── property_dataset.json
-│   │   ├── property_statistics.json
-│   │   ├── property-generator.py
-│   │   ├── README.md
-│   │   ├── transaction_dataset.json
-│   │   ├── user_dataset.json
-│   │   ├── user_statistics.json
-│   │   ├── user-generator.py
-│   ├── index.ts
-│   ├── kenyan-data-generator.ts
-│   ├── land-verification.ts
-│   ├── land-verification-seed.ts
-│   ├── land-verification-system.ts
-│   ├── README.md
-│   ├── sample-ai-data.ts
-│   ├── seed-kenya-properties.ts
-│   ├── UnifiedDataGenerator.ts
-├── service.ts
-├── types/
-│   ├── database.types.ts
-│   ├── index.ts
-├── utils/
-│   ├── analyzers/
-│   │   ├── index.ts
-│   ├── database-utils.ts
-│   ├── generators/
-│   │   ├── __tests__/
-│   │   │   ├── data-generator.test.ts
-│   │   ├── index.ts
-│   │   ├── kenyan-data-generator.ts
-│   │   ├── README.md
-│   │   ├── unified-generator.ts
-│   ├── index.ts
-│   ├── migration-tools/
-│   │   ├── consolidate-schemas.ts
-│   │   ├── database-manager.ts
-│   │   ├── fix-database.ts
-│   │   ├── generate-test-chunks.ts
-│   │   ├── index.ts
-│   │   ├── inspect-schema.ts
-│   │   ├── migrate-existing-properties.ts
-│   │   ├── quality-gates.ts
-│   │   ├── reset-and-create.ts
-│   │   ├── robust-batch-loader.ts
-│   │   ├── rollback-migration.ts
-│   │   ├── run-migration.ts
-│   │   ├── validate-migration.ts
-│   ├── QueryOptimizer.ts
-│   ├── validators/
-│   │   ├── index.ts
-database-consolidation-audit.md
-database-consolidation-complete-report.md
-database-consolidation-migration-plan.md
-database-redundant-files-cleanup-complete.md
-DEPLOYMENT.md
 desktop.ini
-developer-portal.html
 docs/
 ├── advanced_image_prompts.md
 ├── Component Placement Rationale_ Modular Service Architecture.md
 ├── comprehensive_code_analysis_framework.md
+├── database-consolidation-complete-report.md
+├── database-consolidation-migration-plan.md
+├── developer-portal.html
+├── hook-migration.md
 ├── improved-triplecheck-data-generation-prompts.md
 ├── Kenya Land Verification Data Generation prompts.md
 ├── kenya_land_verification_guide.md
@@ -348,30 +53,30 @@ docs/
 │   ├── Safaricom_Partnership_Pitch.md
 ├── project-structure.md
 ├── prompt_engineering_analysis.md
+├── README.md
 ├── triplecheck_unified_plan.md
 ├── unified_code_analysis_framework.md
 drizzle.config.ts
 eslint.config.js
+FINAL_IMPLEMENTATION_SUMMARY.md
 firebase.json
+fix-package-duplicates.js
+frontend-facade-analysis.md
+FUNCTIONAL_PAGES_SUMMARY.md
 generate-structure.sh
 generate-structure-to-file.sh
-IMAGE_COMPONENT_ANALYSIS.md
-IMAGE_IMPORT_ANALYSIS.md
-IMAGE_SYSTEM_ANALYSIS.md
-IMAGE_SYSTEM_INTEGRATION_FIXES.md
+IMPLEMENTATION_SUMMARY.md
 index.html
-INTERLINKING_AUDIT_SUMMARY.md
+LICENSE
 load-test-config.yml
-MEMORY_OPTIMIZATION_SUMMARY.md
-nul
-optimized-tailwind.config.ts
+NAVIGATION_RECOMMENDATIONS.md
 package.json
 package-lock.json
 playwright.config.ts
 playwright-report/
 ├── index.html
 postcss.config.js
-PROPERTY_LISTING_IMPROVEMENTS.md
+property-broken-links-analysis.md
 public/
 ├── assets/
 │   ├── alice-pasqual-Olki5QpHxts-unsplash.jpg
@@ -483,19 +188,20 @@ public/
 │   ├── TripleCheck.ico
 ├── debug.html
 ├── favicon-preview.html
+├── mockServiceWorker.js
 ├── placeholder-property.jpg
 ├── sw.js
-railway.json
+README.md
 reports/
 ├── bug-analysis.json
 ├── bug-detection-report.json
 ├── bug-detection-report.md
 ├── load-test-validation-report.json
-rest-express@1.0.0
 scripts/
 ├── add-b2b-messaging.js
 ├── add-reviews.ts
 ├── aggressive-optimization.js
+├── analyze-hooks.js
 ├── api-race-condition-detector.ts
 ├── check-data.ts
 ├── check-reviews-table.ts
@@ -560,8 +266,11 @@ scripts/
 ├── load-test-suite.js
 ├── logger.js
 ├── memory-benchmark.js
+├── migrate-database-structure.ts
 ├── migrate-embedded-tests.ts
+├── migrate-hooks.js
 ├── migrate-optimized-components.sh
+├── migrate-schema-imports.ts
 ├── MISSING_FEATURES_ANALYSIS.md
 ├── MOBILE_AND_DATA_IMPROVEMENTS.md
 ├── optimize-for-deployment.js
@@ -579,6 +288,7 @@ scripts/
 ├── run-complete-load-test.cjs
 ├── run-e2e-tests.js
 ├── run-land-verification-migration.ts
+├── run-ui-audit.ts
 ├── run-visual-tests.js
 ├── security/
 │   ├── bug-categorization.ts
@@ -595,7 +305,12 @@ scripts/
 ├── test-navigation.ts
 ├── test-server-connection.cjs
 ├── test-server-ports.js
+├── update-database-paths.cjs
 ├── validate-authentication.ts
+├── validate-database-paths.ts
+├── validate-database-structure.cjs
+├── validate-database-structure.js
+├── validate-database-structure.ts
 ├── validate-deployment.cjs
 ├── validate-deployment-current.cjs
 ├── validate-image-tests.ts
@@ -636,11 +351,18 @@ server/
 │   │   ├── property-enhancements.integration.test.ts
 │   │   ├── user-dashboard.controller.test.ts
 │   ├── analytics.controller.ts
+│   ├── b2b.controller.ts
+│   ├── community.controller.ts
 │   ├── fraud-alerts.controller.ts
 │   ├── health.controller.ts
+│   ├── messages.controller.ts
+│   ├── messaging.controller.ts
 │   ├── monitoring.controller.ts
+│   ├── notifications.controller.ts
 │   ├── professionals.controller.ts
 │   ├── property-enhancements.controller.ts
+│   ├── search.controller.ts
+│   ├── trust.controller.ts
 │   ├── trust-integration.controller.ts
 │   ├── user-dashboard.controller.ts
 ├── document-auth/
@@ -709,11 +431,297 @@ server/
 │   │   ├── README.md
 │   │   ├── UnifiedCacheManager.ts
 │   ├── database/
-│   │   ├── connection.ts
+│   │   ├── __tests__/
+│   │   │   ├── config.test.ts
+│   │   │   ├── service.test.ts
+│   │   ├── audit/
+│   │   │   ├── comprehensive-database-audit.md
+│   │   │   ├── database-inventory.json
+│   │   │   ├── database-structure-audit.md
+│   │   │   ├── dependency-map.md
+│   │   ├── config/
+│   │   │   ├── database.config.ts
+│   │   │   ├── index.ts
+│   │   ├── connection/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── connection-pool.test.ts
+│   │   │   ├── DatabaseCircuitBreaker.ts
+│   │   │   ├── index.ts
+│   │   │   ├── ProductionConnectionPool.ts
+│   │   │   ├── production-pool.ts
+│   │   ├── data-generation/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── production-demo-generator.test.ts
+│   │   │   ├── cli/
+│   │   │   │   ├── demo-generator-cli.ts
+│   │   │   │   ├── demo-scenario-cli.ts
+│   │   │   │   ├── unified-data-generation.ts
+│   │   │   ├── core/
+│   │   │   │   ├── checkpoint-manager.ts
+│   │   │   │   ├── data-validator.ts
+│   │   │   │   ├── KenyanDataGenerator.ts
+│   │   │   │   ├── UnifiedDataGenerator.ts
+│   │   │   ├── docs/
+│   │   │   │   ├── examples/
+│   │   │   ├── examples/
+│   │   │   │   ├── demo-generation-example.ts
+│   │   │   ├── generators/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── python/
+│   │   │   │   ├── typescript/
+│   │   │   ├── index.ts
+│   │   │   ├── integrations/
+│   │   │   ├── output/
+│   │   │   │   ├── checkpoints/
+│   │   │   │   ├── datasets/
+│   │   │   │   ├── reports/
+│   │   │   │   ├── statistics/
+│   │   │   ├── README.md
+│   │   │   ├── scenarios/
+│   │   │   │   ├── demo-data-validator.ts
+│   │   │   │   ├── production-demo-generator.ts
+│   │   │   │   ├── production-demo-scenarios.ts
+│   │   │   │   ├── README.md
+│   │   │   │   ├── scenario-generator.ts
+│   │   │   ├── templates/
+│   │   ├── deployment/
+│   │   │   ├── BlueGreenDeploymentManager.ts
+│   │   │   ├── deployment-cli.ts
+│   │   │   ├── deployment-utils.ts
+│   │   │   ├── DeploymentValidator.ts
+│   │   │   ├── examples/
+│   │   │   │   ├── complete-deployment-example.ts
+│   │   │   ├── index.ts
+│   │   │   ├── README.md
+│   │   │   ├── ZeroDowntimeMigrationManager.ts
+│   │   ├── disaster-recovery/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── ComprehensiveDisasterRecovery.test.ts
+│   │   │   │   ├── disaster-recovery-integration.test.ts
+│   │   │   ├── BackupManager.ts
+│   │   │   ├── ComprehensiveDisasterRecovery.ts
+│   │   │   ├── config.json
+│   │   │   ├── disaster-recovery-cli.ts
+│   │   │   ├── DisasterRecoveryManager.ts
+│   │   │   ├── IMPLEMENTATION_COMPLETE.md
+│   │   │   ├── index.ts
+│   │   │   ├── package-scripts.json
+│   │   │   ├── README.md
+│   │   │   ├── scripts/
+│   │   │   │   ├── activate-replica.sh
+│   │   │   │   ├── restore-config.sh
+│   │   │   │   ├── restore-original-db.sh
+│   │   │   │   ├── restore-pre-recovery-backup.sh
+│   │   │   │   ├── restore-primary-region.sh
+│   │   ├── docs/
+│   │   │   ├── kenya-land-verification.md
+│   │   │   ├── operational-excellence-guide.md
+│   │   │   ├── production-deployment-checklist.md
+│   │   ├── examples/
+│   │   │   ├── production-setup.ts
+│   │   ├── health/
+│   │   │   ├── DatabaseHealthMonitor.ts
+│   │   │   ├── health-monitor.ts
+│   │   │   ├── index.ts
 │   │   ├── index.ts
 │   │   ├── init.ts
-│   │   ├── integration.ts
+│   │   ├── integration/
+│   │   │   ├── integration-cli.ts
+│   │   │   ├── integration-test-runner.ts
+│   │   │   ├── ProductionReadinessAssessment.ts
+│   │   │   ├── run-production-assessment.ts
+│   │   │   ├── simple-assessment.cjs
+│   │   │   ├── SystemIntegrationValidator.ts
+│   │   ├── MIGRATION_SUMMARY.md
+│   │   ├── migration-plan.md
+│   │   ├── migrations/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── integration.test.ts
+│   │   │   │   ├── migration-manager.test.ts
+│   │   │   │   ├── migrations/
+│   │   │   │   ├── test-migration.ts
+│   │   │   │   ├── test-scripts.test.ts
+│   │   │   ├── _legacy_backup/
+│   │   │   ├── 0000_daffy_skrulls.sql
+│   │   │   ├── analytics/
+│   │   │   │   ├── 001_create_analytics_tables.sql
+│   │   │   │   ├── index.ts
+│   │   │   ├── communication/
+│   │   │   │   ├── 001_create_communication_tables.sql
+│   │   │   │   ├── index.ts
+│   │   │   ├── core/
+│   │   │   │   ├── 001_create_comprehensive_tables.sql
+│   │   │   │   ├── files/
+│   │   │   │   ├── meta/
+│   │   │   │   ├── README.md
+│   │   │   ├── fraud/
+│   │   │   │   ├── 001_create_fraud_detection_tables.sql
+│   │   │   │   ├── index.ts
+│   │   │   ├── index.ts
+│   │   │   ├── migration-cli.ts
+│   │   │   ├── migration-executor.ts
+│   │   │   ├── migration-loader.ts
+│   │   │   ├── migration-manager.ts
+│   │   │   ├── migration-registry.ts
+│   │   │   ├── performance/
+│   │   │   │   ├── 001_create_performance_indexes.sql
+│   │   │   ├── README.md
+│   │   │   ├── trust/
+│   │   │   │   ├── 001_create_trust_system_tables.sql
+│   │   │   │   ├── index.ts
+│   │   │   ├── update-package-scripts.ts
+│   │   │   ├── verification/
+│   │   │   │   ├── 001_create_land_verification_tables.sql
+│   │   │   │   ├── index.ts
+│   │   ├── OPTIMIZED_STRUCTURE.md
+│   │   ├── performance/
+│   │   │   ├── index.ts
+│   │   │   ├── LoadTestingFramework.ts
+│   │   │   ├── PerformanceCertificationSystem.ts
+│   │   │   ├── performance-cli.ts
+│   │   │   ├── PerformanceMonitoringDashboard.ts
+│   │   ├── PRODUCTION_DEPLOYMENT_GUIDE.md
 │   │   ├── README.md
+│   │   ├── replication/
+│   │   │   ├── ConnectionRouter.ts
+│   │   │   ├── docker-compose.ha.yml
+│   │   │   ├── FailoverManager.ts
+│   │   │   ├── haproxy.cfg
+│   │   │   ├── pg_hba.conf
+│   │   │   ├── postgresql-primary.conf
+│   │   │   ├── postgresql-replica.conf
+│   │   │   ├── ReplicationManager.ts
+│   │   │   ├── scripts/
+│   │   │   │   ├── 01-setup-replication.sh
+│   │   │   ├── setup-ha.ts
+│   │   ├── schemas/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── schema-manager.test.ts
+│   │   │   │   ├── validation.test.ts
+│   │   │   ├── analytics/
+│   │   │   │   ├── index.ts
+│   │   │   ├── communication/
+│   │   │   │   ├── index.ts
+│   │   │   ├── consolidated.ts
+│   │   │   ├── core/
+│   │   │   │   ├── index.ts
+│   │   │   ├── fraud/
+│   │   │   │   ├── index.ts
+│   │   │   ├── index.ts
+│   │   │   ├── README.md
+│   │   │   ├── trust/
+│   │   │   │   ├── index.ts
+│   │   │   ├── validation.ts
+│   │   │   ├── verification/
+│   │   │   │   ├── index.ts
+│   │   ├── scripts/
+│   │   │   ├── cleanup-redundant-files.ts
+│   │   │   ├── consolidate-database-files.ts
+│   │   │   ├── consolidate-database-infrastructure.ts
+│   │   │   ├── consolidate-schemas.ts
+│   │   │   ├── database-setup/
+│   │   │   │   ├── initialize-database.ts
+│   │   │   ├── data-pipeline.ts
+│   │   │   ├── deploy.ts
+│   │   │   ├── deploy-land-verification.ts
+│   │   │   ├── execute-production-deployment.ts
+│   │   │   ├── load-data.ts
+│   │   │   ├── remove-empty-dirs.ts
+│   │   │   ├── reset.ts
+│   │   │   ├── run-disaster-recovery-test.ts
+│   │   │   ├── run-performance-certification.ts
+│   │   │   ├── run-production-readiness-assessment.ts
+│   │   │   ├── run-security-validation.ts
+│   │   │   ├── seed-data.ts
+│   │   │   ├── setup-database.ts
+│   │   │   ├── status.ts
+│   │   │   ├── test-connection.ts
+│   │   │   ├── test-migration-system.ts
+│   │   │   ├── test-schema-management.ts
+│   │   │   ├── test-setup.ts
+│   │   │   ├── unified-data-generation.ts
+│   │   │   ├── validate.ts
+│   │   │   ├── validate-consolidation.ts
+│   │   ├── scripts-evaluation.md
+│   │   ├── security/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── SecuritySystem.test.ts
+│   │   │   ├── ComplianceManager.ts
+│   │   │   ├── index.ts
+│   │   │   ├── security-cli.ts
+│   │   │   ├── SecurityMonitor.ts
+│   │   │   ├── SecurityReporting.ts
+│   │   │   ├── SecuritySystem.ts
+│   │   │   ├── VulnerabilityScanner.ts
+│   │   ├── seeds/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── database-seeder.test.ts
+│   │   │   │   ├── UnifiedDataGenerator.test.ts
+│   │   │   ├── database-seeder.ts
+│   │   │   ├── generators/
+│   │   │   │   ├── checkpoint-manager.ts
+│   │   │   │   ├── community-insights-generator.py
+│   │   │   │   ├── fraud_analysis_report.json
+│   │   │   │   ├── fraud-reports-generator.py
+│   │   │   │   ├── fraud-simulator.py
+│   │   │   │   ├── fraudulent_property_dataset.json
+│   │   │   │   ├── fraudulent_transaction_dataset.json
+│   │   │   │   ├── fraudulent_user_dataset.json
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── integrate-data.ts
+│   │   │   │   ├── KenyanDataGenerator.ts
+│   │   │   │   ├── land-verification-generator.py
+│   │   │   │   ├── optimized_land_dataset.json
+│   │   │   │   ├── optimized_land_dataset_statistics.json
+│   │   │   │   ├── property_dataset.json
+│   │   │   │   ├── property_statistics.json
+│   │   │   │   ├── property-generator.py
+│   │   │   │   ├── README.md
+│   │   │   │   ├── transaction_dataset.json
+│   │   │   │   ├── user_dataset.json
+│   │   │   │   ├── user_statistics.json
+│   │   │   │   ├── user-generator.py
+│   │   │   ├── index.ts
+│   │   │   ├── kenyan-data-generator.ts
+│   │   │   ├── land-verification.ts
+│   │   │   ├── land-verification-seed.ts
+│   │   │   ├── land-verification-system.ts
+│   │   │   ├── README.md
+│   │   │   ├── sample-ai-data.ts
+│   │   │   ├── seed-kenya-properties.ts
+│   │   │   ├── UnifiedDataGenerator.ts
+│   │   ├── service.ts
+│   │   ├── types/
+│   │   │   ├── database.types.ts
+│   │   │   ├── index.ts
+│   │   ├── utils/
+│   │   │   ├── analyzers/
+│   │   │   │   ├── index.ts
+│   │   │   ├── database-utils.ts
+│   │   │   ├── generators/
+│   │   │   │   ├── __tests__/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── kenyan-data-generator.ts
+│   │   │   │   ├── README.md
+│   │   │   │   ├── unified-generator.ts
+│   │   │   ├── index.ts
+│   │   │   ├── migration-tools/
+│   │   │   │   ├── consolidate-schemas.ts
+│   │   │   │   ├── database-manager.ts
+│   │   │   │   ├── fix-database.ts
+│   │   │   │   ├── generate-test-chunks.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── inspect-schema.ts
+│   │   │   │   ├── migrate-existing-properties.ts
+│   │   │   │   ├── quality-gates.ts
+│   │   │   │   ├── reset-and-create.ts
+│   │   │   │   ├── robust-batch-loader.ts
+│   │   │   │   ├── rollback-migration.ts
+│   │   │   │   ├── run-migration.ts
+│   │   │   │   ├── validate-migration.ts
+│   │   │   ├── QueryOptimizer.ts
+│   │   │   ├── validators/
+│   │   │   │   ├── index.ts
 │   ├── deduplication/
 │   │   ├── __tests__/
 │   │   │   ├── deduplication-middleware.integration.test.ts
@@ -933,11 +941,13 @@ server/
 │   ├── community-intelligence.routes.ts
 │   ├── community-resources.routes.ts
 │   ├── community-trust-routes.ts
+│   ├── contact.routes.ts
 │   ├── demo-auth-routes.ts
 │   ├── document-verification.routes.ts
 │   ├── email-routes.ts
 │   ├── fraud-intelligence.routes.ts
 │   ├── index.ts
+│   ├── messaging.routes.ts
 │   ├── metrics.routes.ts
 │   ├── ml-routes.ts
 │   ├── payments.ts
@@ -946,8 +956,10 @@ server/
 │   ├── README.md
 │   ├── README-PropertyRoutes.md
 │   ├── reviews.routes.ts
+│   ├── search.routes.ts
 │   ├── secure-document-routes.ts
 │   ├── seed.ts
+│   ├── trust.routes.ts
 │   ├── users.routes.ts
 │   ├── verification.routes.ts
 ├── search/
@@ -977,18 +989,16 @@ server/
 │   ├── email-service.ts
 │   ├── file-storage-service.ts
 │   ├── FraudIntelligenceService.ts
+│   ├── MessagingService.ts
 │   ├── mpesa-service.ts
-│   ├── mpesa-service-enhanced.ts
 │   ├── notification-service.ts
 │   ├── ProfessionalService.ts
 │   ├── PropertyService.ts
-│   ├── README-email-service.md
-│   ├── README-PropertyService.md
-│   ├── README-VerificationService.md
 │   ├── ReviewService.ts
 │   ├── TrustIntegrationService.ts
 │   ├── UserService.ts
 │   ├── VerificationService.ts
+│   ├── WebSocketService.ts
 ├── shared/
 │   ├── community-trust-schema.ts
 │   ├── email-types.ts
@@ -1049,6 +1059,7 @@ server/
 │   ├── auth.types.ts
 │   ├── fraud.types.ts
 │   ├── index.ts
+│   ├── messaging.types.ts
 │   ├── property.types.ts
 │   ├── review.types.ts
 │   ├── user.types.ts
@@ -1119,6 +1130,7 @@ src/
 │   │   ├── __tests__/
 │   │   │   ├── Login.test.tsx
 │   │   │   ├── Register.test.tsx
+│   │   ├── ForgotPassword.tsx
 │   │   ├── Login.tsx
 │   │   ├── Register.tsx
 │   ├── services/
@@ -1129,16 +1141,25 @@ src/
 │   ├── components/
 │   │   ├── MessageComposer.tsx
 │   │   ├── MessageList.tsx
+│   │   ├── MessageThread.tsx
+│   │   ├── NotificationCenter.tsx
 │   │   ├── NotificationSystem.tsx
 │   │   ├── RealTimeNotifications.tsx
+│   ├── context/
+│   │   ├── CommunicationContext.tsx
 │   ├── hooks/
 │   │   ├── useMessages.ts
+│   │   ├── useMessaging.ts
+│   │   ├── useNotifications.ts
 │   ├── index.ts
 │   ├── pages/
 │   │   ├── Inbox.tsx
+│   │   ├── MessageCenter.tsx
+│   │   ├── Notifications.tsx
 │   ├── services/
 │   │   ├── communication-business-logic.ts
 │   │   ├── DocumentCommunicationIntegration.ts
+│   │   ├── WebSocketManager.ts
 │   ├── types/
 ├── config/
 │   ├── external-dependencies.ts
@@ -1150,6 +1171,20 @@ src/
 │   │   ├── data-validation.ts
 │   │   ├── queryClient.ts
 │   │   ├── request-manager.ts
+│   ├── audit/
+│   │   ├── AuditReporter.ts
+│   │   ├── cli.ts
+│   │   ├── config.ts
+│   │   ├── EnhancedAuditRunner.ts
+│   │   ├── index.ts
+│   │   ├── LinkValidator.ts
+│   │   ├── plugins/
+│   │   │   ├── AccessibilityPlugin.ts
+│   │   │   ├── PerformancePlugin.ts
+│   │   │   ├── SecurityPlugin.ts
+│   │   ├── README.md
+│   │   ├── RouteAnalyzer.ts
+│   │   ├── UIAuditSystem.ts
 │   ├── cache/
 │   │   ├── query-cache.ts
 │   ├── hooks/
@@ -1253,15 +1288,18 @@ src/
 │   │   ├── HelpDocumentationService.ts
 ├── lib/
 ├── main.tsx
+├── monitoring/
+│   ├── components/
+│   │   ├── HealthDashboard.tsx
+│   ├── index.ts
+│   ├── pages/
+│   │   ├── MonitoringPage.tsx
 ├── property/
-│   ├── COMPARE-INTEGRATION.md
 │   ├── components/
 │   │   ├── __tests__/
 │   │   │   ├── accessibility.test.tsx
-│   │   │   ├── ListingCard.test.tsx
+│   │   │   ├── ListingCard.grid.test.tsx
 │   │   │   ├── PropertyCard.test.tsx
-│   │   │   ├── PropertyGallery.performance.test.tsx
-│   │   │   ├── PropertyGallery.test.tsx
 │   │   │   ├── PropertyListing.comprehensive.test.tsx
 │   │   │   ├── PropertyListing.integration.test.tsx
 │   │   │   ├── PropertyListing.test.tsx
@@ -1272,38 +1310,47 @@ src/
 │   │   │   ├── PropertyReviews.test.tsx
 │   │   ├── CompareBar.tsx
 │   │   ├── CompareModal.tsx
-│   │   ├── COMPONENT_CLEANUP_SUMMARY.md
-│   │   ├── COMPONENT_INTEGRATION_ANALYSIS.md
 │   │   ├── EnhancedLandCard.tsx
-│   │   ├── ListingCard.tsx
 │   │   ├── PerformanceTestPanel.tsx
-│   │   ├── PROPERTY_GALLERY_MIGRATION.md
-│   │   ├── PropertyCard.tsx
 │   │   ├── PropertyCardShowcase.tsx
-│   │   ├── PropertyGallery.tsx
 │   │   ├── PropertyListingWizard.tsx
 │   │   ├── PropertyMap.tsx
 │   │   ├── PropertyReviews.tsx
 │   │   ├── PropertyTestComponent.tsx
-│   │   ├── wizard-steps/
-│   │   │   ├── BasicDetailsStep.tsx
-│   │   │   ├── FeaturesStep.tsx
-│   │   │   ├── ImagesStep.tsx
+│   │   ├── wizard/
+│   │   │   ├── config.ts
+│   │   │   ├── examples/
+│   │   │   │   ├── WizardExamples.tsx
 │   │   │   ├── index.ts
-│   │   │   ├── LocationStep.tsx
-│   │   │   ├── PreviewStep.tsx
-│   │   │   ├── PricingStep.tsx
+│   │   │   ├── README.md
+│   │   │   ├── steps/
+│   │   │   │   ├── AdaptedBasicDetailsStep.tsx
+│   │   │   │   ├── AdaptedFeaturesStep.tsx
+│   │   │   │   ├── AdaptedImagesStep.tsx
+│   │   │   │   ├── AdaptedLocationStep.tsx
+│   │   │   │   ├── AdaptedPreviewStep.tsx
+│   │   │   │   ├── AdaptedPricingStep.tsx
+│   │   │   │   ├── DocumentationStep.tsx
+│   │   │   │   ├── index.ts
+│   │   │   ├── types.ts
+│   │   │   ├── UnifiedPropertyWizard.tsx
 │   ├── contexts/
-│   │   ├── CompareContext.tsx
+│   │   ├── __tests__/
+│   │   │   ├── compare-context-removal.test.tsx
+│   │   ├── ARCHITECTURE.md
+│   │   ├── COMPARE_CONTEXT_REMOVAL_SUMMARY.md
+│   │   ├── index.ts
 │   │   ├── PropertyContext.tsx
 │   ├── hooks/
+│   │   ├── __tests__/
+│   │   │   ├── consolidation-validation.test.ts
+│   │   ├── MIGRATION_GUIDE.md
+│   │   ├── useConsolidatedPropertySearch.ts
 │   │   ├── useLandProperty.ts
 │   │   ├── useProperty.ts
 │   │   ├── usePropertySearch.ts
+│   │   ├── useUnifiedProperty.ts
 │   ├── index.ts
-│   ├── INTEGRATION-FIXES.md
-│   ├── LINTING-FIXES.md
-│   ├── NAVIGATION-IMPLEMENTATION.md
 │   ├── pages/
 │   │   ├── __tests__/
 │   │   │   ├── ListProperty.test.tsx
@@ -1311,17 +1358,14 @@ src/
 │   │   │   ├── PropertyCompare.comprehensive.test.tsx
 │   │   │   ├── PropertyDetails.comprehensive.test.tsx
 │   │   │   ├── PropertyDetails.test.tsx
-│   │   ├── CommercialProperties.migrated.tsx
 │   │   ├── CommercialProperties.tsx
 │   │   ├── index.ts
 │   │   ├── LandDetails.tsx
-│   │   ├── Lands.migrated.tsx
+│   │   ├── LandRedirect.tsx
 │   │   ├── Lands.tsx
 │   │   ├── ListProperty.tsx
-│   │   ├── PropertiesResidential.migrated.tsx
 │   │   ├── PropertiesResidential.tsx
 │   │   ├── PropertyCompare.tsx
-│   │   ├── PropertyDetails.migrated.tsx
 │   │   ├── PropertyDetails.tsx
 │   │   ├── PropertyEdit.tsx
 │   │   ├── PropertyMap.tsx
@@ -1329,9 +1373,6 @@ src/
 │   │   ├── PropertyPhotos.tsx
 │   │   ├── PropertyVerification.tsx
 │   │   ├── PropertyWizard.tsx
-│   │   ├── VerifyProperty.tsx
-│   ├── PERFORMANCE-IMPROVEMENTS.md
-│   ├── README-Images.md
 │   ├── services/
 │   │   ├── mock-land-data.ts
 │   │   ├── property-api.ts
@@ -1343,7 +1384,6 @@ src/
 │   ├── types/
 │   │   ├── index.ts
 │   │   ├── property.types.ts
-│   ├── TYPESCRIPT-FIXES.md
 │   ├── utils/
 │   │   ├── performanceMonitor.ts
 │   │   ├── propertyImages.ts
@@ -1353,13 +1393,15 @@ src/
 │   ├── components/
 │   │   ├── __tests__/
 │   │   │   ├── SearchBar.test.tsx
-│   │   ├── AdvancedSearch.tsx
-│   │   ├── PropertySearch.tsx
+│   │   ├── ConsolidatedSearch.tsx
+│   │   ├── index.ts
 │   │   ├── SearchBar.tsx
-│   │   ├── SearchDebug.tsx
-│   │   ├── SearchDebugger.tsx
 │   │   ├── SearchFilters.tsx
+│   ├── CONSOLIDATION_SUMMARY.md
+│   ├── examples/
+│   │   ├── SearchExample.tsx
 │   ├── hooks/
+│   │   ├── index.ts
 │   │   ├── useSearch.ts
 │   ├── index.ts
 │   ├── pages/
@@ -1370,6 +1412,7 @@ src/
 ├── shared/
 │   ├── components/
 │   │   ├── __tests__/
+│   │   │   ├── PropertyDataGrid.test.tsx
 │   │   │   ├── QueryErrorBoundary.test.tsx
 │   │   ├── AfricaCoverageMap.tsx
 │   │   ├── b2b/
@@ -1388,6 +1431,10 @@ src/
 │   │   ├── CommunityInsights.tsx
 │   │   ├── DemoLoginHelper.tsx
 │   │   ├── EnhancedVirtualizedPropertyList.tsx
+│   │   ├── ErrorBoundary.tsx
+│   │   ├── ErrorFeedback.tsx
+│   │   ├── error-handling/
+│   │   │   ├── index.ts
 │   │   ├── examples/
 │   │   │   ├── EnhancedHooksExample.tsx
 │   │   ├── fallbacks/
@@ -1399,12 +1446,14 @@ src/
 │   │   │   ├── __tests__/
 │   │   │   │   ├── FormField.test.tsx
 │   │   │   ├── FileUpload.tsx
+│   │   │   ├── FileUploadField.tsx
 │   │   │   ├── FormField.tsx
 │   │   ├── GlobalPerformanceTestPanel.tsx
 │   │   ├── hero/
 │   │   │   ├── ConversionHero.tsx
 │   │   │   ├── EnhancedHero.tsx
 │   │   ├── images/
+│   │   │   ├── EnhancedImageShowcase.tsx
 │   │   │   ├── ImageGallery.module.css
 │   │   │   ├── ImageGallery.tsx
 │   │   │   ├── index.ts
@@ -1433,6 +1482,8 @@ src/
 │   │   │   ├── SectionDivider.tsx
 │   │   ├── lazy/
 │   │   │   ├── LazyComponents.tsx
+│   │   ├── LazyComponents.tsx
+│   │   ├── LoadingStates.tsx
 │   │   ├── navigation/
 │   │   │   ├── __tests__/
 │   │   │   │   ├── accessibility.test.tsx
@@ -1466,18 +1517,35 @@ src/
 │   │   │   ├── __tests__/
 │   │   │   │   ├── PropertyListingPage.test.tsx
 │   │   │   ├── filters/
+│   │   │   │   ├── AllPropertiesFilters.tsx
 │   │   │   │   ├── BasePropertyFilters.tsx
 │   │   │   │   ├── CommercialFilters.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── LandFilters.tsx
 │   │   │   │   ├── ResidentialFilters.tsx
 │   │   │   ├── index.ts
 │   │   │   ├── PhotoManagementButton.tsx
 │   │   │   ├── PropertyArchitectureComparison.tsx
+│   │   │   ├── PropertyCard.tsx
+│   │   │   ├── PropertyCardWithImageManagement.example.tsx
 │   │   │   ├── PropertyDataGrid.tsx
 │   │   │   ├── PropertyListingPage.tsx
 │   │   │   ├── PropertySkeletonGrid.tsx
+│   │   │   ├── shared/
+│   │   │   │   ├── examples/
+│   │   │   │   ├── FINAL_STATUS.md
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── PropertyFeatures.tsx
+│   │   │   │   ├── PropertyImageSection.tsx
+│   │   │   │   ├── QuickActionsOverlay.tsx
+│   │   │   │   ├── REFACTORING_COMPLETE.md
+│   │   │   │   ├── REFACTORING_GUIDE.md
+│   │   │   ├── UnifiedPropertyCard.tsx
 │   │   ├── QueryErrorBoundary.tsx
 │   │   ├── RouteRedirect.tsx
 │   │   ├── ServiceCategories.tsx
+│   │   ├── skeletons/
+│   │   │   ├── PropertyDetailsSkeleton.tsx
 │   │   ├── Testimonials.tsx
 │   │   ├── TrustIndicators.tsx
 │   │   ├── ui/
@@ -1519,7 +1587,6 @@ src/
 │   │   │   ├── logo.tsx
 │   │   │   ├── menubar.tsx
 │   │   │   ├── navigation-menu.tsx
-│   │   │   ├── pagination.tsx
 │   │   │   ├── popover.tsx
 │   │   │   ├── progress.tsx
 │   │   │   ├── radio-group.tsx
@@ -1559,42 +1626,84 @@ src/
 │   │   ├── memory-optimization-guide.md
 │   ├── hooks/
 │   │   ├── __tests__/
+│   │   │   ├── accessibility-integration.test.tsx
+│   │   │   ├── backward-compatibility.test.tsx
+│   │   │   ├── feature-parity.test.ts
+│   │   │   ├── feature-parity.test.tsx
+│   │   │   ├── integration.test.tsx
+│   │   │   ├── performance-validation.test.ts
+│   │   │   ├── test-config.ts
+│   │   │   ├── useAccessibility.test.tsx
 │   │   │   ├── useDebounce.test.ts
 │   │   │   ├── useFileUpload.test.ts
 │   │   │   ├── useForm.test.tsx
 │   │   │   ├── useFormPersistence.test.ts
 │   │   │   ├── useFormValidation.test.ts
+│   │   │   ├── useImageGallery.test.ts
+│   │   │   ├── usePropertyCardActions.test.ts
+│   │   │   ├── usePropertyFormatting.test.ts
+│   │   │   ├── useSafeQuery.test.ts
 │   │   │   ├── use-toast.test.ts
+│   │   ├── configs/
+│   │   │   ├── formValidationConfigs.ts
+│   │   │   ├── hookConfigs.ts
+│   │   │   ├── propertyQueryConfigs.ts
+│   │   ├── CONSOLIDATION_LOG.md
+│   │   ├── examples/
+│   │   │   ├── configurationExamples.ts
 │   │   ├── images/
 │   │   │   ├── usePropertyImageUpload.ts
 │   │   ├── index.ts
-│   │   ├── useAccessibility.ts
+│   │   ├── migration/
+│   │   │   ├── COMPREHENSIVE_MIGRATION_GUIDE.md
+│   │   │   ├── MIGRATION_CHECKLIST.md
+│   │   │   ├── property-hooks-migration.md
+│   │   │   ├── README.md
+│   │   │   ├── TROUBLESHOOTING_GUIDE.md
+│   │   ├── presets/
+│   │   │   ├── commonHookPresets.ts
+│   │   ├── QUALITY_STANDARDS.md
+│   │   ├── SESSION_SUMMARY.md
+│   │   ├── STANDARDIZATION_SUMMARY.md
 │   │   ├── useAccessibility.tsx
 │   │   ├── useB2BEntryPoints.ts
 │   │   ├── useB2BMessaging.ts
 │   │   ├── useCMS.ts
 │   │   ├── useCompareError.ts
-│   │   ├── useComponentPerformance.ts
+│   │   ├── useComponentPerformance.tsx
+│   │   ├── useConfigurableHook.ts
 │   │   ├── useDebounce.ts
+│   │   ├── useDebouncedCallback.ts
+│   │   ├── useEnhancedImageGallery.ts
+│   │   ├── useErrorRecovery.ts
 │   │   ├── useFileUpload.ts
 │   │   ├── useFilterState.ts
-│   │   ├── useForm.ts
 │   │   ├── useFormValidation.ts
 │   │   ├── useGeolocation.ts
-│   │   ├── useInfiniteScroll.ts
+│   │   ├── useHealthMonitoring.ts
+│   │   ├── useImageGallery.ts
 │   │   ├── useMemoryOptimization.ts
 │   │   ├── use-mobile.tsx
 │   │   ├── useNavigationSpacing.ts
 │   │   ├── useOperationTracking.ts
 │   │   ├── useOptimisticMutation.ts
-│   │   ├── usePaginatedQuery.ts
+│   │   ├── usePagination.ts
 │   │   ├── usePaymentGuidance.ts
+│   │   ├── usePerformanceOptimization.ts
 │   │   ├── usePolling.ts
 │   │   ├── usePropertyActions.ts
+│   │   ├── usePropertyCardActions.ts
+│   │   ├── usePropertyCardState.ts
+│   │   ├── usePropertyCompareActions.ts
+│   │   ├── usePropertyFormatting.ts
 │   │   ├── useSafeQuery.ts
+│   │   ├── useSecurity.ts
 │   │   ├── use-toast.ts
-│   │   ├── useVirtualizationHelpers.ts
 │   │   ├── useWebSocket.ts
+│   │   ├── utils/
+│   │   │   ├── deprecation.ts
+│   │   │   ├── init.ts
+│   │   │   ├── migration.ts
 │   ├── index.ts
 │   ├── lib/
 │   │   ├── utils.ts
@@ -1604,6 +1713,7 @@ src/
 │   │   │   ├── Fraud-resources.test.tsx
 │   │   │   ├── PropertiesResidential.test.tsx
 │   │   ├── About.tsx
+│   │   ├── AdminDashboard.tsx
 │   │   ├── ApiDemo.tsx
 │   │   ├── Blog.tsx
 │   │   ├── BlogPost.tsx
@@ -1611,11 +1721,16 @@ src/
 │   │   ├── ComingSoon.tsx
 │   │   ├── Community.tsx
 │   │   ├── CommunityAndResources.tsx
+│   │   ├── CommunityIntelligence.tsx
 │   │   ├── Contact.tsx
 │   │   ├── ContactSales.tsx
 │   │   ├── Cookies.tsx
 │   │   ├── Demo.tsx
 │   │   ├── DeveloperDashboard.tsx
+│   │   ├── DocumentsPage.tsx
+│   │   ├── DocumentUpload.tsx
+│   │   ├── DocumentViewer.tsx
+│   │   ├── ExpertCoordination.tsx
 │   │   ├── Features.tsx
 │   │   ├── FindProfessionals.tsx
 │   │   ├── Fraud-resources.tsx
@@ -1623,16 +1738,17 @@ src/
 │   │   ├── Help.tsx
 │   │   ├── Home.tsx
 │   │   ├── index.ts
+│   │   ├── LocationServices.tsx
 │   │   ├── MVP-Demo.tsx
 │   │   ├── NavigationTest.tsx
 │   │   ├── NotFound.tsx
 │   │   ├── OurStory.tsx
 │   │   ├── Partners.tsx
+│   │   ├── PhysicalVerification.tsx
 │   │   ├── PressMedia.tsx
 │   │   ├── Pricing.tsx
 │   │   ├── Privacy.tsx
 │   │   ├── Properties.tsx
-│   │   ├── PropertiesNew.tsx
 │   │   ├── Resources.tsx
 │   │   ├── Security.tsx
 │   │   ├── Services.tsx
@@ -1643,9 +1759,13 @@ src/
 │   │   │   ├── PropertyDevelopers.tsx
 │   │   │   ├── PropertySellers.tsx
 │   │   │   ├── RealEstateAgents.tsx
+│   │   ├── SystemMonitoring.tsx
 │   │   ├── Terms.tsx
+│   ├── performance/
+│   │   ├── index.ts
 │   ├── schema.ts
-│   ├── schema-compat.ts
+│   ├── security/
+│   │   ├── index.ts
 │   ├── services/
 │   │   ├── __tests__/
 │   │   │   ├── api-client.integration.test.ts
@@ -1656,21 +1776,45 @@ src/
 │   │   │   ├── data-transformation.test.ts
 │   │   │   ├── websocket-integration.test.ts
 │   │   │   ├── websocket-simple.test.ts
+│   │   ├── AlertingService.ts
 │   │   ├── api-client.ts
+│   │   ├── AuditLogService.ts
+│   │   ├── AuthTokenService.ts
+│   │   ├── CacheService.ts
+│   │   ├── DataMigrationService.ts
+│   │   ├── ErrorHandlingService.ts
+│   │   ├── FormService.ts
+│   │   ├── HealthCheckService.ts
 │   │   ├── images/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── service-consolidation.test.ts
+│   │   │   ├── CONSOLIDATION_SUMMARY.md
+│   │   │   ├── core/
+│   │   │   │   ├── ImageServiceCore.ts
 │   │   │   ├── ImageMetadataService.ts
+│   │   │   ├── ImageServiceOrchestrator.ts
+│   │   │   ├── index.ts
+│   │   │   ├── LegacyServiceAdapter.ts
+│   │   │   ├── MIGRATION_GUIDE.md
 │   │   │   ├── PropertyImageUploadCoordinator.ts
+│   │   │   ├── PropertyImageUploadService.ts
 │   │   │   ├── PropertyImageValidationService.ts
 │   │   │   ├── PropertyImageWorkflowManager.ts
 │   │   │   ├── UnifiedImageServiceFactory.ts
-│   │   ├── propertyApi.ts
+│   │   │   ├── USAGE_EXAMPLES.md
+│   │   ├── PerformanceService.ts
+│   │   ├── RateLimitService.ts
+│   │   ├── SearchService.ts
+│   │   ├── ValidationService.ts
 │   ├── styles/
 │   │   ├── css.d.ts
-│   │   ├── DESIGN_SYSTEM_MIGRATION.md
 │   │   ├── design-system.css
 │   │   ├── globals.css
-│   │   ├── optimized-design-system (1).css
-│   │   ├── optimized-globals.css
+│   ├── testing/
+│   │   ├── ApiTestUtils.ts
+│   │   ├── E2ETestUtils.ts
+│   │   ├── index.ts
+│   │   ├── TestUtils.ts
 │   ├── test-utils/
 │   │   ├── __tests__/
 │   │   │   ├── accessibility-basic.test.tsx
@@ -1708,6 +1852,7 @@ src/
 │   │   ├── foundation.test.tsx
 │   │   ├── index.ts
 │   │   ├── memory-manager.ts
+│   │   ├── msw-browser.ts
 │   │   ├── msw-server.ts
 │   │   ├── patterns.ts
 │   │   ├── performance-testing.ts
@@ -1729,6 +1874,7 @@ src/
 │   │   │   ├── unified.ts
 │   │   ├── index.ts
 │   │   ├── property.ts
+│   │   ├── search.ts
 │   │   ├── service-interfaces.ts
 │   ├── utils/
 │   │   ├── __tests__/
@@ -1741,6 +1887,7 @@ src/
 │   │   ├── enhanced-cache-manager.ts
 │   │   ├── error-handling.ts
 │   │   ├── errors.ts
+│   │   ├── formatters.ts
 │   │   ├── form-validation.ts
 │   │   ├── globalPerformanceMonitor.ts
 │   │   ├── images/
@@ -1758,6 +1905,7 @@ src/
 │   │   ├── test-helpers.tsx
 │   │   ├── toast-utils.ts
 │   │   ├── validation.ts
+├── test-new-pages.tsx
 ├── test-safe-hooks.tsx
 ├── trust/
 │   ├── components/
@@ -1812,6 +1960,7 @@ src/
 │   │   ├── useUser.ts
 │   ├── index.ts
 │   ├── pages/
+│   │   ├── Activity.tsx
 │   │   ├── Dashboard.tsx
 │   │   ├── index.ts
 │   │   ├── Team.tsx
@@ -1828,12 +1977,12 @@ src/
 ├── vite-env.d.ts
 srclib/
 srcsharedtest-utils/
-STYLE_CONSOLIDATION_SUMMARY.md
 tailwind.config.ts
 temp-files/
 ├── eslint-fixes-summary.md
 ├── visual-improvements-summary.md
 test-integration-quick.js
+test-property-endpoints.cjs
 test-property-hook.tsx
 test-results/
 ├── e2e-junit.xml
@@ -1852,6 +2001,9 @@ tests/
 │   ├── review-workflows.spec.ts
 │   ├── user-profile-workflows.spec.ts
 ├── integration/
+│   ├── api/
+│   │   ├── auth.test.ts
+├── setup.ts
 ├── test-all-routes.ts
 ├── test-app-startup.ts
 ├── test-db.cjs
@@ -1862,6 +2014,8 @@ tests/
 ├── test-integration-simple.js
 ├── test-with-jsdom.ts
 ├── unit/
+│   ├── services/
+│   │   ├── CacheService.test.ts
 ├── validate-integration.js
 ├── validation/
 ├── visual/
@@ -1878,12 +2032,8 @@ tests/
 test-server.js
 test-server-start.js
 theme.json
-tsconfig.deploy.json
-tsconfig.dev.json
-tsconfig.infrastructure.json
 tsconfig.json
 tsconfig.test.json
-tsx
 uploads/
 ├── documents/
 │   ├── file_1754021814606_517d49feb639eee5.pdf
@@ -1903,30 +2053,8 @@ uploads/
 ├── tmp-1-56561752646317955
 ├── tmp-2-56561752646341431
 vercel.json
-vite
-vite.config.external.ts
 vite.config.ts
-vite.minimal.config.ts
-vitest.chunk-1.config.ts
-vitest.chunk-10.config.ts
-vitest.chunk-11.config.ts
-vitest.chunk-12.config.ts
-vitest.chunk-13.config.ts
-vitest.chunk-14.config.ts
-vitest.chunk-15.config.ts
-vitest.chunk-16.config.ts
-vitest.chunk-17.config.ts
-vitest.chunk-18.config.ts
-vitest.chunk-19.config.ts
-vitest.chunk-2.config.ts
-vitest.chunk-3.config.ts
-vitest.chunk-4.config.ts
-vitest.chunk-5.config.ts
-vitest.chunk-6.config.ts
-vitest.chunk-7.config.ts
-vitest.chunk-8.config.ts
-vitest.chunk-9.config.ts
 vitest.workspace.ts
 ```
 
-Generated on: Sun, Aug 10, 2025  2:53:08 AM
+Generated on: Sat, Aug 16, 2025  4:08:05 AM

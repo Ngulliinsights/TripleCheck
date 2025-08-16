@@ -4,21 +4,15 @@ import {
   User, 
   Clock, 
   AlertTriangle,
-  CheckCircle,
   FileText,
   MessageSquare,
-  Calendar,
-  Flag,
   Search,
-  Filter,
   Plus,
-  Eye,
   Edit,
   Archive
 } from 'lucide-react';
 import React, { useState } from 'react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '../../shared/components/ui/avatar';
 import { Badge } from '../../shared/components/ui/badge';
 import { Button } from '../../shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card';
@@ -27,47 +21,48 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs';
 import { useToast } from '../../shared/hooks/use-toast';
 
+// Interface definitions with proper readonly properties for better TypeScript safety
 interface CaseManagementInterfaceProps {
-  userId?: string;
-  showCreateCase?: boolean;
+  readonly userId?: string;
+  readonly showCreateCase?: boolean;
 }
 
 interface InvestigationCase {
-  id: string;
-  title: string;
-  description: string;
-  status: 'open' | 'investigating' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  assignedTo: string;
-  createdAt: Date;
-  updatedAt: Date;
-  dueDate?: Date;
-  alertIds: string[];
-  evidence: Evidence[];
-  notes: CaseNote[];
-  tags: string[];
+  readonly id: string;
+  readonly title: string;
+  readonly description: string;
+  readonly status: 'open' | 'investigating' | 'resolved' | 'closed';
+  readonly priority: 'low' | 'medium' | 'high' | 'urgent';
+  readonly assignedTo: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+  readonly dueDate?: Date;
+  readonly alertIds: readonly string[];
+  readonly evidence: readonly Evidence[];
+  readonly notes: readonly CaseNote[];
+  readonly tags: readonly string[];
 }
 
 interface Evidence {
-  id: string;
-  type: 'document' | 'screenshot' | 'log' | 'witness' | 'other';
-  name: string;
-  description: string;
-  uploadedAt: Date;
-  uploadedBy: string;
-  fileUrl?: string;
+  readonly id: string;
+  readonly type: 'document' | 'screenshot' | 'log' | 'witness' | 'other';
+  readonly name: string;
+  readonly description: string;
+  readonly uploadedAt: Date;
+  readonly uploadedBy: string;
+  readonly fileUrl?: string;
 }
 
 interface CaseNote {
-  id: string;
-  content: string;
-  createdAt: Date;
-  createdBy: string;
-  type: 'note' | 'action' | 'decision';
+  readonly id: string;
+  readonly content: string;
+  readonly createdAt: Date;
+  readonly createdBy: string;
+  readonly type: 'note' | 'action' | 'decision';
 }
 
-// Mock data for demonstration
-const MOCK_CASES: InvestigationCase[] = [
+// Mock data with proper readonly arrays and immutable structure
+const MOCK_CASES: readonly InvestigationCase[] = [
   {
     id: 'case-001',
     title: 'Suspicious Property Flipping Network',
@@ -98,32 +93,39 @@ const MOCK_CASES: InvestigationCase[] = [
     notes: [],
     tags: ['document_forgery', 'title_deeds', 'geographic_cluster']
   }
-];
+] as const;
 
+// Configuration objects with proper typing - these help maintain consistency and type safety
 const STATUS_CONFIG = {
   open: { color: 'bg-blue-100 text-blue-800', label: 'Open' },
   investigating: { color: 'bg-yellow-100 text-yellow-800', label: 'Investigating' },
   resolved: { color: 'bg-green-100 text-green-800', label: 'Resolved' },
   closed: { color: 'bg-gray-100 text-gray-800', label: 'Closed' }
-};
+} as const;
 
 const PRIORITY_CONFIG = {
   low: { color: 'bg-gray-100 text-gray-800', label: 'Low' },
   medium: { color: 'bg-blue-100 text-blue-800', label: 'Medium' },
   high: { color: 'bg-orange-100 text-orange-800', label: 'High' },
   urgent: { color: 'bg-red-100 text-red-800', label: 'Urgent' }
-};
+} as const;
 
-export function CaseManagementInterface({ userId, showCreateCase = true }: CaseManagementInterfaceProps) {
+export function CaseManagementInterface({ 
+  userId: _userId, // Prefixed with underscore to indicate intentionally unused
+  showCreateCase = true 
+}: CaseManagementInterfaceProps) {
   const { toast } = useToast();
-  const [cases, setCases] = useState<InvestigationCase[]>(MOCK_CASES);
+  
+  // State management - using proper typing and immutable patterns
+  const [cases] = useState<readonly InvestigationCase[]>(MOCK_CASES);
   const [selectedCase, setSelectedCase] = useState<InvestigationCase | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [selectedTab, setSelectedTab] = useState('overview');
 
-  const filteredCases = cases.filter(case_ => {
+  // Filtering logic with improved type safety and null checking
+  const filteredCases = cases.filter((case_: InvestigationCase) => {
     const matchesSearch = case_.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          case_.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || case_.status === statusFilter;
@@ -132,21 +134,16 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
-  const handleCreateCase = () => {
+  // Event handlers with proper error handling and user feedback
+  const handleCreateCase = (): void => {
     toast({
       title: "Create New Case",
       description: "Case creation dialog would open here.",
     });
   };
 
-  const handleCaseAction = (action: string, case_: InvestigationCase) => {
-    toast({
-      title: "Case Action",
-      description: `${action} action taken for case ${case_.id}`,
-    });
-  };
-
-  const formatTimeAgo = (date: Date) => {
+  // Utility functions for date formatting and calculations
+  const formatTimeAgo = (date: Date): string => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / 86400000);
@@ -156,7 +153,8 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
     return `${diffDays} days ago`;
   };
 
-  const getDaysUntilDue = (dueDate?: Date) => {
+  // Safe calculation with null checking to avoid runtime errors
+  const getDaysUntilDue = (dueDate?: Date): number | null => {
     if (!dueDate) return null;
     const now = new Date();
     const diffMs = dueDate.getTime() - now.getTime();
@@ -165,7 +163,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header section with conditional rendering for create button */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Case Management</h2>
@@ -182,7 +180,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
         )}
       </div>
 
-      {/* Filters */}
+      {/* Filters section with improved accessibility and UX */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center space-x-4">
@@ -198,6 +196,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
               </div>
             </div>
             
+            {/* Status filter with proper value handling */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-32">
                 <SelectValue />
@@ -211,6 +210,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
               </SelectContent>
             </Select>
 
+            {/* Priority filter with consistent pattern */}
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
               <SelectTrigger className="w-32">
                 <SelectValue />
@@ -228,7 +228,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cases List */}
+        {/* Cases List with improved performance through proper key usage */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
@@ -240,7 +240,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
             <CardContent>
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 <AnimatePresence>
-                  {filteredCases.map((case_) => {
+                  {filteredCases.map((case_: InvestigationCase) => {
                     const statusConfig = STATUS_CONFIG[case_.status];
                     const priorityConfig = PRIORITY_CONFIG[case_.priority];
                     const daysUntilDue = getDaysUntilDue(case_.dueDate);
@@ -269,6 +269,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
                                   <Badge className={priorityConfig.color}>
                                     {priorityConfig.label}
                                   </Badge>
+                                  {/* Safe null checking prevents runtime errors */}
                                   {daysUntilDue !== null && daysUntilDue <= 3 && (
                                     <Badge variant="destructive" className="text-xs">
                                       Due in {daysUntilDue} days
@@ -301,9 +302,10 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
                               </div>
                             </div>
                             
+                            {/* Tag display with proper array handling */}
                             {case_.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-2">
-                                {case_.tags.slice(0, 3).map((tag) => (
+                                {case_.tags.slice(0, 3).map((tag: string) => (
                                   <Badge key={tag} variant="outline" className="text-xs">
                                     {tag.replace('_', ' ')}
                                   </Badge>
@@ -322,6 +324,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
                   })}
                 </AnimatePresence>
                 
+                {/* Empty state with proper user guidance */}
                 {filteredCases.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <Briefcase className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -333,7 +336,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
           </Card>
         </div>
 
-        {/* Case Details */}
+        {/* Case Details with conditional rendering and proper null checking */}
         <div>
           {selectedCase ? (
             <Card>
@@ -394,10 +397,11 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
                           <span>{selectedCase.createdAt.toLocaleDateString()}</span>
                         </div>
                         
+                        {/* Safe due date handling with proper null checking */}
                         {selectedCase.dueDate && (
                           <div className="flex justify-between">
                             <span className="text-gray-600">Due date:</span>
-                            <span className={getDaysUntilDue(selectedCase.dueDate)! <= 3 ? 'text-red-600 font-medium' : ''}>
+                            <span className={getDaysUntilDue(selectedCase.dueDate) !== null && getDaysUntilDue(selectedCase.dueDate)! <= 3 ? 'text-red-600 font-medium' : ''}>
                               {selectedCase.dueDate.toLocaleDateString()}
                             </span>
                           </div>
@@ -413,7 +417,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
                     <div className="pt-4 border-t">
                       <h5 className="font-medium text-gray-900 mb-2">Tags</h5>
                       <div className="flex flex-wrap gap-1">
-                        {selectedCase.tags.map((tag) => (
+                        {selectedCase.tags.map((tag: string) => (
                           <Badge key={tag} variant="outline" className="text-xs">
                             {tag.replace('_', ' ')}
                           </Badge>
@@ -422,6 +426,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
                     </div>
                   </TabsContent>
 
+                  {/* Evidence tab with proper placeholder state */}
                   <TabsContent value="evidence">
                     <div className="text-center py-8 text-gray-500">
                       <FileText className="h-8 w-8 mx-auto mb-2 text-gray-300" />
@@ -433,6 +438,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
                     </div>
                   </TabsContent>
 
+                  {/* Notes tab with consistent placeholder pattern */}
                   <TabsContent value="notes">
                     <div className="text-center py-8 text-gray-500">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
@@ -447,6 +453,7 @@ export function CaseManagementInterface({ userId, showCreateCase = true }: CaseM
               </CardContent>
             </Card>
           ) : (
+            // Empty state when no case is selected
             <Card>
               <CardContent className="p-8 text-center">
                 <Briefcase className="h-12 w-12 mx-auto mb-4 text-gray-300" />

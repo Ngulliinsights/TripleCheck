@@ -7,9 +7,7 @@
 import React, { useState, useCallback, useMemo, memo } from "react";
 
 import { usePropertyImageUpload } from "../../hooks/images/usePropertyImageUpload";
-import { PropertyImageUploadCoordinator } from "../../services/images/PropertyImageUploadCoordinator";
-// Removed unused import: PropertyImageValidationService
-import { PropertyImageWorkflowManager } from "../../services/images/PropertyImageWorkflowManager";
+import { getImageServiceOrchestrator } from "../../services/images/ImageServiceOrchestrator";
 import type {
   PropertyImage,
   UploadProgress,
@@ -25,6 +23,29 @@ import type {
 } from "../../types/images";
 import { ImageProcessingError } from "../../types/images";
 import { ImageUtils } from "../../utils/images/unified-utils";
+
+// Define missing types to resolve TypeScript errors
+interface SessionCreationMetadata {
+  fileName: string;
+  fileSize: number;
+  contentType: string;
+  documentType?: DocumentType;
+  landVerificationId?: string;
+}
+
+interface ChunkUploadMetadata {
+  totalChunks: number;
+  chunkIndex: number;
+  fileName: string;
+}
+
+interface AuditEventMetadata {
+  userId?: string;
+  sessionId?: string;
+  imageId?: string;
+  timestamp: Date;
+  metadata?: Record<string, unknown>;
+}
 
 // Enhanced type definitions for better type safety
 interface ExtendedPropertyImage extends PropertyImage {
@@ -67,7 +88,7 @@ const hasDocumentAuthResult = (
 
 // Optimized mock services moved to module level to prevent recreation
 const createOptimizedMockApiClient = () => ({
-  createUploadSession: async (_metadata: Record<string, unknown>) => {
+  createUploadSession: async (metadata: SessionCreationMetadata) => {
     // Reduced timeout for better development experience
     await new Promise((resolve) => setTimeout(resolve, 50));
     return {
@@ -78,7 +99,7 @@ const createOptimizedMockApiClient = () => ({
   uploadChunk: async (
     _sessionId: string,
     _chunk: { data: Blob; index: number; size: number },
-    _metadata?: Record<string, unknown>
+    _metadata?: ChunkUploadMetadata
   ): Promise<void> => {
     // Optimized random delay for more consistent performance
     await new Promise((resolve) =>
@@ -210,13 +231,13 @@ const createOptimizedMockServices = () => {
   const auditService = {
     logUploadEvent: async (
       _event: string,
-      _metadata: Record<string, unknown>
+      _metadata: AuditEventMetadata
     ) => {
       // Mock implementation - no-op for demo
     },
     logValidationEvent: async (
       _event: string,
-      _metadata: Record<string, unknown>
+      _metadata: AuditEventMetadata
     ) => {
       // Mock implementation - no-op for demo
     },
@@ -257,78 +278,8 @@ const createOptimizedMockServices = () => {
   };
 };
 
-// Create services once at module level for better performance
-const mockApiClient = createOptimizedMockApiClient();
-const mockServices = createOptimizedMockServices();
-
-// Initialize services with proper dependencies - done once at module level
-const uploadCoordinator = new PropertyImageUploadCoordinator({
-  apiClient: mockApiClient,
-  auditService: mockServices.auditService,
-});
-
-// Note: Validation service would be used for advanced workflow management in production
-
-const workflowManager = new PropertyImageWorkflowManager({
-  validationService: {
-    validateUrl: async (_url: string, _options?: Record<string, unknown>) => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      return {
-        isValid: true,
-        errors: [],
-        warnings: [],
-      };
-    },
-  },
-  metadataService: {
-    extractMetadata: async (_fileRef: string) => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      return {
-        fileSize: 1024 * 1024,
-        dimensions: { width: 1920, height: 1080 },
-        technicalMetadata: {
-          format: "jpeg",
-          colorSpace: "sRGB",
-          bitDepth: 24,
-          compression: "JPEG",
-          orientation: 1,
-        },
-        createdAt: Date.now(),
-        lastModified: Date.now(),
-        geoLocation: { latitude: -1.2921, longitude: 36.8219, accuracy: 10 }, // Nairobi coords
-      };
-    },
-    performVirusScan: async (_fileRef: string): Promise<ScanResult> => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      const isClean = secureRandom() > 0.05;
-      return {
-        clean: isClean,
-        threats: isClean ? [] : ["EICAR-Test-File"], // cspell:disable-line
-        scanDate: new Date(),
-        scanDuration: 100,
-        engine: "MockAV",
-        signatureVersion: "1.0.0",
-      }; // 95% clean
-    },
-    checkCompliance: async (
-      _fileRef: string,
-      _metadata: PropertyImageMetadata
-    ): Promise<ComplianceResult> => {
-      await new Promise((resolve) => setTimeout(resolve, 75));
-      const complianceFlags =
-        secureRandom() > 0.8 ? ["missing_title_deed"] : [];
-      const regulatoryFlags =
-        secureRandom() > 0.9 ? ["nema_clearance_required"] : []; // cspell:disable-line
-      return { complianceFlags, regulatoryFlags };
-    },
-  },
-  documentAuthService: mockServices.documentAuthServiceForWorkflow,
-  fraudDetectionService: mockServices.fraudDetectionService,
-  landVerificationService: mockServices.landVerificationService,
-  storageService: mockServices.storageService,
-  notificationService: mockServices.notificationService,
-  auditService: mockServices.auditService,
-});
+// Get the orchestrator instance - it handles all service coordination
+const orchestrator = getImageServiceOrchestrator();
 
 interface PropertyImageVaultProps {
   landVerificationId?: string;
@@ -391,8 +342,25 @@ const ProgressBar = memo<{
 }>(({ progress, colorScheme, label, secondaryLabel }) => {
   const clampedProgress = Math.min(100, Math.max(0, progress));
 
-  // Creating CSS class-based width using CSS custom properties instead of inline styles
-  const progressBarClass = `bg-${colorScheme}-600 h-2.5 rounded-full transition-all duration-300`;
+  // Use CSS classes for different progress levels to avoid inline styles
+  const getProgressClass = (progress: number) => {
+    if (progress >= 100) return "w-full";
+    if (progress >= 90) return "w-11/12";
+    if (progress >= 80) return "w-4/5";
+    if (progress >= 75) return "w-3/4";
+    if (progress >= 66) return "w-2/3";
+    if (progress >= 60) return "w-3/5";
+    if (progress >= 50) return "w-1/2";
+    if (progress >= 40) return "w-2/5";
+    if (progress >= 33) return "w-1/3";
+    if (progress >= 25) return "w-1/4";
+    if (progress >= 20) return "w-1/5";
+    if (progress >= 10) return "w-1/12";
+    if (progress > 0) return "w-1";
+    return "w-0";
+  };
+
+  const progressBarClass = `bg-${colorScheme}-600 h-2.5 rounded-full transition-all duration-300 ${getProgressClass(clampedProgress)}`;
 
   return (
     <div className="mt-3">
@@ -403,10 +371,7 @@ const ProgressBar = memo<{
         </div>
       )}
       <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-        <div
-          className={progressBarClass}
-          style={{ width: `${clampedProgress}%` } as React.CSSProperties}
-        />
+        <div className={progressBarClass} />
       </div>
     </div>
   );
@@ -477,7 +442,7 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
     isUploading,
     uploadStats,
     workflowStats,
-  } = usePropertyImageUpload(uploadCoordinator, workflowManager, hookOptions);
+  } = usePropertyImageUpload(orchestrator, undefined, hookOptions);
 
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [currentDocumentType, setCurrentDocumentType] = useState<DocumentType>(
@@ -557,7 +522,7 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
       const extendedImage = image as ExtendedPropertyImage;
       const workflowStatus =
         workflowStats.activeWorkflows > 0 ?
-          workflowManager.getWorkflowStatus(image.id)
+          orchestrator.getWorkflowStatus(image.id)
         : null;
       const currentStep = workflowStatus?.currentStep || "N/A";
       const progress = workflowStatus?.progress || image.progress || 0;
@@ -948,6 +913,8 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
             className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors"
           />
           <select
+            id="document-type-selector"
+            name="documentType"
             value={currentDocumentType}
             onChange={(e) =>
               setCurrentDocumentType(e.target.value as DocumentType)

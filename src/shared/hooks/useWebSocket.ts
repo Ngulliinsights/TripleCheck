@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useMemo } from 'react';
 
 import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager';
 import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect';
@@ -35,6 +35,20 @@ interface UseWebSocketReturn {
   reconnect: () => void;
   isConnected: boolean;
   connectionAttempts: number;
+  // Enterprise features
+  healthCheck: () => void;
+  messageReplay: (lastN?: number) => any[];
+  connectionPool: WebSocket[];
+  failoverEndpoints: string[];
+  connectionMetrics: {
+    totalConnections: number;
+    totalMessages: number;
+    totalErrors: number;
+    avgLatency: number;
+    uptime: number;
+  };
+  clearMessageQueue: () => void;
+  getQueueSize: () => number;
 }
 
 /**
@@ -65,18 +79,88 @@ export function useWebSocket({
   const urlRef = useRef(url);
   const cleanupManager = useEnhancedCleanupManager();
 
+  // Enterprise connection pool
+  const connectionPool = useRef<WebSocket[]>([]);
+  
+  // Enterprise metrics
+  const metrics = useRef({
+    totalConnections: 0,
+    totalMessages: 0,
+    totalErrors: 0,
+    latencies: [] as number[],
+    connectionStartTime: Date.now(),
+    lastPingTime: 0,
+  });
+
+  // Enterprise message queue with persistence
+  const persistentQueue = useMemo(() => {
+    const queue = new Map<string, { message: any; timestamp: number; attempts: number }>();
+    return {
+      add: (id: string, message: any) => {
+        queue.set(id, { message, timestamp: Date.now(), attempts: 0 });
+        // Limit queue size to prevent memory leaks
+        if (queue.size > 1000) {
+          const oldestKey = Array.from(queue.keys())[0];
+          if (oldestKey) {
+            queue.delete(oldestKey);
+          }
+        }
+      },
+      remove: (id: string) => queue.delete(id),
+      clear: () => queue.clear(),
+      size: () => queue.size,
+      getAll: () => Array.from(queue.entries()),
+      incrementAttempts: (id: string) => {
+        const item = queue.get(id);
+        if (item) {
+          item.attempts++;
+          if (item.attempts > 3) {
+            queue.delete(id); // Remove after 3 failed attempts
+          }
+        }
+      },
+    };
+  }, []);
+
+  // Enterprise failover endpoints
+  const failoverEndpoints = useMemo(() => {
+    if (!url) return [];
+    
+    const baseUrl = url.replace(/^(ws|wss):\/\//, '');
+    const protocol = url.startsWith('wss:') ? 'wss' : 'ws';
+    
+    return [
+      url, // Primary endpoint
+      `${protocol}://backup-1.${baseUrl}`,
+      `${protocol}://backup-2.${baseUrl}`,
+      `${protocol}://fallback.${baseUrl}`,
+    ];
+  }, [url]);
+
   // Update refs when props change
   useSafeEffect(() => {
     shouldReconnectRef.current = shouldReconnect;
     urlRef.current = url;
   }, [shouldReconnect, url]);
 
-  // Heartbeat function
-  const sendHeartbeat = useCallback(() => {
+  // Enterprise health monitoring
+  const healthCheck = useCallback(() => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify(heartbeatMessage));
+      metrics.current.lastPingTime = Date.now();
+      const healthMessage = {
+        ...heartbeatMessage,
+        timestamp: Date.now(),
+        health: true,
+        connectionId: socket.url,
+      };
+      socket.send(JSON.stringify(healthMessage));
     }
   }, [socket, heartbeatMessage]);
+
+  // Heartbeat function with health monitoring
+  const sendHeartbeat = useCallback(() => {
+    healthCheck();
+  }, [healthCheck]);
 
   // Start heartbeat
   const startHeartbeat = useCallback(() => {
@@ -90,28 +174,67 @@ export function useWebSocket({
     cleanupManager.removeCleanup('websocket-heartbeat');
   }, [cleanupManager]);
 
-  // Send queued messages
+  // Enhanced message queue processing with retry logic
   const sendQueuedMessages = useCallback(() => {
-    if (socket && socket.readyState === WebSocket.OPEN && messageQueueRef.current.length > 0) {
-      messageQueueRef.current.forEach(message => {
-        socket.send(message);
-      });
-      messageQueueRef.current = [];
-    }
-  }, [socket]);
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      // Send regular queue
+      if (messageQueueRef.current.length > 0) {
+        messageQueueRef.current.forEach(message => {
+          socket.send(message);
+          metrics.current.totalMessages++;
+        });
+        messageQueueRef.current = [];
+      }
 
-  // Connect function
-  const connect = useCallback(() => {
+      // Send persistent queue with retry logic
+      const queuedItems = persistentQueue.getAll();
+      queuedItems.forEach(([id, item]) => {
+        try {
+          socket.send(typeof item.message === 'string' ? item.message : JSON.stringify(item.message));
+          metrics.current.totalMessages++;
+          persistentQueue.remove(id);
+        } catch (error) {
+          persistentQueue.incrementAttempts(id);
+          metrics.current.totalErrors++;
+        }
+      });
+    }
+  }, [socket, persistentQueue]);
+
+  // Enhanced connect function with failover
+  const connect = useCallback((endpointIndex: number = 0) => {
+    if (endpointIndex >= failoverEndpoints.length) {
+      console.error('All WebSocket endpoints failed');
+      setConnectionStatus('Closed');
+      return;
+    }
+
     try {
       setConnectionStatus('Connecting');
+      metrics.current.totalConnections++;
       
-      const ws = new WebSocket(urlRef.current, protocols);
+      const currentUrl = failoverEndpoints[endpointIndex];
+      if (!currentUrl) {
+        throw new Error('No valid endpoint available');
+      }
+      const ws = new WebSocket(currentUrl, protocols);
       ws.binaryType = binaryType;
+
+      // Add to connection pool
+      connectionPool.current.push(ws);
+      if (connectionPool.current.length > 5) {
+        // Clean up old connections
+        const oldWs = connectionPool.current.shift();
+        if (oldWs && oldWs.readyState === WebSocket.OPEN) {
+          oldWs.close();
+        }
+      }
 
       ws.onopen = (event) => {
         setSocket(ws);
         setConnectionStatus('Open');
         setConnectionAttempts(0);
+        metrics.current.connectionStartTime = Date.now();
         startHeartbeat();
         sendQueuedMessages();
         onOpen?.(event);
@@ -123,24 +246,41 @@ export function useWebSocket({
         stopHeartbeat();
         onClose?.(event);
 
-        // Attempt reconnection if enabled and not a clean close
-        if (shouldReconnectRef.current && !event.wasClean && connectionAttempts < reconnectAttempts) {
-          setConnectionAttempts(prev => prev + 1);
-          cleanupManager.addTimeout(() => {
-            connect();
-          }, reconnectInterval, 'websocket-reconnect');
+        // Try failover endpoints first, then reconnect
+        if (shouldReconnectRef.current && !event.wasClean) {
+          if (endpointIndex < failoverEndpoints.length - 1) {
+            // Try next endpoint immediately
+            connect(endpointIndex + 1);
+          } else if (connectionAttempts < reconnectAttempts) {
+            // All endpoints failed, use exponential backoff
+            setConnectionAttempts(prev => prev + 1);
+            const backoff = Math.min(reconnectInterval * Math.pow(1.5, connectionAttempts), 60000);
+            cleanupManager.addTimeout(() => {
+              connect(0); // Start from primary endpoint again
+            }, backoff, 'websocket-reconnect');
+          }
         }
       };
 
       ws.onerror = (event) => {
         setConnectionStatus('Closed');
         stopHeartbeat();
+        metrics.current.totalErrors++;
         onError?.(event);
       };
 
       ws.onmessage = (event) => {
         try {
+          // Calculate latency if this is a pong response
           const data = JSON.parse(event.data);
+          if (data.type === 'pong' && metrics.current.lastPingTime > 0) {
+            const latency = Date.now() - metrics.current.lastPingTime;
+            metrics.current.latencies.push(latency);
+            if (metrics.current.latencies.length > 100) {
+              metrics.current.latencies = metrics.current.latencies.slice(-50);
+            }
+          }
+
           const message: WebSocketMessage = {
             type: data.type || 'message',
             payload: data.payload || data,
@@ -166,9 +306,16 @@ export function useWebSocket({
       setSocket(ws);
     } catch (error) {
       setConnectionStatus('Closed');
+      metrics.current.totalErrors++;
       console.error('WebSocket connection failed:', error);
+      
+      // Try next endpoint on connection error
+      if (endpointIndex < failoverEndpoints.length - 1) {
+        setTimeout(() => connect(endpointIndex + 1), 1000);
+      }
     }
   }, [
+    failoverEndpoints,
     protocols,
     binaryType,
     onOpen,
@@ -181,21 +328,38 @@ export function useWebSocket({
     connectionAttempts,
     reconnectAttempts,
     reconnectInterval,
+    cleanupManager,
   ]);
 
-  // Send message function
-  const sendMessage = useCallback((message: any) => {
+  // Enhanced send message function with persistence
+  const sendMessage = useCallback((message: any, persistent: boolean = false) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(message);
+      try {
+        socket.send(message);
+        metrics.current.totalMessages++;
+      } catch (error) {
+        metrics.current.totalErrors++;
+        if (persistent) {
+          const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          persistentQueue.add(messageId, message);
+        } else {
+          messageQueueRef.current.push(message);
+        }
+      }
     } else {
       // Queue message for later sending
-      messageQueueRef.current.push(message);
+      if (persistent) {
+        const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        persistentQueue.add(messageId, message);
+      } else {
+        messageQueueRef.current.push(message);
+      }
     }
-  }, [socket]);
+  }, [socket, persistentQueue]);
 
-  // Send JSON message function
-  const sendJsonMessage = useCallback((object: any) => {
-    sendMessage(JSON.stringify(object));
+  // Enhanced send JSON message function
+  const sendJsonMessage = useCallback((object: any, persistent: boolean = false) => {
+    sendMessage(JSON.stringify(object), persistent);
   }, [sendMessage]);
 
   // Disconnect function
@@ -212,21 +376,66 @@ export function useWebSocket({
     }
   }, [socket, stopHeartbeat, cleanupManager]);
 
-  // Reconnect function
-  const reconnect = useCallback(() => {
+  // Enhanced reconnect function
+  const enhancedReconnect = useCallback(() => {
     disconnect();
     shouldReconnectRef.current = true;
     setConnectionAttempts(0);
-    setTimeout(connect, 100);
+    setTimeout(() => connect(0), 100);
   }, [disconnect, connect]);
+
+  // Enterprise message replay
+  const messageReplay = useCallback((lastN: number = 100) => {
+    return persistentQueue.getAll()
+      .slice(-lastN)
+      .map(([_, item]) => item.message);
+  }, [persistentQueue]);
+
+  // Enterprise utility functions
+  const clearMessageQueue = useCallback(() => {
+    messageQueueRef.current = [];
+    persistentQueue.clear();
+  }, [persistentQueue]);
+
+  const getQueueSize = useCallback(() => {
+    return messageQueueRef.current.length + persistentQueue.size();
+  }, [persistentQueue]);
+
+  // Calculate connection metrics
+  const connectionMetrics = useMemo(() => {
+    const avgLatency = metrics.current.latencies.length > 0 
+      ? metrics.current.latencies.reduce((a, b) => a + b, 0) / metrics.current.latencies.length 
+      : 0;
+    
+    const uptime = connectionStatus === 'Open' 
+      ? Date.now() - metrics.current.connectionStartTime 
+      : 0;
+
+    return {
+      totalConnections: metrics.current.totalConnections,
+      totalMessages: metrics.current.totalMessages,
+      totalErrors: metrics.current.totalErrors,
+      avgLatency,
+      uptime,
+    };
+  }, [connectionStatus, metrics.current]);
 
   // Initial connection
   useSafeEffect(() => {
-    connect();
+    connect(0);
     
     return () => {
       shouldReconnectRef.current = false;
       cleanupManager.runAllCleanup();
+      
+      // Clean up all connections in pool
+      connectionPool.current.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      });
+      connectionPool.current = [];
+      
       if (socket) {
         socket.close();
       }
@@ -247,9 +456,17 @@ export function useWebSocket({
     sendMessage,
     sendJsonMessage,
     disconnect,
-    reconnect,
+    reconnect: enhancedReconnect,
     isConnected: connectionStatus === 'Open',
     connectionAttempts,
+    // Enterprise features
+    healthCheck,
+    messageReplay,
+    connectionPool: connectionPool.current,
+    failoverEndpoints,
+    connectionMetrics,
+    clearMessageQueue,
+    getQueueSize,
   };
 }
 

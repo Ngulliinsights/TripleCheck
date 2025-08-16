@@ -1,43 +1,14 @@
 // src/property/components/PropertyMap.tsx
 /// <reference types="google.maps" />
-import React, { useEffect, useRef, useState, useCallback } from "react";
+/* global google */
 
-// Declare google maps types
+// Global declaration for Google Maps
 declare global {
   interface Window {
     google: typeof google;
   }
 }
 
-// Google Maps types
-interface GoogleMapsAPI {
-  maps: {
-    Map: new (element: HTMLElement, options: any) => any;
-    Marker: new (options: any) => any;
-    InfoWindow: new (options: any) => any;
-    Size: new (width: number, height: number) => any;
-    Point: new (x: number, y: number) => any;
-    LatLngLiteral: { lat: number; lng: number };
-  };
-  places: {
-    PlacesService: new (map: any) => unknown;
-    PlacesServiceStatus: {
-      OK: string;
-    };
-    PlaceResult: {
-      geometry?: {
-        location?: {
-          lat(): number;
-          lng(): number;
-        };
-      };
-      name?: string;
-      rating?: number;
-    };
-  };
-}
-
-declare const google: GoogleMapsAPI;
 import { Loader } from "@googlemaps/js-api-loader";
 import { Badge } from "@shared/components/ui/badge";
 import { Button } from "@shared/components/ui/button";
@@ -60,7 +31,15 @@ import {
   ShoppingCart,
   Utensils,
   Bus,
+  type LucideProps,
 } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  type ComponentType,
+} from "react";
 
 /* ---------- TYPES ---------- */
 interface PropertyLocation {
@@ -77,17 +56,17 @@ interface NearbyPlace {
   type: string;
   distance: number;
   rating?: number;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<LucideProps>;
 }
 
 interface PropertyMapProps {
-  location: PropertyLocation;
-  nearbyProperties?: PropertyLocation[];
-  showNearbyPlaces?: boolean;
-  height?: string;
-  className?: string;
-  onLocationChange?: (location: PropertyLocation) => void;
-  interactive?: boolean;
+  readonly location: PropertyLocation;
+  readonly nearbyProperties?: PropertyLocation[];
+  readonly showNearbyPlaces?: boolean;
+  readonly height?: string;
+  readonly className?: string;
+  readonly onLocationChange?: (location: PropertyLocation) => void;
+  readonly interactive?: boolean;
 }
 
 /* ---------- CONSTANTS ---------- */
@@ -98,12 +77,12 @@ export function PropertyMap({
   location,
   nearbyProperties = [],
   showNearbyPlaces = true,
-  height = "400px",
   className = "",
   interactive = true,
 }: PropertyMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  // eslint-disable-next-line sonarjs/deprecation
   const markersRef = useRef<google.maps.Marker[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,20 +100,22 @@ export function PropertyMap({
 
     let isMounted = true;
     const loader = new Loader({ apiKey: GOOGLE_KEY, libraries: ["places"] });
-    
+
     loader
-      .importLibrary('maps')
+      .importLibrary("maps")
       .then(() => {
         if (isMounted) {
           setIsLoaded(true);
         }
+        return undefined;
       })
       .catch((err) => {
         if (isMounted) {
           // eslint-disable-next-line no-console
-          console.error('Google Maps loading error:', err);
+          console.error("Google Maps loading error:", err);
           setError("Failed to load Google Maps");
         }
+        throw err;
       });
 
     return () => {
@@ -143,12 +124,49 @@ export function PropertyMap({
   }, []);
 
   /* ---------- Nearby Places ---------- */
+  const processPlaceResults = useCallback(
+    (
+      results: google.maps.places.PlaceResult[] | null,
+      type: string,
+      icon: ComponentType<LucideProps>,
+      center: { lat: number; lng: number }
+    ) => {
+      if (!results) return;
+
+      const newPlaces = results
+        .slice(0, 2)
+        .map((place): NearbyPlace | null => {
+          if (!place.geometry?.location || !place.name) return null;
+          const d = distance(center, {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+          });
+          return {
+            name: place.name,
+            type,
+            distance: Math.round(d * 100) / 100,
+            rating: place.rating ?? 0,
+            icon,
+          };
+        })
+        .filter((place): place is NearbyPlace => place !== null);
+
+      setNearbyPlaces((prev: NearbyPlace[]) => {
+        const combined = [...prev, ...newPlaces];
+        const sorted = [...combined].sort((a, b) => a.distance - b.distance);
+        return sorted.slice(0, 10);
+      });
+    },
+    []
+  );
+
   const loadNearby = useCallback(
     (map: google.maps.Map, center: google.maps.LatLngLiteral) => {
-      const service = new (google.maps as any).places.PlacesService(map);
-      const collected: NearbyPlace[] = [];
+      if (!window.google?.maps?.places) return;
 
-      const types: Array<{ type: string; icon: React.ComponentType<any> }> = [
+      const service = new window.google.maps.places.PlacesService(map);
+
+      const types: Array<{ type: string; icon: ComponentType<LucideProps> }> = [
         { type: "school", icon: School },
         { type: "hospital", icon: Hospital },
         { type: "shopping_mall", icon: ShoppingCart },
@@ -156,44 +174,22 @@ export function PropertyMap({
         { type: "bus_station", icon: Bus },
       ];
 
-      types.forEach(({ type, icon }) =>
+      types.forEach(({ type, icon }) => {
         service.nearbySearch(
-          { location: center, radius: 2000, type: type as string },
-          (
-            results: google.maps.places.PlaceResult[] | null,
-            status: google.maps.places.PlacesServiceStatus
-          ) => {
-            if (
-              status === (google.maps as any).places.PlacesServiceStatus.OK &&
-              results
-            ) {
-              results
-                .slice(0, 2)
-                .forEach((place: google.maps.places.PlaceResult) => {
-                  if (!place.geometry?.location || !place.name) return;
-                  const d = distance(center, {
-                    lat: place.geometry.location.lat(),
-                    lng: place.geometry.location.lng(),
-                  });
-                  collected.push({
-                    name: place.name,
-                    type,
-                    distance: Math.round(d * 100) / 100,
-                    rating: place.rating || 0,
-                    icon,
-                  });
-                });
-              setNearbyPlaces((prev: NearbyPlace[]) =>
-                [...prev, ...collected]
-                  .sort((a, b) => a.distance - b.distance)
-                  .slice(0, 10)
-              );
+          {
+            location: center,
+            radius: 2000,
+            type: type as string,
+          },
+          (results, status) => {
+            if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+              processPlaceResults(results, type, icon, center);
             }
           }
-        )
-      );
+        );
+      });
     },
-    []
+    [processPlaceResults]
   );
 
   /* ---------- Initialize Map ---------- */
@@ -201,10 +197,10 @@ export function PropertyMap({
     if (!isLoaded || !mapRef.current) return;
 
     // Clear existing markers to prevent duplicates
-    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current.forEach((marker) => marker.setMap(null));
     markersRef.current = [];
 
-    const map = new google.maps.Map(mapRef.current, {
+    const map = new window.google.maps.Map(mapRef.current as HTMLDivElement, {
       center: { lat: location.lat, lng: location.lng },
       zoom: 15,
       mapTypeId: mapType,
@@ -224,22 +220,21 @@ export function PropertyMap({
     mapInstanceRef.current = map;
 
     /* Main marker with teal color to match brand */
-    const mainMarker = new google.maps.Marker({
+    // eslint-disable-next-line sonarjs/deprecation
+    const mainMarker = new window.google.maps.Marker({
       position: { lat: location.lat, lng: location.lng },
       map,
       title: location.title || location.address,
       icon: {
-        url:
-          `data:image/svg+xml;charset=UTF-8,${ 
-          encodeURIComponent(
-            '<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="12" fill="#14B8A6" stroke="white" stroke-width="2"/><path d="M16 8L20 14H12L16 8Z" fill="white"/><circle cx="16" cy="20" r="2" fill="white"/></svg>'
-          )}`,
-        scaledSize: new google.maps.Size(32, 32),
-        anchor: new google.maps.Point(16, 32),
+        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+          '<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="12" fill="#14B8A6" stroke="white" stroke-width="2"/><path d="M16 8L20 14H12L16 8Z" fill="white"/><circle cx="16" cy="20" r="2" fill="white"/></svg>'
+        )}`,
+        scaledSize: new window.google.maps.Size(32, 32),
+        anchor: new window.google.maps.Point(16, 32),
       },
     });
 
-    const infoWindow = new google.maps.InfoWindow({
+    const infoWindow = new window.google.maps.InfoWindow({
       content: `
         <div class="p-2 max-w-[200px]">
           <h3 class="text-sm font-bold mb-1">${location.title ?? "Property"}</h3>
@@ -254,18 +249,17 @@ export function PropertyMap({
 
     /* Nearby properties */
     nearbyProperties.forEach((p) => {
-      const m = new google.maps.Marker({
+      // eslint-disable-next-line sonarjs/deprecation
+      const m = new window.google.maps.Marker({
         position: { lat: p.lat, lng: p.lng },
         map,
         title: p.title || p.address,
         icon: {
-          url:
-            `data:image/svg+xml;charset=UTF-8,${ 
-            encodeURIComponent(
-              '<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" fill="#10B981" stroke="white" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="white"/></svg>'
-            )}`,
-          scaledSize: new google.maps.Size(24, 24),
-          anchor: new google.maps.Point(12, 24),
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+            '<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" fill="#10B981" stroke="white" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="white"/></svg>'
+          )}`,
+          scaledSize: new window.google.maps.Size(24, 24),
+          anchor: new window.google.maps.Point(12, 24),
         },
       });
       markersRef.current.push(m);
@@ -277,7 +271,7 @@ export function PropertyMap({
 
     // Cleanup function to prevent memory leaks
     return () => {
-      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current.forEach((marker) => marker.setMap(null));
       markersRef.current = [];
     };
   }, [
@@ -292,15 +286,13 @@ export function PropertyMap({
     interactive,
     showNearbyPlaces,
     loadNearby,
-    nearbyProperties
+    nearbyProperties,
   ]);
-
-
 
   /* ---------- Helpers ---------- */
   const distance = (
-    a: google.maps.LatLngLiteral,
-    b: google.maps.LatLngLiteral
+    a: { lat: number; lng: number },
+    b: { lat: number; lng: number }
   ) => {
     const R = 6371;
     const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -377,14 +369,9 @@ export function PropertyMap({
         </CardHeader>
         <CardContent className="p-0">
           <div className="relative">
-            {!isLoaded ? (
+            {!isLoaded ?
               <Skeleton className="w-full h-96" />
-            ) : (
-              <div
-                ref={mapRef}
-                className="w-full rounded-b-lg h-96"
-              />
-            )}
+            : <div ref={mapRef} className="w-full rounded-b-lg h-96" />}
 
             {interactive && isLoaded && (
               <div className="absolute top-4 right-4 flex flex-col gap-2">

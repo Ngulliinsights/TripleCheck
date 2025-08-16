@@ -1,108 +1,68 @@
-import React from 'react';
+import React from "react";
 
-import { Card, CardContent } from '../ui/card';
-import { Skeleton } from '../ui/skeleton';
+import { Card, CardContent } from "../ui/card";
+import { Skeleton } from "../ui/skeleton";
 
 interface PropertySkeletonGridProps {
-  count: number;
-  viewMode: 'grid' | 'list';
-  itemHeight?: number;
-  className?: string;
+  readonly count: number;
+  readonly viewMode: "grid" | "list";
+  readonly itemHeight?: number;
+  readonly className?: string;
 }
 
 /**
- * Unified skeleton loading component for property listings
- * Provides consistent loading states across all property types
+ * Individual property skeleton item component
+ * This handles both grid and list view modes with optimized rendering
  */
-export function PropertySkeletonGrid({
-  count,
-  viewMode,
-  itemHeight = 320,
-  className = '',
-}: PropertySkeletonGridProps): React.ReactElement {
-
-  // Generate skeleton items
-  const skeletonItems = Array.from({ length: count }, (_, index) => (
-    <PropertySkeletonItem
-      key={index}
-      viewMode={viewMode}
-      itemHeight={itemHeight}
-    />
-  ));
-
-  return (
-    <div className={className}>
-      {/* View Mode Toggle Skeleton */}
-      <div className="flex items-center justify-between mb-4">
-        <Skeleton className="h-4 w-32" />
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-8 w-16" />
-          <Skeleton className="h-8 w-16" />
-        </div>
-      </div>
-
-      {/* Grid/List Skeleton */}
-      <div className={
-        viewMode === 'grid'
-          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-          : 'space-y-4'
-      }>
-        {skeletonItems}
-      </div>
-    </div>
-  );
+interface PropertySkeletonItemProps {
+  readonly viewMode: "grid" | "list";
+  readonly itemHeight: number;
 }
 
-/**
- * Individual property skeleton item
- */
 function PropertySkeletonItem({
   viewMode,
   itemHeight,
-}: {
-  viewMode: 'grid' | 'list';
-  itemHeight: number;
-}): React.ReactElement {
-
-  if (viewMode === 'list') {
+}: PropertySkeletonItemProps): React.ReactElement {
+  // List view provides a horizontal layout with image on the left
+  if (viewMode === "list") {
     return (
       <Card className="overflow-hidden">
         <div className="flex">
-          {/* Image skeleton */}
+          {/* Left side: Image skeleton with fixed width for consistent alignment */}
           <div className="flex-shrink-0">
             <Skeleton className="w-48 h-32" />
           </div>
-          
-          {/* Content skeleton */}
+
+          {/* Right side: Content that expands to fill available space */}
           <CardContent className="flex-1 p-4">
             <div className="space-y-3">
-              {/* Title and price */}
+              {/* Header: Title and price in a flex layout */}
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
-                  <Skeleton className="h-5 w-48" />
-                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-5 w-48" /> {/* Property title */}
+                  <Skeleton className="h-4 w-32" /> {/* Location */}
                 </div>
-                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-24" /> {/* Price */}
               </div>
-              
-              {/* Features */}
+
+              {/* Property features (bedrooms, bathrooms, area) */}
               <div className="flex items-center gap-4">
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="h-4 w-16" />
               </div>
-              
-              {/* Description */}
+
+              {/* Description lines with realistic text width variation */}
               <div className="space-y-2">
                 <Skeleton className="h-3 w-full" />
                 <Skeleton className="h-3 w-3/4" />
               </div>
-              
-              {/* Actions */}
+
+              {/* Action buttons */}
               <div className="flex items-center gap-2 pt-2">
                 <Skeleton className="h-8 w-20" />
                 <Skeleton className="h-8 w-20" />
-                <Skeleton className="h-8 w-8" />
+                <Skeleton className="h-8 w-8" /> {/* Icon button */}
               </div>
             </div>
           </CardContent>
@@ -111,55 +71,56 @@ function PropertySkeletonItem({
     );
   }
 
-  // Grid view skeleton
+  // Grid view provides a vertical card layout
   return (
     <Card className="overflow-hidden" style={{ height: itemHeight }}>
+      {/* Image section with overlay elements */}
       <div className="relative">
-        {/* Image skeleton */}
         <Skeleton className="w-full h-48" />
-        
-        {/* Verification badge skeleton */}
+
+        {/* Top-right: Verification badge */}
         <div className="absolute top-2 right-2">
           <Skeleton className="h-6 w-16 rounded-full" />
         </div>
-        
-        {/* Price badge skeleton */}
+
+        {/* Bottom-left: Price badge */}
         <div className="absolute bottom-2 left-2">
           <Skeleton className="h-8 w-24 rounded-lg" />
         </div>
       </div>
-      
+
+      {/* Card content section */}
       <CardContent className="p-4">
         <div className="space-y-3">
-          {/* Title */}
+          {/* Property title */}
           <Skeleton className="h-5 w-full" />
-          
-          {/* Location */}
+
+          {/* Location with icon placeholder */}
           <div className="flex items-center gap-2">
-            <Skeleton className="h-4 w-4" />
+            <Skeleton className="h-4 w-4" /> {/* Location icon */}
             <Skeleton className="h-4 w-32" />
           </div>
-          
-          {/* Features */}
+
+          {/* Property features with icon placeholders */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-8" />
+              <Skeleton className="h-4 w-4" /> {/* Bed icon */}
+              <Skeleton className="h-4 w-8" /> {/* Count */}
             </div>
             <div className="flex items-center gap-1">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-8" />
+              <Skeleton className="h-4 w-4" /> {/* Bath icon */}
+              <Skeleton className="h-4 w-8" /> {/* Count */}
             </div>
             <div className="flex items-center gap-1">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-8" />
+              <Skeleton className="h-4 w-4" /> {/* Area icon */}
+              <Skeleton className="h-4 w-8" /> {/* Size */}
             </div>
           </div>
-          
-          {/* Actions */}
+
+          {/* Action buttons */}
           <div className="flex items-center gap-2 pt-2">
-            <Skeleton className="h-8 flex-1" />
-            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 flex-1" /> {/* Primary action */}
+            <Skeleton className="h-8 w-8" /> {/* Secondary action */}
           </div>
         </div>
       </CardContent>
@@ -168,100 +129,165 @@ function PropertySkeletonItem({
 }
 
 /**
- * Specialized skeleton for different property types
+ * Main unified skeleton loading component for property listings
+ * Provides consistent loading states across all property types with responsive design
  */
-export function ResidentialPropertySkeleton({ count = 12 }: { count?: number }) {
+function UnifiedPropertySkeletonGrid({
+  count,
+  viewMode,
+  itemHeight = 320,
+  className = "",
+}: PropertySkeletonGridProps): React.ReactElement {
+  // Generate skeleton items efficiently using Array.from for better performance
+  const skeletonItems = Array.from({ length: count }, (_, index) => (
+    <PropertySkeletonItem
+      key={`skeleton-${index}`} // More descriptive keys for debugging
+      viewMode={viewMode}
+      itemHeight={itemHeight}
+    />
+  ));
+
   return (
-    <PropertySkeletonGrid
+    <div className={className}>
+      {/* View mode controls skeleton - mimics the actual toggle interface */}
+      <div className="flex items-center justify-between mb-4">
+        <Skeleton className="h-4 w-32" /> {/* Results count */}
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-16" /> {/* Grid button */}
+          <Skeleton className="h-8 w-16" /> {/* List button */}
+        </div>
+      </div>
+
+      {/* Main content grid - responsive layout that matches actual property grid */}
+      <div
+        className={
+          viewMode === "grid" ?
+            "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          : "space-y-4" // List view uses vertical stacking
+        }
+      >
+        {skeletonItems}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Specialized skeleton components for different property types
+ * These provide type-specific optimizations and heights
+ */
+export function ResidentialPropertySkeleton({
+  count = 12,
+  viewMode = "grid" as const,
+}: {
+  readonly count?: number;
+  readonly viewMode?: "grid" | "list";
+}): React.ReactElement {
+  return (
+    <UnifiedPropertySkeletonGrid
       count={count}
-      viewMode="grid"
-      itemHeight={340}
+      viewMode={viewMode}
+      itemHeight={340} // Slightly taller for residential details
       className="animate-pulse"
     />
   );
 }
 
-export function CommercialPropertySkeleton({ count = 12 }: { count?: number }) {
+export function CommercialPropertySkeleton({
+  count = 12,
+  viewMode = "grid" as const,
+}: {
+  readonly count?: number;
+  readonly viewMode?: "grid" | "list";
+}): React.ReactElement {
   return (
-    <PropertySkeletonGrid
+    <UnifiedPropertySkeletonGrid
       count={count}
-      viewMode="grid"
-      itemHeight={360}
+      viewMode={viewMode}
+      itemHeight={360} // Tallest for commercial property details
       className="animate-pulse"
     />
   );
 }
 
-export function LandPropertySkeleton({ count = 12 }: { count?: number }) {
+export function LandPropertySkeleton({
+  count = 12,
+  viewMode = "grid" as const,
+}: {
+  readonly count?: number;
+  readonly viewMode?: "grid" | "list";
+}): React.ReactElement {
   return (
-    <PropertySkeletonGrid
+    <UnifiedPropertySkeletonGrid
       count={count}
-      viewMode="grid"
-      itemHeight={320}
+      viewMode={viewMode}
+      itemHeight={320} // Standard height for land listings
       className="animate-pulse"
     />
   );
 }
 
 /**
- * Skeleton for property details page
+ * Comprehensive skeleton for property details page
+ * Mimics the full property detail page layout structure
  */
 export function PropertyDetailsSkeleton(): React.ReactElement {
   return (
     <div className="space-y-6 animate-pulse">
-      {/* Header skeleton */}
+      {/* Page header with breadcrumb and title */}
       <div className="space-y-4">
-        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-8 w-2/3" /> {/* Property title */}
         <div className="flex items-center gap-4">
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-5 w-24" />
-          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-5 w-32" /> {/* Location */}
+          <Skeleton className="h-5 w-24" /> {/* Property type */}
+          <Skeleton className="h-5 w-20" /> {/* Status */}
         </div>
       </div>
-      
-      {/* Image gallery skeleton */}
+
+      {/* Image gallery section with main image and thumbnails */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Skeleton className="h-96 w-full" />
+        <Skeleton className="h-96 w-full" /> {/* Main image */}
         <div className="grid grid-cols-2 gap-2">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
+          {/* Thumbnail grid */}
+          {Array.from({ length: 4 }, (_, i) => (
+            <Skeleton key={`thumb-${i}`} className="h-48 w-full" />
+          ))}
         </div>
       </div>
-      
-      {/* Content skeleton */}
+
+      {/* Main content area with sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column: Property details */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Description */}
+          {/* Description section */}
           <div className="space-y-3">
-            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-6 w-32" /> {/* Section title */}
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
           </div>
-          
-          {/* Features */}
+
+          {/* Features and amenities grid */}
           <div className="space-y-3">
-            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-6 w-24" /> {/* Section title */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 w-20" />
+              {Array.from({ length: 6 }, (_, i) => (
+                <div key={`feature-${i}`} className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" /> {/* Feature icon */}
+                  <Skeleton className="h-4 w-20" /> {/* Feature name */}
                 </div>
               ))}
             </div>
           </div>
         </div>
-        
-        {/* Sidebar */}
+
+        {/* Right sidebar: Contact and actions */}
         <div className="space-y-4">
           <Card className="p-4">
             <div className="space-y-4">
-              <Skeleton className="h-8 w-32" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-8 w-32" /> {/* Price */}
+              <Skeleton className="h-10 w-full" /> {/* Contact button */}
+              <Skeleton className="h-10 w-full" /> {/* Schedule viewing */}
             </div>
           </Card>
         </div>
@@ -270,7 +296,19 @@ export function PropertyDetailsSkeleton(): React.ReactElement {
   );
 }
 
-// Export with display name for debugging
-PropertySkeletonGrid.displayName = 'PropertySkeletonGrid';
+// Export the main component with a clear name to avoid conflicts
+export const PropertySkeletonGrid = UnifiedPropertySkeletonGrid;
 
+// Export PropertySkeleton as an alias for backward compatibility
+export const PropertySkeleton = UnifiedPropertySkeletonGrid;
+
+// Add display name for debugging (using Object.defineProperty to satisfy TypeScript)
+Object.defineProperty(UnifiedPropertySkeletonGrid, "displayName", {
+  value: "PropertySkeletonGrid",
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+// Default export for convenience
 export default PropertySkeletonGrid;

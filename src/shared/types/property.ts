@@ -10,11 +10,11 @@ export interface Property {
   imageUrls?: string[] | undefined; // Optional, API uses 'images'
   images?: string[] | undefined; // API field name
   verificationStatus?:
-    | "verified"
-    | "pending"
-    | "unverified"
-    | "draft"
-    | undefined;
+  | "verified"
+  | "pending"
+  | "unverified"
+  | "draft"
+  | undefined;
   features?: PropertyFeatures | null | undefined;
   ownerId?: string | undefined;
   aiVerificationResults?: AIVerificationResults | null | undefined;
@@ -30,16 +30,16 @@ export interface Property {
   landVerification?: LandVerificationStatus | undefined;
   trustScore?: number | undefined;
   owner?:
-    | {
-        id: string;
-        username: string;
-        email: string;
-        firstName?: string | undefined;
-        lastName?: string | undefined;
-        trustScore: number;
-        isVerifiedAgent: boolean;
-      }
-    | undefined;
+  | {
+    id: string;
+    username: string;
+    email: string;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
+    trustScore: number;
+    isVerifiedAgent: boolean;
+  }
+  | undefined;
   // Additional fields that might be present in API responses
   bedrooms?: number | undefined;
   bathrooms?: number | undefined;
@@ -89,13 +89,13 @@ export interface PropertyOwner {
 export interface ResidentialProperty extends NormalizedProperty {
   category: "residential";
   type:
-    | "apartment"
-    | "house"
-    | "duplex"
-    | "penthouse"
-    | "studio"
-    | "townhouse"
-    | "villa";
+  | "apartment"
+  | "house"
+  | "duplex"
+  | "penthouse"
+  | "studio"
+  | "townhouse"
+  | "villa";
   features: {
     bedrooms: number;
     bathrooms: number;
@@ -223,7 +223,7 @@ export interface BasePropertyFilters {
   category?: "residential" | "commercial" | "land" | null;
 }
 
-export interface ResidentialFilters extends BasePropertyFilters {
+export interface ResidentialFilters extends Omit<BasePropertyFilters, 'category'> {
   category: "residential";
   bedrooms: number | null;
   bathrooms: number | null;
@@ -233,13 +233,27 @@ export interface ResidentialFilters extends BasePropertyFilters {
   petFriendly?: boolean;
 }
 
-export interface CommercialFilters extends BasePropertyFilters {
+export interface CommercialFilters extends Omit<BasePropertyFilters, 'category'> {
   category: "commercial";
   propertyType: string;
   sizeMin: number | null;
   sizeMax: number | null;
   yearBuiltMin: number | null;
   roiMin: number | null;
+  // Commercial-specific properties
+  commercialType: string;
+  businessZone: string;
+  areaMin: string;
+  areaMax: string;
+  floorsMin: string;
+  floorsMax: string;
+  // Amenities
+  parking: boolean;
+  elevator: boolean;
+  airConditioning: boolean;
+  security: boolean;
+  wifi: boolean;
+  generator: boolean;
 }
 
 export interface LandFilters extends BasePropertyFilters {

@@ -35,13 +35,21 @@ const CSS_CLASSES = {
   EMPTY_ITEM: "empty-item",
   ERROR_ITEM: "error-item",
   GRID_ITEM_WRAPPER: "grid-item-wrapper",
+  FALLBACK_ITEM: "fallback-item",
+  LOADING_CONTAINER: "loading-container",
+  EMPTY_CONTAINER: "empty-container",
+  VIRTUALIZED_CONTAINER: "virtualized-container",
+  GRID_ROW_CONTAINER: "grid-row-container",
+  GRID_ROW: "grid-row",
+  DYNAMIC_GAP: "dynamic-gap",
+  GRID_CONTAINER: "grid-container",
 } as const;
 
 /* -------------------------------------------------------------------------- */
 /*                               Shared Types                                 */
 /* -------------------------------------------------------------------------- */
 
-export type VirtualisedRenderFn<ItemType> = (
+export type VirtualisedRenderFn<ItemType> = ( // cspell:disable-line
   item: ItemType,
   index: number,
   style: React.CSSProperties
@@ -53,7 +61,7 @@ export type ScrollAlignment = "auto" | "smart" | "center" | "start" | "end";
 /*                        Enterprise List Props & Handle                      */
 /* -------------------------------------------------------------------------- */
 
-export interface EnterpriseVirtualizedListProps<ItemType> {
+export interface EnterpriseVirtualizedListProps<ItemType> { // cspell:disable-line
   items: readonly ItemType[];
   itemHeight: number | ((index: number) => number);
   estimatedItemHeight?: number;
@@ -61,7 +69,7 @@ export interface EnterpriseVirtualizedListProps<ItemType> {
   containerWidth?: number | string;
   renderItem: VirtualisedRenderFn<ItemType>;
   keyExtractor: (item: ItemType, index: number) => React.Key;
-  overscanCount?: number;
+  overscanCount?: number; // cspell:disable-line
   onScroll?: (scrollTop: number) => void;
   onEndReached?: () => void;
   onEndReachedThreshold?: number;
@@ -104,7 +112,7 @@ const MemoizedRow = memo<{
   index: number;
   style: React.CSSProperties;
   data: MemoizedRowData<unknown>;
-}>(({ index, style, data }): React.ReactElement => {
+}>(({ index, style, data }): React.ReactElement | null => {
   const { items, renderItem } = data;
 
   // Create a fallback div element for all error cases to ensure consistent return type
@@ -210,44 +218,7 @@ function useDebounceCallback<FunctionArgs extends unknown[]>(
 /* -------------------------------------------------------------------------- */
 
 // Helper function to safely handle ref assignments and reduce cognitive complexity
-const assignOuterRef = (
-  node: HTMLDivElement | null,
-  forwardedRef:
-    | React.Ref<HTMLDivElement>
-    | React.MutableRefObject<HTMLDivElement | null>
-    | undefined
-): void => {
-  if (!forwardedRef) return;
 
-  if (typeof forwardedRef === "function") {
-    forwardedRef(node);
-    return;
-  }
-
-  if (
-    typeof forwardedRef === "object" &&
-    forwardedRef != null &&
-    "current" in forwardedRef
-  ) {
-    try {
-      // Type guard to ensure we have a mutable ref
-      const mutableRef =
-        forwardedRef as React.MutableRefObject<HTMLDivElement | null>;
-      if (
-        mutableRef &&
-        typeof mutableRef === "object" &&
-        "current" in mutableRef
-      ) {
-        mutableRef.current = node;
-      }
-    } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        // eslint-disable-next-line no-console
-        console.warn("Failed to assign outer ref:", error);
-      }
-    }
-  }
-};
 
 /* -------------------------------------------------------------------------- */
 /*                  EnterpriseVirtualizedList Component                       */
@@ -265,7 +236,7 @@ function EnterpriseVirtualizedListInner<ItemType>(
     containerWidth = "100%",
     renderItem,
     keyExtractor,
-    overscanCount = 5,
+    overscanCount = 5, // cspell:disable-line
     onScroll,
     onEndReached,
     onEndReachedThreshold = 0.8,
@@ -286,7 +257,7 @@ function EnterpriseVirtualizedListInner<ItemType>(
   const variableListRef =
     useRef<VariableSizeList<MemoizedRowData<ItemType>>>(null);
   const fixedListRef = useRef<FixedSizeList<MemoizedRowData<ItemType>>>(null);
-  const outerRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement | null>(null);
   const scrollTopRef = useRef(0);
   const lastEndReachedCall = useRef(0);
   const endReachedTriggered = useRef(false);
@@ -441,6 +412,7 @@ function EnterpriseVirtualizedListInner<ItemType>(
           } catch (error) {
             // Graceful fallback if ref assignment fails
             if (process.env.NODE_ENV === "development") {
+              // eslint-disable-next-line no-console
               console.warn("Failed to assign forwarded outer ref:", error);
             }
           }
@@ -578,7 +550,7 @@ export interface GridVirtualizedListProps<ItemType> {
   ) => ReactNode;
   keyExtractor: (item: ItemType, index: number) => React.Key;
   gap?: number;
-  overscanCount?: number;
+  overscanCount?: number; // cspell:disable-line
   onScroll?: (scrollTop: number) => void;
   onEndReached?: () => void;
   onEndReachedThreshold?: number;
@@ -635,7 +607,7 @@ function GridVirtualizedListInner<ItemType>(
     renderItem,
     keyExtractor,
     gap = 16,
-    overscanCount = 1,
+    overscanCount = 1, // cspell:disable-line
     onScroll,
     onEndReached,
     onEndReachedThreshold = 0.8,
@@ -869,7 +841,7 @@ function GridVirtualizedListInner<ItemType>(
         width={containerWidth}
         itemCount={gridConfig.rowCount}
         itemSize={gridConfig.rowHeight}
-        overscanCount={overscanCount}
+        overscanCount={overscanCount} // cspell:disable-line
         onScroll={handleScroll}
       >
         {renderRow}

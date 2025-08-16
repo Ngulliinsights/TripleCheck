@@ -1,9 +1,8 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 
 import { useDebounce } from "../../shared/hooks/useDebounce";
+import { useSafePropertiesQuery } from "../../shared/hooks/useSafeQuery";
 import { PropertySearchParams } from "../types/property.types";
-
-import { useProperties } from "./useProperty";
 
 // Enhanced interface for search history management
 interface SearchHistoryEntry {
@@ -108,7 +107,20 @@ const DEFAULT_SEARCH_PARAMS: PropertySearchParams = {
   sortOrder: "desc",
 } as const;
 
+/**
+ * @deprecated This hook is deprecated in favor of the unified useSearch hook from src/search/hooks/useSearch.ts
+ * Please migrate to useSearch for better error handling, caching, and enhanced features.
+ * Migration guide: Use useSearch() instead of usePropertySearch()
+ */
 export function usePropertySearch() {
+  // Add deprecation warning in development
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[DEPRECATED] usePropertySearch is deprecated. Please migrate to useConsolidatedPropertySearch for better error handling, enhanced features, and performance."
+    );
+  }
+
   const [searchParams, setSearchParams] = useState<PropertySearchParams>(
     DEFAULT_SEARCH_PARAMS
   );
@@ -131,12 +143,31 @@ export function usePropertySearch() {
 
   const debouncedSearchParams = useDebounce(searchParams, adaptiveDelay);
 
+  // Create a type-safe wrapper for the query parameters
+  // This addresses the TypeScript error by ensuring proper typing
+  const queryParams = useMemo(() => {
+    // Convert PropertySearchParams to a Record<string, unknown> format
+    // This ensures compatibility with the useSafePropertiesQuery hook
+    const params: Record<string, unknown> = {};
+
+    // Map each property explicitly to maintain type safety
+    // We iterate through entries to avoid dynamic property access security warnings
+    const entries = Object.entries(debouncedSearchParams) as Array<[keyof PropertySearchParams, unknown]>;
+    entries.forEach(([key, value]) => {
+      if (value !== undefined) {
+        params[String(key)] = value;
+      }
+    });
+
+    return params;
+  }, [debouncedSearchParams]);
+
   const {
     data: searchResults,
     isLoading,
     error,
     cancelRequest,
-  } = useProperties(debouncedSearchParams);
+  } = useSafePropertiesQuery(queryParams);
 
   // Resolve conflicts between filter combinations (e.g., price ranges, bed/bath counts)
   // This function ensures that user input doesn't create impossible search criteria
@@ -252,6 +283,19 @@ export function usePropertySearch() {
     });
   }, []);
 
+  // Helper function to extract search criteria without pagination
+  const getSearchCriteriaOnly = useCallback((searchParams: PropertySearchParams) => {
+    const { page, limit, ...criteria } = searchParams;
+    return criteria;
+  }, []);
+
+  // Helper function to check if search criteria are duplicate
+  const isDuplicateSearch = useCallback((existingParams: PropertySearchParams, newParams: PropertySearchParams) => {
+    const existingCriteria = getSearchCriteriaOnly(existingParams);
+    const newCriteria = getSearchCriteriaOnly(newParams);
+    return JSON.stringify(existingCriteria) === JSON.stringify(newCriteria);
+  }, [getSearchCriteriaOnly]);
+
   // Advanced search history management with deduplication and intelligent suggestions
   // This function prevents duplicate entries while preserving useful search history
   const addToHistory = useCallback(
@@ -269,20 +313,7 @@ export function usePropertySearch() {
 
       setSearchHistory((prev) => {
         // Deduplicate based on search criteria (ignoring pagination parameters)
-        const isDuplicate = prev.some((entry) => {
-          // Compare search criteria without page/limit parameters
-          const entryCriteria = { ...entry.params };
-          const newCriteria = { ...params };
-
-          // Remove pagination parameters from comparison
-          delete entryCriteria.page;
-          delete entryCriteria.limit;
-          delete newCriteria.page;
-          delete newCriteria.limit;
-
-          // Use JSON comparison for deep equality (simple but effective for our use case)
-          return JSON.stringify(entryCriteria) === JSON.stringify(newCriteria);
-        });
+        const isDuplicate = prev.some((entry) => isDuplicateSearch(entry.params, params));
 
         if (isDuplicate) return prev;
 
@@ -290,7 +321,7 @@ export function usePropertySearch() {
         return [historyEntry, ...prev].slice(0, 20);
       });
     },
-    [generateId]
+    [generateId, isDuplicateSearch]
   );
 
   // Safe metrics tracking that explicitly handles each property
@@ -368,19 +399,9 @@ export function usePropertySearch() {
         // Extract result count in a type-safe manner
         let resultCount: number | undefined;
 
-        // Handle different possible response structures safely
-        if (searchResults && typeof searchResults === "object") {
-          // Check if response has a total property (common API pattern)
-          if (
-            "total" in searchResults &&
-            typeof searchResults.total === "number"
-          ) {
-            resultCount = searchResults.total;
-          }
-          // Check if response is an array (direct results)
-          else if (Array.isArray(searchResults)) {
-            resultCount = searchResults.length;
-          }
+        // Handle the new useSafePropertiesQuery return type (Property[])
+        if (Array.isArray(searchResults)) {
+          resultCount = searchResults.length;
         }
 
         addToHistory(debouncedSearchParams, resultCount);
@@ -575,7 +596,7 @@ export function usePropertySearch() {
       sortOrder: PropertySearchParams["sortOrder"] = "desc"
     ) => {
       // Ensure we don't pass undefined values to updateSearch
-      if (sortBy !== undefined) {
+      if (sortBy != null) {
         updateSearch({ sortBy, sortOrder });
       }
     },

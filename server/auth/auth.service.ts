@@ -98,7 +98,15 @@ export class AuthService {
   }
 
   private async createTestUser(): Promise<void> {
-    const hashedPassword = await bcrypt.hash('password123', this.SALT_ROUNDS);
+    // Ensure we have valid values for bcrypt
+    const password = 'password123';
+    const saltRounds = this.config.password.saltRounds || 12;
+    
+    if (!password || !saltRounds) {
+      throw new Error('Invalid password or salt rounds for test user creation');
+    }
+    
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
     const testUser: User & { password: string } = {
       id: '1',
       email: 'test@example.com',

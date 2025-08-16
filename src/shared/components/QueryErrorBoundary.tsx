@@ -7,11 +7,11 @@ import {
 } from "@shared/components/ui/card";
 import { QueryErrorResetBoundary } from "@tanstack/react-query";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import React, { Component, ErrorInfo, ReactNode } from "react";
+import React, { Component, ErrorInfo } from "react";
 
 interface QueryErrorFallbackProps {
-  error: Error;
-  resetErrorBoundary: () => void;
+  readonly error: Error;
+  readonly resetErrorBoundary: () => void;
 }
 
 function QueryErrorFallback({
@@ -48,8 +48,8 @@ function QueryErrorFallback({
 }
 
 interface QueryErrorBoundaryProps {
-  children: React.ReactNode;
-  fallback?: React.ComponentType<QueryErrorFallbackProps> | undefined;
+  readonly children: React.ReactNode;
+  readonly fallback?: React.ComponentType<QueryErrorFallbackProps> | undefined;
 }
 
 interface QueryErrorBoundaryState {
@@ -70,11 +70,12 @@ class QueryErrorBoundaryClass extends Component<
     this.state = { hasError: false };
   }
 
-  static override getDerivedStateFromError(error: Error): QueryErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): QueryErrorBoundaryState {
     return { hasError: true, error };
   }
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // eslint-disable-next-line no-console
     console.error('Query Error Boundary caught an error:', error, errorInfo);
   }
 

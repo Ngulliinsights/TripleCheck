@@ -1,38 +1,70 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
-import { PropertyCard } from '../PropertyCard';
-import { renderWithProviders, userEventInstance } from '../../../shared/test-utils';
-import { TestDataFactory } from '../../../shared/test-utils/fixtures';
+import { render as originalRender, screen, fireEvent } from '@testing-library/react';
+import { vi } from 'vitest';
+import { PropertyCard } from '../../../shared/components/property/PropertyCard';
+import { PropertyProvider } from '../../contexts/PropertyContext';
+import type { NormalizedProperty } from '../../../shared/types/property';
 
-// Mock framer-motion to avoid animation issues in tests
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    img: ({ children, ...props }: any) => <img {...props}>{children}</img>,
-  },
+// Override render to always include PropertyProvider
+const render = (ui: React.ReactElement) => {
+  return originalRender(
+    <PropertyProvider>
+      {ui}
+    </PropertyProvider>
+  );
+};
+
+// Mock the UI components
+vi.mock('../../../shared/components/ui/card', () => ({
+  Card: ({ children, className, onClick, role, tabIndex, onKeyDown, ...props }: any) => (
+    <div 
+      className={className} 
+      onClick={onClick} 
+      role={role} 
+      tabIndex={tabIndex} 
+      onKeyDown={onKeyDown}
+      data-testid="card"
+      {...props}
+    >
+      {children}
+    </div>
+  ),
+  CardContent: ({ children, className }: any) => (
+    <div className={className} data-testid="card-content">{children}</div>
+  ),
+}));
+
+vi.mock('../../../shared/components/ui/badge', () => ({
+  Badge: ({ children, className, variant }: any) => (
+    <span className={className} data-variant={variant} data-testid="badge">
+      {children}
+    </span>
+  ),
+}));
+
+// Mock Lucide icons
+vi.mock('lucide-react', () => ({
+  MapPin: ({ className }: any) => <div className={className} data-testid="map-pin-icon" />,
+  Bed: ({ className }: any) => <div className={className} data-testid="bed-icon" />,
+  Bath: ({ className }: any) => <div className={className} data-testid="bath-icon" />,
+  Square: ({ className }: any) => <div className={className} data-testid="square-icon" />,
+  Camera: ({ className }: any) => <div className={className} data-testid="camera-icon" />,
 }));
 
 describe('PropertyCard', () => {
-  const mockProperty = {
+  const mockProperty: NormalizedProperty = {
     id: '1',
-    title: 'Modern 3-Bedroom Apartment',
-    type: 'residential' as const,
-    price: 15000000,
-    location: 'Westlands, Nairobi',
-    images: ['/test-image-1.jpg', '/test-image-2.jpg', '/test-image-3.jpg'],
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 1200,
-    trustScore: 95,
-    verificationStatus: 'verified' as const,
-    features: ['Swimming Pool', 'Gym', '24/7 Security'],
-  };
-
-  const mockCallbacks = {
-    onSave: vi.fn(),
-    onShare: vi.fn(),
-    onViewDetails: vi.fn(),
+    title: 'Beautiful 3BR House',
+    location: 'Nairobi, Kenya',
+    price: 5000000,
+    images: ['image1.jpg', 'image2.jpg'],
+    status: 'verified',
+    features: {
+      bedrooms: 3,
+      bathrooms: 2,
+      squareFeet: 1500,
+      propertyType: 'House',
+    },
   };
 
   beforeEach(() => {
@@ -40,421 +72,277 @@ describe('PropertyCard', () => {
   });
 
   describe('Rendering', () => {
-    it('renders property card with all basic information', () => {
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      expect(screen.getByText(mockProperty.title)).toBeInTheDocument();
-      expect(screen.getByText(mockProperty.location)).toBeInTheDocument();
-      expect(screen.getByText('$15,000,000')).toBeInTheDocument();
-      expect(screen.getByText('3 beds')).toBeInTheDocument();
-      expect(screen.getByText('2 baths')).toBeInTheDocument();
-      expect(screen.getByText('1200 m²')).toBeInTheDocument();
+    it('renders property information correctly', () => {
+      render(<ListingCard property={mockProperty} />);
+      
+      expect(screen.getByText('Beautiful 3BR House')).toBeInTheDocument();
+      expect(screen.getByText('Nairobi, Kenya')).toBeInTheDocument();
+      expect(screen.getByText('Ksh 5,000,000')).toBeInTheDocument();
     });
 
-    it('renders trust score badge correctly', () => {
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      expect(screen.getByText('Trust Score: 95')).toBeInTheDocument();
+    it('displays property image with correct alt text', () => {
+      render(<ListingCard property={mockProperty} />);
+      
+      const image = screen.getByRole('img');
+      expect(image).toHaveAttribute('src', 'image1.jpg');
+      expect(image).toHaveAttribute('alt', 'Beautiful 3BR House - Property image');
     });
 
-    it('renders property features as badges', () => {
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      mockProperty.features.forEach(feature => {
-        expect(screen.getByText(feature)).toBeInTheDocument();
-      });
+    it('shows verified badge for verified properties', () => {
+      renderWithProvider(<ListingCard property={mockProperty} />);
+      
+      const badge = screen.getByText('Verified');
+      expect(badge).toBeInTheDocument();
     });
 
-    it('renders main property image with correct alt text', () => {
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      const image = screen.getByAltText('Modern 3-Bedroom Apartment - Image 1 of 3');
-      expect(image).toBeInTheDocument();
-      expect(image).toHaveAttribute('src', '/test-image-1.jpg');
+    it('displays property features when available', () => {
+      render(<ListingCard property={mockProperty} />);
+      
+      expect(screen.getByTitle('3 bedrooms')).toBeInTheDocument();
+      expect(screen.getByTitle('2 bathrooms')).toBeInTheDocument();
+      expect(screen.getByText('1500 sq ft')).toBeInTheDocument();
+      expect(screen.getByText('House')).toBeInTheDocument();
     });
 
-    it('renders image navigation dots when multiple images exist', () => {
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      const navigationDots = screen.getAllByLabelText(/View image \d+/);
-      expect(navigationDots).toHaveLength(3);
-    });
-
-    it('does not render image navigation for single image', () => {
-      const singleImageProperty = {
-        ...mockProperty,
-        images: ['/test-image-1.jpg'],
-      };
-
-      renderWithProviders(
-        <PropertyCard property={singleImageProperty} {...mockCallbacks} />
-      );
-
-      expect(screen.queryByLabelText(/View image \d+/)).not.toBeInTheDocument();
-    });
-
-    it('handles commercial property pricing correctly', () => {
-      const commercialProperty = {
-        ...mockProperty,
-        type: 'commercial' as const,
-      };
-
-      renderWithProviders(
-        <PropertyCard property={commercialProperty} {...mockCallbacks} />
-      );
-
-      expect(screen.getByText('/month')).toBeInTheDocument();
-    });
-
-    it('handles properties without bedrooms (commercial)', () => {
-      const commercialProperty = {
-        ...mockProperty,
-        type: 'commercial' as const,
-        bedrooms: undefined,
-        bathrooms: undefined,
-      };
-
-      renderWithProviders(
-        <PropertyCard property={commercialProperty} {...mockCallbacks} />
-      );
-
-      expect(screen.queryByText(/beds/)).not.toBeInTheDocument();
-      expect(screen.queryByText(/baths/)).not.toBeInTheDocument();
-      expect(screen.getByText('1200 m²')).toBeInTheDocument();
+    it('shows image count when multiple images exist', () => {
+      render(<ListingCard property={mockProperty} />);
+      
+      // Check for image count indicator with camera icon
+      expect(screen.getByTestId('camera-icon')).toBeInTheDocument();
+      // The image count should be displayed next to the camera icon
+      const imageCountElement = screen.getByTestId('camera-icon').parentElement;
+      expect(imageCountElement).toHaveTextContent('2');
     });
   });
 
-  describe('Verification Status', () => {
-    it('renders verified status with correct styling', () => {
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      const badge = screen.getByRole('img', { name: /Trust score: 95, Status: verified/ });
-      expect(badge).toBeInTheDocument();
+  describe('Price Formatting', () => {
+    it('formats price correctly for valid numbers', () => {
+      render(<ListingCard property={mockProperty} />);
+      
+      expect(screen.getByText('Ksh 5,000,000')).toBeInTheDocument();
     });
 
-    it('renders pending status correctly', () => {
-      const pendingProperty = {
-        ...mockProperty,
-        verificationStatus: 'pending' as const,
-        trustScore: 0,
-      };
-
-      renderWithProviders(
-        <PropertyCard property={pendingProperty} {...mockCallbacks} />
-      );
-
-      const badge = screen.getByRole('img', { name: /Trust score: 0, Status: pending/ });
-      expect(badge).toBeInTheDocument();
+    it('shows "Price on request" for missing price', () => {
+      const propertyWithoutPrice = { ...mockProperty, price: undefined };
+      render(<ListingCard property={propertyWithoutPrice} />);
+      
+      expect(screen.getByText('Price on request')).toBeInTheDocument();
     });
 
-    it('renders warning status correctly', () => {
-      const warningProperty = {
-        ...mockProperty,
-        verificationStatus: 'warning' as const,
-        trustScore: 45,
-      };
-
-      renderWithProviders(
-        <PropertyCard property={warningProperty} {...mockCallbacks} />
-      );
-
-      const badge = screen.getByRole('img', { name: /Trust score: 45, Status: warning/ });
-      expect(badge).toBeInTheDocument();
+    it('shows "Price on request" for invalid price', () => {
+      const propertyWithInvalidPrice = { ...mockProperty, price: null as any };
+      render(<ListingCard property={propertyWithInvalidPrice} />);
+      
+      expect(screen.getByText('Price on request')).toBeInTheDocument();
     });
   });
 
-  describe('User Interactions', () => {
-    it('calls onSave when save button is clicked', async () => {
-      const user = userEventInstance;
+  describe('Image Handling', () => {
+    it('uses placeholder image when no images provided', () => {
+      const propertyWithoutImages = { ...mockProperty, images: [] };
+      render(<ListingCard property={propertyWithoutImages} />);
       
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      const propertyCard = screen.getByRole('article');
-      await user.hover(propertyCard);
-
-      const saveButton = screen.getByLabelText('Save property');
-      await user.click(saveButton);
-
-      expect(mockCallbacks.onSave).toHaveBeenCalledWith(mockProperty.id);
+      const image = screen.getByRole('img');
+      expect(image).toHaveAttribute('src', '/placeholder-property.jpg');
     });
 
-    it('calls onShare when share button is clicked', async () => {
-      const user = userEventInstance;
+    it('handles image error by setting placeholder', () => {
+      render(<ListingCard property={mockProperty} />);
       
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      const propertyCard = screen.getByRole('article');
-      await user.hover(propertyCard);
-
-      const shareButton = screen.getByLabelText('Share property');
-      await user.click(shareButton);
-
-      expect(mockCallbacks.onShare).toHaveBeenCalledWith(mockProperty.id);
+      const image = screen.getByRole('img');
+      fireEvent.error(image);
+      
+      expect(image).toHaveAttribute('src', '/placeholder-property.jpg');
     });
 
-    it('calls onViewDetails when view details button is clicked', async () => {
-      const user = userEventInstance;
+    it('prevents infinite loops in image error handling', () => {
+      const propertyWithPlaceholder = { 
+        ...mockProperty, 
+        images: ['/placeholder-property.jpg'] 
+      };
+      render(<ListingCard property={propertyWithPlaceholder} />);
       
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
+      const image = screen.getByRole('img');
+      const originalSrc = image.getAttribute('src');
+      fireEvent.error(image);
+      
+      // Should not change src if already placeholder
+      expect(image).toHaveAttribute('src', originalSrc);
+    });
+  });
 
-      const viewDetailsButton = screen.getByLabelText(`View details for ${mockProperty.title}`);
-      await user.click(viewDetailsButton);
-
-      expect(mockCallbacks.onViewDetails).toHaveBeenCalledWith(mockProperty.id);
+  describe('Interactive Behavior', () => {
+    it('makes card clickable when onClick provided', () => {
+      const mockOnClick = vi.fn();
+      render(<ListingCard property={mockProperty} onClick={mockOnClick} />);
+      
+      const card = screen.getByTestId('card');
+      expect(card).toHaveAttribute('role', 'button');
+      expect(card).toHaveAttribute('tabIndex', '0');
     });
 
-    it('navigates through images when navigation dots are clicked', async () => {
-      const user = userEventInstance;
+    it('calls onClick with property when clicked', () => {
+      const mockOnClick = vi.fn();
+      render(<ListingCard property={mockProperty} onClick={mockOnClick} />);
       
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      // Click second image dot
-      const secondImageDot = screen.getByLabelText('View image 2');
-      await user.click(secondImageDot);
-
-      const image = screen.getByAltText('Modern 3-Bedroom Apartment - Image 2 of 3');
-      expect(image).toHaveAttribute('src', '/test-image-2.jpg');
-
-      // Click third image dot
-      const thirdImageDot = screen.getByLabelText('View image 3');
-      await user.click(thirdImageDot);
-
-      const thirdImage = screen.getByAltText('Modern 3-Bedroom Apartment - Image 3 of 3');
-      expect(thirdImage).toHaveAttribute('src', '/test-image-3.jpg');
+      const card = screen.getByTestId('card');
+      fireEvent.click(card);
+      
+      expect(mockOnClick).toHaveBeenCalledWith(mockProperty);
     });
 
-    it('supports keyboard navigation for image gallery', async () => {
-      const user = userEventInstance;
+    it('handles keyboard navigation (Enter key)', () => {
+      const mockOnClick = vi.fn();
+      render(<ListingCard property={mockProperty} onClick={mockOnClick} />);
       
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      const propertyCard = screen.getByRole('article');
-      await user.click(propertyCard); // Focus the card
-
-      // Navigate to next image with arrow key
-      await user.keyboard('{ArrowRight}');
+      const card = screen.getByTestId('card');
+      fireEvent.keyDown(card, { key: 'Enter' });
       
-      await waitFor(() => {
-        const image = screen.getByAltText('Modern 3-Bedroom Apartment - Image 2 of 3');
-        expect(image).toHaveAttribute('src', '/test-image-2.jpg');
-      });
-
-      // Navigate back with left arrow
-      await user.keyboard('{ArrowLeft}');
-      
-      await waitFor(() => {
-        const image = screen.getByAltText('Modern 3-Bedroom Apartment - Image 1 of 3');
-        expect(image).toHaveAttribute('src', '/test-image-1.jpg');
-      });
+      expect(mockOnClick).toHaveBeenCalledWith(mockProperty);
     });
 
-    it('does not navigate beyond image bounds with keyboard', async () => {
-      const user = userEventInstance;
+    it('handles keyboard navigation (Space key)', () => {
+      const mockOnClick = vi.fn();
+      render(<ListingCard property={mockProperty} onClick={mockOnClick} />);
       
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      const propertyCard = screen.getByRole('article');
-      await user.click(propertyCard);
-
-      // Try to navigate before first image
-      await user.keyboard('{ArrowLeft}');
+      const card = screen.getByTestId('card');
+      fireEvent.keyDown(card, { key: ' ' });
       
-      const image = screen.getByAltText('Modern 3-Bedroom Apartment - Image 1 of 3');
-      expect(image).toHaveAttribute('src', '/test-image-1.jpg');
+      expect(mockOnClick).toHaveBeenCalledWith(mockProperty);
+    });
 
-      // Navigate to last image
-      await user.keyboard('{ArrowRight}');
-      await user.keyboard('{ArrowRight}');
-
-      // Try to navigate beyond last image
-      await user.keyboard('{ArrowRight}');
+    it('does not make card interactive when no onClick provided', () => {
+      render(<ListingCard property={mockProperty} />);
       
-      const lastImage = screen.getByAltText('Modern 3-Bedroom Apartment - Image 3 of 3');
-      expect(lastImage).toHaveAttribute('src', '/test-image-3.jpg');
+      const card = screen.getByTestId('card');
+      expect(card).not.toHaveAttribute('role');
+      expect(card).not.toHaveAttribute('tabIndex');
+    });
+  });
+
+  describe('Conditional Rendering', () => {
+    it('hides features section when no features available', () => {
+      const propertyWithoutFeatures = { 
+        ...mockProperty, 
+        features: {} 
+      };
+      render(<ListingCard property={propertyWithoutFeatures} />);
+      
+      expect(screen.queryByTestId('bed-icon')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('bath-icon')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('square-icon')).not.toBeInTheDocument();
+    });
+
+    it('shows only available features', () => {
+      const propertyWithPartialFeatures = { 
+        ...mockProperty, 
+        features: { bedrooms: 2 } 
+      };
+      render(<ListingCard property={propertyWithPartialFeatures} />);
+      
+      expect(screen.getByTestId('bed-icon')).toBeInTheDocument();
+      expect(screen.queryByTestId('bath-icon')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('square-icon')).not.toBeInTheDocument();
+    });
+
+    it('does not show verified badge for non-verified properties', () => {
+      const unverifiedProperty = { ...mockProperty, status: 'pending' };
+      render(<ListingCard property={unverifiedProperty} />);
+      
+      expect(screen.queryByText('Verified')).not.toBeInTheDocument();
+    });
+
+    it('does not show image count for single image', () => {
+      const singleImageProperty = { ...mockProperty, images: ['image1.jpg'] };
+      render(<ListingCard property={singleImageProperty} />);
+      
+      expect(screen.queryByTestId('camera-icon')).not.toBeInTheDocument();
     });
   });
 
   describe('Accessibility', () => {
-    it('has proper ARIA labels and roles', () => {
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      const article = screen.getByRole('article', { 
-        name: `Property: ${mockProperty.title}` 
-      });
-      expect(article).toBeInTheDocument();
-
-      const trustBadge = screen.getByRole('img', { 
-        name: /Trust score: 95, Status: verified/ 
-      });
-      expect(trustBadge).toBeInTheDocument();
+    it('provides proper aria-label for interactive cards', () => {
+      const mockOnClick = vi.fn();
+      render(<ListingCard property={mockProperty} onClick={mockOnClick} />);
+      
+      const card = screen.getByTestId('card');
+      expect(card).toHaveAttribute('aria-label', 'View property Beautiful 3BR House');
     });
 
-    it('is keyboard focusable', async () => {
-      const user = userEventInstance;
+    it('provides proper image alt text', () => {
+      render(<ListingCard property={mockProperty} />);
       
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      const propertyCard = screen.getByRole('article');
-      
-      await user.tab();
-      expect(propertyCard).toHaveFocus();
+      const image = screen.getByRole('img');
+      expect(image).toHaveAttribute('alt', 'Beautiful 3BR House - Property image');
     });
 
-    it('has proper image alt text', () => {
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
+    it('includes proper titles for feature icons', () => {
+      render(<ListingCard property={mockProperty} />);
+      
+      const bedroomContainer = screen.getByTitle('3 bedrooms');
+      const bathroomContainer = screen.getByTitle('2 bathrooms');
+      const squareFeetContainer = screen.getByTitle('1500 square feet');
+      
+      expect(bedroomContainer).toBeInTheDocument();
+      expect(bathroomContainer).toBeInTheDocument();
+      expect(squareFeetContainer).toBeInTheDocument();
+    });
+  });
 
-      const image = screen.getByAltText('Modern 3-Bedroom Apartment - Image 1 of 3');
-      expect(image).toBeInTheDocument();
+  describe('Styling and CSS Classes', () => {
+    it('applies custom className', () => {
+      render(<ListingCard property={mockProperty} className="custom-class" />);
+      
+      const card = screen.getByTestId('card');
+      expect(card).toHaveClass('custom-class');
     });
 
-    it('has descriptive button labels', async () => {
-      const user = userEventInstance;
+    it('applies hover styles for interactive cards', () => {
+      const mockOnClick = vi.fn();
+      render(<ListingCard property={mockProperty} onClick={mockOnClick} />);
       
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
+      const card = screen.getByTestId('card');
+      expect(card.className).toContain('cursor-pointer');
+      expect(card.className).toContain('hover:shadow-lg');
+    });
 
-      const propertyCard = screen.getByRole('article');
-      await user.hover(propertyCard);
-
-      expect(screen.getByLabelText('Save property')).toBeInTheDocument();
-      expect(screen.getByLabelText('Share property')).toBeInTheDocument();
-      expect(screen.getByLabelText(`View details for ${mockProperty.title}`)).toBeInTheDocument();
+    it('applies different styles for non-interactive cards', () => {
+      render(<ListingCard property={mockProperty} />);
+      
+      const card = screen.getByTestId('card');
+      expect(card.className).toContain('hover:shadow-md');
+      expect(card.className).not.toContain('cursor-pointer');
     });
   });
 
   describe('Edge Cases', () => {
-    it('shows placeholder when property has no images', () => {
-      const noImageProperty = {
-        ...mockProperty,
+    it('handles property with minimal data', () => {
+      const minimalProperty: Property = {
+        id: '1',
+        title: 'Basic Property',
+        location: 'Location',
         images: [],
       };
-
-      renderWithProviders(
-        <PropertyCard property={noImageProperty} {...mockCallbacks} />
-      );
-
-      // Should render with placeholder image
-      const image = screen.getByAltText('Modern 3-Bedroom Apartment - Image 1 of 1');
-      expect(image).toBeInTheDocument();
-      expect(image).toHaveAttribute('src', '/placeholder-property.jpg');
       
-      // Should not show image navigation for placeholder
-      expect(screen.queryByLabelText(/View image \d+/)).not.toBeInTheDocument();
-    });
-
-    it('handles missing callback functions gracefully', async () => {
-      const user = userEventInstance;
+      render(<ListingCard property={minimalProperty} />);
       
-      renderWithProviders(
-        <PropertyCard property={mockProperty} />
-      );
-
-      const propertyCard = screen.getByRole('article');
-      await user.hover(propertyCard);
-
-      // Should not throw errors when callbacks are undefined
-      const saveButton = screen.getByLabelText('Save property');
-      await user.click(saveButton);
-
-      const shareButton = screen.getByLabelText('Share property');
-      await user.click(shareButton);
-
-      const viewDetailsButton = screen.getByLabelText(`View details for ${mockProperty.title}`);
-      await user.click(viewDetailsButton);
-
-      // No assertions needed - just ensuring no errors are thrown
+      expect(screen.getByText('Basic Property')).toBeInTheDocument();
+      expect(screen.getByText('Location')).toBeInTheDocument();
+      expect(screen.getByText('Price on request')).toBeInTheDocument();
     });
 
-    it('handles singular bedroom/bathroom counts correctly', () => {
-      const singularProperty = {
-        ...mockProperty,
-        bedrooms: 1,
-        bathrooms: 1,
-      };
-
-      renderWithProviders(
-        <PropertyCard property={singularProperty} {...mockCallbacks} />
-      );
-
-      expect(screen.getByText('1 bed')).toBeInTheDocument();
-      expect(screen.getByText('1 bath')).toBeInTheDocument();
-    });
-
-    it('handles large numbers in price formatting', () => {
-      const expensiveProperty = {
-        ...mockProperty,
-        price: 1234567890,
-      };
-
-      renderWithProviders(
-        <PropertyCard property={expensiveProperty} {...mockCallbacks} />
-      );
-
-      expect(screen.getByText('$1,234,567,890')).toBeInTheDocument();
-    });
-
-    it('handles empty features array', () => {
-      const noFeaturesProperty = {
-        ...mockProperty,
-        features: [],
-      };
-
-      renderWithProviders(
-        <PropertyCard property={noFeaturesProperty} {...mockCallbacks} />
-      );
-
-      // Should render without features section
-      expect(screen.getByText(mockProperty.title)).toBeInTheDocument();
-    });
-  });
-
-  describe('Performance', () => {
-    it('renders consistently with same props', () => {
-      // First render
-      const { unmount } = renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      expect(screen.getByText(mockProperty.title)).toBeInTheDocument();
-      unmount();
-
-      // Second render with same props should work the same way
-      renderWithProviders(
-        <PropertyCard property={mockProperty} {...mockCallbacks} />
-      );
-
-      expect(screen.getByText(mockProperty.title)).toBeInTheDocument();
+    it('handles fallback onClick pattern', () => {
+      const mockOnClick = vi.fn();
+      // Simulate the old onClick pattern without property parameter
+      const legacyOnClick = mockOnClick as () => void;
+      
+      render(<ListingCard property={mockProperty} onClick={legacyOnClick} />);
+      
+      const card = screen.getByTestId('card');
+      fireEvent.click(card);
+      
+      // Should still be called, even if with different signature
+      expect(mockOnClick).toHaveBeenCalled();
     });
   });
 });

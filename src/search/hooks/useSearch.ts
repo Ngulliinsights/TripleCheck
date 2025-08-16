@@ -1,44 +1,39 @@
-import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 
-import { SearchFilters } from '@/shared/types';
+import { searchService } from '../../shared/services/SearchService';
+import { 
+  PropertySearchFilters, 
+  SearchOptions, 
+  SearchResult, 
+  SearchSuggestion,
+  UseSearchOptions,
+  searchKeys
+} from '../../shared/types/search';
 
-// Mock search API - replace with actual implementation
-const searchApi = {
-  search: async (filters: SearchFilters) => {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        params.append(key, value.toString());
-      }
-    });
+// Query keys are now imported from unified types
 
-    const response = await fetch(`/api/search?${params}`);
-    if (!response.ok) throw new Error('Search failed');
-    return response.json();
-  },
+export function useSearch({
+  initialFilters = {},
+  initialOptions = { page: 1, limit: 20, sortBy: 'relevance', sortOrder: 'desc' },
+  autoSearch = false,
+  debounceMs = 300,
+}: UseSearchOptions = {}) {
+  const queryClient = useQueryClient();
+  
+  const [filters, setFilters] = useState<PropertySearchFilters>(initialFilters);
+  const [options, setOptions] = useState<SearchOptions>(initialOptions);
+  const [isSearchActive, setIsSearchActive] = useState(autoSearch);
+  const [debouncedFilters, setDebouncedFilters] = useState<PropertySearchFilters>(filters);
 
-  getSuggestions: async (query: string) => {
-    const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
-    if (!response.ok) throw new Error('Failed to get suggestions');
-    return response.json();
-  },
-};
+  // Debounce filters to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilters(filters);
+    }, debounceMs);
 
-// Query keys
-export const searchKeys = {
-  all: ['search'] as const,
-  results: (filters: SearchFilters) => [...searchKeys.all, 'results', filters] as const,
-  suggestions: (query: string) => [...searchKeys.all, 'suggestions', query] as const,
-};
-
-export function useSearch() {
-  const [filters, setFilters] = useState<SearchFilters>({
-    query: '',
-    location: '',
-  });
-
-  const [isSearchActive, setIsSearchActive] = useState(false);
+    return () => clearTimeout(timer);
+  }, [filters, debounceMs]);
 
   // Search results query
   const {
@@ -46,64 +41,169 @@ export function useSearch() {
     isLoading,
     error,
     refetch,
+    isFetching,
   } = useQuery({
-    queryKey: searchKeys.results(filters),
-    queryFn: () => searchApi.search(filters),
-    enabled: isSearchActive && (!!filters.query || !!filters.location),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    queryKey: searchKeys.results(debouncedFilters, options),
+    queryFn: () => searchService.searchProperties(debouncedFilters, options),
+    enabled: isSearchActive && Object.keys(debouncedFilters).some(key => debouncedFilters[key as keyof PropertySearchFilters]),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Search suggestions query
+  // Suggestions query
   const {
     data: suggestions,
-    isLoading: isSuggestionsLoading,
+    isLoading: isLoadingSuggestions,
   } = useQuery({
     queryKey: searchKeys.suggestions(filters.query || ''),
-    queryFn: () => searchApi.getSuggestions(filters.query || ''),
-    enabled: !!(filters.query && filters.query.length > 2),
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    queryFn: () => searchService.getSuggestions(filters.query || ''),
+    enabled: Boolean(filters.query && filters.query.length >= 2),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const updateFilters = useCallback((updates: Partial<SearchFilters>) => {
-    setFilters(prev => ({ ...prev, ...updates }));
+  // Location suggestions query
+  const {
+    data: locationSuggestions,
+    isLoading: isLoadingLocations,
+  } = useQuery({
+    queryKey: searchKeys.locations(filters.location || ''),
+    queryFn: () => searchService.getLocationSuggestions(filters.location || ''),
+    enabled: Boolean(filters.location && filters.location.length >= 2),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  // Popular searches query
+  const {
+    data: popularSearches,
+  } = useQuery({
+    queryKey: searchKeys.popular(),
+    queryFn: () => searchService.getPopularSearches(),
+    staleTime: 60 * 60 * 1000, // 1 hour
+  });
+
+  // Search facets query
+  const {
+    data: facets,
+    isLoading: isLoadingFacets,
+  } = useQuery({
+    queryKey: searchKeys.facets(debouncedFilters),
+    queryFn: () => searchService.getSearchFacets(debouncedFilters),
+    enabled: isSearchActive,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Update filter
+  const updateFilter = useCallback(<K extends keyof PropertySearchFilters>(
+    key: K,
+    value: PropertySearchFilters[K]
+  ) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const executeSearch = useCallback(() => {
+  // Update multiple filters
+  const updateFilters = useCallback((newFilters: Partial<PropertySearchFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
+
+  // Clear filters
+  const clearFilters = useCallback(() => {
+    setFilters({});
+    setOptions(initialOptions);
+  }, [initialOptions]);
+
+  // Update options
+  const updateOptions = useCallback((newOptions: Partial<SearchOptions>) => {
+    setOptions(prev => ({ ...prev, ...newOptions }));
+  }, []);
+
+  // Perform search
+  const search = useCallback(() => {
     setIsSearchActive(true);
-    refetch();
-  }, [refetch]);
+    
+    // Save search for analytics
+    if (searchResults) {
+      searchService.saveSearch(debouncedFilters, searchResults.total);
+    }
+  }, [debouncedFilters, searchResults]);
 
-  const clearSearch = useCallback(() => {
-    setFilters({
-      query: '',
-      location: '',
-    });
+  // Reset search
+  const resetSearch = useCallback(() => {
     setIsSearchActive(false);
-  }, []);
+    clearFilters();
+  }, [clearFilters]);
 
-  const hasActiveFilters = useMemo(() => {
-    return !!(
-      filters.query ||
-      filters.location ||
-      filters.priceMin ||
-      filters.priceMax ||
-      filters.propertyType ||
-      filters.bedrooms ||
-      filters.bathrooms
-    );
+  // Load more results (pagination)
+  const loadMore = useCallback(() => {
+    if (searchResults?.hasMore) {
+      updateOptions({ page: (options.page || 1) + 1 });
+    }
+  }, [searchResults?.hasMore, options.page, updateOptions]);
+
+  // Validate current filters
+  const validation = useMemo(() => {
+    return searchService.validateFilters(filters);
   }, [filters]);
 
+  // Check if search has results
+  const hasResults = useMemo(() => {
+    return Boolean(searchResults?.items?.length);
+  }, [searchResults?.items?.length]);
+
+  // Check if search is empty
+  const isEmpty = useMemo(() => {
+    return isSearchActive && !isLoading && !hasResults;
+  }, [isSearchActive, isLoading, hasResults]);
+
+  // Get active filter count
+  const activeFilterCount = useMemo(() => {
+    return Object.values(filters).filter(value => 
+      value !== undefined && value !== null && value !== '' && 
+      (!Array.isArray(value) || value.length > 0)
+    ).length;
+  }, [filters]);
+
+  // Clear cache
+  const clearCache = useCallback(() => {
+    searchService.clearCache();
+    queryClient.invalidateQueries({ queryKey: searchKeys.all });
+  }, [queryClient]);
+
   return {
-    filters,
+    // Data
     searchResults,
     suggestions,
-    isLoading,
-    isSuggestionsLoading,
-    error,
+    locationSuggestions,
+    popularSearches,
+    facets,
+    
+    // State
+    filters,
+    options,
     isSearchActive,
-    hasActiveFilters,
+    validation,
+    hasResults,
+    isEmpty,
+    activeFilterCount,
+    
+    // Loading states
+    isLoading,
+    isFetching,
+    isLoadingSuggestions,
+    isLoadingLocations,
+    isLoadingFacets,
+    
+    // Error
+    error,
+    
+    // Actions
+    updateFilter,
     updateFilters,
-    executeSearch,
-    clearSearch,
+    clearFilters,
+    updateOptions,
+    search,
+    resetSearch,
+    loadMore,
+    refetch,
+    clearCache,
   };
 }

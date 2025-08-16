@@ -2,6 +2,8 @@ import { Search, MapPin, DollarSign, Shield, X } from 'lucide-react';
 import React, { useCallback } from 'react';
 
 import type { BasePropertyFilters } from '../../../types/property';
+
+const HOVER_BG_TRANSPARENT = 'hover:bg-transparent';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
 import { Card, CardContent } from '../../ui/card';
@@ -9,11 +11,11 @@ import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 
 interface BasePropertyFiltersProps {
-  filters: BasePropertyFilters;
-  onChange: (filters: BasePropertyFilters) => void;
-  onReset: () => void;
-  errors?: Record<string, string>;
-  className?: string;
+  readonly filters: BasePropertyFilters;
+  readonly onChange: (filters: BasePropertyFilters) => void;
+  readonly onReset: () => void;
+  readonly errors?: Record<string, string>;
+  readonly className?: string;
 }
 
 /**
@@ -36,15 +38,16 @@ export function BasePropertyFiltersComponent({
   }, [filters, onChange]);
 
   const clearFilter = useCallback(<K extends keyof BasePropertyFilters>(key: K) => {
-    const defaultValues: Record<string, any> = {
+    const defaultValues = {
       query: '',
       location: '',
       priceMin: null,
       priceMax: null,
       verified: false,
       category: null,
-    };
-    updateFilter(key, defaultValues[key]);
+    } as const;
+    
+    updateFilter(key, defaultValues[key] as BasePropertyFilters[K]);
   }, [updateFilter]);
 
   const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
@@ -179,6 +182,8 @@ export function BasePropertyFiltersComponent({
             checked={filters.verified}
             onChange={(e) => updateFilter('verified', e.target.checked)}
             className="rounded border-gray-300 text-primary focus:ring-primary"
+            aria-label="Show only verified properties"
+            title="Show only verified properties"
           />
           <Label htmlFor="verified-only" className="flex items-center gap-2 cursor-pointer">
             <Shield className="w-4 h-4" />
@@ -193,11 +198,11 @@ export function BasePropertyFiltersComponent({
             <div className="flex flex-wrap gap-2">
               {filters.query && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Search: "{filters.query}"
+                  Search: &ldquo;{filters.query}&rdquo;
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    className={`h-4 w-4 p-0 ${HOVER_BG_TRANSPARENT}`}
                     onClick={() => clearFilter('query')}
                   >
                     <X className="w-3 h-3" />
@@ -206,11 +211,11 @@ export function BasePropertyFiltersComponent({
               )}
               {filters.location && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Location: "{filters.location}"
+                  Location: &ldquo;{filters.location}&rdquo;
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    className={`h-4 w-4 p-0 ${HOVER_BG_TRANSPARENT}`}
                     onClick={() => clearFilter('location')}
                   >
                     <X className="w-3 h-3" />
@@ -223,7 +228,7 @@ export function BasePropertyFiltersComponent({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    className={`h-4 w-4 p-0 ${HOVER_BG_TRANSPARENT}`}
                     onClick={() => {
                       updateFilter('priceMin', null);
                       updateFilter('priceMax', null);
@@ -239,7 +244,7 @@ export function BasePropertyFiltersComponent({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    className={`h-4 w-4 p-0 ${HOVER_BG_TRANSPARENT}`}
                     onClick={() => clearFilter('verified')}
                   >
                     <X className="w-3 h-3" />

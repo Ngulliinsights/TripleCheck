@@ -1,13 +1,26 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner'; // or your preferred toast library
 
-import { propertyApi } from '../services/propertyApi';
+import { PropertyApi } from '../../property/services/property-api';
 
+/**
+ * @deprecated This hook is deprecated in favor of useSafeQuery with mutation configurations
+ * Please migrate to useSafeQuery with custom mutation endpoints for better error handling.
+ * Migration guide: Use useSafeQuery with POST/PUT methods for property actions
+ */
 export const usePropertyActions = () => {
   const queryClient = useQueryClient();
+  
+  // Add deprecation warning in development
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[DEPRECATED] usePropertyActions is deprecated. Please migrate to useSafeQuery with mutation configurations for better error handling and performance."
+    );
+  }
 
   const addToFavoritesMutation = useMutation({
-    mutationFn: propertyApi.addToFavorites,
+    mutationFn: PropertyApi.addToFavorites,
     onSuccess: () => {
       toast.success('Property added to favorites');
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
@@ -19,7 +32,7 @@ export const usePropertyActions = () => {
 
   const sharePropertyMutation = useMutation({
     mutationFn: ({ propertyId, method }: { propertyId: string; method: 'email' | 'sms' | 'link' }) =>
-      propertyApi.shareProperty(propertyId, method),
+      PropertyApi.shareProperty(propertyId, method),
     onSuccess: (shareUrl, { method }) => {
       if (method === 'link') {
         navigator.clipboard.writeText(shareUrl);

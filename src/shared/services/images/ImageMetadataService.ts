@@ -6,12 +6,13 @@
  * Integrates with configuration system and shared utilities
  */
 
-import { imageServiceConfig } from '../../config/image-system.config';
+import { ImageServiceCore, ImageServiceRegistry } from './core/ImageServiceCore';
 import type {
   PropertyImageMetadata as AssetMetadata,
   AITag,
   ScanResult,
   ComplianceResult,
+  ImageServiceConfig,
 } from '../../types/images';
 import { ImageProcessingError } from '../../types/images';
 
@@ -71,14 +72,18 @@ const devLog = {
   }
 };
 
-export class ImageMetadataService implements IImageMetadataService {
-  private config = imageServiceConfig;
+export class ImageMetadataService extends ImageServiceCore implements IImageMetadataService {
+  readonly serviceName = 'ImageMetadataService';
+  readonly version = '2.0.0';
 
   constructor(
     private aiVisionAPI?: AIVisionAPI,
     private virusScanAPI?: VirusScanAPI,
-    private complianceEngine?: ComplianceEngine
+    private complianceEngine?: ComplianceEngine,
+    config?: ImageServiceConfig
   ) {
+    super(config, ImageServiceRegistry.getInstance().getAuditService());
+    
     // Validate configuration on initialization
     if (!this.config.processing.enableAITagging && aiVisionAPI) {
       // Log warning about configuration mismatch
@@ -305,3 +310,10 @@ export class ImageMetadataService implements IImageMetadataService {
   }
 }
 
+
+// Register service in the registry
+export const imageMetadataService = ImageServiceRegistry.getInstance().register(
+  new ImageMetadataService()
+);
+
+export default ImageMetadataService;

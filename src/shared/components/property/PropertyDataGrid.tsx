@@ -6,17 +6,17 @@ import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 
 interface PropertyDataGridProps<T> {
-  items: T[];
-  loading: boolean;
-  viewMode: 'grid' | 'list';
-  onViewModeChange: (mode: 'grid' | 'list') => void;
-  renderItem: (item: T, style: React.CSSProperties) => React.ReactNode;
-  itemHeight: number;
-  gridItemSize: { width: number; height: number };
-  emptyState?: React.ReactNode;
-  className?: string;
-  containerHeight?: number;
-  containerWidth?: number;
+  readonly items: T[];
+  readonly loading: boolean;
+  readonly viewMode: 'grid' | 'list';
+  readonly onViewModeChange: (mode: 'grid' | 'list') => void;
+  readonly renderItem: (item: T, style: React.CSSProperties) => React.ReactNode;
+  readonly itemHeight: number;
+  readonly gridItemSize: { width: number; height: number };
+  readonly emptyState?: React.ReactNode;
+  readonly className?: string;
+  readonly containerHeight?: number;
+  readonly containerWidth?: number;
 }
 
 /**
@@ -82,7 +82,7 @@ export function PropertyDataGrid<T>({
     return (
       <div style={style}>
         <div className="px-4 py-2">
-          {renderItem(item, { width: '100%', height: itemHeight - 16 })}
+          {item && renderItem(item, { width: '100%', height: itemHeight - 16 })}
         </div>
       </div>
     );

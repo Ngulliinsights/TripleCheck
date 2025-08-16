@@ -3,9 +3,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PropertiesResidential from '../PropertiesResidential';
 
-// Mock the ListingCard component
-jest.mock('../../../property/components/ListingCard', () => {
-  return function MockListingCard({ property, onClick }: any) {
+// Mock the PropertyCard component
+jest.mock('../../components/property', () => ({
+  PropertyCard: function MockPropertyCard({ property, onClick }: any) {
     return (
       <div data-testid={`property-${property.id}`} onClick={onClick}>
         <h3>{property.title}</h3>
@@ -13,8 +13,8 @@ jest.mock('../../../property/components/ListingCard', () => {
         <span>{property.price}</span>
       </div>
     );
-  };
-});
+  },
+}));
 
 const createTestQueryClient = () =>
   new QueryClient({

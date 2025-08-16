@@ -420,7 +420,7 @@ export class DocumentAuthenticationService {
     // Using a Map instead of object literal access to prevent object injection vulnerabilities
     // This approach is safer because Map lookups can't be exploited through prototype pollution
     const extensionsMap = new Map<string, string[]>([
-      ['application/pdf', ['.pdf']],
+      [DocumentAuthenticationService.PDF_MIME_TYPE, ['.pdf']],
       ['image/jpeg', ['.jpg', '.jpeg']],
       ['image/png', ['.png']],
       ['application/msword', ['.doc']],
@@ -466,7 +466,7 @@ export class DocumentAuthenticationService {
 
   private hasUnusualStructure(buffer: Buffer, mimeType: string): boolean {
     // Basic structure validation
-    if (mimeType === 'application/pdf') {
+    if (mimeType === DocumentAuthenticationService.PDF_MIME_TYPE) {
       const content = buffer.toString('binary');
       return !content.includes('%%EOF') || !content.includes('%PDF');
     }
@@ -546,8 +546,7 @@ export class DocumentAuthenticationService {
     // Ensure the results directory exists using the controlled path
     try {
       // Using literal path construction to satisfy security linting
-      const literalResultsPath = path.join(this.uploadDir, 'results');
-      await fs.mkdir(literalResultsPath, { recursive: true });
+      await fs.mkdir(path.join(this.uploadDir, 'results'), { recursive: true });
     } catch (error) {
       throw new Error(`Failed to create results directory: ${DocumentAuthenticationService.getErrorMessage(error)}`);
     }
@@ -563,8 +562,7 @@ export class DocumentAuthenticationService {
     // Write the result file to the secured path
     try {
       // Using literal path construction to satisfy security linting
-      const literalResultPath = path.join(this.uploadDir, 'results', secureFilename);
-      await fs.writeFile(literalResultPath, JSON.stringify(result, null, 2));
+      await fs.writeFile(path.join(this.uploadDir, 'results', secureFilename), JSON.stringify(result, null, 2));
     } catch (error) {
       throw new Error(`Failed to store verification result: ${DocumentAuthenticationService.getErrorMessage(error)}`);
     }
@@ -578,7 +576,6 @@ export class DocumentAuthenticationService {
     // Define directory structure using only literal strings
     const UPLOADS_BASE = 'uploads';
     const DOCUMENTS_DIR = 'documents'; 
-    const RESULTS_DIR = 'results';
     
     // Build paths step by step with full control over each component
     const projectRoot = process.cwd();

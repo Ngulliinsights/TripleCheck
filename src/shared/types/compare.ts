@@ -78,7 +78,7 @@ export interface BaseCompareProps {
 }
 
 export interface CompareContextType {
-  // Core state management
+  // Core functionality
   selectedProperties: CompareProperty[];
   addToCompare: (property: CompareProperty) => void;
   removeFromCompare: (propertyId: string) => void;
@@ -86,45 +86,46 @@ export interface CompareContextType {
   isSelected: (propertyId: string) => boolean;
   canAddMore: boolean;
   maxProperties: number;
-  
+
   // Enhanced functionality
   toggleProperty: (property: CompareProperty) => void;
   replaceProperty: (oldPropertyId: string, newProperty: CompareProperty) => void;
   reorderProperties: (fromIndex: number, toIndex: number) => void;
   getPropertyIndex: (propertyId: string) => number;
-  
+
   // Bulk operations
   addMultiple: (properties: CompareProperty[]) => void;
   removeMultiple: (propertyIds: string[]) => void;
   replaceAll: (properties: CompareProperty[]) => void;
-  
+
   // Comparison utilities
   getCommonFeatures: () => string[];
   getDifferentFeatures: () => string[];
   getPropertyComparison: () => ComparisonResult[];
-  
+
   // Persistence and sharing
   exportComparison: () => string;
   importComparison: (data: string) => boolean;
   getShareableUrl: () => string;
-  
+
   // Statistics and insights
   getStats: () => ComparisonStats;
   getPriceRange: () => { min: number; max: number; average: number } | null;
-  
+
   // History and undo
   history: CompareProperty[][];
   canUndo: boolean;
   canRedo: boolean;
   undo: () => void;
   redo: () => void;
-  
+
   // State flags
   isLoading: boolean;
   error: string | null;
-  
-  // Event callbacks
+
+  // Event callbacks (optional)
   onSelectionChange?: (properties: CompareProperty[]) => void;
   onMaxReached?: () => void;
   onEmptyState?: () => void;
 }
+
