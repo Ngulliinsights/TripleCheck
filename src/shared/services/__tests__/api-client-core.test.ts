@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupMswServer , server } from '../../test-utils/msw-server';
-import { ApiClient, apiClient, api } from '../api-client';
+import { UnifiedApiClient, apiClient } from '../unified-api-client';
 import { http, HttpResponse } from 'msw';
 
 
@@ -8,10 +8,10 @@ import { http, HttpResponse } from 'msw';
 setupMswServer({ quiet: true });
 
 describe('API Client Core Integration Tests', () => {
-  let client: ApiClient;
+  let client: UnifiedApiClient;
 
   beforeEach(() => {
-    client = new ApiClient({
+    client = new UnifiedApiClient({
       baseUrl: '/api',
       timeout: 5000,
       retryAttempts: 2,

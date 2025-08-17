@@ -945,6 +945,9 @@ export function createAIConfig(): AIConfig {
   };
 }
 
+// Import the new ML core system
+import { getMLService, initializeMLService } from '../ml-core';
+
 // Global AI/ML service instance
 let aimlServiceInstance: AIMLService | null = null;
 
@@ -954,6 +957,16 @@ export function getAIMLService(): AIMLService {
     aimlServiceInstance = new AIMLService(config);
   }
   return aimlServiceInstance;
+}
+
+// New ML service integration
+export async function getAdvancedMLService() {
+  try {
+    return await initializeMLService();
+  } catch (error) {
+    console.warn('Advanced ML service not available, falling back to basic AI service');
+    return getAIMLService();
+  }
 }
 
 // Helper functions for common AI tasks

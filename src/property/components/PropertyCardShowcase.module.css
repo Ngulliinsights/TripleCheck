@@ -1,0 +1,33 @@
+:root {
+  --container-height: 400px;
+  --total-height: 0px;
+  --item-height: 200px;
+  --item-offset: 0;
+}
+
+.virtualizedContainer {
+  height: var(--container-height);
+  overflow: auto;
+  width: 100%;
+  position: relative;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.virtualizedContent {
+  position: relative;
+  width: 100%;
+  height: var(--total-height);
+}
+
+.virtualizedItem {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  transform: translateY(var(--item-offset, 0));
+  height: var(--item-height);
+  will-change: transform;
+}

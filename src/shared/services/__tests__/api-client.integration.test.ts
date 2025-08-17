@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
 import { setupMswServer, mockApiSuccess, mockApiError, simulateNetworkConditions, withTemporaryHandlers , server } from '../../test-utils/msw-server';
-import { ApiClient, apiClient, api, type ApiResponse, type ApiClientConfig, type RequestInterceptor, type ResponseInterceptor } from '../api-client';
+import { UnifiedApiClient, apiClient, type ApiResponse, type ApiRequestOptions } from '../unified-api-client';
 import { http, HttpResponse } from 'msw';
 
 
@@ -8,11 +8,11 @@ import { http, HttpResponse } from 'msw';
 setupMswServer({ quiet: true });
 
 describe('API Client Integration Tests', () => {
-  let client: ApiClient;
+  let client: UnifiedApiClient;
 
   beforeEach(() => {
     // Create a fresh client instance for each test
-    client = new ApiClient({
+    client = new UnifiedApiClient({
       baseUrl: '/api',
       timeout: 5000,
       retryAttempts: 2,
@@ -153,7 +153,7 @@ describe('API Client Integration Tests', () => {
     });
 
     it('should handle timeout errors', async () => {
-      const timeoutClient = new ApiClient({ timeout: 100 });
+      const timeoutClient = new UnifiedApiClient({ defaultOptions: { timeout: 100 } });
       
       server.use(
         http.get('/api/timeout', async () => {
@@ -276,12 +276,11 @@ describe('API Client Integration Tests', () => {
 
   describe('Caching Integration', () => {
     beforeEach(() => {
-      client = new ApiClient({
+      client = new UnifiedApiClient({
         baseUrl: '/api',
-        cacheStrategy: {
-          type: 'LRU',
-          maxSize: 5,
-          defaultTTL: 1000, // 1 second for testing
+        defaultOptions: {
+          useCache: true,
+          cacheTtl: 1000, // 1 second for testing
         },
       });
       client.clearCache();

@@ -11,6 +11,8 @@ import { useNavigate } from "react-router-dom";
 
 import { PropertyCard } from "../../shared/components/property";
 import { Badge } from "../../shared/components/ui/badge";
+import { normalizeLandProperty } from "../utils/normalizeLandProperty";
+import { cn } from "../../shared/lib/utils";
 import { Button } from "../../shared/components/ui/button";
 import {
   Card,
@@ -25,8 +27,10 @@ import {
   TabsTrigger,
 } from "../../shared/components/ui/tabs";
 import type { NormalizedProperty } from "../../shared/types/property";
+import type { CSSProperties } from "react";
 
 import EnhancedLandCard from "./EnhancedLandCard";
+import styles from "./PropertyCardShowcase.module.css";
 
 /* ------------------------------------------------------------------ */
 /* Types & Constants                                                  */
@@ -65,7 +69,7 @@ interface ShowcaseProperty {
   isFeatured?: boolean;
 }
 
-interface LandProperty {
+export interface LandProperty {
   id: string;
   title: string;
   description: string;
@@ -278,26 +282,28 @@ const VirtualizedPropertyList: React.FC<VirtualizedPropertyListProps> = ({
     setScrollTop(e.currentTarget.scrollTop);
   }, []);
 
+  const containerStyle = {
+    '--total-height': `${virtualizedData.totalHeight}px`,
+  } as CSSProperties;
+
+  // These inline styles are required for dynamic virtualization values that can't be handled by CSS alone
   return (
     <div
-      className={`overflow-auto ${className}`}
-      style={{ height: CONTAINER_HEIGHT }}
+      className={cn(styles.virtualizedContainer, className)}
       onScroll={handleScroll}
+      // containerStyle contains dynamic total-height which must be calculated at runtime
+      style={containerStyle}
     >
-      <div
-        style={{ height: virtualizedData.totalHeight, position: "relative" }}
-      >
+      <div className={styles.virtualizedContent}>
         {virtualizedData.visibleProperties.map((property, index) => (
           <div
             key={property.id}
-            className="p-2"
+            className={cn(styles.virtualizedItem)}
+            // Dynamic positioning for virtualized items requires runtime calculation
             style={{
-              position: "absolute",
-              top: (virtualizedData.startIndex + index) * itemHeight,
-              left: 0,
-              right: 0,
-              height: itemHeight,
-            }}
+              '--item-height': `${itemHeight}px`,
+              '--item-offset': `${(virtualizedData.startIndex + index) * itemHeight}px`
+            } as CSSProperties}
           >
             <ListingCard
               property={{
@@ -633,7 +639,7 @@ export default function PropertyCardShowcase() {
     return landProperties.map((property) => (
       <EnhancedLandCard
         key={property.id}
-        property={property}
+        property={normalizeLandProperty(property)}
         showQuickActions={true}
         showGallery={true}
         isInWishlist={wishlist.has(property.id)}

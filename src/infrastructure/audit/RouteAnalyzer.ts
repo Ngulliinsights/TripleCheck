@@ -5,7 +5,7 @@
  * routes that are referenced in the UI but not properly implemented.
  */
 
-import { RouteValidationResult } from './UIAuditSystem.js';
+import type { RouteValidationResult } from '../../types/route.types';
 
 export interface RouteDefinition {
   path: string;

@@ -4,6 +4,7 @@
     "server/**/*",
     "scripts/**/*",
     "database/**/*",
+    "types/**/*",
     "vite.config.ts",
     "vite.*.config.ts",
     "vitest.*.config.ts",
@@ -31,7 +32,7 @@
     
     // Module System
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     
@@ -56,15 +57,19 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "allowImportingTsExtensions": true,
+    "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
-    "moduleDetection": "force",
+    "moduleDetection": "auto",
     
     // Performance & Compatibility
     "skipLibCheck": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": false,
     "downlevelIteration": true,
+    "declaration": true,
+    "declarationMap": true,
+    "rootDir": ".",
+    "outDir": "./dist",
     
     // JSX
     "jsx": "react-jsx",

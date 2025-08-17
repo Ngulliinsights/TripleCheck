@@ -1,0 +1,19 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    // Override main config for audit tools compilation
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "../../../dist/audit",
+    "rootDir": ".",
+    "baseUrl": "../../../",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@infrastructure/*": ["./src/infrastructure/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+}

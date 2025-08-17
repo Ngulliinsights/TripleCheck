@@ -7,7 +7,7 @@
 import { EventEmitter } from 'events';
 import { OptimizedUIAuditSystem, EnhancedAuditReport } from './UIAuditSystem.js';
 import { RouteAnalyzer } from './RouteAnalyzer.js';
-import { LinkValidator } from './LinkValidator.js';
+import { EnhancedLinkValidator } from './LinkValidator.js';
 import { AuditReporter } from './AuditReporter.js';
 import { AccessibilityPlugin } from './plugins/AccessibilityPlugin.js';
 import { PerformancePlugin } from './plugins/PerformancePlugin.js';

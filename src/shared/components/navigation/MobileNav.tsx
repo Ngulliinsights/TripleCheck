@@ -50,6 +50,21 @@ interface NavigationItem {
   readonly items?: readonly { readonly label: string; readonly href: string }[];
 }
 
+/**
+ * Enhanced MobileNav Component
+ * 
+ * Strategic consolidation: This component combines the best features from both
+ * layout and navigation versions, providing a comprehensive mobile navigation solution.
+ * 
+ * Features:
+ * - Advanced search functionality
+ * - Collapsible navigation sections  
+ * - Authentication state handling
+ * - Quick action buttons
+ * - Smooth animations and transitions
+ * - Accessibility compliance
+ */
+
 export function MobileNav({ 
   className, 
   variant = "default", 

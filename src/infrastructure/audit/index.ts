@@ -7,22 +7,39 @@
 
 import { UIAuditSystem } from './UIAuditSystem.js';
 import { RouteAnalyzer } from './RouteAnalyzer.js';
-import { LinkValidator } from './LinkValidator.js';
+import LinkValidator from './LinkValidator.js';
 import { AuditReporter } from './AuditReporter.js';
+import type {
+  UIElement,
+  ComponentLocation,
+  ElementStatus,
+  Priority,
+  AccessibilityInfo,
+  PerformanceMetrics,
+  AuditConfiguration,
+  AuditRule,
+  AuditRuleResult
+} from '../../types/audit.types';
+import type { EventHandler, APICall } from '../../types/event.types';
+import type { RouteValidationResult } from '../../types/route.types';
+import type { APIConnectionResult } from './LinkValidator.js';
 
 export { UIAuditSystem } from './UIAuditSystem.js';
 export { RouteAnalyzer } from './RouteAnalyzer.js';
-export { LinkValidator } from './LinkValidator.js';
+export { default as LinkValidator } from './LinkValidator.js';
 export { AuditReporter } from './AuditReporter.js';
 
 // Re-export types
 export type {
   UIElement,
   ComponentLocation,
-  EventHandler,
-  APICall,
-  AuditReport,
-  AuditSummary,
+  ElementStatus,
+  Priority,
+  AccessibilityInfo,
+  PerformanceMetrics,
+  AuditConfiguration,
+  AuditRule,
+  AuditRuleResult,
   RouteValidationResult,
   APIConnectionResult,
   Recommendation
@@ -66,7 +83,19 @@ export async function runCompleteAudit(): Promise<{
   
   try {
     // Create audit system instances
-    const auditSystem = new UIAuditSystem();
+    const auditSystem = new UIAuditSystem({
+      scanDepth: 'deep',
+      includeTestFiles: false,
+      excludePaths: [],
+      componentDirectories: [],
+      apiTimeout: 5000,
+      parallelism: 4,
+      cacheResults: true,
+      cacheDuration: 60,
+      includeAccessibility: true,
+      includePerformance: true,
+      customRules: []
+    });
     const routeAnalyzer = new RouteAnalyzer();
     const linkValidator = new LinkValidator();
     const auditReporter = new AuditReporter();
@@ -139,19 +168,31 @@ export async function runQuickAudit(): Promise<{
   
   try {
     // Create audit system instance
-    const auditSystem = new UIAuditSystem();
+    const auditSystem = new UIAuditSystem({
+      scanDepth: 'shallow',
+      includeTestFiles: false,
+      excludePaths: [],
+      componentDirectories: [],
+      apiTimeout: 3000,
+      parallelism: 2,
+      cacheResults: true,
+      cacheDuration: 30,
+      includeAccessibility: false,
+      includePerformance: false,
+      customRules: []
+    });
     
     // Quick scan of critical elements only
     const elements = await auditSystem.scanComponents();
-    const criticalElements = elements.filter(e => e.priority === 'critical');
+    const criticalElements = elements.filter((e: UIElement) => e.priority === 'critical');
     
     // Quick route validation
     const routes = await auditSystem.validateRoutes();
-    const brokenRoutes = routes.filter(r => r.status === 'broken' || r.status === '404');
+    const brokenRoutes = routes.filter((r: RouteValidationResult) => r.status === 'broken' || r.status === '404');
     
     // Quick API test
     const apiConnections = await auditSystem.testAPIConnections();
-    const brokenAPIs = apiConnections.filter(a => a.status === 'broken');
+    const brokenAPIs = apiConnections.filter((a: APIConnectionResult) => a.status === 'broken');
 
     const summary = {
       totalElements: elements.length,

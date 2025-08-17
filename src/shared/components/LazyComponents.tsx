@@ -1,6 +1,17 @@
 /**
- * Lazy Loading Components
- * Optimized components for performance and lazy loading
+ * Comprehensive Lazy Loading Components
+ * 
+ * Strategic consolidation: This file combines basic lazy loading with advanced
+ * performance optimization features including virtualization, infinite scroll,
+ * and progressive image loading.
+ * 
+ * Features:
+ * - Basic lazy loading with intersection observer
+ * - Virtualized lists for large datasets
+ * - Infinite scroll implementation
+ * - Progressive image loading
+ * - Lazy route components
+ * - Performance optimized rendering
  */
 
 import React, { Suspense, lazy, ComponentType } from 'react';

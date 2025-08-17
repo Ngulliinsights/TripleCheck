@@ -147,6 +147,7 @@ export const AppRouter: React.FC = () => {
         <Route path="/mvp-demo" element={<LazyRoutes.MVPDemo />} />
         <Route path="/nav-test" element={<LazyRoutes.NavigationTest />} />
         <Route path="/api-demo" element={<LazyRoutes.ApiDemo />} />
+        <Route path="/ai-test" element={<LazyRoutes.HuggingFaceTest />} />
         <Route path="/contact-sales" element={<LazyRoutes.ContactSales />} />
 
         {/* ==========================================

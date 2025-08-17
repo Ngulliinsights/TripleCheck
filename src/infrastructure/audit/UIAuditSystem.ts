@@ -8,109 +8,47 @@
 import { ReactElement } from 'react';
 import { EventEmitter } from 'events';
 
-// Enhanced core interfaces
-export interface UIElement {
-  id: string;
-  type: UIElementType;
-  location: ComponentLocation;
-  currentBehavior: string;
-  intendedBehavior: string;
-  priority: Priority;
-  status: ElementStatus;
-  confidence: number; // 0-1 confidence in status assessment
-  props: Record<string, any>;
-  handlers: EventHandler[];
-  apiCalls: APICall[];
-  dependencies: string[];
-  navigationTarget?: string;
-  accessibility: AccessibilityInfo;
-  performance: PerformanceMetrics;
-  lastUpdated: Date;
-}
+// Import types from centralized type definitions
+import {
+  AuditConfiguration,
+  AuditRule,
+  AuditRuleResult,
+  UIElement,
+  AccessibilityInfo,
+  PerformanceMetrics,
+  Priority,
+  ElementStatus,
+  ComponentLocation
+} from '../../types/audit.types';
 
-export type UIElementType = 'button' | 'link' | 'form' | 'input' | 'select' | 'textarea' | 'modal' | 'dropdown' | 'tab' | 'accordion' | 'carousel' | 'div' | 'img';
-export type Priority = 'critical' | 'high' | 'medium' | 'low';
-export type ElementStatus = 'working' | 'broken' | 'missing' | 'unknown' | 'degraded' | 'deprecated';
+/**
+ * Core audit system implementation
+ */
+export class UIAuditSystem extends EventEmitter {
+  private config: AuditConfiguration;
+  private cache: Map<string, any>;
+  private abortController?: AbortController;
 
-export interface ComponentLocation {
-  filePath: string;
-  componentName: string;
-  lineNumber?: number;
-  columnNumber?: number;
-  elementPath: string; // CSS selector path
-  gitHash?: string; // For tracking changes
-  parentComponents: string[];
-}
+  constructor(config: AuditConfiguration) {
+    super();
+    this.config = config;
+    this.cache = new Map();
+  }
 
-export interface EventHandler {
-  event: string;
-  handlerName: string;
-  isConnected: boolean;
-  handlerType: 'inline' | 'method' | 'hook' | 'external';
-  targetEndpoint?: string;
-  errorMessage?: string;
-  sourceLocation?: ComponentLocation;
-  dependencies: string[];
-}
+  async scanComponents(): Promise<UIElement[]> {
+    // Implementation details to be added
+    return [];
+  }
 
-export interface APICall {
-  method: HTTPMethod;
-  endpoint: string;
-  isWorking: boolean;
-  responseTime?: number;
-  errorCode?: number;
-  errorMessage?: string;
-  requestBody?: any;
-  expectedResponse?: any;
-  rateLimited?: boolean;
-  cached?: boolean;
-  retryCount?: number;
-}
+  async validateRoutes(): Promise<RouteValidationResult[]> {
+    // Implementation details to be added
+    return [];
+  }
 
-export interface AccessibilityInfo {
-  hasAriaLabels: boolean;
-  hasKeyboardSupport: boolean;
-  contrastRatio?: number;
-  screenReaderFriendly: boolean;
-  wcagLevel: 'AA' | 'AAA' | 'fail' | 'unknown';
-}
-
-export interface PerformanceMetrics {
-  renderTime?: number;
-  bundleImpact: number; // KB added to bundle
-  memoryUsage?: number;
-  rerendersPerSecond?: number;
-}
-
-export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
-
-export interface AuditConfiguration {
-  scanDepth: 'shallow' | 'deep' | 'exhaustive';
-  includeTestFiles: boolean;
-  excludePaths: string[];
-  apiTimeout: number; // milliseconds
-  parallelism: number; // concurrent operations
-  cacheResults: boolean;
-  cacheDuration: number; // minutes
-  includeAccessibility: boolean;
-  includePerformance: boolean;
-  customRules: AuditRule[];
-}
-
-export interface AuditRule {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  severity: Priority;
-  check: (element: UIElement) => Promise<AuditRuleResult>;
-}
-
-export interface AuditRuleResult {
-  passed: boolean;
-  message: string;
-  suggestion?: string;
-  autoFixAvailable?: boolean;
+  async testAPIConnections(): Promise<APIConnectionResult[]> {
+    // Implementation details to be added
+    return [];
+  }
 }
 
 // Enhanced audit report interfaces
@@ -492,7 +430,9 @@ export class OptimizedUIAuditSystem extends EventEmitter {
       if (cachedElements) {
         console.log(`📦 Using cached scan results (${cachedElements.length} elements)`);
         cachedElements.forEach(element => {
-          this.discoveredElements.set(element.id, element);
+          if (element.id) {
+            this.discoveredElements.set(element.id, element);
+          }
         });
         return cachedElements;
       }
@@ -541,7 +481,9 @@ export class OptimizedUIAuditSystem extends EventEmitter {
 
     // Populate the main map
     allElements.forEach(element => {
-      this.discoveredElements.set(element.id, element);
+      if (element.id) {
+        this.discoveredElements.set(element.id, element);
+      }
     });
 
     return allElements;
@@ -758,10 +700,10 @@ export class OptimizedUIAuditSystem extends EventEmitter {
     // Calculate confidence based on various factors
     let confidence = 0.5; // Base confidence
 
-    if (element.handlers.length > 0) confidence += 0.2;
-    if (element.apiCalls.length > 0) confidence += 0.1;
+    if ((element.handlers?.length ?? 0) > 0) confidence += 0.2;
+    if ((element.apiCalls?.length ?? 0) > 0) confidence += 0.1;
     if (element.navigationTarget) confidence += 0.1;
-    if (element.location.lineNumber) confidence += 0.1;
+    if (element.location?.lineNumber) confidence += 0.1;
 
     return Math.min(confidence, 1.0);
   }
@@ -773,7 +715,8 @@ export class OptimizedUIAuditSystem extends EventEmitter {
       hasKeyboardSupport: element.type !== 'input' || Math.random() > 0.2,
       contrastRatio: 4.5 + Math.random() * 3,
       screenReaderFriendly: Math.random() > 0.4,
-      wcagLevel: Math.random() > 0.7 ? 'AA' : 'fail'
+      wcagLevel: Math.random() > 0.7 ? 'AA' : 'fail',
+      issues: [] // Required by interface
     };
   }
 
@@ -782,7 +725,8 @@ export class OptimizedUIAuditSystem extends EventEmitter {
       renderTime: Math.random() * 10,
       bundleImpact: Math.random() * 50,
       memoryUsage: Math.random() * 1000,
-      rerendersPerSecond: Math.random() * 5
+      rerendersPerSecond: Math.random() * 5,
+      issues: [] // Required by interface
     };
   }
 
@@ -798,15 +742,18 @@ export class OptimizedUIAuditSystem extends EventEmitter {
         type: 'button',
         location: {
           filePath: 'src/user/pages/Dashboard.tsx',
-          componentName: 'Dashboard',
           lineNumber: 471,
           columnNumber: 12,
-          elementPath: 'button[data-testid="notifications-btn"]',
-          parentComponents: ['Layout', 'Header']
+          contextLines: [
+            'import { Header } from "./Header";',
+            'import { Layout } from "./Layout";',
+            'const DashboardPage = () => {',
+            '  return (',
+            '    <button data-testid="notifications-btn">Notifications</button>',
+            '  );',
+            '};'
+          ]
         },
-        currentBehavior: 'onClick handler calls handleNavigate("/notifications")',
-        intendedBehavior: 'Navigate to notifications page',
-        priority: 'high',
         status: 'broken', // Will be determined by analysis
         confidence: 0,
         props: {
@@ -815,19 +762,27 @@ export class OptimizedUIAuditSystem extends EventEmitter {
           'data-testid': 'notifications-btn'
         },
         handlers: [{
-          event: 'onClick',
-          handlerName: 'handleNavigate',
-          handlerType: 'method',
-          isConnected: false,
-          targetEndpoint: '/notifications',
-          dependencies: ['react-router-dom']
+          name: 'handleNavigate',
+          code: 'handleNavigate("/notifications")',
+          event: 'onClick'
         }],
         apiCalls: [],
-        dependencies: ['react-router-dom'],
         navigationTarget: '/notifications',
-        accessibility: {} as AccessibilityInfo, // Will be populated
-        performance: {} as PerformanceMetrics, // Will be populated
-        lastUpdated: new Date()
+        accessibility: {
+          hasAriaLabels: false,
+          hasKeyboardSupport: true,
+          contrastRatio: 4.5,
+          screenReaderFriendly: true,
+          wcagLevel: 'AA',
+          issues: []
+        },
+        performance: {
+          renderTime: 10,
+          bundleImpact: 50,
+          memoryUsage: 100,
+          rerendersPerSecond: 2,
+          issues: []
+        }
       });
     }
 
@@ -977,7 +932,18 @@ export class OptimizedUIAuditSystem extends EventEmitter {
         description: 'Potential XSS vulnerability in user input handling',
         location: {
           filePath: 'src/user/components/ProfileForm.tsx',
-          componentName: 'ProfileForm',
+          filePath: 'src/components/ProfileForm.tsx',
+          lineNumber: 45,
+          columnNumber: 3,
+          contextLines: [
+            'export const ProfileForm = () => {',
+            '  return (',
+            '    <form>',
+            '      <input type="text" />',
+            '    </form>',
+            '  );',
+            '};'
+          ],
           lineNumber: 45,
           elementPath: 'input[name="bio"]',
           parentComponents: ['Profile', 'Layout']
@@ -1048,7 +1014,7 @@ export class OptimizedUIAuditSystem extends EventEmitter {
         description: `${accessibilityIssues.length} elements fail accessibility standards`,
         estimatedEffort: accessibilityIssues.length * 2,
         dependencies: ['accessibility-guidelines', 'design-system-update'],
-        affectedElements: accessibilityIssues.map(e => e.id),
+        affectedElements: accessibilityIssues.filter(e => e.id).map(e => e.id!),
         suggestedSolution: 'Add ARIA labels, improve keyboard navigation, ensure proper contrast ratios, implement focus management',
         autoFixAvailable: true,
         businessImpact: 'Medium - Legal compliance risk, excludes users with disabilities'
@@ -1069,7 +1035,7 @@ export class OptimizedUIAuditSystem extends EventEmitter {
         description: `${performanceIssues.length} components have render times >16ms affecting 60fps target`,
         estimatedEffort: performanceIssues.length * 4,
         dependencies: ['performance-profiling', 'code-optimization'],
-        affectedElements: performanceIssues.map(e => e.id),
+        affectedElements: performanceIssues.filter(e => e.id).map(e => e.id!),
         suggestedSolution: 'Implement React.memo, optimize re-renders, lazy load components, reduce bundle size',
         businessImpact: 'Low-Medium - User experience impact, especially on mobile devices'
       });
@@ -1192,8 +1158,8 @@ export class OptimizedUIAuditSystem extends EventEmitter {
     const missingElements = elements.filter(e => e.status === 'missing').length;
     const unknownElements = elements.filter(e => e.status === 'unknown').length;
 
-    const criticalIssues = elements.filter(e => e.priority === 'critical' && e.status !== 'working').length;
-    const highPriorityIssues = elements.filter(e => e.priority === 'high' && e.status !== 'working').length;
+    const criticalIssues = elements.filter(e => e.priority === 'critical' && e.status !== 'working' && typeof e.priority !== 'undefined').length;
+    const highPriorityIssues = elements.filter(e => e.priority === 'high' && e.status !== 'working' && typeof e.priority !== 'undefined').length;
 
     return {
       totalElements: elements.length,
@@ -1350,7 +1316,7 @@ export class OptimizedUIAuditSystem extends EventEmitter {
     routes: RouteValidationResult[],
     apiConnections: APIConnectionResult[]
   ): RiskAssessment {
-    const criticalIssues = elements.filter(e => e.priority === 'critical' && e.status !== 'working').length;
+    const criticalIssues = elements.filter(e => e.priority === 'critical' && e.status !== 'working' && typeof e.priority !== 'undefined').length;
     const brokenAPIs = apiConnections.filter(a => a.status === 'broken').length;
 
     let overallRisk: 'high' | 'medium' | 'low' = 'low';
@@ -1474,7 +1440,7 @@ export class AccessibilityAuditPlugin implements AuditPlugin {
       if (findings.length > 0) {
         results.push({
           pluginName: this.name,
-          elementId: element.id,
+          elementId: element.id || `generated-${Date.now()}`,
           findings,
           metadata: {
             wcagLevel: element.accessibility?.wcagLevel || 'unknown',
