@@ -8,7 +8,7 @@ import MessageCenter from './communication/pages/MessageCenter';
 import Notifications from './communication/pages/Notifications';
 import AdvancedSearch from './search/pages/AdvancedSearch';
 import PropertyEdit from './property/pages/PropertyEdit';
-import PropertyMap from './property/pages/PropertyMap';
+import { PropertyMap } from './property/components/PropertyMap';
 import PropertyOptimize from './property/pages/PropertyOptimize';
 import BasicChecks from './trust/pages/BasicChecks';
 import FraudDetection from './trust/pages/FraudDetection';

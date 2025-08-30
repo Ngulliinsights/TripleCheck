@@ -3,22 +3,23 @@
  * Integrates retry policies, fallback mechanisms, graceful degradation, and audit logging
  */
 
-import { 
-  AppError, 
-  ExternalServiceError, 
-  ErrorCode, 
+import {
+  AppError,
+  ErrorCode,
   HttpStatusCode,
-  generateCorrelationId 
-} from "../../../src/shared/utils/errors";
+  generateCorrelationId,
+  ErrorCategory,
+  ErrorSeverity
+} from "../../../src/shared/error-handling";
 import { logger } from "../../logger";
 
 import { auditLogger, AuditSeverity } from "./AuditLogger";
 import { fallbackManager, FallbackResult } from "./FallbackManager";
-import { 
-  gracefulDegradationManager, 
-  DegradationContext, 
+import {
+  gracefulDegradationManager,
+  DegradationContext,
   DegradationResult,
-  DegradationLevel 
+  DegradationLevel
 } from "./GracefulDegradationManager";
 import { retryPolicyManager, RetryResult } from "./RetryPolicyManager";
 
@@ -113,7 +114,7 @@ export class ErrorHandlingService {
       // Step 1: Try primary operation with retry
       if (this.config.enableRetry) {
         const retryResult = await this.executeWithRetry(operation, context, correlationId);
-        
+
         if (retryResult.success) {
           await this.logSuccess(context, correlationId, Date.now() - startTime, 'retry');
           return {
@@ -134,7 +135,7 @@ export class ErrorHandlingService {
       // Step 2: Try fallback mechanisms
       if (this.config.enableFallback) {
         const fallbackResult = await this.executeWithFallback(operation, context, correlationId);
-        
+
         if (fallbackResult.success) {
           await this.logSuccess(context, correlationId, Date.now() - startTime, 'fallback');
           return {
@@ -157,7 +158,7 @@ export class ErrorHandlingService {
           degradationContext,
           correlationId
         );
-        
+
         if (degradationResult.success) {
           await this.logSuccess(context, correlationId, Date.now() - startTime, 'degradation');
           return {
@@ -173,16 +174,20 @@ export class ErrorHandlingService {
       }
 
       // All strategies failed
-      const finalError = new ExternalServiceError(
+      const finalError = new AppError(
+        ErrorCode.EXTERNAL_SERVICE_ERROR,
         `All error handling strategies failed for ${context.operation}`,
-        ErrorCode.EXTERNAL_SERVICE_UNAVAILABLE,
         HttpStatusCode.SERVICE_UNAVAILABLE,
-        { service: context.service, operation: context.operation },
-        correlationId
+        ErrorCategory.EXTERNAL_SERVICE,
+        {
+          severity: ErrorSeverity.CRITICAL,
+          details: { service: context.service, operation: context.operation },
+          correlationId
+        }
       );
 
       await this.logFailure(context, correlationId, Date.now() - startTime, finalError);
-      
+
       return {
         success: false,
         error: finalError,
@@ -199,7 +204,7 @@ export class ErrorHandlingService {
     } catch (error) {
       const handlingError = error instanceof Error ? error : new Error(String(error));
       await this.logFailure(context, correlationId, Date.now() - startTime, handlingError);
-      
+
       return {
         success: false,
         error: handlingError,
@@ -384,7 +389,7 @@ export class ErrorHandlingService {
       health.healthy = true;
     } else {
       health.consecutiveFailures++;
-      
+
       // Mark as unhealthy after threshold failures
       if (health.consecutiveFailures >= (this.config.degradationThreshold || 2)) {
         health.healthy = false;
@@ -420,7 +425,7 @@ export class ErrorHandlingService {
         health.consecutiveFailures = 0;
       }
       this.serviceHealthMap.set(service, health);
-      
+
       logger.info(
         `Manually set service health: ${service} = ${healthy}`,
         'ERROR_HANDLER',
@@ -439,7 +444,7 @@ export class ErrorHandlingService {
   ): (...args: T) => Promise<R> {
     return async (...args: T): Promise<R> => {
       const degradationContext = degradationContextFactory ? degradationContextFactory(...args) : undefined;
-      
+
       const result = await this.executeWithErrorHandling(
         () => fn(...args),
         { ...context, correlationId: generateCorrelationId() },
@@ -466,7 +471,7 @@ export class ErrorHandlingService {
    */
   updateConfig(updates: Partial<ErrorHandlingConfig>): void {
     Object.assign(this.config, updates);
-    
+
     logger.info(
       'Updated error handling configuration',
       'ERROR_HANDLER',
@@ -479,12 +484,12 @@ export class ErrorHandlingService {
    */
   getMetrics(): ErrorHandlingMetrics {
     const services = Array.from(this.serviceHealthMap.values());
-    
+
     return {
       totalServices: services.length,
       healthyServices: services.filter(s => s.healthy).length,
       unhealthyServices: services.filter(s => !s.healthy).length,
-      averageSuccessRate: services.reduce((sum, s) => 
+      averageSuccessRate: services.reduce((sum, s) =>
         sum + (s.totalRequests > 0 ? s.successfulRequests / s.totalRequests : 1), 0
       ) / services.length,
       serviceHealth: services.map(s => ({

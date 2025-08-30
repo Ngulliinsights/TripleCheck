@@ -18,7 +18,7 @@ import {
   cleanup 
 } from '../error-testing';
 import { ErrorBoundary } from '../../../app/error-boundary';
-import { api } from '../../services/api-client';
+import { api } from "../../../shared/services/unified-api-client"
 
 // Comprehensive component that demonstrates multiple error scenarios
 function ComprehensiveErrorTestComponent() {

@@ -11,13 +11,12 @@
  */
 
 // Standard exports
-export * from './api-client';
+export * from "../../shared/services/unified-api-client"
 export * from './cn';
 export * from './date-utils';
-export * from './enhanced-cache-manager';
+export * from "../services/CacheService"
 export * from './error-handling';
 export * from './errors';
-export * from './form-validation';
 export * from './formatters';
 export * from './globalPerformanceMonitor';
 export * from './logger';
@@ -31,4 +30,3 @@ export * from './route-tester';
 export * from './route-validator';
 export * from './safe-navigation';
 export * from './toast-utils';
-export * from './validation';

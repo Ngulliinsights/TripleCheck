@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ApiRateLimiter } from '../ApiRateLimiter';
-import { CacheService } from '../../cache/CacheService';
+import { CacheService } from "../infrastructure/cache"
 
 // Mock CacheService
 vi.mock('../../cache/CacheService');

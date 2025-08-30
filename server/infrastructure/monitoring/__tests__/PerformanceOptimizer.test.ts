@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PerformanceOptimizer, PerformanceMetrics, OptimizationRecommendation, PerformanceAlert } from '../PerformanceOptimizer';
 import { CachePerformanceMonitor } from '../CachePerformanceMonitor';
-import { CacheService } from '../../cache/CacheService';
+import { CacheService } from "../infrastructure/cache"
 
 // Mock dependencies
 vi.mock('../CachePerformanceMonitor');

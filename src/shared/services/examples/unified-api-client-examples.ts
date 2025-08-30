@@ -5,7 +5,7 @@
  * with all its enhanced features.
  */
 
-import { apiClient, UnifiedApiClient } from '../unified-api-client';
+import { apiClient, UnifiedApiClient } from "../../../shared/services/unified-api-client"
 
 // Example 1: Basic Usage (same as before)
 export async function basicUsage() {

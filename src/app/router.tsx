@@ -7,16 +7,16 @@ import { LazyRoutes } from './lazy-routes';
 
 /**
  * Comprehensive MVP Router - All Pages Accessible
- * 
+ *
  * This router provides access to all pages without authentication barriers
  * for stakeholder presentations and MVP demonstrations.
- * 
+ *
  * All routes are organized by domain and fully accessible.
  */
 
 export const AppRouter: React.FC = () => {
   return (
-    <Suspense 
+    <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center">
           <LoadingSpinner size="lg" />
@@ -55,44 +55,92 @@ export const AppRouter: React.FC = () => {
             PROPERTY MANAGEMENT ROUTES
             ========================================== */}
         <Route path="/properties" element={<LazyRoutes.Properties />} />
-        <Route path="/properties/residential" element={<LazyRoutes.PropertiesResidential />} />
-        <Route path="/properties/commercial" element={<LazyRoutes.PropertiesCommercial />} />
+        <Route
+          path="/properties/residential"
+          element={<LazyRoutes.PropertiesResidential />}
+        />
+        <Route
+          path="/properties/commercial"
+          element={<LazyRoutes.PropertiesCommercial />}
+        />
         <Route path="/properties/land" element={<LazyRoutes.Lands />} />
         <Route path="/property/:id" element={<LazyRoutes.PropertyDetails />} />
-        <Route path="/property/:id/edit" element={<LazyRoutes.PropertyEdit />} />
+        <Route
+          path="/property/:id/edit"
+          element={<LazyRoutes.PropertyEdit />}
+        />
         {/* Redirect legacy land routes to unified property route */}
         <Route path="/land/:id" element={<LazyRoutes.LandRedirect />} />
         <Route path="/compare" element={<LazyRoutes.PropertyCompare />} />
         <Route path="/list-property" element={<LazyRoutes.ListProperty />} />
         <Route path="/property/wizard" element={<LazyRoutes.PropertyWizard />} />
         <Route path="/property/map" element={<LazyRoutes.PropertyMap />} />
-        <Route path="/property/photos" element={<LazyRoutes.PropertyPhotos />} />
-        <Route path="/property/optimize" element={<LazyRoutes.PropertyOptimize />} />
-        <Route path="/property/verification" element={<LazyRoutes.PropertyVerification />} />
-        <Route path="/verify-property" element={<LazyRoutes.PropertyVerification />} />
+        <Route
+          path="/property/photos"
+          element={<LazyRoutes.PropertyPhotos />}
+        />
+        <Route
+          path="/property/optimize"
+          element={<LazyRoutes.PropertyOptimize />}
+        />
+        <Route
+          path="/property/verification"
+          element={<LazyRoutes.PropertyVerification />}
+        />
+        <Route
+          path="/verify-property"
+          element={<LazyRoutes.PropertyVerification />}
+        />
 
         {/* ==========================================
             LAND VERIFICATION ROUTES (Kenya-specific)
             ========================================== */}
-        <Route path="/land-verification" element={<LazyRoutes.LandVerification />} />
-        <Route path="/land-verification/dashboard" element={<LazyRoutes.LandVerificationDashboard />} />
-        <Route path="/land-verification/new" element={<LazyRoutes.NewLandVerification />} />
+        <Route
+          path="/land-verification"
+          element={<LazyRoutes.LandVerification />}
+        />
+        <Route
+          path="/land-verification/dashboard"
+          element={<LazyRoutes.LandVerificationDashboard />}
+        />
+        <Route
+          path="/land-verification/new"
+          element={<LazyRoutes.NewLandVerification />}
+        />
         <Route path="/verification" element={<LazyRoutes.LandVerification />} />
-        <Route path="/verification/:id" element={<LazyRoutes.LandVerification />} />
+        <Route
+          path="/verification/:id"
+          element={<LazyRoutes.LandVerification />}
+        />
 
         {/* ==========================================
             TRUST & FRAUD DETECTION ROUTES
             ========================================== */}
-        <Route path="/trust/basic-checks" element={<LazyRoutes.BasicChecks />} />
-        <Route path="/trust/fraud-detection" element={<LazyRoutes.FraudDetection />} />
-        <Route path="/trust/document-auth" element={<LazyRoutes.DocumentAuth />} />
+        <Route
+          path="/trust/basic-checks"
+          element={<LazyRoutes.BasicChecks />}
+        />
+        <Route
+          path="/trust/fraud-detection"
+          element={<LazyRoutes.FraudDetection />}
+        />
+        <Route
+          path="/trust/document-auth"
+          element={<LazyRoutes.DocumentAuth />}
+        />
         <Route path="/trust/reports" element={<LazyRoutes.TrustReports />} />
         <Route path="/trust/alerts" element={<LazyRoutes.TrustAlerts />} />
         <Route path="/trust/karma" element={<LazyRoutes.TrustKarma />} />
-        <Route path="/trust/reputation" element={<LazyRoutes.TrustReputation />} />
+        <Route
+          path="/trust/reputation"
+          element={<LazyRoutes.TrustReputation />}
+        />
         <Route path="/trust/points" element={<LazyRoutes.TrustPoints />} />
         <Route path="/trust/reviews" element={<LazyRoutes.TrustReviews />} />
-        <Route path="/trust/fraud-protection" element={<LazyRoutes.FraudProtectionInfo />} />
+        <Route
+          path="/trust/fraud-protection"
+          element={<LazyRoutes.FraudProtectionInfo />}
+        />
         <Route path="/trust-score" element={<LazyRoutes.TrustPoints />} />
 
         {/* ==========================================
@@ -121,9 +169,15 @@ export const AppRouter: React.FC = () => {
         <Route path="/blog-test" element={<LazyRoutes.BlogTest />} />
         <Route path="/resources" element={<LazyRoutes.Resources />} />
         <Route path="/community" element={<LazyRoutes.Community />} />
-        <Route path="/community-resources" element={<LazyRoutes.CommunityAndResources />} />
+        <Route
+          path="/community-resources"
+          element={<LazyRoutes.CommunityAndResources />}
+        />
         <Route path="/fraud-resources" element={<LazyRoutes.FraudResources />} />
-        <Route path="/find-professionals" element={<LazyRoutes.FindProfessionals />} />
+        <Route
+          path="/find-professionals"
+          element={<LazyRoutes.FindProfessionals />}
+        />
         <Route path="/our-story" element={<LazyRoutes.OurStory />} />
         <Route path="/partners" element={<LazyRoutes.Partners />} />
         <Route path="/press" element={<LazyRoutes.PressMedia />} />
@@ -132,36 +186,81 @@ export const AppRouter: React.FC = () => {
             BUSINESS & DEMO ROUTES
             ========================================== */}
         <Route path="/services" element={<LazyRoutes.Services />} />
-        <Route path="/services/basic-checks" element={<LazyRoutes.BasicChecks />} />
-        <Route path="/services/fraud-detection" element={<LazyRoutes.FraudDetection />} />
-        <Route path="/services/document-auth" element={<LazyRoutes.DocumentAuth />} />
-        <Route path="/services/reputation" element={<LazyRoutes.TrustReputation />} />
-        <Route path="/services/list-property" element={<LazyRoutes.ListProperty />} />
+        <Route
+          path="/services/basic-checks"
+          element={<LazyRoutes.BasicChecks />}
+        />
+        <Route
+          path="/services/fraud-detection"
+          element={<LazyRoutes.FraudDetection />}
+        />
+        <Route
+          path="/services/document-auth"
+          element={<LazyRoutes.DocumentAuth />}
+        />
+        <Route
+          path="/services/reputation"
+          element={<LazyRoutes.TrustReputation />}
+        />
+        <Route
+          path="/services/list-property"
+          element={<LazyRoutes.ListProperty />}
+        />
         <Route path="/solutions" element={<LazyRoutes.Solutions />} />
-        <Route path="/solutions/buyers" element={<LazyRoutes.SolutionsBuyers />} />
-        <Route path="/solutions/sellers" element={<LazyRoutes.SolutionsSellers />} />
-        <Route path="/solutions/agents" element={<LazyRoutes.SolutionsAgents />} />
-        <Route path="/solutions/developers" element={<LazyRoutes.SolutionsDevelopers />} />
-        <Route path="/solutions/legal-experts" element={<LazyRoutes.SolutionsLegalExperts />} />
+        <Route
+          path="/solutions/buyers"
+          element={<LazyRoutes.SolutionsBuyers />}
+        />
+        <Route
+          path="/solutions/sellers"
+          element={<LazyRoutes.SolutionsSellers />}
+        />
+        <Route
+          path="/solutions/agents"
+          element={<LazyRoutes.SolutionsAgents />}
+        />
+        <Route
+          path="/solutions/developers"
+          element={<LazyRoutes.SolutionsDevelopers />}
+        />
+        <Route
+          path="/solutions/legal-experts"
+          element={<LazyRoutes.SolutionsLegalExperts />}
+        />
         <Route path="/demo" element={<LazyRoutes.Demo />} />
         <Route path="/mvp-demo" element={<LazyRoutes.MVPDemo />} />
         <Route path="/nav-test" element={<LazyRoutes.NavigationTest />} />
         <Route path="/api-demo" element={<LazyRoutes.ApiDemo />} />
         <Route path="/ai-test" element={<LazyRoutes.HuggingFaceTest />} />
-        <Route path="/contact-sales" element={<LazyRoutes.ContactSales />} />
+        <Route
+          path="/contact-sales"
+          element={<LazyRoutes.ContactSales />}
+        />
 
         {/* ==========================================
             EXPERT COORDINATION ROUTES
             ========================================== */}
-        <Route path="/expert-coordination" element={<LazyRoutes.ExpertCoordination />} />
-        <Route path="/physical-verification" element={<LazyRoutes.PhysicalVerification />} />
-        <Route path="/community-intelligence" element={<LazyRoutes.CommunityIntelligence />} />
+        <Route
+          path="/expert-coordination"
+          element={<LazyRoutes.ExpertCoordination />}
+        />
+        <Route
+          path="/physical-verification"
+          element={<LazyRoutes.PhysicalVerification />}
+        />
+        <Route
+          path="/community-intelligence"
+          element={<LazyRoutes.CommunityIntelligence />}
+        />
 
         {/* ==========================================
             LEGAL & SUPPORT ROUTES
             ========================================== */}
         <Route path="/help" element={<LazyRoutes.Help />} />
-        <Route path="/help/getting-started" element={<LazyRoutes.GettingStarted />} />
+        <Route
+          path="/help/getting-started"
+          element={<LazyRoutes.GettingStarted />}
+        />
         <Route path="/contact" element={<LazyRoutes.Contact />} />
         <Route path="/privacy" element={<LazyRoutes.Privacy />} />
         <Route path="/terms" element={<LazyRoutes.Terms />} />
@@ -192,7 +291,10 @@ export const AppRouter: React.FC = () => {
             DOCUMENT MANAGEMENT ROUTES
             ========================================== */}
         <Route path="/documents" element={<LazyRoutes.DocumentsPage />} />
-        <Route path="/documents/upload" element={<LazyRoutes.DocumentUpload />} />
+        <Route
+          path="/documents/upload"
+          element={<LazyRoutes.DocumentUpload />}
+        />
         <Route path="/documents/:id" element={<LazyRoutes.DocumentViewer />} />
 
         {/* ==========================================
@@ -204,8 +306,14 @@ export const AppRouter: React.FC = () => {
             MISSING ROUTE REDIRECTS & FIXES
             ========================================== */}
         <Route path="/activity" element={<LazyRoutes.ComingSoon />} />
-        <Route path="/services/list-property" element={<LazyRoutes.ListProperty />} />
-        <Route path="/services/basic-checks" element={<LazyRoutes.BasicChecks />} />
+        <Route
+          path="/services/list-property"
+          element={<LazyRoutes.ListProperty />}
+        />
+        <Route
+          path="/services/basic-checks"
+          element={<LazyRoutes.BasicChecks />}
+        />
         <Route path="/land" element={<LazyRoutes.Lands />} />
 
         {/* ==========================================

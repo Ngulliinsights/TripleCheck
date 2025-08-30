@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { ErrorHandlingService, ErrorContext } from '../ErrorHandlingService';
+import { errorHandlingService } from '../ErrorHandlingService';
 import { DegradationContext , gracefulDegradationManager } from '../GracefulDegradationManager';
 
 // Mock the dependencies
@@ -88,7 +88,7 @@ describe('ErrorHandlingService', () => {
 
       (retryPolicyManager.executeWithRetry as vi.Mock).mockResolvedValueOnce(mockRetryResult);
 
-      const result = await errorHandlingService.executeWithErrorHandling(
+      const result = await errorHandler.executeWithErrorHandling(
         mockOperation,
         mockContext
       );
@@ -117,7 +117,7 @@ describe('ErrorHandlingService', () => {
 
       (retryPolicyManager.executeWithRetry as vi.Mock).mockResolvedValueOnce(mockRetryResult);
 
-      const result = await errorHandlingService.executeWithErrorHandling(
+      const result = await errorHandler.executeWithErrorHandling(
         mockOperation,
         mockContext
       );
@@ -148,7 +148,7 @@ describe('ErrorHandlingService', () => {
       (retryPolicyManager.executeWithRetry as vi.Mock).mockResolvedValueOnce(mockRetryResult);
       (fallbackManager.executeWithFallback as vi.Mock).mockResolvedValueOnce(mockFallbackResult);
 
-      const result = await errorHandlingService.executeWithErrorHandling(
+      const result = await errorHandler.executeWithErrorHandling(
         mockOperation,
         mockContext
       );
@@ -196,7 +196,7 @@ describe('ErrorHandlingService', () => {
       (fallbackManager.executeWithFallback as vi.Mock).mockResolvedValueOnce(mockFallbackResult);
       (gracefulDegradationManager.executeWithDegradation as vi.Mock).mockResolvedValueOnce(mockDegradationResult);
 
-      const result = await errorHandlingService.executeWithErrorHandling(
+      const result = await errorHandler.executeWithErrorHandling(
         mockOperation,
         mockContext,
         mockDegradationContext
@@ -244,7 +244,7 @@ describe('ErrorHandlingService', () => {
       (fallbackManager.executeWithFallback as vi.Mock).mockResolvedValueOnce(mockFallbackResult);
       (gracefulDegradationManager.executeWithDegradation as vi.Mock).mockResolvedValueOnce(mockDegradationResult);
 
-      const result = await errorHandlingService.executeWithErrorHandling(
+      const result = await errorHandler.executeWithErrorHandling(
         mockOperation,
         mockContext,
         mockDegradationContext
@@ -259,7 +259,7 @@ describe('ErrorHandlingService', () => {
     it('should handle error handling system failure', async () => {
       (retryPolicyManager.executeWithRetry as vi.Mock).mockRejectedValueOnce(new Error('System failure'));
 
-      const result = await errorHandlingService.executeWithErrorHandling(
+      const result = await errorHandler.executeWithErrorHandling(
         mockOperation,
         mockContext
       );
@@ -293,7 +293,7 @@ describe('ErrorHandlingService', () => {
 
   describe('service health management', () => {
     it('should track service health', () => {
-      const health = errorHandlingService.getServiceHealth();
+      const health = errorHandler.getServiceHealth();
       
       expect(health.length).toBeGreaterThan(0);
       expect(health.find(h => h.service === 'government-api')).toBeDefined();
@@ -310,12 +310,12 @@ describe('ErrorHandlingService', () => {
 
       (retryPolicyManager.executeWithRetry as vi.Mock).mockResolvedValueOnce(mockRetryResult);
 
-      await errorHandlingService.executeWithErrorHandling(
+      await errorHandler.executeWithErrorHandling(
         mockOperation,
         mockContext
       );
 
-      const health = errorHandlingService.getServiceHealthStatus('government-api');
+      const health = errorHandler.getServiceHealthStatus('government-api');
       expect(health?.healthy).toBe(true);
       expect(health?.consecutiveFailures).toBe(0);
     });
@@ -339,19 +339,19 @@ describe('ErrorHandlingService', () => {
       (retryPolicyManager.executeWithRetry as vi.Mock).mockResolvedValueOnce(mockRetryResult);
       (fallbackManager.executeWithFallback as vi.Mock).mockResolvedValueOnce(mockFallbackResult);
 
-      await errorHandlingService.executeWithErrorHandling(
+      await errorHandler.executeWithErrorHandling(
         mockOperation,
         mockContext
       );
 
-      const health = errorHandlingService.getServiceHealthStatus('government-api');
+      const health = errorHandler.getServiceHealthStatus('government-api');
       expect(health?.consecutiveFailures).toBeGreaterThan(0);
     });
 
     it('should manually set service health', () => {
-      errorHandlingService.setServiceHealth('government-api', false);
+      errorHandler.setServiceHealth('government-api', false);
       
-      const health = errorHandlingService.getServiceHealthStatus('government-api');
+      const health = errorHandler.getServiceHealthStatus('government-api');
       expect(health?.healthy).toBe(false);
     });
   });
@@ -360,7 +360,7 @@ describe('ErrorHandlingService', () => {
     it('should create error-handled wrapper function', async () => {
       const originalFunction = vi.fn().mockResolvedValue('result');
       
-      const errorHandledFunction = errorHandlingService.createErrorHandledFunction(
+      const errorHandledFunction = errorHandler.createErrorHandledFunction(
         originalFunction,
         { service: 'test-service', operation: 'test-op' }
       );
@@ -384,7 +384,7 @@ describe('ErrorHandlingService', () => {
     it('should throw error when wrapped function fails', async () => {
       const originalFunction = vi.fn().mockRejectedValue(new Error('Function failed'));
       
-      const errorHandledFunction = errorHandlingService.createErrorHandledFunction(
+      const errorHandledFunction = errorHandler.createErrorHandledFunction(
         originalFunction,
         { service: 'test-service', operation: 'test-op' }
       );
@@ -412,7 +412,7 @@ describe('ErrorHandlingService', () => {
       const originalFunction = vi.fn().mockResolvedValue('result');
       const degradationContextFactory = vi.fn().mockReturnValue(mockDegradationContext);
       
-      const errorHandledFunction = errorHandlingService.createErrorHandledFunction(
+      const errorHandledFunction = errorHandler.createErrorHandledFunction(
         originalFunction,
         { service: 'test-service', operation: 'test-op' },
         degradationContextFactory
@@ -436,7 +436,7 @@ describe('ErrorHandlingService', () => {
 
   describe('configuration management', () => {
     it('should get current configuration', () => {
-      const config = errorHandlingService.getConfig();
+      const config = errorHandler.getConfig();
       
       expect(config.enableRetry).toBe(true);
       expect(config.enableFallback).toBe(true);
@@ -445,12 +445,12 @@ describe('ErrorHandlingService', () => {
     });
 
     it('should update configuration', () => {
-      errorHandlingService.updateConfig({
+      errorHandler.updateConfig({
         enableRetry: false,
         maxRetryAttempts: 5
       });
 
-      const config = errorHandlingService.getConfig();
+      const config = errorHandler.getConfig();
       expect(config.enableRetry).toBe(false);
       expect(config.maxRetryAttempts).toBe(5);
     });
@@ -458,7 +458,7 @@ describe('ErrorHandlingService', () => {
 
   describe('metrics', () => {
     it('should get error handling metrics', () => {
-      const metrics = errorHandlingService.getMetrics();
+      const metrics = errorHandler.getMetrics();
       
       expect(metrics.totalServices).toBeGreaterThan(0);
       expect(metrics.healthyServices).toBeGreaterThanOrEqual(0);
@@ -481,13 +481,13 @@ describe('ErrorHandlingService', () => {
 
       // Execute multiple operations
       for (let i = 0; i < 3; i++) {
-        await errorHandlingService.executeWithErrorHandling(
+        await errorHandler.executeWithErrorHandling(
           mockOperation,
           mockContext
         );
       }
 
-      const metrics = errorHandlingService.getMetrics();
+      const metrics = errorHandler.getMetrics();
       const govApiHealth = metrics.serviceHealth.find(h => h.service === 'government-api');
       
       expect(govApiHealth?.successRate).toBe(1); // 100% success rate

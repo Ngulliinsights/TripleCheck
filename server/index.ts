@@ -9,7 +9,7 @@ import helmet from "helmet";
 
 import { initializeDatabase, runMigrations, seedDatabase } from "./infrastructure/database/connection";
 import { logger } from "./infrastructure/monitoring/logger";
-import { errorHandler, notFoundHandler, corsErrorHandler, timeoutHandler } from "./middleware/error-handler";
+import { errorHandler, notFoundHandler } from "./middleware/error";
 import { registerAIRoutes } from "./routes/ai-routes";
 import { registerRoutes } from "./routes/index";
 import { registerMLRoutes } from "./routes/ml-routes";

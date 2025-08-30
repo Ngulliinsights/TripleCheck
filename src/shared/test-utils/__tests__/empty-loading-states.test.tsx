@@ -9,7 +9,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../render';
 import { stateUtilities, cleanup } from '../error-testing';
-import { api } from '../../services/api-client';
+import { api } from "../../../shared/services/unified-api-client"
 
 // Mock component for testing different states
 function StateTestComponent() {

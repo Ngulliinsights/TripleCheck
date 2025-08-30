@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
 import { setupMswServer, mockApiSuccess, mockApiError, simulateNetworkConditions, withTemporaryHandlers , server } from '../../test-utils/msw-server';
-import { UnifiedApiClient, apiClient, type ApiResponse, type ApiRequestOptions } from '../unified-api-client';
+import { UnifiedApiClient, apiClient, type ApiResponse, type ApiRequestOptions } from "../../../shared/services/unified-api-client"
 import { http, HttpResponse } from 'msw';
 
 

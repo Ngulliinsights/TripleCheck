@@ -1,6 +1,6 @@
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 
-import { cacheService } from '../cache/CacheService';
+import { cacheService } from "../infrastructure/cache"
 import { storage } from '../infrastructure/storage/storage';
 import { structuredLogger } from '../monitoring/StructuredLogger';
 

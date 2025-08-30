@@ -1,6 +1,6 @@
 import { logger } from '../monitoring/logger';
 
-import { CacheService } from './CacheService';
+import { CacheService } from "../infrastructure/cache"
 
 /**
  * Analytics-specific caching layer with intelligent cache management

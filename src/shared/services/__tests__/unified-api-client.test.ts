@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { UnifiedApiClient, apiClient } from '../unified-api-client';
+import { UnifiedApiClient, apiClient } from "../../../shared/services/unified-api-client"
 
 // Mock fetch globally
 const mockFetch = vi.fn();

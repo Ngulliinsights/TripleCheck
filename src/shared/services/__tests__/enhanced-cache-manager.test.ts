@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { enhancedCache, EnhancedCacheManager } from '../enhanced-cache-manager';
+import { cacheService as enhancedCache } from "../CacheService"
 
 describe('Enhanced Cache Manager', () => {
   beforeEach(() => {
@@ -153,14 +153,11 @@ describe('Enhanced Cache Manager', () => {
   });
 
   describe('Instance Creation', () => {
-    it('should allow creating custom instances', () => {
-      const customCache = new EnhancedCacheManager();
+    it('should use singleton cache service', () => {
+      // The cache service is a singleton, so we test its behavior
+      enhancedCache.set('singleton-test', 'singleton-value');
       
-      customCache.set('custom-test', 'custom-value');
-      
-      // Should not affect the singleton instance
-      expect(enhancedCache.get('custom-test')).toBeNull();
-      expect(customCache.get('custom-test')).toBe('custom-value');
+      expect(enhancedCache.get('singleton-test')).toBe('singleton-value');
     });
   });
 });

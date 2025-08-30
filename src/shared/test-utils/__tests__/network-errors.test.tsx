@@ -9,7 +9,7 @@ import { screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../render';
 import { networkErrors, cleanup } from '../error-testing';
-import { api } from '../../services/api-client';
+import { api } from "../../../shared/services/unified-api-client"
 
 // Mock component that makes API calls
 function NetworkTestComponent() {

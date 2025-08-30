@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 
-import { cacheService } from '../../cache/CacheService';
+import { cacheService } from "../infrastructure/cache"
 import { logger } from '../../infrastructure/monitoring/logger';
 import { asyncProcessor } from '../AsyncProcessor';
 import { landVerificationCache } from '../cache/LandVerificationCache';

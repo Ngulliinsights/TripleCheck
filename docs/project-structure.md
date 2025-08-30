@@ -1,6 +1,9 @@
 # Project Structure
 
+Maximum depth: 7 levels
+
 ```
+.
 api/
 ├── v1/
 │   ├── document-auth/
@@ -15,7 +18,8 @@ AUDIT_SYSTEM_SUMMARY.md
 broken-links-analysis.md
 CHANGELOG.md
 CODE_OF_CONDUCT.md
-COMPLETE_FUNCTIONAL_PAGES_SUMMARY.md
+CODEBASE_GAPS_RESOLUTION.md
+competitive_landscape.html
 config/
 ├── app.config.ts
 ├── database.config.ts
@@ -34,16 +38,21 @@ config/
 │   ├── vitest.server.config.ts
 │   ├── vitest.unit.config.ts
 CONTRIBUTING.md
+CRITICAL_FIXES_IMPLEMENTATION.md
 cspell.json
-desktop.ini
+debug-evolution.sh
 docs/
 ├── advanced_image_prompts.md
+├── API_INTEGRATION_GUIDE.md
 ├── Component Placement Rationale_ Modular Service Architecture.md
 ├── comprehensive_code_analysis_framework.md
+├── COMPREHENSIVE_GAP_ANALYSIS.md
 ├── database-consolidation-complete-report.md
 ├── database-consolidation-migration-plan.md
+├── deep_audit.md
 ├── developer-portal.html
 ├── hook-migration.md
+├── IMPORT_GUIDE.md
 ├── improved-triplecheck-data-generation-prompts.md
 ├── Kenya Land Verification Data Generation prompts.md
 ├── kenya_land_verification_guide.md
@@ -53,150 +62,39 @@ docs/
 │   ├── Safaricom_Partnership_Pitch.md
 ├── project-structure.md
 ├── prompt_engineering_analysis.md
+├── PropTech Analysis.md
 ├── README.md
+├── skeptical-expert-responses.md
+├── SYSTEM_DESIGN_DOCUMENTATION.md
+├── technical-cofounder-pitch.md
 ├── triplecheck_unified_plan.md
 ├── unified_code_analysis_framework.md
 drizzle.config.ts
 eslint.config.js
+execute-api-consolidation.sh
+execute-cache-consolidation.sh
 FINAL_IMPLEMENTATION_SUMMARY.md
 firebase.json
 fix-package-duplicates.js
+fix-schema-imports.sh
 frontend-facade-analysis.md
 FUNCTIONAL_PAGES_SUMMARY.md
 generate-structure.sh
 generate-structure-to-file.sh
-IMPLEMENTATION_SUMMARY.md
+HUGGINGFACE_AI_INTEGRATION.md
 index.html
 LICENSE
-load-test-config.yml
-NAVIGATION_RECOMMENDATIONS.md
+migrate-validation.sh
+organize-validation-files.sh
 package.json
 package-lock.json
 playwright.config.ts
-playwright-report/
-├── index.html
 postcss.config.js
+PROJECT_REDUNDANCY_ANALYSIS.md
 property-broken-links-analysis.md
 public/
-├── assets/
-│   ├── alice-pasqual-Olki5QpHxts-unsplash.jpg
-│   ├── android-chrome-192x192.svg
-│   ├── android-chrome-192x192-temp.svg
-│   ├── android-chrome-512x512.svg
-│   ├── android-chrome-512x512-temp.svg
-│   ├── apartment-cozy-1.jpg
-│   ├── apartment-luxury-1.jpg
-│   ├── apple-touch-icon.svg
-│   ├── apple-touch-icon-temp.svg
-│   ├── Artmark.svg
-│   ├── blog1.jpg
-│   ├── blog1.webp
-│   ├── blog2.jpg
-│   ├── blog2.webp
-│   ├── blog3.jpg
-│   ├── blog3.webp
-│   ├── browserconfig.xml
-│   ├── Commercial/
-│   │   ├── ash-lab-ka4HDVIti78-unsplash.jpg
-│   │   ├── benjamin-cheng-wTZAqLPcTKk-unsplash (1).jpg
-│   │   ├── isai-sanchez-MLIUd81AX1o-unsplash.jpg
-│   │   ├── kc-shum-OKdd71f5Oq8-unsplash (1).jpg
-│   │   ├── nikita-pishchugin-y2lZI81BGk0-unsplash.jpg
-│   │   ├── nir-himi--i87qT8TJ34-unsplash.jpg
-│   │   ├── omar-elsharawy-lTqU2v0OKH4-unsplash.jpg
-│   │   ├── patrick-tomasso-gMes5dNykus-unsplash.jpg
-│   │   ├── pawel-czerwinski-3-Q4hnx60WM-unsplash.jpg
-│   │   ├── roman-fxTYHz1RG10-unsplash.jpg
-│   │   ├── the-prototype-45-GefVF-TA-unsplash.jpg
-│   │   ├── uran-wang-xsZ47_FLdpo-unsplash.jpg
-│   │   ├── willian-justen-de-vasconcellos-DY6g9FgXwbY-unsplash.jpg
-│   │   ├── zhiqiang-wang-9anoZ1zUr40-unsplash.jpg
-│   ├── confident-entrepreneur-looking-camera-with-arms-folded-smiling.jpg
-│   ├── customer1.png
-│   ├── customer2.png
-│   ├── customer3.jpg
-│   ├── customer3.png
-│   ├── depositphotos_68088663-stock-photo-portrait-of-a-young-african.jpg
-│   ├── diogo-brandao-cUXK9-kQfy4-unsplash.jpg
-│   ├── duplex-modern-1.jpg
-│   ├── e-fedorzyn-dS3qN-_VWuk-unsplash.jpg
-│   ├── elizeu-dias-2EGNqazbAMk-unsplash.jpg
-│   ├── etty-fidele-YYfzJhfNU14-unsplash.jpg
-│   ├── favicon.svg
-│   ├── favicon-144x144.svg
-│   ├── favicon-144x144-temp.svg
-│   ├── favicon-16x16.png
-│   ├── favicon-16x16.svg
-│   ├── favicon-16x16-temp.svg
-│   ├── favicon-32x32.svg
-│   ├── favicon-32x32-temp.svg
-│   ├── favicon-48x48.svg
-│   ├── favicon-48x48-temp.svg
-│   ├── favicon-72x72.svg
-│   ├── favicon-72x72-temp.svg
-│   ├── favicon-96x96.svg
-│   ├── favicon-96x96-temp.svg
-│   ├── fonts/
-│   │   ├── primary-font.woff2
-│   ├── fun.png
-│   ├── hero-bg.jpg
-│   ├── hero-bg.webp
-│   ├── house-executive-1.jpg
-│   ├── improved-triplecheck-data-generation-prompts_1751409334941.md
-│   ├── Land/
-│   │   ├── bogdan-pasca-XpyDh3PY2lA-unsplash.jpg
-│   │   ├── federico-respini-sYffw0LNr7s-unsplash.jpg
-│   │   ├── gautier-pfeiffer-WPapb9IqRKw-unsplash.jpg
-│   │   ├── jas-min-C1OaYNWprjc-unsplash.jpg
-│   │   ├── julian-ebert-zSflp4Mq_l0-unsplash.jpg
-│   │   ├── tomas-eidsvold-s2wjvuA_mFY-unsplash.jpg
-│   │   ├── yuriy-bogdanov-W51VK3Obcj0-unsplash.jpg
-│   ├── maria-fernanda-pissioli-6BOGBGy2-sU-unsplash.jpg
-│   ├── mstile-150x150.svg
-│   ├── mstile-150x150-temp.svg
-│   ├── penthouse-elegant-1.jpg
-│   ├── Residential/
-│   │   ├── alejandra-cifre-gonzalez-ylyn5r4vxcA-unsplash.jpg
-│   │   ├── alexander-andrews-A3DPhhAL6Zg-unsplash.jpg
-│   │   ├── billy-jo-catbagan-ysUyvjCocWo-unsplash.jpg
-│   │   ├── caroline-badran-aaONSK4BKxc-unsplash.jpg
-│   │   ├── caroline-badran-aH_EykwSvFk-unsplash.jpg
-│   │   ├── caroline-badran-ew0GEbhe-Ec-unsplash.jpg
-│   │   ├── caroline-badran-nf7iKpydFR4-unsplash.jpg
-│   │   ├── caroline-badran-OZIdKtn8pKs-unsplash.jpg
-│   │   ├── cytonn-photography-TVyhDpvL8MY-unsplash.jpg
-│   │   ├── dillon-kydd-XGvwt544g8k-unsplash.jpg
-│   │   ├── etienne-beauregard-riverin-B0aCvAVSX8E-unsplash.jpg
-│   │   ├── evan-wise-jZkFVycn3FQ-unsplash.jpg
-│   │   ├── evan-wise-lnSyq-qz2Ds-unsplash.jpg
-│   │   ├── evan-wise-u3aN79sbzYs-unsplash.jpg
-│   │   ├── frames-for-your-heart-2d4lAQAlbDA-unsplash.jpg
-│   │   ├── jason-briscoe-AQl-J19ocWE-unsplash.jpg
-│   │   ├── joel-filipe-RFDP7_80v5A-unsplash.jpg
-│   │   ├── krzysztof-hepner-V7Q0Oh3Az-c-unsplash.jpg
-│   │   ├── lennon-cheng-zoR9R1gOj0g-unsplash.jpg
-│   │   ├── luke-van-zyl-koH7IVuwRLw-unsplash.jpg
-│   │   ├── michael-oxendine-GHCVUtBECuY-unsplash (1).jpg
-│   │   ├── minh-pham-7pCFUybP_P8-unsplash.jpg
-│   │   ├── rebecca-chandler-z6Yn9hhlrJw-unsplash.jpg
-│   │   ├── sebastien-lavalaye-gNY6RsMIsPo-unsplash.jpg
-│   │   ├── terrah-holly-pmhdkgRCbtE-unsplash.jpg
-│   │   ├── thanos-pal-I3S-Oha_5k4-unsplash.jpg
-│   │   ├── webaliser-_TPTXZd9mOo-unsplash.jpg
-│   ├── site.webmanifest
-│   ├── studio-stylish-1.jpg
-│   ├── TripleCheck.ico
-├── debug.html
-├── favicon-preview.html
-├── mockServiceWorker.js
-├── placeholder-property.jpg
 ├── sw.js
 README.md
-reports/
-├── bug-analysis.json
-├── bug-detection-report.json
-├── bug-detection-report.md
-├── load-test-validation-report.json
 scripts/
 ├── add-b2b-messaging.js
 ├── add-reviews.ts
@@ -206,7 +104,10 @@ scripts/
 ├── check-data.ts
 ├── check-reviews-table.ts
 ├── check-table-structure.ts
+├── cleanup-redundancies.ts
+├── comprehensive-cleanup.ts
 ├── convert-favicons.bat
+├── create-barrel-exports.ts
 ├── create-favicon-pngs.js
 ├── create-minimal-pngs.js
 ├── create-png-favicons.js
@@ -217,26 +118,14 @@ scripts/
 ├── debug-blank-page.ts
 ├── debug-vercel-deployment.ts
 ├── deployment/
-│   ├── alert_rules.yml
 │   ├── deployment-tests.ts
 │   ├── deploy-production.ts
 │   ├── deploy-staging.ts
-│   ├── docker-compose.land-verification.yml
-│   ├── enhanced-alert-rules.yml
 │   ├── grafana/
 │   │   ├── dashboards/
 │   │   │   ├── business-metrics.json
 │   │   │   ├── database-health.json
 │   │   │   ├── query-performance.json
-│   │   ├── provisioning/
-│   │   │   ├── dashboards/
-│   │   │   │   ├── dashboard.yml
-│   │   │   │   ├── dashboard-provisioning.yml
-│   │   │   ├── datasources/
-│   │   │   │   ├── prometheus.yml
-│   ├── kubernetes/
-│   │   ├── land-verification-deployment.yaml
-│   ├── prometheus.yml
 │   ├── README.md
 │   ├── setup-comprehensive-monitoring.ts
 │   ├── setup-monitoring.ts
@@ -249,6 +138,7 @@ scripts/
 ├── detect-bugs.ts
 ├── disable-route-preloader.js
 ├── emergency-stop.js
+├── execute-optimization.ts
 ├── extract-api-core.js
 ├── fix-authentication-issues.ts
 ├── fix-image-test-issues.ts
@@ -273,6 +163,7 @@ scripts/
 ├── migrate-schema-imports.ts
 ├── MISSING_FEATURES_ANALYSIS.md
 ├── MOBILE_AND_DATA_IMPROVEMENTS.md
+├── OptimizedBuildPipeline.ts
 ├── optimize-for-deployment.js
 ├── performance/
 │   ├── api-performance-test.ts
@@ -306,6 +197,7 @@ scripts/
 ├── test-server-connection.cjs
 ├── test-server-ports.js
 ├── update-database-paths.cjs
+├── update-imports.ts
 ├── validate-authentication.ts
 ├── validate-database-paths.ts
 ├── validate-database-structure.cjs
@@ -316,6 +208,8 @@ scripts/
 ├── validate-image-tests.ts
 ├── validate-production.ts
 ├── validate-staging-final.cjs
+├── verify-api-client.js
+├── verify-optimization.ts
 server/
 ├── ai/
 │   ├── ai.controller.ts
@@ -327,7 +221,6 @@ server/
 │   ├── storage.ts
 ├── analytics/
 │   ├── analytics.controller.ts
-│   ├── performance-analytics.ts
 ├── app.ts
 ├── app-optimized.ts
 ├── auth/
@@ -343,6 +236,7 @@ server/
 │   ├── notification.service.ts
 ├── config/
 │   ├── development.ts
+│   ├── environment-schema.ts
 │   ├── ports.ts
 ├── controllers/
 │   ├── __tests__/
@@ -383,9 +277,6 @@ server/
 │   ├── types/
 │   │   ├── exif-parser.d.ts
 ├── fraud-detection/
-│   ├── analytics/
-│   │   ├── MLAnalyticsEngine.ts
-│   │   ├── NetworkAnalysisService.ts
 │   ├── api/
 │   │   ├── FraudDetectionAPI.ts
 │   ├── core/
@@ -461,21 +352,13 @@ server/
 │   │   │   │   ├── data-validator.ts
 │   │   │   │   ├── KenyanDataGenerator.ts
 │   │   │   │   ├── UnifiedDataGenerator.ts
-│   │   │   ├── docs/
-│   │   │   │   ├── examples/
 │   │   │   ├── examples/
 │   │   │   │   ├── demo-generation-example.ts
 │   │   │   ├── generators/
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── python/
-│   │   │   │   ├── typescript/
+│   │   │   │   │   ├── runner.ts
 │   │   │   ├── index.ts
-│   │   │   ├── integrations/
-│   │   │   ├── output/
-│   │   │   │   ├── checkpoints/
-│   │   │   │   ├── datasets/
-│   │   │   │   ├── reports/
-│   │   │   │   ├── statistics/
 │   │   │   ├── README.md
 │   │   │   ├── scenarios/
 │   │   │   │   ├── demo-data-validator.ts
@@ -483,7 +366,6 @@ server/
 │   │   │   │   ├── production-demo-scenarios.ts
 │   │   │   │   ├── README.md
 │   │   │   │   ├── scenario-generator.ts
-│   │   │   ├── templates/
 │   │   ├── deployment/
 │   │   │   ├── BlueGreenDeploymentManager.ts
 │   │   │   ├── deployment-cli.ts
@@ -538,21 +420,19 @@ server/
 │   │   │   ├── __tests__/
 │   │   │   │   ├── integration.test.ts
 │   │   │   │   ├── migration-manager.test.ts
-│   │   │   │   ├── migrations/
 │   │   │   │   ├── test-migration.ts
 │   │   │   │   ├── test-scripts.test.ts
-│   │   │   ├── _legacy_backup/
 │   │   │   ├── 0000_daffy_skrulls.sql
-│   │   │   ├── analytics/
-│   │   │   │   ├── 001_create_analytics_tables.sql
-│   │   │   │   ├── index.ts
 │   │   │   ├── communication/
 │   │   │   │   ├── 001_create_communication_tables.sql
 │   │   │   │   ├── index.ts
 │   │   │   ├── core/
 │   │   │   │   ├── 001_create_comprehensive_tables.sql
 │   │   │   │   ├── files/
+│   │   │   │   │   ├── 001_initial_schema.sql
 │   │   │   │   ├── meta/
+│   │   │   │   │   ├── _journal.json
+│   │   │   │   │   ├── 0000_snapshot.json
 │   │   │   │   ├── README.md
 │   │   │   ├── fraud/
 │   │   │   │   ├── 001_create_fraud_detection_tables.sql
@@ -581,10 +461,10 @@ server/
 │   │   │   ├── performance-cli.ts
 │   │   │   ├── PerformanceMonitoringDashboard.ts
 │   │   ├── PRODUCTION_DEPLOYMENT_GUIDE.md
+│   │   ├── QueryOptimizer.ts
 │   │   ├── README.md
 │   │   ├── replication/
 │   │   │   ├── ConnectionRouter.ts
-│   │   │   ├── docker-compose.ha.yml
 │   │   │   ├── FailoverManager.ts
 │   │   │   ├── haproxy.cfg
 │   │   │   ├── pg_hba.conf
@@ -598,8 +478,6 @@ server/
 │   │   │   ├── __tests__/
 │   │   │   │   ├── schema-manager.test.ts
 │   │   │   │   ├── validation.test.ts
-│   │   │   ├── analytics/
-│   │   │   │   ├── index.ts
 │   │   │   ├── communication/
 │   │   │   │   ├── index.ts
 │   │   │   ├── consolidated.ts
@@ -700,6 +578,7 @@ server/
 │   │   │   ├── database-utils.ts
 │   │   │   ├── generators/
 │   │   │   │   ├── __tests__/
+│   │   │   │   │   ├── data-generator.test.ts
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── kenyan-data-generator.ts
 │   │   │   │   ├── README.md
@@ -735,20 +614,17 @@ server/
 │   ├── email/
 │   │   ├── email.service.ts
 │   │   ├── email-config.ts
-│   │   ├── EmailService.ts
 │   │   ├── email-service-init.ts
-│   ├── error-handling/
-│   │   ├── StandardErrorHandler.ts
 │   ├── events/
 │   │   ├── EventBus.ts
 │   ├── monitoring/
 │   │   ├── __tests__/
 │   │   │   ├── PerformanceOptimizer.test.ts
 │   │   ├── AlertingSystem.ts
+│   │   ├── BuildPerformanceMonitor.ts
 │   │   ├── CachePerformanceMonitor.ts
 │   │   ├── index.ts
 │   │   ├── logger.ts
-│   │   ├── logging.service.ts
 │   │   ├── MonitoringDashboard.ts
 │   │   ├── ObservabilitySystem.ts
 │   │   ├── PerformanceMonitor.ts
@@ -756,6 +632,7 @@ server/
 │   │   ├── PrometheusMetrics.ts
 │   │   ├── QueryPerformanceMonitor.ts
 │   ├── optimization/
+│   │   ├── BundleOptimizer.ts
 │   │   ├── PerformanceOptimizer.ts
 │   ├── rate-limiting/
 │   │   ├── __tests__/
@@ -772,6 +649,7 @@ server/
 │   │   ├── file.storage.ts
 │   │   ├── FileStorageService.ts
 │   │   ├── logger.ts
+│   │   ├── SecureFileUploadService.ts
 │   │   ├── storage.ts
 │   ├── testing/
 │   │   ├── TestFramework.ts
@@ -786,6 +664,7 @@ server/
 │   │   │   ├── client-examples.ts
 │   │   ├── index.ts
 │   │   ├── README.md
+│   │   ├── sedGOSgOE
 │   │   ├── VersionedRoutes.ts
 │   │   ├── versioning.middleware.ts
 ├── land-verification/
@@ -897,19 +776,40 @@ server/
 │   ├── auth.middleware.ts
 │   ├── auth.ts
 │   ├── cache.middleware.ts
-│   ├── centralized-error-handler.ts
 │   ├── data-validation.ts
 │   ├── deduplication.middleware.ts
-│   ├── enhanced-error-handler.ts
-│   ├── error.middleware.ts
-│   ├── error-handler.ts
+│   ├── error.ts
 │   ├── error-handler-integration-example.ts
 │   ├── logging.middleware.ts
 │   ├── query-limiter.middleware.ts
 │   ├── rate-limiting.middleware.ts
 │   ├── README-auth-middleware.md
 │   ├── README-centralized-error-handler.md
+│   ├── UnifiedSecurityMiddleware.ts
 │   ├── validation.middleware.ts
+├── ml/
+│   ├── core/
+│   │   ├── base-model.ts
+│   ├── README.md
+├── ml-core/
+│   ├── deployment/
+│   │   ├── production-deployment-guide.md
+│   ├── examples/
+│   │   ├── comprehensive-ml-integration.ts
+│   ├── fraud-detection/
+│   │   ├── AdvancedFraudDetectionEngine.ts
+│   ├── index.ts
+│   ├── infrastructure/
+│   │   ├── ModelRegistry.ts
+│   ├── orchestration/
+│   │   ├── MLOrchestrationService.ts
+│   ├── property-valuation/
+│   │   ├── AutomatedValuationModel.ts
+│   ├── README.md
+│   ├── training/
+│   │   ├── ContinuousLearningPipeline.ts
+│   ├── trust-intelligence/
+│   │   ├── CommunityTrustEngine.ts
 ├── monitoring/
 │   ├── HealthMonitor.ts
 │   ├── StructuredLogger.ts
@@ -986,7 +886,6 @@ server/
 │   ├── CommunityIntelligenceService.ts
 │   ├── CommunityResourcesService.ts
 │   ├── DocumentAuthenticationService.ts
-│   ├── email-service.ts
 │   ├── file-storage-service.ts
 │   ├── FraudIntelligenceService.ts
 │   ├── MessagingService.ts
@@ -1083,10 +982,6 @@ src/
 │   ├── hooks/
 │   │   ├── useAnalytics.ts
 │   ├── index.ts
-│   ├── pages/
-│   │   ├── Analytics.tsx
-│   ├── services/
-│   ├── types/
 ├── app/
 │   ├── __tests__/
 │   │   ├── lazy-loading.test.tsx
@@ -1115,6 +1010,7 @@ src/
 │   │   │   ├── setup.ts
 │   │   │   ├── TwoFactorAuth.test.tsx
 │   │   │   ├── UserProfile.test.tsx
+│   │   ├── index.ts
 │   │   ├── LoginForm.tsx
 │   │   ├── PasswordReset.tsx
 │   │   ├── RegistrationWizard.tsx
@@ -1124,6 +1020,7 @@ src/
 │   ├── hooks/
 │   │   ├── __tests__/
 │   │   │   ├── useAuth.test.tsx
+│   │   ├── index.ts
 │   │   ├── useAuth.ts
 │   ├── index.ts
 │   ├── pages/
@@ -1160,10 +1057,14 @@ src/
 │   │   ├── communication-business-logic.ts
 │   │   ├── DocumentCommunicationIntegration.ts
 │   │   ├── WebSocketManager.ts
-│   ├── types/
+├── components/
+│   ├── ai/
+│   │   ├── HuggingFaceTestPage.tsx
+│   │   ├── HuggingFaceTestPanel.tsx
 ├── config/
 │   ├── external-dependencies.ts
 ├── global.d.ts
+├── index.ts
 ├── infrastructure/
 │   ├── ai/
 │   │   ├── AIModelManager.tsx
@@ -1172,6 +1073,7 @@ src/
 │   │   ├── queryClient.ts
 │   │   ├── request-manager.ts
 │   ├── audit/
+│   │   ├── audit.types.ts
 │   │   ├── AuditReporter.ts
 │   │   ├── cli.ts
 │   │   ├── config.ts
@@ -1184,6 +1086,9 @@ src/
 │   │   │   ├── SecurityPlugin.ts
 │   │   ├── README.md
 │   │   ├── RouteAnalyzer.ts
+│   │   ├── run-audit.ts
+│   │   ├── tsconfig.json
+│   │   ├── types.ts
 │   │   ├── UIAuditSystem.ts
 │   ├── cache/
 │   │   ├── query-cache.ts
@@ -1228,17 +1133,13 @@ src/
 │   │   ├── ROUTE_PRELOADER_ANALYSIS.md
 │   │   ├── RoutePerformanceMonitor.tsx
 │   │   ├── route-preloader.ts
-│   │   ├── route-preloader.ts.backup
 │   │   ├── route-preloader-disabled.ts
 │   │   ├── useRoutePreloader.ts
-│   │   ├── useRoutePreloader.ts.backup
 │   │   ├── useRoutePreloader-disabled.ts
-│   ├── security/
 │   ├── services/
 │   │   ├── image-preload-service.ts
 │   ├── service-worker/
 │   │   ├── sw-registration.ts
-│   ├── storage/
 │   ├── utils/
 │   │   ├── __tests__/
 │   │   │   ├── image-optimization.test.ts
@@ -1286,8 +1187,10 @@ src/
 │   │   │   ├── HelpDocumentationService.test.ts
 │   │   ├── DocumentIntelligenceIntegration.ts
 │   │   ├── HelpDocumentationService.ts
-├── lib/
 ├── main.tsx
+├── ml/
+│   ├── core/
+│   │   ├── feature-engineering.ts
 ├── monitoring/
 │   ├── components/
 │   │   ├── HealthDashboard.tsx
@@ -1311,7 +1214,10 @@ src/
 │   │   ├── CompareBar.tsx
 │   │   ├── CompareModal.tsx
 │   │   ├── EnhancedLandCard.tsx
+│   │   ├── index.ts
 │   │   ├── PerformanceTestPanel.tsx
+│   │   ├── PropertyCardShowcase.module.css
+│   │   ├── PropertyCardShowcase.module.css.d.ts
 │   │   ├── PropertyCardShowcase.tsx
 │   │   ├── PropertyListingWizard.tsx
 │   │   ├── PropertyMap.tsx
@@ -1344,6 +1250,7 @@ src/
 │   ├── hooks/
 │   │   ├── __tests__/
 │   │   │   ├── consolidation-validation.test.ts
+│   │   ├── index.ts
 │   │   ├── MIGRATION_GUIDE.md
 │   │   ├── useConsolidatedPropertySearch.ts
 │   │   ├── useLandProperty.ts
@@ -1368,12 +1275,12 @@ src/
 │   │   ├── PropertyCompare.tsx
 │   │   ├── PropertyDetails.tsx
 │   │   ├── PropertyEdit.tsx
-│   │   ├── PropertyMap.tsx
 │   │   ├── PropertyOptimize.tsx
 │   │   ├── PropertyPhotos.tsx
 │   │   ├── PropertyVerification.tsx
 │   │   ├── PropertyWizard.tsx
 │   ├── services/
+│   │   ├── index.ts
 │   │   ├── mock-land-data.ts
 │   │   ├── property-api.ts
 │   │   ├── PropertyDocumentIntegration.ts
@@ -1385,6 +1292,8 @@ src/
 │   │   ├── index.ts
 │   │   ├── property.types.ts
 │   ├── utils/
+│   │   ├── normalizeLandProperty.ts
+│   │   ├── normalizeProperty.ts
 │   │   ├── performanceMonitor.ts
 │   │   ├── propertyImages.ts
 │   │   ├── raceConditionTest.ts
@@ -1407,8 +1316,6 @@ src/
 │   ├── pages/
 │   │   ├── AdvancedSearch.tsx
 │   │   ├── SearchResults.tsx
-│   ├── services/
-│   ├── types/
 ├── shared/
 │   ├── components/
 │   │   ├── __tests__/
@@ -1474,16 +1381,16 @@ src/
 │   │   │   ├── HeroSection.tsx
 │   │   │   ├── index.ts
 │   │   │   ├── LayoutContainer.tsx
-│   │   │   ├── MobileNav.tsx
 │   │   │   ├── NavbarSpacer.tsx
 │   │   │   ├── Navigation.tsx
 │   │   │   ├── PageWrapper.tsx
 │   │   │   ├── README.md
 │   │   │   ├── SectionDivider.tsx
-│   │   ├── lazy/
-│   │   │   ├── LazyComponents.tsx
 │   │   ├── LazyComponents.tsx
+│   │   ├── listing-card.tsx
 │   │   ├── LoadingStates.tsx
+│   │   ├── monitoring/
+│   │   │   ├── ApiClientDashboard.tsx
 │   │   ├── navigation/
 │   │   │   ├── __tests__/
 │   │   │   │   ├── accessibility.test.tsx
@@ -1533,6 +1440,8 @@ src/
 │   │   │   ├── PropertySkeletonGrid.tsx
 │   │   │   ├── shared/
 │   │   │   │   ├── examples/
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── MinimalPropertyCard.tsx
 │   │   │   │   ├── FINAL_STATUS.md
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── PropertyFeatures.tsx
@@ -1578,6 +1487,7 @@ src/
 │   │   │   ├── error-states.tsx
 │   │   │   ├── form.tsx
 │   │   │   ├── hover-card.tsx
+│   │   │   ├── index.ts
 │   │   │   ├── input.tsx
 │   │   │   ├── input-otp.tsx
 │   │   │   ├── label.tsx
@@ -1619,7 +1529,6 @@ src/
 │   │   ├── image-system.config.ts
 │   │   ├── propertyTypes.ts
 │   │   ├── user-journeys.ts
-│   ├── constants/
 │   ├── contexts/
 │   │   ├── ThemeContext.tsx
 │   ├── docs/
@@ -1774,17 +1683,26 @@ src/
 │   │   │   ├── api-integration-summary.test.ts
 │   │   │   ├── cache-invalidation.test.ts
 │   │   │   ├── data-transformation.test.ts
+│   │   │   ├── enhanced-cache-manager.test.ts
+│   │   │   ├── unified-api-client.test.ts
+│   │   │   ├── unified-api-client-verification.test.ts
 │   │   │   ├── websocket-integration.test.ts
 │   │   │   ├── websocket-simple.test.ts
 │   │   ├── AlertingService.ts
-│   │   ├── api-client.ts
+│   │   ├── api-client-monitor.ts
+│   │   ├── archive/
+│   │   │   ├── README.md
 │   │   ├── AuditLogService.ts
+│   │   ├── audit-trail-service.ts
 │   │   ├── AuthTokenService.ts
 │   │   ├── CacheService.ts
 │   │   ├── DataMigrationService.ts
-│   │   ├── ErrorHandlingService.ts
+│   │   ├── examples/
+│   │   │   ├── unified-api-client-examples.ts
 │   │   ├── FormService.ts
 │   │   ├── HealthCheckService.ts
+│   │   ├── huggingface-api-client.ts
+│   │   ├── huggingface-mock-client.ts
 │   │   ├── images/
 │   │   │   ├── __tests__/
 │   │   │   │   ├── service-consolidation.test.ts
@@ -1802,12 +1720,17 @@ src/
 │   │   │   ├── PropertyImageWorkflowManager.ts
 │   │   │   ├── UnifiedImageServiceFactory.ts
 │   │   │   ├── USAGE_EXAMPLES.md
+│   │   ├── index.ts
+│   │   ├── mock-ai-data.ts
+│   │   ├── mock-huggingface-client.ts
+│   │   ├── performance-monitoring-service.ts
 │   │   ├── PerformanceService.ts
 │   │   ├── RateLimitService.ts
 │   │   ├── SearchService.ts
+│   │   ├── security-monitoring-service.ts
+│   │   ├── unified-api-client.ts
 │   │   ├── ValidationService.ts
 │   ├── styles/
-│   │   ├── css.d.ts
 │   │   ├── design-system.css
 │   │   ├── globals.css
 │   ├── testing/
@@ -1878,20 +1801,16 @@ src/
 │   │   ├── service-interfaces.ts
 │   ├── utils/
 │   │   ├── __tests__/
-│   │   │   ├── form-validation.test.ts
-│   │   │   ├── validation.test.ts
 │   │   ├── api-client.ts
 │   │   ├── cn.ts
 │   │   ├── compare-utils.tsx
 │   │   ├── date-utils.ts
-│   │   ├── enhanced-cache-manager.ts
-│   │   ├── error-handling.ts
 │   │   ├── errors.ts
 │   │   ├── formatters.ts
-│   │   ├── form-validation.ts
 │   │   ├── globalPerformanceMonitor.ts
 │   │   ├── images/
 │   │   │   ├── unified-utils.ts
+│   │   ├── index.ts
 │   │   ├── logger.ts
 │   │   ├── mockPropertyApi.ts
 │   │   ├── navigation.ts
@@ -1904,7 +1823,6 @@ src/
 │   │   ├── safe-navigation.ts
 │   │   ├── test-helpers.tsx
 │   │   ├── toast-utils.ts
-│   │   ├── validation.ts
 ├── test-new-pages.tsx
 ├── test-safe-hooks.tsx
 ├── trust/
@@ -1949,14 +1867,18 @@ src/
 │   │   ├── index.ts
 │   │   ├── trust.types.ts
 ├── types/
-│   ├── google-maps.d.ts
+│   ├── audit.types.ts
+│   ├── css.d.ts
+│   ├── event.types.ts
 │   ├── land-verification.ts
-│   ├── react-window-infinite-loader.d.ts
+│   ├── route.types.ts
 ├── user/
 │   ├── components/
+│   │   ├── index.ts
 │   │   ├── UserNotifications.tsx
 │   │   ├── UserProfile.tsx
 │   ├── hooks/
+│   │   ├── index.ts
 │   │   ├── useUser.ts
 │   ├── index.ts
 │   ├── pages/
@@ -1970,23 +1892,18 @@ src/
 │   ├── services/
 │   │   ├── README.md
 │   │   ├── user-business-logic.ts
-│   ├── types/
 ├── utils/
 │   ├── bundle-optimizer.ts
 │   ├── performance-optimizer.ts
 ├── vite-env.d.ts
-srclib/
-srcsharedtest-utils/
+STRATEGIC_CONSOLIDATION_SUMMARY.md
+strategic-consolidation.md
 tailwind.config.ts
-temp-files/
-├── eslint-fixes-summary.md
-├── visual-improvements-summary.md
+test-huggingface-integration.js
 test-integration-quick.js
+test-jq.sh
 test-property-endpoints.cjs
 test-property-hook.tsx
-test-results/
-├── e2e-junit.xml
-├── e2e-results.json
 tests/
 ├── e2e/
 │   ├── auth-workflows.spec.ts
@@ -2004,6 +1921,8 @@ tests/
 │   ├── api/
 │   │   ├── auth.test.ts
 ├── setup.ts
+├── shared/
+│   ├── ConsolidatedTestFramework.ts
 ├── test-all-routes.ts
 ├── test-app-startup.ts
 ├── test-db.cjs
@@ -2017,7 +1936,6 @@ tests/
 │   ├── services/
 │   │   ├── CacheService.test.ts
 ├── validate-integration.js
-├── validation/
 ├── visual/
 │   ├── animations.visual.test.ts
 │   ├── components.visual.test.ts
@@ -2033,28 +1951,21 @@ test-server.js
 test-server-start.js
 theme.json
 tsconfig.json
+tsconfig.src.json
 tsconfig.test.json
+types/
+├── css.d.ts
+├── PropertyCardShowcase.css.d.ts
+unified-evolution.sh
+update-consolidated-imports.sh
+update-shared-imports.sh
+update-validation-imports.sh
 uploads/
-├── documents/
-│   ├── file_1754021814606_517d49feb639eee5.pdf
-│   ├── file_1754021839201_29914262918e44b5.pdf
-│   ├── file_1754021865229_42774772cae92bce.pdf
-│   ├── file_1754022048605_5049ab93ad2b7eb9.pdf
-│   ├── results/
-├── images/
-├── optimized/
-├── processed/
-├── profiles/
-├── properties/
-│   ├── file_1754021865181_284dc50dd1fca92e.jpg
-│   ├── file_1754022048581_443ed08738b37ff2.jpg
-├── temp/
-├── thumbnails/
-├── tmp-1-56561752646317955
-├── tmp-2-56561752646341431
 vercel.json
 vite.config.ts
 vitest.workspace.ts
 ```
 
-Generated on: Sat, Aug 16, 2025  4:08:05 AM
+**Excluded directories:** `.git`, `node_modules`, `dist`, `build`, `coverage`, `tmp`, `temp`, `__pycache__`, `vendor`, and all hidden files/directories
+
+Generated on: 2025-08-21 00:08:14

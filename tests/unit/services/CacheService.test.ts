@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { cacheService } from '../../../src/shared/services/CacheService';
+import { cacheService } from "../../../src/shared/services/CacheService"
 
 describe('CacheService', () => {
   beforeEach(() => {

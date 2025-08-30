@@ -25,7 +25,7 @@ import {
   ErrorCode,
   HttpStatusCode,
   ErrorCategory,
-} from '../../../src/shared/utils/errors';
+} from '../../../src/shared/error-handling';
 
 import { vi } from 'vitest';
 

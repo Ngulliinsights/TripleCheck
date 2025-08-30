@@ -18,7 +18,7 @@ import Redis from 'ioredis';
 
 import { cachePerformanceMonitor } from '../monitoring/CachePerformanceMonitor';
 
-import { CacheService } from './CacheService';
+import { CacheService } from "../infrastructure/cache"
 
 
 /**

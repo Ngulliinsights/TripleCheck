@@ -38,7 +38,7 @@ export {
 } from './CacheWarmingStrategy';
 
 // Legacy cache service (for gradual migration)
-export { CacheService, cacheService as legacyCacheService } from './CacheService';
+export { CacheService, cacheService as legacyCacheService } from "../infrastructure/cache"
 
 // Performance monitoring
 export { 

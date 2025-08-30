@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { SchemaValidator } from '../validation';
+import { SchemaValidator } from '@/shared/services/ValidationService';
 import postgres from 'postgres';
 
 // Mock postgres

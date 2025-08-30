@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
 import { setupMswServer } from '../../test-utils/msw-server';
-import { ApiClient } from '../api-client';
+import { ApiClient } from "../../../shared/services/unified-api-client"
 
 // Mock WebSocket for testing
 class MockWebSocket {

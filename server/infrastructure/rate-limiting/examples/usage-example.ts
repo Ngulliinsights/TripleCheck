@@ -7,7 +7,7 @@
 
 import express from 'express';
 
-import { CacheService } from '../../cache/CacheService';
+import { CacheService } from "../infrastructure/cache"
 import { 
   createRateLimitingMiddleware,
   rateLimitCounterMiddleware,

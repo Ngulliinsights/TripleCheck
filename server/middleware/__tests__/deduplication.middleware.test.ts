@@ -6,7 +6,7 @@ import {
   DeduplicatedRequest 
 } from '../deduplication.middleware';
 import { RequestDeduplicator } from '../../infrastructure/deduplication/RequestDeduplicator';
-import { CacheService } from '../../infrastructure/cache/CacheService';
+import { CacheService } from "../infrastructure/cache"
 
 // Mock dependencies
 jest.mock('../../infrastructure/deduplication/RequestDeduplicator');

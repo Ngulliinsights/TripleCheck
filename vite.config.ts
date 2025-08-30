@@ -67,7 +67,7 @@ export default defineConfig({
     },
   },
 
-  // Move dependency optimization to root level where it belongs in Vite config
+  // Optimized dependency handling for faster builds
   optimizeDeps: {
     // Include commonly used dependencies to avoid discovery delays
     include: [
@@ -78,8 +78,17 @@ export default defineConfig({
       "react-router-dom",
       "@tanstack/react-query",
     ],
-    // Exclude problematic packages that should remain external
-    exclude: ["@replit/vite-plugin-shadcn-theme-json"],
+    // Exclude server-only dependencies from browser bundle (CRITICAL FIX)
+    exclude: [
+      "@replit/vite-plugin-shadcn-theme-json",
+      "sharp",
+      "pdf-lib", 
+      "exif-parser",
+      "nodemailer",
+      "bcrypt",
+      "jsonwebtoken",
+      "events" // Node.js built-in module
+    ],
     // Force pre-bundling to avoid runtime issues
     force: true,
   },
@@ -97,8 +106,20 @@ export default defineConfig({
     minify: "esbuild", // Faster minification than terser
     sourcemap: false, // Disable source maps for production
 
-    // Let Vite handle chunking automatically with default configuration
-    rollupOptions: {},
+    // Rollup options to handle Node.js modules properly
+    rollupOptions: {
+      external: [
+        // Exclude server-side services from browser bundle
+        /^src\/shared\/services\/audit-trail-service/,
+        /^src\/shared\/services\/security-monitoring-service/,
+        // Node.js built-ins
+        'events',
+        'fs',
+        'path',
+        'crypto',
+        'os'
+      ]
+    },
 
     // Increase chunk size warning limit for domain chunks which may be naturally larger
     chunkSizeWarningLimit: 500,

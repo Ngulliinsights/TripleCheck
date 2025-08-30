@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 
-import { ValidationError, ErrorResponseFormatter, generateCorrelationId } from '../../src/shared/utils/errors';
+import { ValidationError, generateCorrelationId } from '../../src/shared/error-handling';
 
 // Enhanced validation middleware with comprehensive error handling and sanitization
 

@@ -3,7 +3,7 @@
  * Combines race condition protection, enterprise features, and performance optimizations
  */
 
-import { enhancedCache } from './enhanced-cache-manager';
+import { cacheService as enhancedCache } from "./CacheService"
 import { auditLogger } from './audit-trail-service';
 import { securityMonitor } from './security-monitoring-service';
 

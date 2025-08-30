@@ -6,7 +6,7 @@ import {
   AuthenticationError, 
   AuthorizationError,
   ValidationError 
-} from '../../../src/shared/utils/errors';
+} from '../../../src/shared/error-handling';
 import { logger } from '../../infrastructure/monitoring/logger';
 import { db } from '../../lib/database';
 

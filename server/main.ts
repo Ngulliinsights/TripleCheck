@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 import app from "./app";
 import { getPortConfig, validatePort, displayPortConfig } from "./config/ports";
 import { initializeDatabase } from "./infrastructure/database/init";
-import { logger } from "./infrastructure/monitoring/logging.service";
+import { logger } from "./infrastructure/monitoring/logger";
 import { cleanupManager } from "./utils/cleanup-manager";
 import { setupServer } from "./vite";
 

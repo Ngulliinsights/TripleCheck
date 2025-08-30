@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.middleware';
-import { asyncHandler } from '../middleware/centralized-error-handler';
+import { asyncHandler } from "../middleware/error";
 import { createRateLimitingMiddleware } from '../middleware/rate-limiting.middleware';
 import { validateRequest } from '../middleware/validation.middleware';
 import { CommunicationService } from '../services/CommunicationService';

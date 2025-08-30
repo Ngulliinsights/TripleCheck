@@ -1,9 +1,9 @@
 import { Express, Request, Response } from "express";
 import { z } from "zod";
 
-import { CacheService, defaultCacheConfig } from "../cache/CacheService";
+import { CacheService, defaultCacheConfig } from "../infrastructure/cache"
 import { AuthenticatedRequest, requireAuth } from "../middleware/auth.middleware";
-import { asyncHandler } from "../middleware/error-handler";
+import { asyncHandler } from "../middleware/error";
 import { CommunityResourcesService } from "../services/CommunityResourcesService";
 
 // Validation schemas

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupMswServer , server } from '../../test-utils/msw-server';
-import { UnifiedApiClient, apiClient } from '../unified-api-client';
+import { UnifiedApiClient, apiClient } from "../../../shared/services/unified-api-client"
 import { http, HttpResponse } from 'msw';
 
 

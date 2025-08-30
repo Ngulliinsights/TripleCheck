@@ -237,7 +237,8 @@
     "yxxx",
     "Kilimani",
     "Nuxt",
-    "tinyurl"
+    "tinyurl",
+    "retryable"
   ],
   "ignorePaths": [
     "node_modules/**",

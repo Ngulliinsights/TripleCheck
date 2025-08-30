@@ -1,0 +1,61 @@
+{
+  "file_path": "./server/middleware/auth.middleware.ts",
+  "analysis_timestamp": "2025-08-17T15:18:53+03:00",
+  "basic_metrics": {
+    "file_size": 22343,
+    "line_count": 723,
+    "age_days": 0
+  },
+  "domain_indicators": [
+  "auth",
+  "Auth",
+  "AUTH",
+  "config",
+  "Config",
+  "interface",
+  "Property",
+  "service",
+  "type",
+  "Type"
+],
+  "technical_capabilities": [
+  "async",
+  "await",
+  "class",
+  "error",
+  "Error",
+  "ERROR",
+  "export",
+  "Function",
+  "HTTP",
+  "import",
+  "interface",
+  "Promise",
+  "validation",
+  "Validation"
+],
+  "complexity_metrics": {
+    "functions": 26,
+    "classes": 5,
+    "interfaces": 6,
+    "async_operations": 33,
+    "error_handling": 71,
+    "database_operations": 11,
+    "http_operations": 22
+  },
+  "architectural_analysis": {
+    "role": "unknown",
+    "quality_score": 1969,
+    "maturity_level": "experimental"
+  },
+  "api_surface": [
+  "interface IStorage {",
+  "export interface CustomSession {",
+  "export interface AuthenticatedRequest extends Omit<Request, 'session'> {",
+  "export class SessionManager {",
+  "export class UserContext {",
+  "class AuthRateLimiter {",
+  "export class AuthorizationManager {",
+  "export class SessionConfigManager {"
+]
+}

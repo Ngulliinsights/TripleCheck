@@ -7,7 +7,7 @@ import {
   ExternalServiceError, 
   ErrorCode, 
   HttpStatusCode 
-} from '../../../../src/shared/utils/errors';
+} from '../../../../src/shared/error-handling';
 import { logger } from '../../../logger';
 import { auditLogger, AuditSeverity } from '../AuditLogger';
 import { errorHandlingService } from '../ErrorHandlingService';
@@ -160,7 +160,7 @@ export class GovernmentApiService {
       criticalityLevel: 'high' as const
     };
 
-    const result = await errorHandlingService.executeWithErrorHandling(
+    const result = await errorHandler.executeWithErrorHandling(
       () => this.performRegistrySearch(titleNumber),
       context,
       degradationContext
@@ -229,7 +229,7 @@ export class GovernmentApiService {
       criticalityLevel: 'medium' as const
     };
 
-    const result = await errorHandlingService.executeWithErrorHandling(
+    const result = await errorHandler.executeWithErrorHandling(
       () => this.performCourtRecordsSearch(propertyId, ownerNames),
       context,
       degradationContext
@@ -473,7 +473,7 @@ export class GovernmentApiService {
    */
   createErrorHandledWrappers() {
     return {
-      searchLandRegistry: errorHandlingService.createErrorHandledFunction(
+      searchLandRegistry: errorHandler.createErrorHandledFunction(
         (titleNumber: string) => this.performRegistrySearch(titleNumber),
         { service: 'government-registry', operation: 'search_land_registry' },
         (titleNumber: string) => ({
@@ -485,7 +485,7 @@ export class GovernmentApiService {
         })
       ),
 
-      searchCourtRecords: errorHandlingService.createErrorHandledFunction(
+      searchCourtRecords: errorHandler.createErrorHandledFunction(
         (propertyId: string, ownerNames: string[]) => 
           this.performCourtRecordsSearch(propertyId, ownerNames),
         { service: 'court-records', operation: 'search_court_records' },

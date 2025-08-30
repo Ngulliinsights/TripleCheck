@@ -1,5 +1,5 @@
 import { DocumentAuthService } from "../document-auth/DocumentAuthService";
-import { PropertyCacheService } from "../infrastructure/cache/PropertyCacheService";
+import { PropertyCacheService } from "../infrastructure/cache"
 import { LandVerificationService } from "../land-verification/LandVerificationService";
 
 import { PropertyRepository } from "./property.repository";

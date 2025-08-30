@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { setupMswServer, mockApiSuccess, mockApiError , server } from '../../test-utils/msw-server';
-import { ApiClient } from '../api-client';
+import { ApiClient } from "../../../shared/services/unified-api-client"
 import { PropertyApi, type ResidentialProperty, type ResidentialFilters } from '../../property/services/property-api';
 import { http, HttpResponse } from 'msw';
 

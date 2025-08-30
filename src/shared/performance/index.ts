@@ -4,7 +4,7 @@
  */
 
 // Services
-export { default as cacheService } from '../services/CacheService';
+export { default as cacheService } from "../services/CacheService"
 export { default as performanceService } from '../services/PerformanceService';
 
 // Hooks
@@ -34,7 +34,7 @@ export type {
   CacheEntry,
   CacheConfig,
   CacheStats
-} from '../services/CacheService';
+} from "../services/CacheService"
 
 export type {
   PerformanceMetric,

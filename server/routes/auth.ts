@@ -14,7 +14,7 @@ import {
   authRateLimit,
   validateSession
 } from "../middleware/auth.middleware";
-import { asyncHandler } from "../middleware/error-handler";
+import { asyncHandler } from "../middleware/error";
 
 // Import storage (you'll need to adjust this import based on your storage implementation)
 // import { storage } from "../infrastructure/storage/storage";

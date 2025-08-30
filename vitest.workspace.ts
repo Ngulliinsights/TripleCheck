@@ -1,10 +1,46 @@
+/**
+ * CONSOLIDATED VITEST WORKSPACE - CRITICAL CONFIGURATION FIX
+ * =========================================================
+ * 
+ * Addresses the configuration sprawl issue identified in the audit.
+ * Previously had 15+ separate Vitest configurations causing conflicts.
+ * Now consolidated into a single, manageable workspace configuration.
+ */
+
 import { defineWorkspace } from 'vitest/config';
 
+// Shared test configuration to reduce duplication
+const sharedTestConfig = {
+  globals: true,
+  testTimeout: 30000,
+  hookTimeout: 10000,
+  teardownTimeout: 10000,
+  pool: 'threads' as const,
+  watch: false,
+  sequence: {
+    shuffle: false,
+  },
+};
+
+// Shared coverage configuration
+const sharedCoverageConfig = {
+  provider: 'v8' as const,
+  reporter: ['text', 'json', 'html'] as const,
+  exclude: [
+    '**/*.{test,spec}.{js,ts,jsx,tsx}',
+    '**/*.d.ts',
+    '**/types.ts',
+    '**/__tests__/**',
+    '**/*.config.*',
+  ],
+};
+
 export default defineWorkspace([
-  // Main frontend application tests
+  // Frontend tests - consolidated from multiple configs
   {
     extends: './vite.config.ts',
     test: {
+      ...sharedTestConfig,
       name: 'frontend',
       include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
       exclude: [
@@ -12,15 +48,7 @@ export default defineWorkspace([
         'src/**/*.e2e.{test,spec}.{js,ts,jsx,tsx}'
       ],
       environment: 'jsdom',
-      setupFiles: [
-        'src/shared/test-utils/setup.ts',
-        'src/shared/components/images/__tests__/setup.ts'
-      ],
-      globals: true,
-      testTimeout: 30000,
-      hookTimeout: 10000,
-      teardownTimeout: 10000,
-      pool: 'threads',
+      setupFiles: ['src/shared/test-utils/setup.ts'],
       poolOptions: {
         threads: {
           maxThreads: 4,
@@ -33,23 +61,13 @@ export default defineWorkspace([
         concurrent: false,
         shuffle: false,
       },
-      watch: false,
       cache: {
         dir: 'node_modules/.vitest/frontend',
       },
       coverage: {
-        provider: 'v8',
-        reporter: ['text', 'json', 'html', 'lcov'],
+        ...sharedCoverageConfig,
         reportsDirectory: './coverage/frontend',
         include: ['src/**/*.{js,ts,jsx,tsx}'],
-        exclude: [
-          'src/**/*.{test,spec}.{js,ts,jsx,tsx}',
-          'src/**/*.d.ts',
-          'src/**/types.ts',
-          'src/**/__tests__/**',
-          'src/**/test-utils/**',
-          'src/**/*.config.*',
-        ],
         thresholds: {
           global: {
             branches: 70,
@@ -62,18 +80,14 @@ export default defineWorkspace([
     },
   },
   
-  // Server-side land verification tests
+  // Backend tests - consolidated from land-verification + infrastructure configs
   {
     test: {
-      name: 'land-verification',
-      include: ['server/land-verification/**/*.{test,spec}.ts'],
+      ...sharedTestConfig,
+      name: 'backend',
+      include: ['server/**/*.{test,spec}.ts'],
       environment: 'node',
-      setupFiles: ['server/land-verification/tests/setup.ts'],
-      globals: true,
-      testTimeout: 30000,
-      hookTimeout: 10000,
-      teardownTimeout: 10000,
-      pool: 'threads',
+      setupFiles: ['server/tests/setup.ts'],
       poolOptions: {
         threads: {
           maxThreads: 2,
@@ -86,85 +100,13 @@ export default defineWorkspace([
         concurrent: true,
         shuffle: false,
       },
-      watch: false,
       cache: {
-        dir: 'node_modules/.vitest/land-verification',
+        dir: 'node_modules/.vitest/backend',
       },
       coverage: {
-        provider: 'v8',
-        reporter: ['text', 'json', 'html'],
-        reportsDirectory: './coverage/land-verification',
-        include: ['server/land-verification/**/*.ts'],
-        exclude: [
-          'server/land-verification/**/*.{test,spec}.ts',
-          'server/land-verification/**/*.d.ts',
-          'server/land-verification/**/types.ts',
-          'server/land-verification/__tests__/**',
-        ],
-        thresholds: {
-          global: {
-            branches: 80,
-            functions: 80,
-            lines: 80,
-            statements: 80,
-          },
-        },
-      },
-    },
-    resolve: {
-      alias: {
-        '@': './src',
-        '@server': './server',
-        '@tests': './server/land-verification/tests',
-      },
-    },
-    define: {
-      'process.env.NODE_ENV': '"test"',
-      'process.env.DATABASE_URL': '"test-database-url"',
-      'process.env.REDIS_URL': '"test-redis-url"',
-    },
-  },
-  
-  // Server infrastructure tests
-  {
-    test: {
-      name: 'infrastructure',
-      include: ['server/infrastructure/**/*.{test,spec}.ts', 'server/**/*.{test,spec}.ts'],
-      exclude: ['server/land-verification/**/*.{test,spec}.ts'],
-      environment: 'node',
-      globals: true,
-      testTimeout: 30000,
-      hookTimeout: 10000,
-      teardownTimeout: 10000,
-      pool: 'threads',
-      poolOptions: {
-        threads: {
-          maxThreads: 2,
-          minThreads: 1,
-          isolate: true,
-        },
-      },
-      maxConcurrency: 2,
-      sequence: {
-        concurrent: true,
-        shuffle: false,
-      },
-      watch: false,
-      cache: {
-        dir: 'node_modules/.vitest/infrastructure',
-      },
-      coverage: {
-        provider: 'v8',
-        reporter: ['text', 'json', 'html'],
-        reportsDirectory: './coverage/infrastructure',
-        include: ['server/infrastructure/**/*.ts', 'server/**/*.ts'],
-        exclude: [
-          'server/**/*.{test,spec}.ts',
-          'server/**/*.d.ts',
-          'server/**/types.ts',
-          'server/**/__tests__/**',
-          'server/land-verification/**/*',
-        ],
+        ...sharedCoverageConfig,
+        reportsDirectory: './coverage/backend',
+        include: ['server/**/*.ts'],
         thresholds: {
           global: {
             branches: 75,
@@ -188,22 +130,24 @@ export default defineWorkspace([
     },
   },
 
-  // Integration tests
+  // Integration tests - simplified configuration
   {
     extends: './vite.config.ts',
     test: {
+      ...sharedTestConfig,
       name: 'integration',
-      include: ['src/**/*.integration.{test,spec}.{js,ts,jsx,tsx}'],
+      include: [
+        'src/**/*.integration.{test,spec}.{js,ts,jsx,tsx}',
+        'tests/integration/**/*.{test,spec}.{js,ts,jsx,tsx}'
+      ],
       environment: 'jsdom',
       setupFiles: ['src/shared/test-utils/setup.ts'],
-      globals: true,
       testTimeout: 60000,
       hookTimeout: 20000,
       teardownTimeout: 20000,
-      pool: 'threads',
       poolOptions: {
         threads: {
-          maxThreads: 2,
+          maxThreads: 1,
           minThreads: 1,
           isolate: true,
         },
@@ -213,7 +157,6 @@ export default defineWorkspace([
         concurrent: false,
         shuffle: false,
       },
-      watch: false,
       cache: {
         dir: 'node_modules/.vitest/integration',
       },

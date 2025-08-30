@@ -43,4 +43,4 @@ export {
 } from '../../hooks/useErrorRecovery';
 
 // Error Handling Service
-export { default as errorHandlingService } from '../../services/ErrorHandlingService';
+export { errorHandlingService } from '../../../server/land-verification/error-handling/ErrorHandlingService';

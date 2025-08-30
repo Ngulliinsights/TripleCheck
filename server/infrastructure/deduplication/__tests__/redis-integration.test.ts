@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { RequestDeduplicator } from '../RequestDeduplicator';
-import { CacheService } from '../../cache/CacheService';
+import { CacheService } from "../infrastructure/cache"
 
 // Mock Redis-like cache service for testing
 class MockRedisCacheService extends CacheService {

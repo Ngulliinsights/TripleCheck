@@ -1,4 +1,4 @@
-import { CacheService } from './CacheService';
+import { CacheService } from "../infrastructure/cache"
 
 export class PropertyCacheService {
   private cache: CacheService;

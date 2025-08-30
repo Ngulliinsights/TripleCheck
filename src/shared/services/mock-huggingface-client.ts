@@ -9,7 +9,7 @@ import {
   ImageAnalysisResult, 
   TextClassificationResult, 
   TranslationResult 
-} from './huggingface-api-client';
+} from "../../shared/services/unified-api-client"
 import { 
   mockAIResponses, 
   simulateProcessingDelay, 

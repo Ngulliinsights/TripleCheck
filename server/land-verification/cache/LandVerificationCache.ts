@@ -6,7 +6,7 @@ import type {
   CommunityIntelligence,
   PhysicalVerificationResult
 } from '../../../src/types/land-verification';
-import { cacheService, CacheKeys } from '../../cache/CacheService';
+import { cacheService, CacheKeys } from "../infrastructure/cache"
 import { logger } from '../../infrastructure/monitoring/logger';
 
 export interface LandVerificationCacheConfig {

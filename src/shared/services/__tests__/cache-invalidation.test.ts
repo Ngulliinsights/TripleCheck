@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupMswServer, mockApiSuccess , server } from '../../test-utils/msw-server';
-import { ApiClient, type CacheStrategy } from '../api-client';
+import { ApiClient, type CacheStrategy } from "../../../shared/services/unified-api-client"
 import { http, HttpResponse } from 'msw';
 
 

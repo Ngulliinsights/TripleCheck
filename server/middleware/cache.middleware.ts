@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { cacheService, CacheKeys, CacheOptions } from '../cache/CacheService';
+import { cacheService, CacheKeys, CacheOptions } from "../infrastructure/cache"
 import { Logger } from '../infrastructure/monitoring/logger';
 
 export interface CacheMiddlewareOptions {

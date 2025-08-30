@@ -8,7 +8,7 @@ import {
   ErrorCode, 
   HttpStatusCode,
   generateCorrelationId 
-} from "../../../src/shared/utils/errors";
+} from "../../../src/shared/error-handling";
 import { logger } from "../../logger";
 
 export interface DegradationLevel {

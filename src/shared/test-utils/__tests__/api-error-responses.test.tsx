@@ -9,7 +9,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../render';
 import { apiErrors, authErrorUtilities, cleanup } from '../error-testing';
-import { api } from '../../services/api-client';
+import { api } from "../../../shared/services/unified-api-client"
 
 // Component for testing API error handling
 function ApiErrorTestComponent() {

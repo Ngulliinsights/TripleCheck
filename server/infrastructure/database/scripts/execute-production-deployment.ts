@@ -8,7 +8,7 @@
 import { Pool } from 'pg';
 import { runProductionReadinessAssessment } from './run-production-readiness-assessment';
 import { runPerformanceCertification } from './run-performance-certification';
-import { runSecurityValidation } from './run-security-validation';
+import { runSecurityValidation } from '@/shared/services/ValidationService';
 import { runDisasterRecoveryTest } from './run-disaster-recovery-test';
 import { logger } from '../../monitoring/logger';
 

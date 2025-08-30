@@ -7,7 +7,7 @@
 
 import { EventEmitter } from 'events';
 
-import { standardErrorHandler, ErrorCategory } from '../error-handling/StandardErrorHandler';
+import { errorHandlingService } from '../land-verification/error-handling/ErrorHandlingService';
 import { logger } from '../monitoring/logger';
 import { performanceMonitor } from '../monitoring/PerformanceMonitor';
 
@@ -140,7 +140,7 @@ export class TestFramework extends EventEmitter {
   async runSuite(suiteId: string): Promise<TestReport> {
     const suite = this.testSuites.get(suiteId);
     if (!suite) {
-      throw standardErrorHandler.createError(
+      throw errorHandler.createError(
         ErrorCategory.NOT_FOUND,
         'SUITE_NOT_FOUND',
         `Test suite not found: ${suiteId}`
@@ -210,7 +210,7 @@ export class TestFramework extends EventEmitter {
    */
   async runAllSuites(): Promise<TestReport[]> {
     if (this.isRunning) {
-      throw standardErrorHandler.createError(
+      throw errorHandler.createError(
         ErrorCategory.CONFLICT,
         'TESTS_ALREADY_RUNNING',
         'Test execution is already in progress'

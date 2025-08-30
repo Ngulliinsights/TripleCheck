@@ -7,7 +7,7 @@
 
 import { EventEmitter } from 'events';
 
-import { standardErrorHandler, ErrorCategory } from '../error-handling/StandardErrorHandler';
+import { errorHandlingService } from '../land-verification/error-handling/ErrorHandlingService';
 import { logger } from '../monitoring/logger';
 import { performanceMonitor } from '../monitoring/PerformanceMonitor';
 
@@ -147,7 +147,7 @@ export class EventBus extends EventEmitter {
         },
         error as Error
       );
-      throw standardErrorHandler.createError(
+      throw errorHandler.createError(
         ErrorCategory.SYSTEM,
         'EVENT_PUBLISH_FAILED',
         `Failed to publish event: ${event.type}`,

@@ -1,0 +1,24 @@
+{
+  "comparison_timestamp": "2025-08-17T15:22:07+03:00",
+  "files": ["./server/land-verification/middleware/auth.middleware.ts", "./server/middleware/auth.middleware.ts"],
+  "strategic_analysis": {
+    "evolution_strategy": "STRATEGIC_FEATURE_INTEGRATION",
+    "confidence_level": "low",
+    "quality_scores": {
+      "file1": 1969,
+      "file2": 1969,
+      "difference": 0
+    },
+    "roles": {
+      "file1": "unknown",
+      "file2": "unknown",
+      "role_conflict": false
+    },
+    "maturity": {
+      "file1": "experimental",
+      "file2": "experimental"
+    }
+  },
+  "recommendations": ["Manual analysis required", "Review both implementations carefully", "Create hybrid approach", "Extensive testing needed"],
+  "implementation_plan": {"phase1": "Analysis and Planning", "phase2": "Interface Definition", "phase3": "Implementation", "phase4": "Testing and Migration", "estimated_effort": "2-4 weeks"}
+}
