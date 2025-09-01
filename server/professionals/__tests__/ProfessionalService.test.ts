@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
 import { ProfessionalService, CreateProfessionalData, UpdateProfessionalData } from '../ProfessionalService';
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../../core/src/cache'
 import { RequestDeduplicator } from '../../infrastructure/deduplication/RequestDeduplicator';
 import { db } from '../../infrastructure/database/connection';
 import { professionals, professionalReviews } from '../../../src/shared/schema';

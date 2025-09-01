@@ -8,7 +8,7 @@
 import { RequestDeduplicator } from '../deduplication/RequestDeduplicator';
 import { ApiRateLimiter } from '../rate-limiting/ApiRateLimiter';
 
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../../core/src/cache'
 import { UnifiedCacheManager } from './UnifiedCacheManager';
 
 /**

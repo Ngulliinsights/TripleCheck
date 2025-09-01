@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { cacheService } from "../services/CacheService"
+import { cacheService } from "../../../core/src/cache"
 import { performanceService } from '../services/PerformanceService';
 
 /**

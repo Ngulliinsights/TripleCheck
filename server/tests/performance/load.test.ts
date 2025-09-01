@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { performance } from 'perf_hooks';
 import { storage } from '../../storage';
-import { cacheService } from "../infrastructure/cache"
+import { cacheService } from '../../../core/src/cache'
 import { queryOptimizer } from '../../infrastructure/database/QueryOptimizer';
 import { testUtils } from '../setup';
 

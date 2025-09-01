@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 
 import type { UserRole, AuthorizationContext, PermissionCheckResult, SessionConfig } from '../types/auth.types';
 import { HTTP_STATUS, AUTH_CONSTANTS, ROLE_HIERARCHY } from '../utils/constants';
-import { AUTH_ERROR_MESSAGES } from '../utils/error-messages';
+import { AUTH_ERROR_MESSAGES } from '../../../../core/src/error-handling';
 import { ResponseHelper } from '../utils/response-helpers';
 
 // Constants

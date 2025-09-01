@@ -1,7 +1,11 @@
 import { defineConfig } from "drizzle-kit";
+import { configManager } from "@triplecheck/core/config";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
+// Load configuration
+const config = configManager.config;
+
+if (!config.database.url) {
+  throw new Error("DATABASE_URL not configured, ensure the database is provisioned");
 }
 
 export default defineConfig({
@@ -9,6 +13,6 @@ export default defineConfig({
   schema: "./server/infrastructure/database/schemas/core/index.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url: config.database.url,
   },
 });

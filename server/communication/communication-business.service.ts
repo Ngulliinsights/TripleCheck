@@ -15,7 +15,7 @@ import {
   notifications,
   users,
 } from '../../src/shared/schema';
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../core/src/cache'
 import { db } from '../infrastructure/database/connection';
 import { RequestDeduplicator } from '../infrastructure/deduplication/RequestDeduplicator';
 

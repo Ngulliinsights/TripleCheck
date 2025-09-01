@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../core/src/cache'
 import { ApiCallTracker } from '../infrastructure/rate-limiting/ApiCallTracker';
 import { ApiRateLimiter, RateLimitConfig } from '../infrastructure/rate-limiting/ApiRateLimiter';
 import { CircuitBreaker, CircuitBreakerManager } from '../infrastructure/rate-limiting/CircuitBreaker';

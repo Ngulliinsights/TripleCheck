@@ -6,7 +6,7 @@ import { AuthService } from '../services/AuthService';
 import { UserService } from '../services/UserService';
 import type { LoginRequest, RegisterRequest } from '../types/auth.types';
 import { HTTP_STATUS } from '../utils/constants';
-import { AUTH_ERROR_MESSAGES } from '../utils/error-messages';
+import { AUTH_ERROR_MESSAGES } from '../../core/src/error-handling';
 import { ResponseHelper } from '../utils/response-helpers';
 
 /**

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { cacheService } from "../infrastructure/cache"
+import { cacheService } from '../../core/src/cache'
 import { storage } from '../infrastructure/storage/storage';
 
 import { structuredLogger } from './StructuredLogger';

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../core/src/cache'
 import { asyncHandler } from "../middleware/error";
 import { ProfessionalService } from '../services/ProfessionalService';
 import { ResponseHelper } from '../utils/response-helpers';

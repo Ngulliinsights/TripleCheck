@@ -21,7 +21,7 @@ import { trustRouter } from './routes/trust.routes';
 import { reviewsRouter } from './routes/reviews.routes';
 import { contactRouter } from './routes/contact.routes';
 import { searchRouter } from './routes/search.routes';
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../core/src/cache'
 import { storage } from './infrastructure/storage/storage';
 import { setupApiVersioning } from './infrastructure/versioning';
 import { healthRoutes } from './land-verification/health/health-routes';

@@ -7,7 +7,7 @@
 
 import express from 'express';
 
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../../../core/src/cache'
 import { 
   createDeduplicationMiddleware, 
   addRequestIdMiddleware, 

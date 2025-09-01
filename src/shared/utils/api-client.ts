@@ -57,7 +57,7 @@ export interface CacheEntry<T = unknown> {
   ttl: number;
 }
 
-import { cacheService as enhancedCache } from "../services/CacheService"
+import { cacheService as enhancedCache } from "../../../core/src/cache"
 
 // Request cache for preventing duplicate requests
 const requestCache = new Map<string, Promise<ApiResponse<unknown>>>();

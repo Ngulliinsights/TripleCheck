@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'crypto';
 import { performance } from 'perf_hooks';
 
 import { EnhancedCacheService, CacheFactory } from '../cache/CacheIntegrationAdapter';
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../../core/src/cache'
 import { cachePerformanceMonitor } from '../monitoring/CachePerformanceMonitor';
 
 /**

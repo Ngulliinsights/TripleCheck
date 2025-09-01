@@ -5,7 +5,7 @@
  * to seamlessly work with the new UnifiedCacheManager while maintaining existing APIs.
  */
 
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../../core/src/cache'
 import { UnifiedCacheManager, UnifiedCacheConfig } from './UnifiedCacheManager';
 
 /**

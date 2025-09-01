@@ -5,7 +5,7 @@ import {
 } from "@server/infrastructure/database/schemas/consolidated";
 import { eq, and, or, like, desc, asc, sql, gte, lte } from "drizzle-orm";
 
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../core/src/cache'
 import { db } from "../infrastructure/database/connection";
 import { RequestDeduplicator } from "../infrastructure/deduplication/RequestDeduplicator";
 import {

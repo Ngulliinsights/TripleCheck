@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { RequestDeduplicator } from '../RequestDeduplicator';
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../../../core/src/cache'
 
 // Mock CacheService
 vi.mock('../../cache/CacheService');

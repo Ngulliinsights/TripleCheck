@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../core/src/cache'
 import { db } from '../infrastructure/database/connection';
 import { ResponseHelper } from '../utils/response-helpers';
 

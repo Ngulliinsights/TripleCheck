@@ -16,6 +16,8 @@ api/
 │   │   ├── webhook.js
 AUDIT_SYSTEM_SUMMARY.md
 broken-links-analysis.md
+cache-consolidation-plan.md
+cache-consolidation-strategy.md
 CHANGELOG.md
 CODE_OF_CONDUCT.md
 CODEBASE_GAPS_RESOLUTION.md
@@ -38,6 +40,202 @@ config/
 │   ├── vitest.server.config.ts
 │   ├── vitest.unit.config.ts
 CONTRIBUTING.md
+core/
+├── logs/
+│   ├── archive/
+├── MIGRATION_VALIDATION_REPORT.md
+├── package.json
+├── package-lock.json
+├── README.md
+├── src/
+│   ├── __tests__/
+│   │   ├── integration.test.ts
+│   │   ├── integration-complete.test.ts
+│   │   ├── performance.test.ts
+│   │   ├── setup.ts
+│   │   ├── stress.test.ts
+│   │   ├── system-integration.test.ts
+│   ├── cache/
+│   │   ├── __tests__/
+│   │   │   ├── circuit-breaker-single-flight.test.ts
+│   │   │   ├── single-flight-cache.test.ts
+│   │   │   ├── single-flight-integration.test.ts
+│   │   ├── adapters/
+│   │   │   ├── memory-adapter.ts
+│   │   │   ├── multi-tier-adapter.ts
+│   │   │   ├── redis-adapter.ts
+│   │   ├── base-adapter.ts
+│   │   ├── CIRCUIT_BREAKER_IMPLEMENTATION.md
+│   │   ├── index.ts
+│   │   ├── key-generator.ts
+│   │   ├── single-flight-cache.ts
+│   │   ├── types.ts
+│   ├── config/
+│   │   ├── __tests__/
+│   │   │   ├── config-manager.test.ts
+│   │   ├── index.ts
+│   │   ├── schema.ts
+│   │   ├── types.ts
+│   ├── error-handling/
+│   │   ├── __tests__/
+│   │   │   ├── circuit-breaker.test.ts
+│   │   ├── circuit-breaker.ts
+│   │   ├── errors/
+│   │   │   ├── base-error.ts
+│   │   │   ├── enhanced-errors.ts
+│   │   ├── index.ts
+│   │   ├── middleware.ts
+│   ├── errors/
+│   │   ├── __tests__/
+│   │   │   ├── CircuitBreaker.test.ts
+│   │   │   ├── errorHandler.test.ts
+│   │   ├── AppError.ts
+│   │   ├── base-error.ts
+│   │   ├── circuit-breaker.ts
+│   │   ├── CircuitBreaker.ts
+│   │   ├── EnhancedAppError.ts
+│   │   ├── error-handler.ts
+│   │   ├── errorHandler.ts
+│   │   ├── index.ts
+│   │   ├── SpecializedErrors.ts
+│   │   ├── UnifiedCircuitBreaker.ts
+│   │   ├── UnifiedError.ts
+│   │   ├── UnifiedErrorHandler.ts
+│   ├── health/
+│   │   ├── __tests__/
+│   │   │   ├── health-checker.test.ts
+│   │   ├── checks/
+│   │   │   ├── database-check.ts
+│   │   │   ├── memory-check.ts
+│   │   │   ├── redis-check.ts
+│   │   ├── health-checker.ts
+│   │   ├── index.ts
+│   │   ├── middleware.ts
+│   │   ├── types.ts
+│   ├── index.ts
+│   ├── logging/
+│   │   ├── __tests__/
+│   │   │   ├── logger.test.ts
+│   │   │   ├── log-rotation.test.ts
+│   │   │   ├── middleware.test.ts
+│   │   ├── index.ts
+│   │   ├── logger.ts
+│   │   ├── log-rotation.ts
+│   │   ├── middleware.ts
+│   │   ├── rotation.ts
+│   │   ├── schemas.ts
+│   │   ├── service.ts
+│   │   ├── telemetry.ts
+│   │   ├── types.ts
+│   ├── middleware/
+│   │   ├── __tests__/
+│   │   │   ├── factory.test.ts
+│   │   ├── auth/
+│   │   │   ├── provider.ts
+│   │   ├── cache/
+│   │   │   ├── provider.ts
+│   │   ├── caching/
+│   │   ├── config.ts
+│   │   ├── deduplication/
+│   │   ├── enhanced-factory.ts
+│   │   ├── error-handler/
+│   │   │   ├── provider.ts
+│   │   ├── factory.ts
+│   │   ├── factory.ts.bak
+│   │   ├── factory.ts.new
+│   │   ├── index.ts
+│   │   ├── logging/
+│   │   ├── rate-limit/
+│   │   │   ├── provider.ts
+│   │   ├── rate-limiting/
+│   │   ├── registry.ts
+│   │   ├── types.ts
+│   │   ├── unified.ts
+│   │   ├── validation/
+│   │   │   ├── provider.ts
+│   ├── migration/
+│   │   ├── __tests__/
+│   │   │   ├── unit/
+│   │   │   │   ├── adapters/
+│   │   │   │   │   ├── BaseAdapter.test.ts
+│   │   ├── adapters/
+│   │   │   ├── BaseAdapter.ts
+│   │   │   ├── CacheAdapter.ts
+│   │   ├── feature-flags/
+│   │   │   ├── FlagManager.ts
+│   │   │   ├── types.ts
+│   │   ├── index.ts
+│   │   ├── monitoring/
+│   │   │   ├── MigrationMetrics.ts
+│   │   ├── scripts/
+│   │   │   ├── finalize-migration.ts
+│   │   │   ├── simple-migration.ts
+│   │   │   ├── validate-migration.ts
+│   ├── rate-limiting/
+│   │   ├── algorithms/
+│   │   │   ├── fixed-window.ts
+│   │   │   ├── sliding-window.ts
+│   │   │   ├── token-bucket.ts
+│   │   ├── factory.ts
+│   │   ├── index.ts
+│   │   ├── metrics.ts
+│   │   ├── middleware.ts
+│   │   ├── stores/
+│   │   │   ├── __tests__/
+│   │   │   │   ├── redis-store.test.ts
+│   │   │   ├── memory-store.ts
+│   │   │   ├── redis-store.ts
+│   │   │   ├── redis-store-example.ts
+│   │   ├── types.ts
+│   ├── services/
+│   │   ├── cache.ts
+│   │   ├── health.ts
+│   │   ├── logging.ts
+│   │   ├── rate-limit.ts
+│   │   ├── validation.ts
+│   ├── testing/
+│   │   ├── __tests__/
+│   │   │   ├── load-tester.test.ts
+│   │   ├── example-usage.ts
+│   │   ├── index.ts
+│   │   ├── load-tester.ts
+│   │   ├── performance-benchmarks.ts
+│   │   ├── performance-monitor.ts
+│   │   ├── stress-tests.ts
+│   ├── types/
+│   │   ├── services.ts
+│   ├── utils/
+│   │   ├── correlation-id.ts
+│   │   ├── migration.ts
+│   ├── validation/
+│   │   ├── __tests__/
+│   │   │   ├── common-schemas.test.ts
+│   │   │   ├── middleware.test.ts
+│   │   │   ├── validation-service.test.ts
+│   │   ├── index.ts
+│   │   ├── middleware.ts
+│   │   ├── schemas/
+│   │   │   ├── auth.ts
+│   │   │   ├── common.ts
+│   │   │   ├── index.ts
+│   │   │   ├── property.ts
+│   │   ├── types.ts
+│   │   ├── validation-service.ts
+├── tasks/
+│   ├── advanced_integration_tests.ts
+│   ├── chaos_engineering_tests.ts
+│   ├── comprehensive_migration_tests.md
+│   ├── health_test_config.json
+│   ├── health_test_setup.ts
+│   ├── middleware_architecture.ts
+│   ├── middleware_unit_tests.ts
+│   ├── optimized_health_system.md
+│   ├── optimized_migration_strategy.md
+│   ├── optimized-rate-limiting.md
+│   ├── rate-limiting-integration-tests.ts
+│   ├── refined_cross_cutting.ts
+├── tsconfig.json
+├── vitest.config.ts
 CRITICAL_FIXES_IMPLEMENTATION.md
 cspell.json
 debug-evolution.sh
@@ -47,11 +245,15 @@ docs/
 ├── Component Placement Rationale_ Modular Service Architecture.md
 ├── comprehensive_code_analysis_framework.md
 ├── COMPREHENSIVE_GAP_ANALYSIS.md
+├── comprehensive_sprawl_mapping.md
 ├── database-consolidation-complete-report.md
 ├── database-consolidation-migration-plan.md
 ├── deep_audit.md
+├── design_document.md
 ├── developer-portal.html
+├── enhanced_core_layout.md
 ├── hook-migration.md
+├── implementation_plan.md
 ├── IMPORT_GUIDE.md
 ├── improved-triplecheck-data-generation-prompts.md
 ├── Kenya Land Verification Data Generation prompts.md
@@ -64,12 +266,17 @@ docs/
 ├── prompt_engineering_analysis.md
 ├── PropTech Analysis.md
 ├── README.md
+├── requirements_document.md
 ├── skeptical-expert-responses.md
+├── strategic_consolidation_guide.md
 ├── SYSTEM_DESIGN_DOCUMENTATION.md
 ├── technical-cofounder-pitch.md
 ├── triplecheck_unified_plan.md
 ├── unified_code_analysis_framework.md
+DOMAIN_DRIVEN_CONSOLIDATION_PLAN.md
+DOMAIN_DRIVEN_CONSOLIDATION_SUMMARY.md
 drizzle.config.ts
+ERROR_HANDLING_CONSOLIDATION_SUMMARY.md
 eslint.config.js
 execute-api-consolidation.sh
 execute-cache-consolidation.sh
@@ -84,7 +291,11 @@ generate-structure-to-file.sh
 HUGGINGFACE_AI_INTEGRATION.md
 index.html
 LICENSE
+migrate-specific-utilities.ts
+migrate-to-core-utilities.sh
 migrate-validation.sh
+MIGRATION_GUIDE.md
+migration-progress-report.md
 organize-validation-files.sh
 package.json
 package-lock.json
@@ -95,6 +306,8 @@ property-broken-links-analysis.md
 public/
 ├── sw.js
 README.md
+refined_cross_cutting.ts
+run-migration.sh
 scripts/
 ├── add-b2b-messaging.js
 ├── add-reviews.ts
@@ -156,11 +369,17 @@ scripts/
 ├── load-test-suite.js
 ├── logger.js
 ├── memory-benchmark.js
+├── migrate-core-utilities.ts
 ├── migrate-database-structure.ts
 ├── migrate-embedded-tests.ts
 ├── migrate-hooks.js
 ├── migrate-optimized-components.sh
 ├── migrate-schema-imports.ts
+├── migrate-to-core-utilities.ts
+├── migration-helpers/
+│   ├── cache-migration.ts
+│   ├── config-migration.ts
+│   ├── middleware-migration.ts
 ├── MISSING_FEATURES_ANALYSIS.md
 ├── MOBILE_AND_DATA_IMPROVEMENTS.md
 ├── OptimizedBuildPipeline.ts
@@ -179,6 +398,7 @@ scripts/
 ├── run-complete-load-test.cjs
 ├── run-e2e-tests.js
 ├── run-land-verification-migration.ts
+├── run-migration.ts
 ├── run-ui-audit.ts
 ├── run-visual-tests.js
 ├── security/
@@ -206,59 +426,60 @@ scripts/
 ├── validate-deployment.cjs
 ├── validate-deployment-current.cjs
 ├── validate-image-tests.ts
+├── validate-migration.ts
 ├── validate-production.ts
 ├── validate-staging-final.cjs
 ├── verify-api-client.js
 ├── verify-optimization.ts
 server/
 ├── ai/
+│   ├── __tests__/
+│   │   ├── ml-business.service.test.ts
 │   ├── ai.controller.ts
 │   ├── community-trust-ai.ts
 │   ├── community-trust-ai-root.ts
+│   ├── ml-business.service.ts
 │   ├── ml-training.test.ts
 │   ├── ml-training.ts
 │   ├── ml-training-root.ts
 │   ├── storage.ts
 ├── analytics/
+│   ├── __tests__/
+│   │   ├── analytics-business.service.test.ts
 │   ├── analytics.controller.ts
+│   ├── analytics-business.service.ts
 ├── app.ts
 ├── app-optimized.ts
 ├── auth/
 │   ├── auth.controller.ts
 │   ├── auth.service.ts
 │   ├── AuthenticationService.ts
+├── b2b/
+│   ├── b2b.controller.ts
+│   ├── index.ts
 ├── blockchain/
 │   ├── blockchain-service.ts
 ├── cache/
 │   ├── CacheService.ts
 ├── communication/
 │   ├── communication.controller.ts
+│   ├── communication-business.service.ts
+│   ├── messages.controller.ts
+│   ├── messaging.controller.ts
+│   ├── messaging.service.ts
 │   ├── notification.service.ts
+│   ├── notification-business.service.ts
+│   ├── notifications.controller.ts
+│   ├── websocket.service.ts
+├── community/
+│   ├── community.controller.ts
+│   ├── index.ts
+│   ├── intelligence.service.ts
+│   ├── resources.service.ts
 ├── config/
 │   ├── development.ts
 │   ├── environment-schema.ts
 │   ├── ports.ts
-├── controllers/
-│   ├── __tests__/
-│   │   ├── health.performance.test.ts
-│   │   ├── property-enhancements.controller.test.ts
-│   │   ├── property-enhancements.integration.test.ts
-│   │   ├── user-dashboard.controller.test.ts
-│   ├── analytics.controller.ts
-│   ├── b2b.controller.ts
-│   ├── community.controller.ts
-│   ├── fraud-alerts.controller.ts
-│   ├── health.controller.ts
-│   ├── messages.controller.ts
-│   ├── messaging.controller.ts
-│   ├── monitoring.controller.ts
-│   ├── notifications.controller.ts
-│   ├── professionals.controller.ts
-│   ├── property-enhancements.controller.ts
-│   ├── search.controller.ts
-│   ├── trust.controller.ts
-│   ├── trust-integration.controller.ts
-│   ├── user-dashboard.controller.ts
 ├── document-auth/
 │   ├── analyzers/
 │   │   ├── ContentAnalyzer.ts
@@ -268,6 +489,7 @@ server/
 │   │   ├── MLDocumentAnalyzer.ts
 │   │   ├── SignatureAnalyzer.ts
 │   │   ├── VisualAnalyzer.ts
+│   ├── authentication-business.service.ts
 │   ├── core/
 │   │   ├── DocumentAuthEngine.ts
 │   ├── DocumentAuthService.land.test.ts
@@ -277,12 +499,14 @@ server/
 │   ├── types/
 │   │   ├── exif-parser.d.ts
 ├── fraud-detection/
+│   ├── alerts.controller.ts
 │   ├── api/
 │   │   ├── FraudDetectionAPI.ts
 │   ├── core/
 │   │   ├── FraudDetectionEngine.ts
 │   ├── index.ts
 │   ├── integrate-real-data.ts
+│   ├── intelligence.service.ts
 │   ├── jest.config.js
 │   ├── README.md
 │   ├── routes/
@@ -647,6 +871,7 @@ server/
 │   │   ├── index.ts
 │   ├── storage/
 │   │   ├── file.storage.ts
+│   │   ├── file-storage.service.ts
 │   │   ├── FileStorageService.ts
 │   │   ├── logger.ts
 │   │   ├── SecureFileUploadService.ts
@@ -691,6 +916,8 @@ server/
 │   │   ├── security/
 │   │   │   ├── api-security.test.ts
 │   │   │   ├── data-protection.test.ts
+│   │   ├── VerificationService.integration.test.ts
+│   │   ├── VerificationService.test.ts
 │   ├── audit/
 │   │   ├── AuditLogger.ts
 │   ├── cache/
@@ -765,6 +992,7 @@ server/
 │   ├── ServiceFactory.ts
 │   ├── utils/
 │   │   ├── gps-calculations.ts
+│   ├── verification-business.service.ts
 ├── main.ts
 ├── middleware/
 │   ├── __tests__/
@@ -779,7 +1007,6 @@ server/
 │   ├── data-validation.ts
 │   ├── deduplication.middleware.ts
 │   ├── error.ts
-│   ├── error-handler-integration-example.ts
 │   ├── logging.middleware.ts
 │   ├── query-limiter.middleware.ts
 │   ├── rate-limiting.middleware.ts
@@ -811,16 +1038,42 @@ server/
 │   ├── trust-intelligence/
 │   │   ├── CommunityTrustEngine.ts
 ├── monitoring/
+│   ├── __tests__/
+│   │   ├── health.performance.test.ts
+│   ├── health.controller.ts
 │   ├── HealthMonitor.ts
+│   ├── monitoring.controller.ts
 │   ├── StructuredLogger.ts
+├── payments/
+│   ├── index.ts
+│   ├── mpesa.service.ts
+├── professionals/
+│   ├── __tests__/
+│   │   ├── ProfessionalService.integration.test.ts
+│   │   ├── ProfessionalService.test.ts
+│   ├── index.ts
+│   ├── professional.service.ts
+│   ├── professionals.controller.ts
 ├── property/
+│   ├── __tests__/
+│   │   ├── property-enhancements.controller.test.ts
+│   │   ├── property-enhancements.integration.test.ts
+│   │   ├── PropertyService.integration.test.ts
+│   │   ├── PropertyService.test.ts
+│   ├── enhancements.controller.ts
 │   ├── property.controller.ts
 │   ├── property.repository.ts
 │   ├── property.service.ts
+│   ├── property-business.service.ts
 │   ├── property-controller-integration.test.ts
 │   ├── property-e2e-integration.test.ts
 │   ├── property-land-verification.test.ts
 │   ├── property-repository-integration.test.ts
+├── reviews/
+│   ├── __tests__/
+│   │   ├── review.service.test.ts
+│   ├── index.ts
+│   ├── review.service.ts
 ├── routes/
 │   ├── __tests__/
 │   │   ├── AuthRoutes.test.ts
@@ -864,40 +1117,9 @@ server/
 │   ├── verification.routes.ts
 ├── search/
 │   ├── search.controller.ts
+│   ├── search-business.controller.ts
 ├── security/
 │   ├── SecurityHardening.ts
-├── services/
-│   ├── __tests__/
-│   │   ├── ai-ml-service.test.ts
-│   │   ├── AnalyticsService.test.ts
-│   │   ├── AuthService.test.ts
-│   │   ├── ProfessionalService.integration.test.ts
-│   │   ├── ProfessionalService.test.ts
-│   │   ├── PropertyService.integration.test.ts
-│   │   ├── PropertyService.test.ts
-│   │   ├── ReviewService.test.ts
-│   │   ├── UserService.test.ts
-│   │   ├── VerificationService.integration.test.ts
-│   │   ├── VerificationService.test.ts
-│   ├── ai-ml-service.ts
-│   ├── AnalyticsService.ts
-│   ├── AuthService.ts
-│   ├── CommunicationService.ts
-│   ├── CommunityIntelligenceService.ts
-│   ├── CommunityResourcesService.ts
-│   ├── DocumentAuthenticationService.ts
-│   ├── file-storage-service.ts
-│   ├── FraudIntelligenceService.ts
-│   ├── MessagingService.ts
-│   ├── mpesa-service.ts
-│   ├── notification-service.ts
-│   ├── ProfessionalService.ts
-│   ├── PropertyService.ts
-│   ├── ReviewService.ts
-│   ├── TrustIntegrationService.ts
-│   ├── UserService.ts
-│   ├── VerificationService.ts
-│   ├── WebSocketService.ts
 ├── shared/
 │   ├── community-trust-schema.ts
 │   ├── email-types.ts
@@ -951,8 +1173,11 @@ server/
 │   ├── validation-report.md
 ├── trust/
 │   ├── community-trust.service.ts
+│   ├── integration.controller.ts
+│   ├── integration.service.ts
 │   ├── trust.controller.ts
 │   ├── TrustScoringService.ts
+│   ├── verification.controller.ts
 ├── types/
 │   ├── api.types.ts
 │   ├── auth.types.ts
@@ -964,12 +1189,16 @@ server/
 │   ├── user.types.ts
 │   ├── verification.types.ts
 ├── user/
+│   ├── __tests__/
+│   │   ├── dashboard.controller.test.ts
+│   │   ├── user.service.test.ts
+│   ├── dashboard.controller.ts
 │   ├── user.controller.ts
+│   ├── user.service.ts
 ├── utils/
 │   ├── api-route-registry.ts
 │   ├── cleanup-manager.ts
 │   ├── constants.ts
-│   ├── error-messages.ts
 │   ├── index.ts
 │   ├── README.md
 │   ├── response-helpers.ts
@@ -1533,6 +1762,26 @@ src/
 │   │   ├── ThemeContext.tsx
 │   ├── docs/
 │   │   ├── memory-optimization-guide.md
+│   ├── error-handling/
+│   │   ├── client/
+│   │   │   ├── error-handler.ts
+│   │   ├── constants/
+│   │   │   ├── error-categories.ts
+│   │   │   ├── error-codes.ts
+│   │   │   ├── error-messages.ts
+│   │   │   ├── http-status.ts
+│   │   │   ├── postgres-codes.ts
+│   │   ├── errors/
+│   │   │   ├── base-error.ts
+│   │   │   ├── database-error.ts
+│   │   │   ├── validation-error.ts
+│   │   ├── index.ts
+│   │   ├── server/
+│   │   │   ├── express-handler.ts
+│   │   ├── utilities/
+│   │   │   ├── error-factory.ts
+│   │   │   ├── error-metrics.ts
+│   │   │   ├── error-utils.ts
 │   ├── hooks/
 │   │   ├── __tests__/
 │   │   │   ├── accessibility-integration.test.tsx
@@ -1805,7 +2054,6 @@ src/
 │   │   ├── cn.ts
 │   │   ├── compare-utils.tsx
 │   │   ├── date-utils.ts
-│   │   ├── errors.ts
 │   │   ├── formatters.ts
 │   │   ├── globalPerformanceMonitor.ts
 │   │   ├── images/
@@ -1961,6 +2209,7 @@ update-consolidated-imports.sh
 update-shared-imports.sh
 update-validation-imports.sh
 uploads/
+validate-migration.ts
 vercel.json
 vite.config.ts
 vitest.workspace.ts
@@ -1968,4 +2217,4 @@ vitest.workspace.ts
 
 **Excluded directories:** `.git`, `node_modules`, `dist`, `build`, `coverage`, `tmp`, `temp`, `__pycache__`, `vendor`, and all hidden files/directories
 
-Generated on: 2025-08-21 00:08:14
+Generated on: 2025-08-31 13:45:32

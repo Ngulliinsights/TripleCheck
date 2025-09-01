@@ -139,6 +139,15 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,scss}\"",
     "check": "npm run test:types && npm run lint && npm run format:check",
     
+    "// === CORE UTILITIES MIGRATION ===": "",
+    "migrate:core-utilities": "tsx scripts/run-migration.ts",
+    "migrate:core-utilities:dry-run": "tsx scripts/run-migration.ts --dry-run",
+    "migrate:core-utilities:verbose": "tsx scripts/run-migration.ts --verbose",
+    "migrate:cache": "tsx scripts/migration-helpers/cache-migration.ts",
+    "migrate:middleware": "tsx scripts/migration-helpers/middleware-migration.ts",
+    "migrate:config": "tsx scripts/migration-helpers/config-migration.ts",
+    "validate:migration": "tsx scripts/validate-migration.ts",
+    
     "// === MAINTENANCE ===": "",
     "clean": "rm -rf dist coverage .turbo node_modules/.cache",
     "clean:full": "npm run clean && rm -rf node_modules package-lock.json && npm install",

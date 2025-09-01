@@ -13,7 +13,7 @@ import {
   notifications,
   professionals,
 } from 'shared/validation/core';
-import { CacheService } from "../infrastructure/cache"
+import { CacheService } from '../../core/src/cache'
 import { db } from '../infrastructure/database/connection';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { asyncHandler } from "../middleware/error";

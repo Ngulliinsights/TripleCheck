@@ -16,7 +16,7 @@ import {
 } from '../auth.middleware';
 import { storage } from '../../storage';
 import { ResponseHelper } from '../../utils/response-helpers';
-import { AUTH_ERROR_MESSAGES } from '../../utils/error-messages';
+import { AUTH_ERROR_MESSAGES } from '../../../core/src/error-handling';
 import { HTTP_STATUS } from '../../utils/constants';
 
 // Mock dependencies

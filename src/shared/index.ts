@@ -1,6 +1,6 @@
 // Shared Exports
 export * from './types';
-export * from './utils/error-handling';
+export * from '../../core/src/error-handling';
 
 // UI Components
 export * from './components/ui/button';
