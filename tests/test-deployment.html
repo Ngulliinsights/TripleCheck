@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TripleCheck Deployment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>TripleCheck Deployment Diagnostic</h1>
+    
+    <div class="test-section">
+        <h2>Basic Environment Check</h2>
+        <div id="env-check"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Asset Loading Test</h2>
+        <div id="asset-check"></div>
+        <button onclick="testAssets()">Test Assets</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>JavaScript Execution Test</h2>
+        <div id="js-check"></div>
+        <button onclick="testJavaScript()">Test JavaScript</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Network Connectivity Test</h2>
+        <div id="network-check"></div>
+        <button onclick="testNetwork()">Test Network</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Console Logs</h2>
+        <div id="console-logs">
+            <p>Check browser console for detailed logs...</p>
+        </div>
+        <button onclick="showConsoleLogs()">Capture Console</button>
+    </div>
+
+    <script>
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const logs = [];
+
+        console.log = function(...args) {
+            logs.push({type: 'log', message: args.join(' '), timestamp: new Date().toISOString()});
+            originalLog.apply(console, args);
+        };
+
+        console.error = function(...args) {
+            logs.push({type: 'error', message: args.join(' '), timestamp: new Date().toISOString()});
+            originalError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            logs.push({type: 'warn', message: args.join(' '), timestamp: new Date().toISOString()});
+            originalWarn.apply(console, args);
+        };
+
+        // Environment check
+        function checkEnvironment() {
+            const envCheck = document.getElementById('env-check');
+            let html = '';
+            
+            // Basic browser features
+            const features = {
+                'Fetch API': typeof fetch !== 'undefined',
+                'Promise': typeof Promise !== 'undefined',
+                'Local Storage': typeof localStorage !== 'undefined',
+                'Session Storage': typeof sessionStorage !== 'undefined',
+                'JSON': typeof JSON !== 'undefined',
+                'URLSearchParams': typeof URLSearchParams !== 'undefined',
+                'ES6 Modules': typeof Symbol !== 'undefined',
+                'Arrow Functions': (() => true)() === true
+            };
+
+            for (const [feature, supported] of Object.entries(features)) {
+                const status = supported ? 'success' : 'error';
+                html += `<div class="status ${status}">${feature}: ${supported ? '✅ Supported' : '❌ Not Supported'}</div>`;
+            }
+
+            // Browser info
+            html += `<div class="status success">User Agent: ${navigator.userAgent}</div>`;
+            html += `<div class="status success">URL: ${window.location.href}</div>`;
+            html += `<div class="status success">Protocol: ${window.location.protocol}</div>`;
+
+            envCheck.innerHTML = html;
+        }
+
+        // Test asset loading
+        async function testAssets() {
+            const assetCheck = document.getElementById('asset-check');
+            assetCheck.innerHTML = '<p>Testing assets...</p>';
+            
+            const assets = [
+                '/js/index-ChVHhYri.js',
+                '/js/react-core-DM29-d1c.js',
+                '/assets/shared-core-DCM5hqQb.css'
+            ];
+
+            let html = '';
+            for (const asset of assets) {
+                try {
+                    const response = await fetch(asset, { method: 'HEAD' });
+                    const status = response.ok ? 'success' : 'error';
+                    html += `<div class="status ${status}">${asset}: ${response.status} ${response.statusText}</div>`;
+                } catch (error) {
+                    html += `<div class="status error">${asset}: Failed to load - ${error.message}</div>`;
+                }
+            }
+            
+            assetCheck.innerHTML = html;
+        }
+
+        // Test JavaScript execution
+        function testJavaScript() {
+            const jsCheck = document.getElementById('js-check');
+            let html = '';
+
+            try {
+                // Test basic JavaScript features
+                const testArray = [1, 2, 3];
+                const testMap = testArray.map(x => x * 2);
+                const testPromise = Promise.resolve('test');
+                
+                html += '<div class="status success">✅ Array methods work</div>';
+                html += '<div class="status success">✅ Promises work</div>';
+                
+                // Test ES6 features
+                const testArrow = () => 'arrow function works';
+                const testDestructuring = {a: 1, b: 2};
+                const {a, b} = testDestructuring;
+                
+                html += '<div class="status success">✅ Arrow functions work</div>';
+                html += '<div class="status success">✅ Destructuring works</div>';
+                
+                // Test async/await
+                (async () => {
+                    try {
+                        await testPromise;
+                        html += '<div class="status success">✅ Async/await works</div>';
+                        jsCheck.innerHTML = html;
+                    } catch (error) {
+                        html += `<div class="status error">❌ Async/await failed: ${error.message}</div>`;
+                        jsCheck.innerHTML = html;
+                    }
+                })();
+                
+            } catch (error) {
+                html += `<div class="status error">❌ JavaScript test failed: ${error.message}</div>`;
+                jsCheck.innerHTML = html;
+            }
+        }
+
+        // Test network connectivity
+        async function testNetwork() {
+            const networkCheck = document.getElementById('network-check');
+            networkCheck.innerHTML = '<p>Testing network...</p>';
+            
+            const tests = [
+                { url: '/', name: 'Root path' },
+                { url: '/api/health', name: 'API health endpoint' },
+                { url: 'https://httpbin.org/get', name: 'External connectivity' }
+            ];
+
+            let html = '';
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url, { 
+                        method: 'GET',
+                        mode: test.url.startsWith('http') ? 'cors' : 'same-origin'
+                    });
+                    const status = response.ok ? 'success' : 'warning';
+                    html += `<div class="status ${status}">${test.name}: ${response.status} ${response.statusText}</div>`;
+                } catch (error) {
+                    html += `<div class="status error">${test.name}: ${error.message}</div>`;
+                }
+            }
+            
+            networkCheck.innerHTML = html;
+        }
+
+        // Show console logs
+        function showConsoleLogs() {
+            const consoleLogsDiv = document.getElementById('console-logs');
+            let html = '<h3>Captured Console Logs:</h3>';
+            
+            if (logs.length === 0) {
+                html += '<p>No logs captured yet.</p>';
+            } else {
+                logs.forEach(log => {
+                    const className = log.type === 'error' ? 'error' : log.type === 'warn' ? 'warning' : 'success';
+                    html += `<div class="status ${className}">[${log.timestamp}] ${log.type.toUpperCase()}: ${log.message}</div>`;
+                });
+            }
+            
+            consoleLogsDiv.innerHTML = html;
+        }
+
+        // Run initial checks
+        document.addEventListener('DOMContentLoaded', () => {
+            checkEnvironment();
+            console.log('Deployment diagnostic page loaded');
+        });
+
+        // Check if main app is trying to load
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+    </script>
+</body>
+</html>

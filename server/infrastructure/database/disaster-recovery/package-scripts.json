@@ -1,0 +1,32 @@
+{
+  "scripts": {
+    "dr:init": "tsx database/disaster-recovery/disaster-recovery-cli.ts init",
+    "dr:health-check": "tsx database/disaster-recovery/disaster-recovery-cli.ts health-check",
+    "dr:health-check:json": "tsx database/disaster-recovery/disaster-recovery-cli.ts health-check --json",
+    "dr:recover": "tsx database/disaster-recovery/disaster-recovery-cli.ts recover",
+    "dr:recover:complete-database-loss": "tsx database/disaster-recovery/disaster-recovery-cli.ts recover complete_database_loss",
+    "dr:recover:point-in-time": "tsx database/disaster-recovery/disaster-recovery-cli.ts recover point_in_time_recovery",
+    "dr:recover:partial-corruption": "tsx database/disaster-recovery/disaster-recovery-cli.ts recover partial_data_corruption",
+    "dr:recover:cross-region-failover": "tsx database/disaster-recovery/disaster-recovery-cli.ts recover cross_region_failover",
+    "dr:test": "tsx database/disaster-recovery/disaster-recovery-cli.ts test",
+    "dr:test-all": "tsx database/disaster-recovery/disaster-recovery-cli.ts test --all",
+    "dr:test:complete-database-loss": "tsx database/disaster-recovery/disaster-recovery-cli.ts test complete_database_loss --dry-run",
+    "dr:test:point-in-time": "tsx database/disaster-recovery/disaster-recovery-cli.ts test point_in_time_recovery --dry-run",
+    "dr:test:partial-corruption": "tsx database/disaster-recovery/disaster-recovery-cli.ts test partial_data_corruption --dry-run",
+    "dr:test:cross-region-failover": "tsx database/disaster-recovery/disaster-recovery-cli.ts test cross_region_failover --dry-run",
+    "dr:backup:full": "tsx database/disaster-recovery/disaster-recovery-cli.ts backup --full",
+    "dr:backup:incremental": "tsx database/disaster-recovery/disaster-recovery-cli.ts backup --incremental",
+    "dr:backup:status": "tsx database/disaster-recovery/disaster-recovery-cli.ts backup --status",
+    "dr:backup:validate": "tsx database/disaster-recovery/disaster-recovery-cli.ts backup --validate",
+    "dr:backup:cleanup": "tsx database/disaster-recovery/disaster-recovery-cli.ts backup --cleanup",
+    "dr:generate-runbooks": "tsx database/disaster-recovery/disaster-recovery-cli.ts generate-runbooks",
+    "dr:list-scenarios": "tsx database/disaster-recovery/disaster-recovery-cli.ts list-scenarios",
+    "dr:monitor": "tsx database/disaster-recovery/disaster-recovery-cli.ts monitor",
+    "dr:monitor:fast": "tsx database/disaster-recovery/disaster-recovery-cli.ts monitor --interval 30",
+    "dr:scripts:activate-replica": "bash database/disaster-recovery/scripts/activate-replica.sh",
+    "dr:scripts:restore-config": "bash database/disaster-recovery/scripts/restore-config.sh",
+    "dr:scripts:restore-original-db": "bash database/disaster-recovery/scripts/restore-original-db.sh",
+    "dr:scripts:restore-pre-recovery-backup": "bash database/disaster-recovery/scripts/restore-pre-recovery-backup.sh",
+    "dr:scripts:restore-primary-region": "bash database/disaster-recovery/scripts/restore-primary-region.sh"
+  }
+}

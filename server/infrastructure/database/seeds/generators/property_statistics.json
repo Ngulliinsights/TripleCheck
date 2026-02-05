@@ -1,0 +1,30 @@
+{
+  "total_properties": 10000,
+  "suspicious_properties": 300,
+  "property_types": {
+    "apartment": 4041,
+    "house": 3469,
+    "condo": 1440,
+    "townhouse": 833,
+    "studio": 217
+  },
+  "cities": {
+    "Nakuru": 2513,
+    "Mombasa": 2507,
+    "Kisumu": 2503,
+    "Nairobi": 2477
+  },
+  "price_statistics": {
+    "mean": 17288342.9654,
+    "median": 11750963.0,
+    "min": 539032.0,
+    "max": 219757446.0,
+    "std": 16702266.996705536
+  },
+  "sqft_statistics": {
+    "mean": 1951.9819,
+    "median": 1676.0,
+    "min": 300.0,
+    "max": 4999.0
+  }
+}

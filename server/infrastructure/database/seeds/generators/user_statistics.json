@@ -1,0 +1,42 @@
+{
+  "users": {
+    "total_users": 5000,
+    "suspicious_users": 100,
+    "user_types": {
+      "buyer": 2259,
+      "seller": 1278,
+      "agent": 736,
+      "investor": 727
+    },
+    "cities": {
+      "Mombasa": 1325,
+      "Nairobi": 1268,
+      "Nakuru": 1243,
+      "Kisumu": 1164
+    },
+    "verified_users": 2501
+  },
+  "transactions": {
+    "total_transactions": 37772,
+    "suspicious_transactions": 638,
+    "transaction_types": {
+      "buy": 13460,
+      "sell": 11043,
+      "lease": 6746,
+      "rent": 5617,
+      "refinance": 906
+    },
+    "transaction_status": {
+      "completed": 32176,
+      "pending": 3695,
+      "cancelled": 1901
+    },
+    "amount_statistics": {
+      "mean": 27661750.996161178,
+      "median": 27634965.0,
+      "min": 5000000.0,
+      "max": 90278126.0,
+      "std": 13012980.952690685
+    }
+  }
+}

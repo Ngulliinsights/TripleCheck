@@ -1,0 +1,149 @@
+{
+  "database": {
+    "primary": {
+      "host": "localhost",
+      "port": 5432,
+      "database": "triplecheck",
+      "username": "postgres",
+      "password": "password"
+    },
+    "replicas": [
+      {
+        "id": "replica-1",
+        "host": "replica1.triplecheck.co.ke",
+        "port": 5432,
+        "database": "triplecheck",
+        "username": "postgres",
+        "password": "password",
+        "region": "us-east-1",
+        "priority": 1
+      },
+      {
+        "id": "replica-2", 
+        "host": "replica2.triplecheck.co.ke",
+        "port": 5432,
+        "database": "triplecheck",
+        "username": "postgres",
+        "password": "password",
+        "region": "eu-west-1",
+        "priority": 2
+      }
+    ]
+  },
+  "storage": {
+    "local": {
+      "path": "./database/disaster-recovery/storage",
+      "maxSizeGB": 100
+    },
+    "crossRegion": {
+      "enabled": true,
+      "regions": [
+        {
+          "id": "us-east-1",
+          "type": "s3",
+          "bucket": "triplecheck-dr-backups-us-east-1",
+          "credentials": {
+            "accessKeyId": "YOUR_ACCESS_KEY",
+            "secretAccessKey": "YOUR_SECRET_KEY",
+            "region": "us-east-1"
+          },
+          "encryption": true
+        },
+        {
+          "id": "eu-west-1",
+          "type": "s3", 
+          "bucket": "triplecheck-dr-backups-eu-west-1",
+          "credentials": {
+            "accessKeyId": "YOUR_ACCESS_KEY",
+            "secretAccessKey": "YOUR_SECRET_KEY",
+            "region": "eu-west-1"
+          },
+          "encryption": true
+        }
+      ]
+    }
+  },
+  "recovery": {
+    "rpoMinutes": 5,
+    "rtoMinutes": 15,
+    "enableWALArchiving": true,
+    "enablePointInTimeRecovery": true,
+    "retentionDays": 30,
+    "testingSchedule": {
+      "backupValidation": "daily",
+      "pointInTimeRecovery": "weekly", 
+      "fullDisasterRecovery": "monthly"
+    }
+  },
+  "monitoring": {
+    "enableHealthChecks": true,
+    "checkIntervalSeconds": 60,
+    "alerting": {
+      "enabled": true,
+      "channels": [
+        {
+          "type": "email",
+          "config": {
+            "smtp": {
+              "host": "smtp.gmail.com",
+              "port": 587,
+              "secure": false,
+              "auth": {
+                "user": "alerts@triplecheck.co.ke",
+                "pass": "your-email-password"
+              }
+            },
+            "recipients": ["tech@triplecheck.co.ke", "management@triplecheck.co.ke"]
+          },
+          "severity": "high"
+        },
+        {
+          "type": "slack",
+          "config": {
+            "webhookUrl": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+            "channel": "#disaster-recovery",
+            "username": "DR-Bot"
+          },
+          "severity": "medium"
+        },
+        {
+          "type": "webhook",
+          "config": {
+            "url": "https://api.triplecheck.co.ke/alerts/disaster-recovery",
+            "method": "POST",
+            "headers": {
+              "Authorization": "Bearer YOUR_API_TOKEN",
+              "Content-Type": "application/json"
+            }
+          },
+          "severity": "critical"
+        },
+        {
+          "type": "sms",
+          "config": {
+            "provider": "twilio",
+            "accountSid": "YOUR_TWILIO_SID",
+            "authToken": "YOUR_TWILIO_TOKEN",
+            "fromNumber": "+1234567890",
+            "recipients": ["+254700000001", "+254700000002"]
+          },
+          "severity": "critical"
+        }
+      ]
+    },
+    "thresholds": {
+      "backupAge": 25,
+      "walArchiveLag": 10,
+      "replicationLag": 30,
+      "diskUsage": 85,
+      "connectionFailures": 3
+    }
+  },
+  "automation": {
+    "enableAutomatedFailover": false,
+    "enableAutomatedRecovery": false,
+    "enableAutomatedTesting": true,
+    "maxAutomatedActions": 5,
+    "requireManualApproval": true
+  }
+}
