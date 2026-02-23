@@ -11,5 +11,5 @@ export type { PropertyImageSectionProps } from './PropertyImageSection'
 export { QuickActionsOverlay } from './QuickActionsOverlay'
 export type { QuickActionsOverlayProps } from './QuickActionsOverlay'
 
-export { PropertyFeatures as PropertyFeaturesComponent } from './PropertyFeatures'
+export { PropertyFeatures as PropertyFeaturesComponent, PropertyFeatures } from './PropertyFeatures'
 export type { PropertyFeaturesProps } from './PropertyFeatures'

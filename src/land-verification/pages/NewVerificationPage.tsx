@@ -9,7 +9,7 @@ import {
 import { ArrowLeft, Info } from "lucide-react"
 import React, { useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { toast } from "../../shared/components/ui/index"
+import { Toast as toast } from "../../shared/components/ui/index"
 
 import { VerificationWizard, CommunityInterviewTemplate } from "../components"
 

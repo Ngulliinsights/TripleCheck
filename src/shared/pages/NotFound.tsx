@@ -1,4 +1,4 @@
-import { Home, ArrowLeft } from './index'
+import { Home, ArrowLeft } from 'lucide-react'
 import React from 'react'
 
 import { Button } from '../components/ui/button'

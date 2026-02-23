@@ -408,3 +408,8 @@ export class UnifiedApiClient {
 
 // Export singleton
 export const apiClient = new UnifiedApiClient({ baseUrl: '/api' });
+
+export const unifiedApiClient = new UnifiedApiClient();
+
+// Re-export landVerificationAI from huggingface-api-client for backward compatibility
+export { landVerificationAI } from './huggingface-api-client';

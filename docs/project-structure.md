@@ -1,6 +1,6 @@
 # Project Structure
 
-**Generated:** 12/20/2025, 7:15:05 AM
+**Generated:** 2/23/2026, 3:37:06 PM
 **Max Depth:** 7 levels
 
 ```
@@ -153,7 +153,6 @@
 │   │   ├── community-trust-ai.ts
 │   │   ├── ml-business.service.ts
 │   │   ├── ml-training-root.ts
-│   │   ├── ml-training.test.ts
 │   │   ├── ml-training.ts
 │   │   └── storage.ts
 │   ├── analytics/
@@ -192,7 +191,6 @@
 │   ├── document-auth/
 │   │   ├── analyzers/
 │   │   │   ├── ContentAnalyzer.ts
-│   │   │   ├── LandDocumentAnalyzer.test.ts
 │   │   │   ├── LandDocumentAnalyzer.ts
 │   │   │   ├── MetadataAnalyzer.ts
 │   │   │   ├── MLDocumentAnalyzer.ts
@@ -203,7 +201,6 @@
 │   │   ├── types/
 │   │   │   └── exif-parser.d.ts
 │   │   ├── authentication-business.service.ts
-│   │   ├── DocumentAuthService.land.test.ts
 │   │   ├── DocumentAuthService.ts
 │   │   └── test-document-auth.ts
 │   ├── fraud-detection/
@@ -218,12 +215,8 @@
 │   │   │   ├── DataIntegrationService.ts
 │   │   │   └── ExternalAPIService.ts
 │   │   ├── tests/
-│   │   │   ├── dashboard.test.ts
-│   │   │   ├── engine.test.ts
 │   │   │   ├── global-setup.ts
 │   │   │   ├── global-teardown.ts
-│   │   │   ├── integration.test.ts
-│   │   │   ├── performance.test.ts
 │   │   │   ├── results-processor.js
 │   │   │   ├── run-tests.ts
 │   │   │   └── setup.ts
@@ -595,21 +588,15 @@
 │   │   │   └── SecurityIntegration.ts
 │   │   ├── utils/
 │   │   │   └── gps-calculations.ts
-│   │   ├── CommunityIntelligenceIntegration.test.ts
-│   │   ├── CommunityIntelligenceService.test.ts
 │   │   ├── CommunityIntelligenceService.ts
 │   │   ├── DocumentIntegration.ts
-│   │   ├── ExpertCoordinationService.test.ts
 │   │   ├── ExpertCoordinationService.ts
 │   │   ├── index.ts
-│   │   ├── integration.test.ts
-│   │   ├── LandVerificationService.test.ts
 │   │   ├── LandVerificationService.ts
 │   │   ├── MonitoringService.ts
 │   │   ├── PhysicalVerificationService.ts
 │   │   ├── README.md
 │   │   ├── ReportingService.ts
-│   │   ├── RiskAssessmentService.test.ts
 │   │   ├── RiskAssessmentService.ts
 │   │   ├── ServiceFactory.ts
 │   │   └── verification-business.service.ts
@@ -664,10 +651,6 @@
 │   ├── property/
 │   │   ├── enhancements.controller.ts
 │   │   ├── property-business.service.ts
-│   │   ├── property-controller-integration.test.ts
-│   │   ├── property-e2e-integration.test.ts
-│   │   ├── property-land-verification.test.ts
-│   │   ├── property-repository-integration.test.ts
 │   │   ├── property.controller.ts
 │   │   ├── property.repository.ts
 │   │   └── property.service.ts
@@ -684,36 +667,14 @@
 │   │   └── email-types.ts
 │   ├── tests/
 │   │   ├── auth/
-│   │   │   └── AuthenticationService.test.ts
 │   │   ├── e2e/
-│   │   │   └── land-verification-workflow.test.ts
 │   │   ├── integration/
-│   │   │   ├── api.test.ts
-│   │   │   └── land-verification-system.test.ts
 │   │   ├── performance/
-│   │   │   ├── land-verification-load.test.ts
-│   │   │   └── load.test.ts
 │   │   ├── security/
-│   │   │   ├── land-verification-security.test.ts
-│   │   │   └── SecurityHardening.test.ts
-│   │   ├── ai-integration-validation.test.ts
-│   │   ├── ai-integration.test.ts
 │   │   ├── API_BUG_FIXES_SUMMARY.md
 │   │   ├── api-bug-fixes.ts
-│   │   ├── api-validation.test.ts
-│   │   ├── application-validation.test.ts
-│   │   ├── backend-api-comprehensive.test.ts
-│   │   ├── backward-compatibility.test.ts
-│   │   ├── basic-api.test.ts
-│   │   ├── compatibility-validation.test.ts
-│   │   ├── comprehensive-validation.test.ts
-│   │   ├── file-upload-validation.test.ts
-│   │   ├── file-upload.test.ts
 │   │   ├── load-test-validation.ts
 │   │   ├── load-test.ts
-│   │   ├── performance-validation.test.ts
-│   │   ├── performance.test.ts
-│   │   ├── quick-validation.test.ts
 │   │   ├── run-api-tests.ts
 │   │   ├── run-compatibility-tests.ts
 │   │   ├── run-final-integration-tests.ts
@@ -721,7 +682,6 @@
 │   │   ├── setup.ts
 │   │   ├── simple-api-validation.js
 │   │   ├── test-setup.ts
-│   │   ├── validate-api-fixes.test.ts
 │   │   ├── validate-system-integration.ts
 │   │   └── validation-report.md
 │   ├── trust/
@@ -992,8 +952,7 @@
 │   │   │   ├── property-validation.ts
 │   │   │   └── PropertyDocumentIntegration.ts
 │   │   ├── tests/
-│   │   │   ├── performanceTest.ts
-│   │   │   └── property-land-verification.test.ts
+│   │   │   └── performanceTest.ts
 │   │   ├── types/
 │   │   │   ├── index.ts
 │   │   │   └── property.types.ts
@@ -1179,6 +1138,7 @@
 │   │   │   ├── PaymentGuidance.tsx
 │   │   │   ├── PricingCTA.tsx
 │   │   │   ├── QueryErrorBoundary.tsx
+│   │   │   ├── ROICalculator.tsx
 │   │   │   ├── ServiceCategories.tsx
 │   │   │   ├── Testimonials.tsx
 │   │   │   ├── TrustIndicators.tsx
@@ -1315,6 +1275,7 @@
 │   │   │   ├── Help.tsx
 │   │   │   ├── Home.tsx
 │   │   │   ├── index.ts
+│   │   │   ├── InstitutionalPricing.tsx
 │   │   │   ├── LocationServices.tsx
 │   │   │   ├── MVP-Demo.tsx
 │   │   │   ├── NavigationTest.tsx
@@ -1393,34 +1354,14 @@
 │   │   │   ├── design-system.css
 │   │   │   └── globals.css
 │   │   ├── test-utils/
-│   │   │   ├── cross-browser/
-│   │   │   │   └── browser-detection.ts
-│   │   │   ├── ACCESSIBILITY_TESTING_GUIDE.md
-│   │   │   ├── accessibility.ts
-│   │   │   ├── api-handlers.ts
-│   │   │   ├── bug-detector.ts
-│   │   │   ├── error-testing.ts
-│   │   │   ├── example.test.tsx
-│   │   │   ├── fixtures.ts
-│   │   │   ├── FORM_TESTING_SUMMARY.md
-│   │   │   ├── form-testing.ts
-│   │   │   ├── foundation.test.tsx
 │   │   │   ├── index.ts
-│   │   │   ├── memory-manager.ts
-│   │   │   ├── msw-browser.ts
-│   │   │   ├── msw-server.ts
-│   │   │   ├── patterns.ts
-│   │   │   ├── performance-testing.ts
-│   │   │   ├── README.md
 │   │   │   ├── render.tsx
-│   │   │   ├── setup.ts
-│   │   │   ├── test-chunking.ts
-│   │   │   └── user-event.ts
+│   │   │   └── setup.ts
 │   │   ├── testing/
 │   │   │   ├── ApiTestUtils.ts
 │   │   │   ├── E2ETestUtils.ts
 │   │   │   ├── index.ts
-│   │   │   └── TestUtils.ts
+│   │   │   └── TestUtils.tsx
 │   │   ├── types/
 │   │   │   ├── contracts/
 │   │   │   │   ├── property-contracts.ts
@@ -1483,6 +1424,7 @@
 │   │   │   ├── FraudDetection.tsx
 │   │   │   ├── FraudProtectionInfo.tsx
 │   │   │   ├── Karma.tsx
+│   │   │   ├── ProofVerification.tsx
 │   │   │   ├── Reports.tsx
 │   │   │   ├── Reputation.tsx
 │   │   │   ├── Reviews.tsx
@@ -1490,10 +1432,14 @@
 │   │   ├── services/
 │   │   │   ├── DocumentTrustIntegration.ts
 │   │   │   ├── fraudDetectionApi.ts
+│   │   │   ├── ImmutableProofService.ts
+│   │   │   ├── NPLVerificationService.ts
+│   │   │   ├── RegistryMismatchDetector.ts
 │   │   │   ├── trust-api.ts
 │   │   │   └── trust-business-logic.ts
 │   │   ├── types/
 │   │   │   ├── index.ts
+│   │   │   ├── npl-verification.types.ts
 │   │   │   └── trust.types.ts
 │   │   └── index.ts
 │   ├── types/
@@ -1537,30 +1483,17 @@
 │   │   │   └── test-config.ts
 │   │   ├── helpers/
 │   │   │   └── test-helpers.ts
-│   │   ├── auth-workflows.spec.ts
-│   │   ├── complete-user-workflows.spec.ts
-│   │   ├── integration-workflows.spec.ts
-│   │   ├── property-workflows.spec.ts
-│   │   ├── README.md
-│   │   ├── review-workflows.spec.ts
-│   │   └── user-profile-workflows.spec.ts
+│   │   └── README.md
 │   ├── integration/
 │   │   └── api/
-│   │       └── auth.test.ts
 │   ├── shared/
 │   │   └── ConsolidatedTestFramework.ts
 │   ├── unit/
 │   │   └── services/
-│   │       └── CacheService.test.ts
 │   ├── visual/
 │   │   ├── helpers/
 │   │   │   └── visual-test-utils.ts
-│   │   ├── animations.visual.test.ts
-│   │   ├── components.visual.test.ts
 │   │   ├── README.md
-│   │   ├── responsive-design.visual.test.ts
-│   │   ├── responsive-navigation.visual.test.ts
-│   │   ├── setup.visual.test.ts
 │   │   └── visual.config.ts
 │   ├── setup.ts
 │   ├── test-app-startup.ts
@@ -1576,11 +1509,30 @@
 │   ├── css.d.ts
 │   └── PropertyCardShowcase.css.d.ts
 ├── uploads/
+├── Artmark.svg
+├── CLEANUP_SUMMARY.md
+├── fix-imports.sh
 ├── generate-structure.mjs
+├── IMPORT_FIXES_APPLIED.md
 ├── import-resolver.mjs
 ├── import-tools.sh
 ├── import-validator.mjs
-└── triplecheck_evaluation.md
+├── index.html
+├── ml_training_quickstart.md
+├── package-lock.json
+├── package.json
+├── triplecheck_development_framework.md
+├── triplecheck_evaluation.md
+├── TripleCheck.ico
+├── tsc_current_errors.txt
+├── tsc_errors_final_verified_2.txt
+├── tsc_errors_final_verified.txt
+├── tsc_errors_final.txt
+├── tsc_errors_new.txt
+├── tsc_errors.txt
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
 ```
 
 ## Excluded

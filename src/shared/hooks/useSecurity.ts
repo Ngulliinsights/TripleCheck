@@ -4,25 +4,30 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { validationService, ValidationError, type ValidationResult } from '../error-handling/errors/validation-error'
+import { ValidationError } from '../error-handling/errors/validation-error'
 import { ZodSchema } from 'zod'
 import { authTokenService } from '../services/AuthTokenService'
 import { rateLimitService, RateLimitConfig, RateLimitStatus } from '../services/RateLimitService'
 import { auditLogService } from '../services/AuditLogService'
-import { sanitizeHtml, sanitizeSql, sanitizeUserInput } from '../../../core/src/validation/sanitization'
 
 // Types for security hooks
-type SanitizationOptions = {
-  html?: boolean;
-  sql?: boolean;
-  userInput?: boolean;
+interface ValidationResult<T> {
+  success: boolean;
+  data?: T;
+  error?: ValidationError;
+}
+
+// Simple sanitization functions
+const sanitizeHtml = (input: string): string => {
+  return input.replace(/<[^>]*>/g, '');
 };
 
-type SecurityHeaders = {
-  'Content-Type': string;
-  'X-CSRF-Token'?: string;
-  'X-Rate-Limit-Remaining'?: string;
-  [key: string]: string | undefined;
+const sanitizeSql = (input: string): string => {
+  return input.replace(/['";\\]/g, '');
+};
+
+const sanitizeUserInput = (input: string): string => {
+  return input.trim().replace(/[<>]/g, '');
 };
 
 /**
@@ -41,16 +46,17 @@ export const useSecureValidation = <T>(schema: ZodSchema<T>) => {
         fields: Object.keys(data as Record<string, unknown>)
       });
 
-      const result = await validationService.validate(schema, data);
+      const result = schema.parse(data) as T;
       setErrors({});  // Clear errors on success
       return { success: true, data: result };
 
     } catch (error) {
       if (error instanceof ValidationError) {
-        const errorMap = error.errors.reduce((acc, err) => {
-          acc[err.field] = err.message;
-          return acc;
-        }, {} as Record<string, string>);
+        const errorMap = error.fieldErrors ? 
+          Object.entries(error.fieldErrors).reduce((acc: Record<string, string>, [field, messages]) => {
+            acc[field] = messages[0] || 'Validation error';
+            return acc;
+          }, {}) : {};
         
         setErrors(errorMap);
 

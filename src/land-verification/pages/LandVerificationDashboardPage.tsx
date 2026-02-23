@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/component
 import { ArrowLeft, AlertTriangle } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { toast } from '../../shared/components/ui/index'
+import { Toast as toast } from '../../shared/components/ui/index'
 
 import { 
   LandVerificationDashboard,

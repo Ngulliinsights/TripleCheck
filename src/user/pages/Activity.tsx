@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { 
   Activity as ActivityIcon, 
   Eye, 
@@ -13,12 +13,12 @@ import {
   TrendingUp,
   MapPin,
   User
-} from './index'
+} from 'lucide-react'
 
 import { Button } from '../../shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
 import { Badge } from '../../shared/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '../../shared/components/ui/tabs'
 
 interface ActivityItem {
   id: string;
@@ -323,7 +323,7 @@ export default function Activity() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={filter} onValueChange={(value) => setFilter(value as typeof filter)}>
+            <Tabs value={filter} onValueChange={(value: string) => setFilter(value as typeof filter)}>
               <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="view">Views</TabsTrigger>

@@ -15,7 +15,7 @@ import {
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import zxcvbn from './PasswordReset'
+import zxcvbn from 'zxcvbn'
 
 import { Alert, AlertDescription } from '../../shared/components/ui/alert'
 import { Avatar, AvatarFallback, AvatarImage } from '../../shared/components/ui/avatar'
