@@ -8,7 +8,7 @@
 import { EventEmitter } from 'events';
 import * as tf from '..\index';
 import { ModelRegistry, ModelMetadata } from '../infrastructure/ModelRegistry';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 
 export interface TrainingDataset {
   id: string;
@@ -265,7 +265,7 @@ export class ContinuousLearningPipeline extends EventEmitter {
       
       logger.info('Continuous Learning Pipeline initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize Continuous Learning Pipeline', error);
+      logger.error({ error: error }, 'Failed to initialize Continuous Learning Pipeline');
       throw error;
     }
   }
@@ -420,7 +420,7 @@ export class ContinuousLearningPipeline extends EventEmitter {
       this.trainingQueue.delete(trainingId);
       this.activeTraining.delete(trainingId);
       
-      logger.error(`Model training failed: ${config.modelId}`, error);
+      logger.error({ error: error }, 'Model training failed: ${config.modelId}');
       
       const failedResult: TrainingResult = {
         trainingId,
@@ -518,7 +518,7 @@ export class ContinuousLearningPipeline extends EventEmitter {
       this.emit('modelDeployed', { trainingResult, modelMetadata });
       
     } catch (error) {
-      logger.error(`Model deployment failed: ${trainingResult.modelId}`, error);
+      logger.error({ error: error }, 'Model deployment failed: ${trainingResult.modelId}');
       throw error;
     }
   }
@@ -1041,7 +1041,7 @@ export class ContinuousLearningPipeline extends EventEmitter {
     try {
       await this.trainModel(trainingId);
     } catch (error) {
-      logger.error(`Training failed for: ${trainingId}`, error);
+      logger.error({ error: error }, 'Training failed for: ${trainingId}');
     }
   }
 

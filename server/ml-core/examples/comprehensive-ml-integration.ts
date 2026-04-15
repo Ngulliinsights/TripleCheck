@@ -14,7 +14,7 @@ import {
   TrustAnalysisRequest,
   FeedbackData
 } from '../index';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 
 /**
  * Example 1: Comprehensive Property Transaction Analysis
@@ -409,7 +409,7 @@ export async function comprehensiveTransactionAnalysis() {
     return result;
     
   } catch (error) {
-    logger.error('Comprehensive transaction analysis failed', error);
+    logger.error({ error: error }, 'Comprehensive transaction analysis failed');
     throw error;
   }
 }
@@ -476,7 +476,7 @@ export async function continuousLearningExample() {
     console.log('');
     
   } catch (error) {
-    logger.error('Continuous learning example failed', error);
+    logger.error({ error: error }, 'Continuous learning example failed');
     throw error;
   }
 }
@@ -585,7 +585,7 @@ export async function individualServiceExample() {
     console.log('');
     
   } catch (error) {
-    logger.error('Individual service example failed', error);
+    logger.error({ error: error }, 'Individual service example failed');
     throw error;
   }
 }
@@ -635,7 +635,7 @@ export async function systemStatusExample() {
     console.log('');
     
   } catch (error) {
-    logger.error('System status example failed', error);
+    logger.error({ error: error }, 'System status example failed');
     throw error;
   }
 }

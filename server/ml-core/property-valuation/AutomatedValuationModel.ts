@@ -8,7 +8,7 @@
 import { EventEmitter } from 'events';
 import * as tf from '..\index';
 import { ModelRegistry, ModelPrediction } from '../infrastructure/ModelRegistry';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 
 export interface PropertyValuationRequest {
   propertyId: string;
@@ -180,7 +180,7 @@ export class AutomatedValuationModel extends EventEmitter {
       
       logger.info('Automated Valuation Model initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize Automated Valuation Model', error);
+      logger.error({ error: error }, 'Failed to initialize Automated Valuation Model');
       throw error;
     }
   }
@@ -264,7 +264,7 @@ export class AutomatedValuationModel extends EventEmitter {
       return result;
       
     } catch (error) {
-      logger.error(`Property valuation failed: ${request.propertyId}`, error);
+      logger.error({ error: error }, 'Property valuation failed: ${request.propertyId}');
       throw error;
     }
   }
@@ -284,7 +284,7 @@ export class AutomatedValuationModel extends EventEmitter {
         await this.modelRegistry.loadModel(modelId);
         logger.info(`Loaded valuation model: ${modelId}`);
       } catch (error) {
-        logger.warn(`Failed to load model: ${modelId}`, error);
+        logger.warn({ error: error }, 'Failed to load model: ${modelId}');
       }
     }
   }
@@ -362,7 +362,7 @@ export class AutomatedValuationModel extends EventEmitter {
       });
       predictions.push(hedonicPrediction);
     } catch (error) {
-      logger.warn('Hedonic pricing model failed', error);
+      logger.warn({ error: error }, 'Hedonic pricing model failed');
     }
     
     // Comparable sales model
@@ -372,7 +372,7 @@ export class AutomatedValuationModel extends EventEmitter {
       });
       predictions.push(comparablePrediction);
     } catch (error) {
-      logger.warn('Comparable sales model failed', error);
+      logger.warn({ error: error }, 'Comparable sales model failed');
     }
     
     // Cost approach model
@@ -382,7 +382,7 @@ export class AutomatedValuationModel extends EventEmitter {
       });
       predictions.push(costPrediction);
     } catch (error) {
-      logger.warn('Cost approach model failed', error);
+      logger.warn({ error: error }, 'Cost approach model failed');
     }
     
     // Geospatial value model
@@ -392,7 +392,7 @@ export class AutomatedValuationModel extends EventEmitter {
       });
       predictions.push(geospatialPrediction);
     } catch (error) {
-      logger.warn('Geospatial value model failed', error);
+      logger.warn({ error: error }, 'Geospatial value model failed');
     }
     
     return predictions;

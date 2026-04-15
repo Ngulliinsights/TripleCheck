@@ -8,7 +8,7 @@
 import { EventEmitter } from 'events';
 import * as tf from '..\index';
 import { ModelRegistry, ModelPrediction } from '../infrastructure/ModelRegistry';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 
 export interface TrustAnalysisRequest {
   userId: string;
@@ -264,7 +264,7 @@ export class CommunityTrustEngine extends EventEmitter {
       
       logger.info('Community Trust Engine initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize Community Trust Engine', error);
+      logger.error({ error: error }, 'Failed to initialize Community Trust Engine');
       throw error;
     }
   }
@@ -353,7 +353,7 @@ export class CommunityTrustEngine extends EventEmitter {
       return result;
       
     } catch (error) {
-      logger.error(`Trust analysis failed for user: ${request.userId}`, error);
+      logger.error({ error: error }, 'Trust analysis failed for user: ${request.userId}');
       throw error;
     }
   }
@@ -373,7 +373,7 @@ export class CommunityTrustEngine extends EventEmitter {
         await this.modelRegistry.loadModel(modelId);
         logger.info(`Loaded trust model: ${modelId}`);
       } catch (error) {
-        logger.warn(`Failed to load model: ${modelId}`, error);
+        logger.warn({ error: error }, 'Failed to load model: ${modelId}');
       }
     }
   }
@@ -486,7 +486,7 @@ export class CommunityTrustEngine extends EventEmitter {
       });
       predictions.push(identityPrediction);
     } catch (error) {
-      logger.warn('Identity trust classifier failed', error);
+      logger.warn({ error: error }, 'Identity trust classifier failed');
     }
     
     // Behavioral trust analyzer
@@ -496,7 +496,7 @@ export class CommunityTrustEngine extends EventEmitter {
       });
       predictions.push(behavioralPrediction);
     } catch (error) {
-      logger.warn('Behavioral trust analyzer failed', error);
+      logger.warn({ error: error }, 'Behavioral trust analyzer failed');
     }
     
     // Social trust evaluator
@@ -506,7 +506,7 @@ export class CommunityTrustEngine extends EventEmitter {
       });
       predictions.push(socialPrediction);
     } catch (error) {
-      logger.warn('Social trust evaluator failed', error);
+      logger.warn({ error: error }, 'Social trust evaluator failed');
     }
     
     // Community reputation model
@@ -516,7 +516,7 @@ export class CommunityTrustEngine extends EventEmitter {
       });
       predictions.push(communityPrediction);
     } catch (error) {
-      logger.warn('Community reputation model failed', error);
+      logger.warn({ error: error }, 'Community reputation model failed');
     }
     
     // Transaction trust scorer
@@ -526,7 +526,7 @@ export class CommunityTrustEngine extends EventEmitter {
       });
       predictions.push(transactionPrediction);
     } catch (error) {
-      logger.warn('Transaction trust scorer failed', error);
+      logger.warn({ error: error }, 'Transaction trust scorer failed');
     }
     
     return predictions;

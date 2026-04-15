@@ -57,7 +57,7 @@ import { AutomatedValuationModel } from './property-valuation/AutomatedValuation
 import { CommunityTrustEngine } from './trust-intelligence/CommunityTrustEngine';
 import { MLOrchestrationService } from './orchestration/MLOrchestrationService';
 import { ContinuousLearningPipeline } from './training/ContinuousLearningPipeline';
-import { logger } from '../infrastructure/monitoring/logger';
+import { logger } from '../infrastructure/observability/telemetry';
 
 /**
  * Unified ML Service - Central access point for all ML capabilities
@@ -109,7 +109,7 @@ export class UnifiedMLService {
       logger.info('Unified ML Service initialized successfully');
       
     } catch (error) {
-      logger.error('Failed to initialize Unified ML Service', error);
+      logger.error({ error: error }, 'Failed to initialize Unified ML Service');
       throw error;
     }
   }
@@ -248,7 +248,7 @@ export class UnifiedMLService {
       logger.info('Unified ML Service shutdown complete');
       
     } catch (error) {
-      logger.error('Error during ML Service shutdown', error);
+      logger.error({ error: error }, 'Error during ML Service shutdown');
       throw error;
     }
   }

@@ -10,7 +10,7 @@ import { ModelRegistry } from '../infrastructure/ModelRegistry';
 import { AdvancedFraudDetectionEngine, FraudDetectionRequest, FraudDetectionResult } from '../fraud-detection/AdvancedFraudDetectionEngine';
 import { AutomatedValuationModel, PropertyValuationRequest, PropertyValuationResult } from '../property-valuation/AutomatedValuationModel';
 import { CommunityTrustEngine, TrustAnalysisRequest, TrustAnalysisResult } from '../trust-intelligence/CommunityTrustEngine';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 
 export interface MLWorkflowRequest {
   workflowId: string;
@@ -182,7 +182,7 @@ export class MLOrchestrationService extends EventEmitter {
       
       logger.info('ML Orchestration Service initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize ML Orchestration Service', error);
+      logger.error({ error: error }, 'Failed to initialize ML Orchestration Service');
       throw error;
     }
   }
@@ -250,7 +250,7 @@ export class MLOrchestrationService extends EventEmitter {
       this.updatePerformanceMetrics(startTime, false);
       this.activeWorkflows.delete(request.workflowId);
       
-      logger.error(`ML workflow failed: ${request.workflowId}`, error);
+      logger.error({ error: error }, 'ML workflow failed: ${request.workflowId}');
       
       // Return error result
       return this.createErrorResult(request, error as Error, Date.now() - startTime);
@@ -965,7 +965,7 @@ export class MLOrchestrationService extends EventEmitter {
         }
       }
     } catch (error) {
-      logger.error('Error processing queued workflows', error);
+      logger.error({ error: error }, 'Error processing queued workflows');
     } finally {
       this.isProcessing = false;
     }

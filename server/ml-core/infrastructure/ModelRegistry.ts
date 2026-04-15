@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'events';
 import * as tf from '..\index';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 
 export interface ModelMetadata {
   id: string;
@@ -207,7 +207,7 @@ export class ModelRegistry extends EventEmitter {
       this.emit('modelLoaded', metadata);
 
     } catch (error) {
-      logger.error(`Failed to load model: ${modelKey}`, error);
+      logger.error({ error: error }, 'Failed to load model: ${modelKey}');
       throw error;
     }
   }
@@ -327,7 +327,7 @@ export class ModelRegistry extends EventEmitter {
       const latency = Date.now() - startTime;
       this.updatePerformanceMetrics(metadata, latency, false);
       
-      logger.error(`Prediction failed: ${modelKey}`, error);
+      logger.error({ error: error }, 'Prediction failed: ${modelKey}');
       throw error;
     }
   }
@@ -767,7 +767,7 @@ export class ModelRegistry extends EventEmitter {
           model.dispose();
         }
       } catch (error) {
-        logger.warn(`Failed to dispose model: ${key}`, error);
+        logger.warn({ error: error }, 'Failed to dispose model: ${key}');
       }
     }
     
