@@ -76,7 +76,7 @@ export function Logo({
       alt={alt}
       className={imgClassName}
       loading={priority ? "eager" : "lazy"}
-      fetchpriority={priority ? "high" : "auto"}
+      fetchPriority={priority ? "high" : "auto"}
       decoding="async"
       draggable={false}
       onError={handleError}

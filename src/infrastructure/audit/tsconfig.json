@@ -1,12 +1,8 @@
 {
   "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    // Override main config for audit tools compilation
-    "noEmit": false,
-    "declaration": true,
-    "declarationMap": true,
-    "outDir": "../../../dist/audit",
-    "rootDir": ".",
+    // Audit-specific TypeScript configuration
+    "noEmit": true,
     "baseUrl": "../../../",
     "paths": {
       "@/*": ["./src/*"],
