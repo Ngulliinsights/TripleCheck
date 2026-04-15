@@ -230,7 +230,7 @@ function getThemeGradientClass(theme: string): string {
  * Enhanced Hero component with Thunes-inspired best practices
  * Features dynamic statistics, progressive disclosure, and African market focus
  */
-export function Hero({
+export function EnhancedHero({
   variant: _variant = "A",
   onSearchSubmit,
   onCtaClick,

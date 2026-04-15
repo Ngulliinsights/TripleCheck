@@ -6,10 +6,10 @@ import { useEffect, useRef, useCallback } from 'react'
 type CleanupFunction = () => void | Promise<void>;
 
 /**
- * Cleanup manager hook that provides centralized cleanup management
+ * Base cleanup manager hook that provides centralized cleanup management
  * for components to prevent memory leaks and ensure proper resource disposal
  */
-export function useCleanupManager(): {
+function useBaseCleanupManager(): {
   addCleanup: (cleanup: CleanupFunction, key?: string) => void;
   removeCleanup: (key: string) => void;
   runCleanup: (key?: string) => Promise<void>;
@@ -135,7 +135,7 @@ export function useCleanupManager(): {
   ) => string;
   addAbortController: (controller: AbortController, key?: string) => string;
 } {
-  const baseManager = useCleanupManager();
+  const baseManager = useBaseCleanupManager();
 
   // Add timeout with automatic cleanup
   const addTimeout = useCallback((

@@ -49,7 +49,7 @@ export function Logo({
   priority = false,
   onClick,
   href = "/",
-  logoSrc = "/assets/Artmark.svg",
+  logoSrc = "/Artmark.svg",
   alt = "Artmark Logo",
 }: LogoProps) {
   const imgClassName = cn(
@@ -76,7 +76,7 @@ export function Logo({
       alt={alt}
       className={imgClassName}
       loading={priority ? "eager" : "lazy"}
-      fetchPriority={priority ? "high" : "auto"}
+      fetchpriority={priority ? "high" : "auto"}
       decoding="async"
       draggable={false}
       onError={handleError}

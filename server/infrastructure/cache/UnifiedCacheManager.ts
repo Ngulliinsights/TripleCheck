@@ -13,12 +13,10 @@
  */
 
 import { createHash } from 'crypto';
-
-import Redis from '..\..\..\scripts\cleanup-redundancies';
-
+import Redis from 'ioredis';
 import { cachePerformanceMonitor } from '../monitoring/CachePerformanceMonitor';
 
-import { CacheService } from './CacheService'
+// Note: CacheService import removed - UnifiedCacheManager is self-contained
 
 
 /**

@@ -1,132 +1,105 @@
-# TripleCheck Scripts Directory
+# Scripts - Utility and Automation Scripts
 
-## 🎯 Core Scripts (Use These)
+Collection of utility scripts for development, deployment, testing, and maintenance of the TripleCheck platform.
 
-### **Data Management**
-- **`unified-data-pipeline.ts`** - Main data loading with chunking, recovery, and validation
-- **`database-manager.ts`** - Database operations, integrity checking, and connection testing
-- **`unified-data-generator.ts`** - Data generation with quality controls
+## Categories
 
-### **Utility Scripts**
-- **`checkpoint-manager.ts`** - Checkpoint management and recovery operations
-- **`quality-gates.ts`** - Quality assurance and CI/CD checks
-- **`fix-database.ts`** - Emergency database repair operations
+### Database Scripts
+- `load-data-*.ts` - Load test/demo data into database
+- `migrate-database-structure.ts` - Database migration utilities
+- `validate-database-*.ts` - Database validation and health checks
+- `setup-database.ts` - Initial database setup
 
-## 🚀 Quick Start Commands
+### Deployment Scripts
+- `deployment/deploy-production.ts` - Production deployment
+- `deployment/deploy-staging.ts` - Staging deployment
+- `deployment/validate-deployment.ts` - Post-deployment validation
+- `prepare-deployment.ts` - Pre-deployment preparation
 
-### Load Your Existing Quality Data
-```bash
-# Load 5,000 users + 10,000 properties from data-generation/
-npx tsx scripts/unified-data-pipeline.ts --clear
-```
+### Testing Scripts
+- `run-e2e-tests.js` - End-to-end tests
+- `run-accessibility-tests.js` - Accessibility testing
+- `run-visual-tests.js` - Visual regression tests
+- `test-*.ts` - Various test utilities
 
-### Verify Database Health
-```bash
-# Test connection and run integrity checks
-npx tsx scripts/database-manager.ts verify
-```
+### Optimization Scripts
+- `optimize-for-deployment.js` - Production optimization
+- `aggressive-optimization.js` - Advanced optimization
+- `OptimizedBuildPipeline.ts` - Build pipeline optimization
 
-### Generate New Data (if needed)
-```bash
-# Generate fresh dataset
-npx tsx scripts/unified-data-generator.ts 1000 500 2000
-```
+### Maintenance Scripts
+- `cleanup-redundancies.ts` - Remove redundant code
+- `fix-*.ts` - Various fix utilities
+- `validate-*.ts` - Validation utilities
 
-## 📁 Directory Structure
+## Usage
 
-```
-scripts/
-├── 🎯 CORE SCRIPTS
-│   ├── unified-data-pipeline.ts    # Data loading with recovery
-│   ├── database-manager.ts         # Database operations
-│   └── unified-data-generator.ts   # Data generation
-├── 🔧 UTILITIES
-│   ├── checkpoint-manager.ts       # Recovery management
-│   ├── quality-gates.ts           # Quality checks
-│   └── fix-database.ts            # Emergency repairs
-├── 📋 DOCUMENTATION
-│   ├── EXECUTION_GUIDE.md          # Step-by-step instructions
-│   ├── SYNTHESIS_SUMMARY.md        # Migration summary
-│   └── ROBUST_DATA_LOADING.md      # Technical details
-├── 🏗️ SPECIALIZED (Keep Separate)
-│   ├── code-analysis.ts           # Code quality analysis
-│   ├── deploy-contracts.ts        # Deployment operations
-│   ├── setup-database.ts          # Database initialization
-│   ├── test-tutorial.js           # UI testing
-│   ├── data-analysis.js           # Data analysis
-│   └── run-analysis.js            # Analysis wrapper
-└── 📊 DATA
-    └── data-generation/            # Generated datasets
-        ├── fraudulent_user_dataset.json      (5,000 users)
-        ├── fraudulent_property_dataset.json  (10,000 properties)
-        └── [Python generators]
-```
-
-## 🎯 Immediate Next Steps
-
-1. **Load your quality data:**
-   ```bash
-   npx tsx scripts/unified-data-pipeline.ts --clear
-   ```
-
-2. **Verify success:**
-   ```bash
-   npx tsx scripts/database-manager.ts verify
-   ```
-
-3. **Start your application:**
-   ```bash
-   npm run dev
-   ```
-
-4. **Check frontend:** Your properties should now appear in the UI!
-
-## 🔄 Recovery Options
-
-If something goes wrong:
+Most scripts can be run directly with ts-node:
 
 ```bash
-# Check what happened
-npx tsx scripts/checkpoint-manager.ts list
+# Run a TypeScript script
+npx ts-node scripts/script-name.ts
 
-# Resume from checkpoint
-npx tsx scripts/unified-data-pipeline.ts --resume
-
-# Fix database issues
-npx tsx scripts/database-manager.ts fix
-
-# Start completely fresh
-npx tsx scripts/database-manager.ts clear
-npx tsx scripts/unified-data-pipeline.ts --clear
+# Run a JavaScript script
+node scripts/script-name.js
 ```
 
-## 📊 What Was Merged
+## Common Scripts
 
-### Removed Redundant Scripts ✅
-- `load-generated-data.ts` → `unified-data-pipeline.ts`
-- `robust-data-loader.ts` → `unified-data-pipeline.ts`
-- `data-integrity-checker.ts` → `database-manager.ts`
-- `test-db-connection.js` → `database-manager.ts`
-- `data-generator.js` → `unified-data-generator.ts`
-- `run-data-generation.js` → `unified-data-generator.ts`
-- `integrate-quality-data.ts` → `unified-data-pipeline.ts`
-- `data-generation/integrate-data.ts` → `unified-data-pipeline.ts`
+### Database Setup
+```bash
+# Initialize database
+npm run db:setup
 
-### Benefits of Consolidation
-- **70% fewer scripts** to maintain
-- **Unified error handling** and recovery
-- **Consistent CLI interface** across all operations
-- **Better progress tracking** and logging
-- **Comprehensive validation** at every step
+# Run migrations
+npm run db:migrate
 
-## 🎉 Success Metrics
+# Seed with demo data
+npm run db:seed
+```
 
-After running the pipeline, you should have:
-- **Database**: 5,000+ users, 10,000+ properties, 15,000+ reviews
-- **Frontend**: Properties visible and searchable
-- **Performance**: Fast loading and responsive UI
-- **Features**: Working authentication, search, and filters
+### Deployment
+```bash
+# Deploy to staging
+npm run deploy:staging
 
----
+# Deploy to production
+npm run deploy:production
 
-**Your quality data is ready to load! Run the pipeline to restore full functionality.**
+# Validate deployment
+npm run deploy:validate
+```
+
+### Testing
+```bash
+# Run all tests
+npm test
+
+# Run E2E tests
+npm run test:e2e
+
+# Run accessibility tests
+npm run test:a11y
+```
+
+## Script Organization
+
+Scripts are organized by function:
+- **Root level**: General utilities
+- `/deployment/`: Deployment-related scripts
+- `/migration-helpers/`: Migration utilities
+- `/security/`: Security-related scripts
+- `/performance/`: Performance testing
+
+## Best Practices
+
+1. **Use TypeScript** for new scripts (better type safety)
+2. **Add error handling** for production scripts
+3. **Log progress** for long-running scripts
+4. **Document usage** in script comments
+5. **Test scripts** before using in production
+
+## Related Documentation
+
+- `/adr/004-test-infrastructure.md` - Testing strategy
+- `/adr/005-database-schema-strategy.md` - Database decisions
