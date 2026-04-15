@@ -382,7 +382,6 @@ function showBrowserNotification(notification: Notification) {
     badge: '/favicon.ico',
     tag: notification.id,
     requireInteraction: notification.priority === 'urgent',
-    silent: notification.priority === 'low',
   };
 
   if (notification.data?.imageUrl) {

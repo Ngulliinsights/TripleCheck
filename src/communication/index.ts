@@ -12,16 +12,16 @@ export * from './hooks/useMessages'
 
 // Components
 export { MessageThread } from './components/MessageThread'
-export { MessagesList } from './components/MessagesList'
+// export { MessagesList } from './components/MessagesList' // Component doesn't exist
 export { NotificationCenter } from './components/NotificationCenter'
-export { NotificationBell } from './components/NotificationBell'
+// export { NotificationBell } from './components/NotificationBell' // Component doesn't exist
 
 // Legacy components (for backward compatibility)
 export { MessageList } from './components/MessageList'
 export { MessageComposer } from './components/MessageComposer'
 
 // Pages
-export { MessagesPage } from './pages/MessagesPage'
+// export { MessagesPage } from './pages/MessagesPage' // Page doesn't exist
 export { default as Inbox } from './pages/Inbox'
 
 // Types

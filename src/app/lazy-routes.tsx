@@ -188,13 +188,17 @@ async function loadFallbackModule(
     const ComingSoonComponent = extractComponent(comingSoonModule);
     
     return {
-      default: () =>
-        ComingSoonComponent({
-          title,
-          description,
-          expectedLaunch: COMING_SOON_LABEL,
-          features: [],
-        }),
+      default: () => {
+        const Component = ComingSoonComponent as React.ComponentType<any>;
+        return (
+          <Component
+            title={title}
+            description={description}
+            expectedLaunch={COMING_SOON_LABEL}
+            features={[]}
+          />
+        );
+      },
     };
   } catch (fallbackError) {
     logger.error('Failed to load fallback component:', fallbackError);
@@ -277,13 +281,17 @@ const createComingSoonRoute = (
       const ComingSoonComponent = extractComponent(comingSoonModule);
       
       return {
-        default: () =>
-          ComingSoonComponent({
-            title,
-            description,
-            expectedLaunch: COMING_SOON_LABEL,
-            features: [],
-          }),
+        default: () => {
+          const Component = ComingSoonComponent as React.ComponentType<any>;
+          return (
+            <Component
+              title={title}
+              description={description}
+              expectedLaunch={COMING_SOON_LABEL}
+              features={[]}
+            />
+          );
+        },
       };
     } catch (error) {
       logger.error('Failed to load ComingSoon component:', error);

@@ -74,7 +74,7 @@ export const ParameterValidationError: React.FC<{
   readonly description: string;
   readonly errors: readonly string[];
 }> = React.memo(({ title, description, errors }) => (
-  <ErrorBoundary level="route">
+  <ErrorBoundary>
     <div className="flex items-center justify-center min-h-[400px]">
       <Card className="max-w-md mx-auto">
         <CardHeader>
@@ -140,7 +140,7 @@ export const createParameterWrapper = <T extends readonly string[]>(
     // Success path: render the component with validated parameters
     // Each prop is explicitly defined for better type checking
     return (
-      <ErrorBoundary level="component">
+      <ErrorBoundary>
         <Component
           id={routeParams.id}
           params={routeParams}

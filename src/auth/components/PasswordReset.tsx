@@ -16,7 +16,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { z } from "zod"
-import zxcvbn from "./LoginForm"
+import zxcvbn from "zxcvbn"
 
 import { Alert, AlertDescription } from "../../shared/components/ui/alert"
 import { Button } from "../../shared/components/ui/button"
