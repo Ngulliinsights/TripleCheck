@@ -599,7 +599,7 @@ export const KenyaLandEducation: React.FC<KenyaLandEducationProps> = ({ focusAre
               {filteredSections.map(section => (
                 <button
                   key={section.id}
-                  onClick={() => setActiveSection(section.id)}
+                  onClick={() => setActiveSection(section.id as any)}
                   className={`w-full text-left p-3 rounded-lg transition-colors ${
                     activeSection === section.id
                       ? 'bg-blue-100 text-blue-900 border border-blue-200'

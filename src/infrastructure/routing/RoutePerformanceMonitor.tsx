@@ -248,8 +248,8 @@ export function RoutePerformanceMonitor({
               <button
                 onClick={() => {
                   // Clear metrics
-                  routePreloader['preloadMetrics'] = [];
-                  routePreloader['routeLoadingMetrics'] = [];
+                  (routePreloader as any)['preloadMetrics'] = [];
+                  (routePreloader as any)['routeLoadingMetrics'] = [];
                 }}
                 className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
               >

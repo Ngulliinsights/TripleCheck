@@ -50,10 +50,8 @@ export {
 // Legacy performance monitor (enhanced)
 export {
   performanceMonitor,
-  usePerformanceMonitor,
-  withPerformanceTracking,
-  type PerformanceMetrics,
-  type RoutePerformance,
+  type PerformanceMetric,
+  type PerformanceRating,
 } from '../../shared/services/performance-monitoring-service'
 
 // Service worker utilities

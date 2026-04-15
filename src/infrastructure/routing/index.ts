@@ -3,6 +3,8 @@
  * Provides centralized access to all route optimization functionality
  */
 
+import { routePreloader as routePreloaderInstance } from './route-preloader'
+
 export { routePreloader } from './route-preloader'
 export type { 
   PreloadStrategy, 
@@ -41,7 +43,7 @@ export const routeUtils = {
    * Preload critical routes immediately
    */
   preloadCritical: () => {
-    routePreloader.preloadImmediate();
+    routePreloaderInstance.preloadImmediate();
   },
   
   /**
@@ -55,7 +57,7 @@ export const routeUtils = {
    * Get current preloading metrics
    */
   getMetrics: () => {
-    return routePreloader.getMetrics();
+    return routePreloaderInstance.getMetrics();
   },
   
   /**
@@ -69,11 +71,11 @@ export const routeUtils = {
     const { enableHover = true, enableIdle = true, enableViewport = true } = config || {};
     
     if (enableHover) {
-      routePreloader.setupHoverPreloading();
+      routePreloaderInstance.setupHoverPreloading();
     }
     
     if (enableIdle || enableViewport) {
-      routePreloader.initialize();
+      routePreloaderInstance.initialize();
     }
     
     console.log('🚀 Route preloading initialized with configuration:', config);
@@ -83,9 +85,9 @@ export const routeUtils = {
 // Development helpers
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   (window as any).__routePreloadingUtils = {
-    preloader: routePreloader,
+    preloader: routePreloaderInstance,
     utils: routeUtils,
-    getMetrics: () => routePreloader.getMetrics(),
-    logMetrics: () => console.table(routePreloader.getMetrics().summary),
+    getMetrics: () => routePreloaderInstance.getMetrics(),
+    logMetrics: () => console.table(routePreloaderInstance.getMetrics().summary),
   };
 }

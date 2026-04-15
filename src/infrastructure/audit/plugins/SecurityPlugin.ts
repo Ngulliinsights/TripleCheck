@@ -171,7 +171,7 @@ export class SecurityPlugin implements AuditPlugin {
                           element.props.children?.toString().includes('_token') ||
                           element.handlers.some((h: any) => h.handlerName.includes('csrf'));
       
-      const isStateChangingForm = element.apiCalls.some(api => 
+      const isStateChangingForm = element.apiCalls.some((api: any) => 
         api.method === 'POST' || api.method === 'PUT' || api.method === 'DELETE'
       );
       
@@ -191,7 +191,7 @@ export class SecurityPlugin implements AuditPlugin {
     );
     
     if (stateChangingAPIs.length > 0) {
-      const hasCSRFHeader = stateChangingAPIs.some(api => 
+      const hasCSRFHeader = stateChangingAPIs.some((api: any) => 
         api.requestBody?.headers?.['X-CSRF-Token'] ||
         api.requestBody?.headers?.['X-Requested-With']
       );
@@ -219,7 +219,7 @@ export class SecurityPlugin implements AuditPlugin {
     
     if (hasUserInput && makesAPIRequests) {
       // Check if user input is directly concatenated in API calls
-      const hasDirectConcatenation = element.apiCalls.some(api => 
+      const hasDirectConcatenation = element.apiCalls.some((api: any) => 
         api.endpoint.includes('${') || api.endpoint.includes('+')
       );
       
@@ -336,7 +336,7 @@ export class SecurityPlugin implements AuditPlugin {
     );
     
     if (protectedAPIs.length > 0) {
-      const hasAuthHeader = protectedAPIs.some(api => 
+      const hasAuthHeader = protectedAPIs.some((api: any) => 
         api.requestBody?.headers?.Authorization ||
         api.requestBody?.headers?.['X-Auth-Token']
       );
@@ -359,7 +359,7 @@ export class SecurityPlugin implements AuditPlugin {
   
   private async checkInsecureTransport(element: UIElement): Promise<AuditRuleResult> {
     // Check for HTTP URLs in production
-    const hasHTTPUrls = element.apiCalls.some(api => 
+    const hasHTTPUrls = element.apiCalls.some((api: any) => 
       api.endpoint.startsWith('http://') && !api.endpoint.includes('localhost')
     );
     
@@ -392,7 +392,7 @@ export class SecurityPlugin implements AuditPlugin {
   }
   
   private async checkVulnerableDependencies(element: UIElement): Promise<AuditRuleResult> {
-    const vulnerableDeps = element.dependencies.filter(dep => 
+    const vulnerableDeps = element.dependencies.filter((dep: any) => 
       this.knownVulnerablePackages.has(dep)
     );
     

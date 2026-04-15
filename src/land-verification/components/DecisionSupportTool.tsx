@@ -264,7 +264,7 @@ export const DecisionSupportTool: React.FC<DecisionSupportToolProps> = ({
     const explanation = showExplanation && RISK_EXPLANATIONS[showExplanation as keyof typeof RISK_EXPLANATIONS];
     if (!explanation) return null;
 
-    const factor = explanation.factors[riskId as keyof typeof explanation.factors];
+    const factor = explanation.factors[riskId as keyof typeof explanation.factors] as any;
     if (!factor) return null;
 
     return (
@@ -276,7 +276,7 @@ export const DecisionSupportTool: React.FC<DecisionSupportToolProps> = ({
           <div>
             <h5 className="font-medium text-blue-900 mb-1">Warning Signs</h5>
             <ul className="text-sm text-blue-800 list-disc list-inside">
-              {factor.indicators.map((indicator, index) => (
+              {factor.indicators.map((indicator: any, index: number) => (
                 <li key={index}>{indicator}</li>
               ))}
             </ul>
@@ -285,7 +285,7 @@ export const DecisionSupportTool: React.FC<DecisionSupportToolProps> = ({
           <div>
             <h5 className="font-medium text-blue-900 mb-1">Potential Consequences</h5>
             <ul className="text-sm text-blue-800 list-disc list-inside">
-              {factor.consequences.map((consequence, index) => (
+              {factor.consequences.map((consequence: any, index: number) => (
                 <li key={index}>{consequence}</li>
               ))}
             </ul>

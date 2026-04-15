@@ -292,7 +292,7 @@ export async function runSystemHealthCheck(): Promise<SystemHealth> {
       logError({
         message: 'System health check failed',
         details: systemHealth
-      }, 'System Health Check');
+      });
     }
   } else if (overall === 'warning' && process.env.NODE_ENV === 'development') {
     console.warn('System health check has warnings:', systemHealth);
@@ -315,7 +315,7 @@ export async function quickHealthCheck(): Promise<boolean> {
     
     return criticalChecks.every(check => check.status !== 'error');
   } catch (error) {
-    logError(parseError(error), 'Quick Health Check');
+    logError(parseError(error));
     return false;
   }
 }

@@ -83,7 +83,7 @@ export function useRoutePreloader(_options: UseRoutePreloaderOptions = {}) {
     // No-op
   };
 
-  const getPerformanceInsights = [];
+  const getPerformanceInsights: any[] = [];
 
   const updateMetrics = () => {
     // No-op

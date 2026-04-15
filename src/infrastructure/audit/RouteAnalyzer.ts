@@ -283,7 +283,7 @@ export class RouteAnalyzer {
     for (const [path, reference] of Array.from(this.routeReferences)) {
       if (!this.definedRoutes.has(path) && !this.isParameterizedRoute(path)) {
         results.push({
-          route: path,
+          path: path,
           status: '404',
           errorMessage: 'Route not defined in router configuration'
         });
@@ -306,12 +306,12 @@ export class RouteAnalyzer {
         const componentExists = await this.checkComponentExists(route.component);
         if (!componentExists) {
           return {
-            route: path,
+            path: path,
             status: 'broken',
             component: route.component || 'Unknown',
             errorMessage: `Component ${route.component} not found`,
             responseTime: Date.now() - startTime
-          };
+          } as any;
         }
       }
 
@@ -320,29 +320,29 @@ export class RouteAnalyzer {
         const lazyLoadWorks = await this.checkLazyLoading(route.component || path);
         if (!lazyLoadWorks) {
           return {
-            route: path,
+            path: path,
             status: 'broken',
             component: route.component || 'Unknown',
             errorMessage: 'Lazy loading failed',
             responseTime: Date.now() - startTime
-          };
+          } as any;
         }
       }
 
       return {
-        route: path,
+        path: path,
         status: 'working',
         component: route.component || 'Unknown',
         responseTime: Date.now() - startTime
-      };
+      } as any;
     } catch (error) {
       return {
-        route: path,
+        path: path,
         status: 'broken',
         component: route.component || 'Unknown',
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime
-      };
+      } as any;
     }
   }
 

@@ -21,37 +21,12 @@ import {
   ComponentLocation
 } from '../../types/audit.types'
 
+// Re-export types for plugins
+export type { UIElement, AuditRuleResult } from '../../types/audit.types'
+
 /**
- * Core audit system implementation
+ * Enhanced audit report interfaces
  */
-export class UIAuditSystem extends EventEmitter {
-  private config: AuditConfiguration;
-  private cache: Map<string, any>;
-  private abortController?: AbortController;
-
-  constructor(config: AuditConfiguration) {
-    super();
-    this.config = config;
-    this.cache = new Map();
-  }
-
-  async scanComponents(): Promise<UIElement[]> {
-    // Implementation details to be added
-    return [];
-  }
-
-  async validateRoutes(): Promise<RouteValidationResult[]> {
-    // Implementation details to be added
-    return [];
-  }
-
-  async testAPIConnections(): Promise<APIConnectionResult[]> {
-    // Implementation details to be added
-    return [];
-  }
-}
-
-// Enhanced audit report interfaces
 export interface EnhancedAuditReport extends AuditReport {
   configuration: AuditConfiguration;
   executionTime: number;
@@ -932,7 +907,6 @@ export class UIAuditSystem extends EventEmitter {
         description: 'Potential XSS vulnerability in user input handling',
         location: {
           filePath: 'src/user/components/ProfileForm.tsx',
-          filePath: 'src/components/ProfileForm.tsx',
           lineNumber: 45,
           columnNumber: 3,
           contextLines: [
@@ -944,7 +918,6 @@ export class UIAuditSystem extends EventEmitter {
             '  );',
             '};'
           ],
-          lineNumber: 45,
           elementPath: 'input[name="bio"]',
           parentComponents: ['Profile', 'Layout']
         },
@@ -964,7 +937,7 @@ export class UIAuditSystem extends EventEmitter {
     // Analyze broken routes with business impact
     const brokenRoutes = routes.filter(r => r.status === 'broken' || r.status === '404');
     if (brokenRoutes.length > 0) {
-      const criticalRoutes = brokenRoutes.filter(r => ['/', '/dashboard', '/login'].includes(r.route));
+      const criticalRoutes = brokenRoutes.filter(r => ['/', '/dashboard', '/login'].includes((r as any).path || (r as any).route));
 
       recommendations.push({
         id: 'fix-critical-routes',
@@ -974,7 +947,7 @@ export class UIAuditSystem extends EventEmitter {
         description: `${criticalRoutes.length} critical and ${brokenRoutes.length - criticalRoutes.length} non-critical routes are failing`,
         estimatedEffort: brokenRoutes.length * 3 + criticalRoutes.length * 2, // Extra effort for critical routes
         dependencies: ['frontend-routing', 'component-implementation'],
-        affectedElements: brokenRoutes.map(r => r.route),
+        affectedElements: brokenRoutes.map(r => (r as any).path || (r as any).route),
         suggestedSolution: 'Implement missing route components, fix routing configuration, and add proper error boundaries',
         autoFixAvailable: false,
         businessImpact: criticalRoutes.length > 0 ? 'High - Core user journeys affected' : 'Medium - Secondary features unavailable'
