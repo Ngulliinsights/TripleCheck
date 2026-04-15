@@ -171,7 +171,7 @@ export class SecurityPlugin implements AuditPlugin {
                           element.props.children?.toString().includes('_token') ||
                           (element.handlers || []).some((h: any) => h.handlerName.includes('csrf'));
       
-      const isStateChangingForm = element.apiCalls.some((api: any) => 
+      const isStateChangingForm = (element.apiCalls || []).some((api: any) => 
         api.method === 'POST' || api.method === 'PUT' || api.method === 'DELETE'
       );
       
@@ -186,7 +186,7 @@ export class SecurityPlugin implements AuditPlugin {
     }
     
     // Check API calls for CSRF protection
-    const stateChangingAPIs = element.apiCalls.filter((api: any) => 
+    const stateChangingAPIs = (element.apiCalls || []).filter((api: any) => 
       api.method === 'POST' || api.method === 'PUT' || api.method === 'DELETE'
     );
     
@@ -215,11 +215,11 @@ export class SecurityPlugin implements AuditPlugin {
   private async checkInjectionVulnerabilities(element: UIElement): Promise<AuditRuleResult> {
     // Check for SQL injection in API calls
     const hasUserInput = element.type === 'input' || element.type === 'textarea';
-    const makesAPIRequests = element.apiCalls.length > 0;
+    const makesAPIRequests = (element.apiCalls || []).length > 0;
     
     if (hasUserInput && makesAPIRequests) {
       // Check if user input is directly concatenated in API calls
-      const hasDirectConcatenation = element.apiCalls.some((api: any) => 
+      const hasDirectConcatenation = (element.apiCalls || []).some((api: any) => 
         api.endpoint.includes('${') || api.endpoint.includes('+')
       );
       
@@ -329,7 +329,7 @@ export class SecurityPlugin implements AuditPlugin {
     }
     
     // Check for API calls without authentication
-    const protectedAPIs = element.apiCalls.filter((api: any) => 
+    const protectedAPIs = (element.apiCalls || []).filter((api: any) => 
       api.endpoint.includes('/api/user') ||
       api.endpoint.includes('/api/admin') ||
       api.endpoint.includes('/api/protected')
@@ -359,7 +359,7 @@ export class SecurityPlugin implements AuditPlugin {
   
   private async checkInsecureTransport(element: UIElement): Promise<AuditRuleResult> {
     // Check for HTTP URLs in production
-    const hasHTTPUrls = element.apiCalls.some((api: any) => 
+    const hasHTTPUrls = (element.apiCalls || []).some((api: any) => 
       api.endpoint.startsWith('http://') && !api.endpoint.includes('localhost')
     );
     
@@ -392,7 +392,7 @@ export class SecurityPlugin implements AuditPlugin {
   }
   
   private async checkVulnerableDependencies(element: UIElement): Promise<AuditRuleResult> {
-    const vulnerableDeps = element.dependencies.filter((dep: any) => 
+    const vulnerableDeps = ((element as any).dependencies || []).filter((dep: any) => 
       this.knownVulnerablePackages.has(dep)
     );
     
@@ -465,7 +465,7 @@ export class SecurityPlugin implements AuditPlugin {
         h.handlerName.includes('localStorage') || h.handlerName.includes('sessionStorage')
       ),
       hasFileUpload: element.type === 'input' && element.props.type === 'file',
-      usesThirdPartyLibraries: element.dependencies.length > 0
+      usesThirdPartyLibraries: ((element as any).dependencies || []).length > 0
     };
   }
   

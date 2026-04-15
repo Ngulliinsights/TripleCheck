@@ -284,9 +284,8 @@ export class RouteAnalyzer {
       if (!this.definedRoutes.has(path) && !this.isParameterizedRoute(path)) {
         results.push({
           path: path,
-          status: '404',
-          errorMessage: 'Route not defined in router configuration'
-        });
+          status: '404'
+        } as any);
       }
     }
 

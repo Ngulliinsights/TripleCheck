@@ -1,21 +1,11 @@
 import "dotenv/config";
 
 import { Server } from "http";
-import path from "./app";
-import { fileURLToPath } from "url";
-
-import express from "./app";
-
-// Define __dirname for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 import app from "./app";
 import { getPortConfig, validatePort, displayPortConfig } from "./config/ports";
 import { initializeDatabase } from "./infrastructure/database/init";
 import { logger } from "./infrastructure/observability/telemetry";
 import { cleanupManager } from "./utils/cleanup-manager";
-import { setupServer } from "./vite";
 
 // Enhanced type declaration with better documentation
 declare global {
@@ -162,13 +152,13 @@ async function gracefulShutdown(signal: string): Promise<void> {
 
     const errorMessage = getErrorMessage(error);
     logger.error(
-      "Error during graceful shutdown",
-      "SHUTDOWN",
       {
+        category: "SHUTDOWN",
         message: errorMessage,
         stack: isError(error) ? error.stack : undefined,
+        error: isError(error) ? error : undefined,
       },
-      isError(error) ? error : undefined
+      "Error during graceful shutdown"
     );
 
     process.exit(1);
@@ -185,12 +175,13 @@ function configureServer(server: Server): void {
   server.maxHeadersCount = SERVER_CONFIG.MAX_HEADERS_COUNT;
 
   // Properly structure the logger call with message and metadata
-  logger.info("Server configuration applied", "SERVER", {
+  logger.info({
+    category: "SERVER",
     keepAliveTimeout: server.keepAliveTimeout,
     headersTimeout: server.headersTimeout,
     timeout: server.timeout,
     maxHeadersCount: server.maxHeadersCount,
-  });
+  }, "Server configuration applied");
 }
 
 /**
@@ -203,14 +194,14 @@ function setupProcessHandlers(): void {
 
     // Properly structure the logger call with message and metadata
     logger.error(
-      "Unhandled Promise Rejection detected",
-      "PROCESS",
       {
+        category: "PROCESS",
         reason: reasonMessage,
         promise: String(promise),
         stack: isError(reason) ? reason.stack : undefined,
+        error: isError(reason) ? reason : undefined,
       },
-      isError(reason) ? reason : undefined
+      "Unhandled Promise Rejection detected"
     );
 
     // Graceful shutdown for unhandled rejections
@@ -221,14 +212,14 @@ function setupProcessHandlers(): void {
   process.on("uncaughtException", (error: Error) => {
     // Properly structure the logger call with message and metadata
     logger.error(
-      "Uncaught Exception detected",
-      "PROCESS",
       {
+        category: "PROCESS",
         message: error.message,
         stack: error.stack,
         name: error.name,
+        error,
       },
-      error
+      "Uncaught Exception detected"
     );
 
     // Uncaught exceptions require immediate exit
@@ -250,9 +241,10 @@ async function initializeDatabaseConnection(): Promise<void> {
     await initializeDatabase();
     logger.info("Database initialized successfully");
   } catch (error) {
-    logger.warn("Database initialization failed, continuing with mock data", "DATABASE", {
+    logger.warn({
+      category: "DATABASE",
       error: error instanceof Error ? error.message : String(error)
-    });
+    }, "Database initialization failed, continuing with mock data");
     
     // Don't throw error - let server continue with mock data
     console.log("⚠️  Server will continue with mock data for development");
@@ -271,13 +263,14 @@ async function createHttpServer(): Promise<Server> {
 
   const server = app.listen(PORT, '0.0.0.0', () => {
     // Properly structure the logger call with message and metadata
-    logger.info("HTTP server started successfully", "SERVER", {
+    logger.info({
+      category: "SERVER",
       port: PORT,
       environment: NODE_ENV,
       pid: process.pid,
       keepAliveTimeout: SERVER_CONFIG.KEEP_ALIVE_TIMEOUT,
       headersTimeout: SERVER_CONFIG.HEADERS_TIMEOUT,
-    });
+    }, "HTTP server started successfully");
 
     // Development-friendly console output with ESLint override comments
     // eslint-disable-next-line no-console -- Intentional startup feedback to user
@@ -329,14 +322,15 @@ async function startServer(): Promise<void> {
 
   try {
     // Properly structure the logger call with message and metadata
-    logger.info("Server initialization starting", "STARTUP", {
+    logger.info({
+      category: "STARTUP",
       port: PORT,
       environment: NODE_ENV,
       nodeVersion: process.version,
       platform: process.platform,
       pid: process.pid,
       timestamp: new Date().toISOString(),
-    });
+    }, "Server initialization starting");
 
     // Initialize database connection
     await initializeDatabaseConnection();
@@ -346,7 +340,7 @@ async function startServer(): Promise<void> {
     configureServer(server);
 
     // Add health check and test routes before Vite setup
-    app.get('/health', (req, res) => {
+    app.get('/health', (_req, res) => {
       res.json({ 
         status: 'ok', 
         timestamp: new Date().toISOString(),
@@ -355,7 +349,7 @@ async function startServer(): Promise<void> {
       });
     });
     
-    app.get('/test', (req, res) => {
+    app.get('/test', (_req, res) => {
       res.json({ message: 'Server is working!', timestamp: new Date().toISOString() });
     });
 
@@ -372,7 +366,7 @@ async function startServer(): Promise<void> {
       logger.info("Development mode: API server only (frontend runs on Vite)");
       
       // Add a simple route to confirm API is working
-      app.get('/api/status', (req, res) => {
+      app.get('/api/status', (_req, res) => {
         res.json({ 
           status: 'API server running',
           environment: NODE_ENV,
@@ -391,12 +385,13 @@ async function startServer(): Promise<void> {
     const startupTime = Date.now() - startTime;
 
     // Properly structure the logger call with message and metadata
-    logger.info("Server startup sequence completed successfully", "STARTUP", {
+    logger.info({
+      category: "STARTUP",
       port: PORT,
       environment: NODE_ENV,
       startupTime: `${startupTime}ms`,
       uptime: process.uptime(),
-    });
+    }, "Server startup sequence completed successfully");
   } catch (error) {
     // Enhanced error logging with comprehensive context
     const errorMessage = getErrorMessage(error);
@@ -415,10 +410,12 @@ async function startServer(): Promise<void> {
 
     // Pass errorContext as the data parameter
     logger.error(
-      "Server startup failed",
-      "STARTUP",
-      errorContext,
-      isError(error) ? error : undefined
+      {
+        category: "STARTUP",
+        ...errorContext,
+        error: isError(error) ? error : undefined,
+      },
+      "Server startup failed"
     );
 
     // Attempt cleanup before exit
@@ -427,12 +424,12 @@ async function startServer(): Promise<void> {
     } catch (cleanupError) {
       // Properly structure the logger call with message and metadata
       logger.error(
-        "Error during startup failure cleanup",
-        "CLEANUP",
         {
+          category: "CLEANUP",
           error: getErrorMessage(cleanupError),
+          errorObj: isError(cleanupError) ? cleanupError : undefined,
         },
-        isError(cleanupError) ? cleanupError : undefined
+        "Error during startup failure cleanup"
       );
     }
 
@@ -444,13 +441,13 @@ async function startServer(): Promise<void> {
 startServer().catch((error) => {
   // Properly structure the logger call with message and metadata
   logger.error(
-    "Fatal error in server startup",
-    "STARTUP",
     {
+      category: "STARTUP",
       error: getErrorMessage(error),
       stack: isError(error) ? error.stack : undefined,
+      errorObj: isError(error) ? error : undefined,
     },
-    isError(error) ? error : undefined
+    "Fatal error in server startup"
   );
   process.exit(1);
 });

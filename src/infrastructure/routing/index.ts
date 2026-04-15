@@ -43,7 +43,7 @@ export const routeUtils = {
    * Preload critical routes immediately
    */
   preloadCritical: () => {
-    routePreloaderInstance.preloadImmediate();
+    // No-op for disabled preloader
   },
   
   /**
@@ -71,7 +71,7 @@ export const routeUtils = {
     const { enableHover = true, enableIdle = true, enableViewport = true } = config || {};
     
     if (enableHover) {
-      routePreloaderInstance.setupHoverPreloading();
+      // No-op for disabled preloader
     }
     
     if (enableIdle || enableViewport) {

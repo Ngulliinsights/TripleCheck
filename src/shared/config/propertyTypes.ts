@@ -206,7 +206,7 @@ export const landConfig: PropertyTypeConfig<LandFilters, LandProperty> = {
   fetcher: fetchLandProperties,
   adapter: landAdapter,
   filterComponent: LandFiltersComponent,
-  cardComponent: EnhancedLandCard,
+  cardComponent: LandCard,
 };
 
 export const allPropertiesConfig: PropertyTypeConfig<BasePropertyFilters, NormalizedProperty> = {

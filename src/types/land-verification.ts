@@ -129,6 +129,9 @@ export interface LayerExecutionResult {
 
 // Risk assessment types
 export interface RiskFactorWithContext extends RiskFactor {
+  category: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  impact: number;
   session?: LandVerificationSession;
   relatedFactors?: RiskFactor[];
   mitigationStatus: 'none' | 'planned' | 'in_progress' | 'completed';
