@@ -54,7 +54,7 @@ export {
   withPerformanceTracking,
   type PerformanceMetrics,
   type RoutePerformance,
-} from './performance-monitor'
+} from '../../shared/services/performance-monitoring-service'
 
 // Service worker utilities
 export {

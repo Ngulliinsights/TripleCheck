@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Badge } from '../../shared/components/ui/badge'
 import { Button } from '../../shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { usePerformanceMonitor } from '../utils/performanceMonitor'
+import { PerformanceMonitoringService } from '../../shared/services/performance-monitoring-service'
 import { raceConditionTester } from '../utils/raceConditionTest'
 
 interface PerformanceTestPanelProps {
