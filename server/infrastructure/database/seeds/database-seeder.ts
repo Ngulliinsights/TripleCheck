@@ -4,7 +4,7 @@
  * Coordinates all seeding operations across different domains
  */
 
-import { logger } from '../../../infrastructure/monitoring/logger';
+import { logger } from '../../../infrastructure/observability/telemetry';
 
 import { LandVerificationSeeder } from './land-verification-seed';
 
@@ -52,7 +52,7 @@ export class DatabaseSeeder {
       errors: []
     };
 
-    logger.info('Starting database seeding process', 'DATABASE_SEEDER', { options });
+    logger.info({ options }, 'Starting database seeding process');
 
     try {
       // Run seeders in order
@@ -88,7 +88,7 @@ export class DatabaseSeeder {
     } catch (error) {
       result.success = false;
       result.errors.push(`Seeding process failed: ${error}`);
-      logger.error('Database seeding process failed', 'DATABASE_SEEDER', { error });
+      logger.error({ error }, 'Database seeding process failed');
     }
 
     result.duration = Date.now() - startTime;
@@ -139,7 +139,7 @@ export class DatabaseSeeder {
     } catch (error) {
       result.success = false;
       result.errors.push(`Seeder ${seederName} failed: ${error}`);
-      logger.error(`Seeder ${seederName} failed`, 'DATABASE_SEEDER', { error });
+      logger.error({ error }, 'Seeder ${seederName} failed');
     }
 
     result.duration = Date.now() - startTime;
@@ -161,7 +161,7 @@ export class DatabaseSeeder {
       throw new Error('Cannot clear data in production environment');
     }
 
-    logger.warn('Clearing all seeded data', 'DATABASE_SEEDER');
+    logger.warn('Clearing all seeded data');
 
     // Run clearers in reverse order
     const seederNames = Array.from(this.seeders.keys()).reverse();
@@ -174,7 +174,7 @@ export class DatabaseSeeder {
           logger.info(`Cleared data for: ${seederName}`);
         }
       } catch (error) {
-        logger.error(`Failed to clear data for ${seederName}`, 'DATABASE_SEEDER', { error });
+        logger.error({ error }, 'Failed to clear data for ${seederName}');
       }
     }
   }

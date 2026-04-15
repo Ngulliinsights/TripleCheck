@@ -292,33 +292,33 @@ export const messageThreadsRelations = relations(messageThreads, ({ one }) => ({
 
 // Zod schemas for validation
 export const insertCommunicationChannelSchema = createInsertSchema(communicationChannels, {
-    channelId: z.string().min(1).max(50),
-    name: z.string().max(255).optional(),
-    participants: z.array(z.number()).default([]),
-    admins: z.array(z.number()).default([]),
+    channelId: (schema) => schema.min(1).max(50),
+    name: (schema) => schema.max(255).optional(),
+    participants: (schema) => schema.default([]),
+    admins: (schema) => schema.default([]),
 });
 
 export const selectCommunicationChannelSchema = createSelectSchema(communicationChannels);
 
 export const insertMessageSchema = createInsertSchema(messages, {
-    messageId: z.string().min(1).max(50),
-    content: z.string().min(1),
+    messageId: (schema) => schema.min(1).max(50),
+    content: (schema) => schema.min(1),
 });
 
 export const selectMessageSchema = createSelectSchema(messages);
 
 export const insertNotificationSchema = createInsertSchema(notifications, {
-    notificationId: z.string().min(1).max(50),
-    title: z.string().min(1).max(255),
-    message: z.string().min(1),
-    deliveryChannels: z.array(z.string()).default(["in_app"]),
+    notificationId: (schema) => schema.min(1).max(50),
+    title: (schema) => schema.min(1).max(255),
+    message: (schema) => schema.min(1),
+    deliveryChannels: (schema) => schema.default(["in_app"]),
 });
 
 export const selectNotificationSchema = createSelectSchema(notifications);
 
 export const insertMessageThreadSchema = createInsertSchema(messageThreads, {
-    threadId: z.string().min(1).max(50),
-    participants: z.array(z.number()).default([]),
+    threadId: (schema) => schema.min(1).max(50),
+    participants: (schema) => schema.default([]),
 });
 
 export const selectMessageThreadSchema = createSelectSchema(messageThreads);

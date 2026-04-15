@@ -83,7 +83,7 @@ export class MonitoringIntegration {
       this.logConfiguration();
 
     } catch (error) {
-      logger.error('❌ Failed to initialize monitoring integration:', error);
+      logger.error({ error: error }, '❌ Failed to initialize monitoring integration:');
       throw error;
     }
   }
@@ -105,7 +105,7 @@ export class MonitoringIntegration {
   private setupErrorHandling(app: Express): void {
     // Error handling middleware for monitoring endpoints
     app.use(this.config.metricsPath, (error: any, req: any, res: any, next: any) => {
-      logger.error('Error in metrics endpoint:', error);
+      logger.error({ error: error }, 'Error in metrics endpoint:');
       
       if (!res.headersSent) {
         res.status(500).json({
@@ -126,7 +126,7 @@ export class MonitoringIntegration {
         logger.info('✅ Monitoring system shutdown completed');
         process.exit(0);
       } catch (error) {
-        logger.error('❌ Error during monitoring system shutdown:', error);
+        logger.error({ error: error }, '❌ Error during monitoring system shutdown:');
         process.exit(1);
       }
     };

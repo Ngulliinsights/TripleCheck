@@ -120,7 +120,7 @@ export class DatabaseServiceImpl implements DatabaseService {
                 }
             };
         } catch (error) {
-            this.logger.error('❌ Database initialization failed:', error);
+            this.logger.error({ error: error }, '❌ Database initialization failed:');
 
             // Attempt retry with different SSL settings if SSL error in development
             if (this.shouldRetryWithoutSSL(error)) {
@@ -268,7 +268,7 @@ export class DatabaseServiceImpl implements DatabaseService {
             // Retry initialization
             return await this.initialize();
         } catch (retryError) {
-            this.logger.error('❌ Retry without SSL failed:', retryError);
+            this.logger.error({ error: retryError }, '❌ Retry without SSL failed:');
             return {
                 success: false,
                 error: retryError instanceof Error ? retryError : new Error(String(retryError))

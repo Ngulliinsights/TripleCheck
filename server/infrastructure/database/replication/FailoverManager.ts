@@ -121,7 +121,7 @@ export class FailoverManager extends EventEmitter {
       logger.info('✅ Failover manager initialized successfully');
       this.emit('initialized');
     } catch (error) {
-      logger.error('❌ Failed to initialize failover manager:', error);
+      logger.error({ error: error }, '❌ Failed to initialize failover manager:');
       throw error;
     }
   }
@@ -183,7 +183,7 @@ export class FailoverManager extends EventEmitter {
       }
 
     } catch (error) {
-      logger.error('Error during failover health check:', error);
+      logger.error({ error: error }, 'Error during failover health check:');
     }
   }
 
@@ -212,7 +212,7 @@ export class FailoverManager extends EventEmitter {
   }
 
   private async handlePrimaryUnhealthy(error: any): Promise<void> {
-    logger.warn('Primary database unhealthy detected:', error);
+    logger.warn({ error: error }, 'Primary database unhealthy detected:');
     
     // Send alert
     await this.sendFailoverAlert('primary_unhealthy', {
@@ -231,7 +231,7 @@ export class FailoverManager extends EventEmitter {
   }
 
   private async handleReplicaUnhealthy(replicaId: string, error: any): Promise<void> {
-    logger.warn(`Replica ${replicaId} unhealthy:`, error);
+    logger.warn({ error: error }, 'Replica ${replicaId} unhealthy:');
     
     await this.sendFailoverAlert('replica_unhealthy', {
       replicaId,
@@ -379,7 +379,7 @@ export class FailoverManager extends EventEmitter {
       this.status.lastFailover = failoverEvent;
       this.status.failoverHistory.push(failoverEvent);
 
-      logger.error(`❌ Failover failed after ${duration}ms:`, error);
+      logger.error({ error: error }, '❌ Failover failed after ${duration}ms:');
 
       // Send failure notification
       await this.sendFailoverAlert('failover_failed', {
@@ -409,7 +409,7 @@ export class FailoverManager extends EventEmitter {
         try {
           await this.attemptRollback(failoverEvent);
         } catch (rollbackError) {
-          logger.error('Rollback also failed:', rollbackError);
+          logger.error({ error: rollbackError }, 'Rollback also failed:');
         }
       }
 
@@ -433,7 +433,7 @@ export class FailoverManager extends EventEmitter {
           logger.warn(`⚠️ Pre-failover check script not found: ${check}`);
         }
       } catch (error) {
-        logger.error(`❌ Pre-failover check failed: ${check}`, error);
+        logger.error({ error: error }, '❌ Pre-failover check failed: ${check}');
         throw new Error(`Pre-failover check failed: ${check}`);
       }
     }
@@ -519,7 +519,7 @@ export class FailoverManager extends EventEmitter {
           logger.warn(`⚠️ Post-failover action script not found: ${action}`);
         }
       } catch (error) {
-        logger.error(`❌ Post-failover action failed: ${action}`, error);
+        logger.error({ error: error }, '❌ Post-failover action failed: ${action}');
         // Don't fail the entire failover for post-actions
       }
     }
@@ -576,7 +576,7 @@ export class FailoverManager extends EventEmitter {
       
       this.status.failoverHistory.push(rollbackEvent);
       
-      logger.error('❌ Failover rollback failed:', rollbackError);
+      logger.error({ error: rollbackError }, '❌ Failover rollback failed:');
       
       await this.sendFailoverAlert('rollback_failed', {
         originalFailoverId: failedFailover.id,
@@ -613,7 +613,7 @@ export class FailoverManager extends EventEmitter {
 
       await alertingSystem.processAlert(alert);
     } catch (error) {
-      logger.error('Failed to send failover alert:', error);
+      logger.error({ error: error }, 'Failed to send failover alert:');
     }
   }
 

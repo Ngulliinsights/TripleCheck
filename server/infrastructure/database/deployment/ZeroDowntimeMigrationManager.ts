@@ -174,7 +174,7 @@ export class ZeroDowntimeMigrationManager extends EventEmitter {
       logger.info('✅ Zero-Downtime Migration Manager initialized');
 
     } catch (error) {
-      logger.error('❌ Failed to initialize Zero-Downtime Migration Manager:', error);
+      logger.error({ error: error }, '❌ Failed to initialize Zero-Downtime Migration Manager:');
       this.emit('initialization_error', error);
       throw error;
     }
@@ -666,7 +666,7 @@ export class ZeroDowntimeMigrationManager extends EventEmitter {
       });
 
     } catch (rollbackError) {
-      logger.error('❌ Migration rollback failed:', rollbackError);
+      logger.error({ error: rollbackError }, '❌ Migration rollback failed:');
       throw rollbackError;
     } finally {
       client.release();
@@ -798,7 +798,7 @@ export class ZeroDowntimeMigrationManager extends EventEmitter {
           client.release();
         }
       } catch (error) {
-        logger.error('Performance monitoring error:', error);
+        logger.error({ error: error }, 'Performance monitoring error:');
       }
     }, 30000); // Every 30 seconds
   }

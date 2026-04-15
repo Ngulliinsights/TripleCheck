@@ -209,7 +209,7 @@ export class ReplicationManager extends EventEmitter {
 
       this.emit('initialized');
     } catch (error) {
-      logger.error('❌ Failed to initialize replication manager:', error);
+      logger.error({ error: error }, '❌ Failed to initialize replication manager:');
       throw error;
     }
   }
@@ -275,7 +275,7 @@ export class ReplicationManager extends EventEmitter {
           client.release();
         }
       } catch (error) {
-        logger.error(`❌ Failed to connect to replica ${replica.id}:`, error);
+        logger.error({ error: error }, '❌ Failed to connect to replica ${replica.id}:');
       }
     }
   }
@@ -305,7 +305,7 @@ export class ReplicationManager extends EventEmitter {
       this.updateMetrics();
 
     } catch (error) {
-      logger.error('Error during health check:', error);
+      logger.error({ error: error }, 'Error during health check:');
     }
   }
 
@@ -341,7 +341,7 @@ export class ReplicationManager extends EventEmitter {
       this.status.primary.isHealthy = false;
       this.status.primary.lastCheck = new Date();
       
-      logger.error('Primary health check failed:', error);
+      logger.error({ error: error }, 'Primary health check failed:');
       observabilitySystem.recordDatabaseError('health_check_failed', 'primary', 'HEALTH_CHECK');
       
       this.emit('primary:unhealthy', error);
@@ -401,7 +401,7 @@ export class ReplicationManager extends EventEmitter {
           replicaStatus.state = 'failed';
         }
 
-        logger.error(`Replica ${replica.id} health check failed:`, error);
+        logger.error({ error: error }, 'Replica ${replica.id} health check failed:');
         observabilitySystem.recordDatabaseError('health_check_failed', `replica-${replica.id}`, 'HEALTH_CHECK');
         
         this.emit('replica:unhealthy', { replicaId: replica.id, error });
@@ -441,7 +441,7 @@ export class ReplicationManager extends EventEmitter {
         replicaClient.release();
       }
     } catch (error) {
-      logger.error(`Error calculating replication lag for ${replicaId}:`, error);
+      logger.error({ error: error }, 'Error calculating replication lag for ${replicaId}:');
       return { lagBytes: 0, lagTime: 0 };
     }
   }
@@ -520,7 +520,7 @@ export class ReplicationManager extends EventEmitter {
       this.emit('failover:completed', { newPrimary: bestReplica.id, reason });
 
     } catch (error) {
-      logger.error('❌ Failover failed:', error);
+      logger.error({ error: error }, '❌ Failover failed:');
       this.emit('failover:failed', { reason, error });
       throw error;
     } finally {
@@ -631,7 +631,7 @@ export class ReplicationManager extends EventEmitter {
         }
       }
     } catch (error) {
-      logger.error('Error collecting replication metrics:', error);
+      logger.error({ error: error }, 'Error collecting replication metrics:');
     }
   }
 

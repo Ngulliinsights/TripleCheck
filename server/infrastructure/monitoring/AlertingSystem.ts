@@ -90,7 +90,7 @@ export class AlertingSystem extends EventEmitter {
       
       logger.info('AlertingSystem initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize AlertingSystem:', error);
+      logger.error({ error: error }, 'Failed to initialize AlertingSystem:');
       throw error;
     }
   }
@@ -315,7 +315,7 @@ export class AlertingSystem extends EventEmitter {
         await this.startEscalation(alert);
       }
     } catch (error) {
-      logger.error('Error processing alert:', error);
+      logger.error({ error: error }, 'Error processing alert:');
     }
   }
 
@@ -431,7 +431,7 @@ export class AlertingSystem extends EventEmitter {
 
       logger.info(`Executed escalation level ${level.level} for alert: ${alert.name}`);
     } catch (error) {
-      logger.error(`Error executing escalation level ${level.level}:`, error);
+      logger.error({ error: error }, 'Error executing escalation level ${level.level}:');
     }
   }
 
@@ -494,7 +494,7 @@ export class AlertingSystem extends EventEmitter {
 
       logger.info(`Sent ${channel.type} notification for alert: ${alert.name}`);
     } catch (error) {
-      logger.error(`Failed to send ${channel.type} notification:`, error);
+      logger.error({ error: error }, 'Failed to send ${channel.type} notification:');
     }
   }
 

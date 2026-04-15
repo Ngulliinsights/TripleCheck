@@ -4,7 +4,7 @@
  * Common database operations and helper functions
  */
 
-import { logger } from '../../../infrastructure/monitoring/logger';
+import { logger } from '../../../infrastructure/observability/telemetry';
 
 export interface DatabaseHealth {
   connected: boolean;
@@ -39,7 +39,7 @@ export async function testDatabaseConnection(): Promise<DatabaseHealth> {
       lastChecked: new Date()
     };
   } catch (error) {
-    logger.error('Database connection test failed', 'DATABASE', { error });
+    logger.error({ error }, 'Database connection test failed');
     
     return {
       connected: false,
@@ -179,7 +179,7 @@ export async function withTransaction<T>(
     return result;
   } catch (error) {
     // Rollback transaction
-    logger.error('Rolling back database transaction', 'DATABASE', { error });
+    logger.error({ error }, 'Rolling back database transaction');
     throw error;
   }
 }

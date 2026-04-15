@@ -7,7 +7,7 @@ import { logger } from "..\..\..\monitoring\logger";
 
 export async function resetAndCreateTables(sql: any) {
   try {
-    logger.info("Resetting and creating database tables...", "MIGRATION");
+    logger.info('Resetting and creating database tables...');
 
     // Drop existing tables in correct order (reverse dependency order)
     await sql`DROP TABLE IF EXISTS verification_layers CASCADE`;
@@ -24,7 +24,7 @@ export async function resetAndCreateTables(sql: any) {
     await sql`DROP TYPE IF EXISTS user_role CASCADE`;
     await sql`DROP TYPE IF EXISTS verification_status CASCADE`;
 
-    logger.info("Dropped existing tables and types", "MIGRATION");
+    logger.info('Dropped existing tables and types');
 
     // Create enums
     await sql`CREATE TYPE verification_status AS ENUM ('verified', 'pending', 'unverified', 'draft')`;
@@ -33,7 +33,7 @@ export async function resetAndCreateTables(sql: any) {
     await sql`CREATE TYPE land_verification_status AS ENUM ('not_started', 'in_progress', 'completed', 'suspended', 'failed')`;
     await sql`CREATE TYPE risk_level AS ENUM ('low', 'medium', 'high', 'critical')`;
 
-    logger.info("Created database enums", "MIGRATION");
+    logger.info('Created database enums');
 
     // Create users table
     await sql`
@@ -160,7 +160,7 @@ export async function resetAndCreateTables(sql: any) {
       )
     `;
 
-    logger.info("Created database tables", "MIGRATION");
+    logger.info('Created database tables');
 
     // Create indexes
     await sql`CREATE INDEX idx_users_email ON users(email)`;
@@ -192,13 +192,13 @@ export async function resetAndCreateTables(sql: any) {
     await sql`CREATE INDEX idx_verification_layers_type ON verification_layers(layer_type)`;
     await sql`CREATE INDEX idx_verification_layers_status ON verification_layers(status)`;
 
-    logger.info("Created database indexes", "MIGRATION");
+    logger.info('Created database indexes');
 
-    logger.info("Database reset and creation completed successfully", "MIGRATION");
+    logger.info('Database reset and creation completed successfully');
     return { success: true };
 
   } catch (error) {
-    logger.error("Failed to reset and create database", "MIGRATION", { error });
+    logger.error({ error }, 'Failed to reset and create database');
     return { success: false, error };
   }
 }

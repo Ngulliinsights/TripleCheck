@@ -197,7 +197,7 @@ export class SystemIntegrationValidator extends EventEmitter {
 
     } catch (error) {
       this.emit('validation_failed', { testId: this.testId, error });
-      logger.error(`❌ System integration validation failed: ${this.testId}`, error);
+      logger.error({ error: error }, '❌ System integration validation failed: ${this.testId}');
       throw error;
     }
   }

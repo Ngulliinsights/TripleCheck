@@ -122,7 +122,7 @@ async function runProductionReadinessAssessment(config: AssessmentConfig = {}) {
 
   } catch (error) {
     console.error('❌ Production readiness assessment failed:', error);
-    logger.error('Production readiness assessment failed', error);
+    logger.error({ error: error }, 'Production readiness assessment failed');
     process.exit(1);
   } finally {
     await pool.end();

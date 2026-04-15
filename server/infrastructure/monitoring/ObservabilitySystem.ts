@@ -88,7 +88,7 @@ export class ObservabilitySystem extends EventEmitter {
       this.isInitialized = true;
       logger.info('ObservabilitySystem initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize ObservabilitySystem:', error);
+      logger.error({ error: error }, 'Failed to initialize ObservabilitySystem:');
       throw error;
     }
   }

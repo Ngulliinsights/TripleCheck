@@ -75,7 +75,7 @@ class SimpleProductionAssessment {
       };
       
     } catch (error) {
-      logger.error('Assessment failed', error);
+      logger.error({ error: error }, 'Assessment failed');
       throw error;
     }
   }

@@ -189,7 +189,7 @@ async function runDisasterRecoveryTest(config: DisasterRecoveryTestConfig = {}) 
 
   } catch (error) {
     console.error('❌ Disaster recovery test failed:', error);
-    logger.error('Disaster recovery test failed', error);
+    logger.error({ error: error }, 'Disaster recovery test failed');
     process.exit(1);
   } finally {
     await primaryPool.end();

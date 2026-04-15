@@ -208,7 +208,7 @@ async function runSecurityValidation(config: SecurityValidationConfig = {}) {
 
   } catch (error) {
     console.error('❌ Security validation failed:', error);
-    logger.error('Security validation failed', error);
+    logger.error({ error: error }, 'Security validation failed');
     process.exit(1);
   } finally {
     await pool.end();

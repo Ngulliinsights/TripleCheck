@@ -220,7 +220,7 @@ export class PerformanceCertificationSystem extends EventEmitter {
           await this.sleep(5000);
 
         } catch (error) {
-          logger.error(`❌ Scenario failed: ${scenario.name}`, error);
+          logger.error({ error: error }, '❌ Scenario failed: ${scenario.name}');
           
           scenarioResults.push({
             name: scenario.name,
@@ -263,7 +263,7 @@ export class PerformanceCertificationSystem extends EventEmitter {
 
     } catch (error) {
       this.emit('certification_failed', { certificationId: this.certificationId, error });
-      logger.error(`❌ Performance certification failed: ${this.certificationId}`, error);
+      logger.error({ error: error }, '❌ Performance certification failed: ${this.certificationId}');
       throw error;
     }
   }

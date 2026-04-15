@@ -208,7 +208,7 @@ async function runPerformanceCertification(config: CertificationConfig = {}) {
 
   } catch (error) {
     console.error('❌ Performance certification failed:', error);
-    logger.error('Performance certification failed', error);
+    logger.error({ error: error }, 'Performance certification failed');
     process.exit(1);
   } finally {
     await pool.end();

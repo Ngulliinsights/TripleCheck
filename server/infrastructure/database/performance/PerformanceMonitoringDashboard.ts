@@ -124,7 +124,7 @@ export class PerformanceMonitoringDashboard extends EventEmitter {
         const metrics = await this.collectMetrics();
         this.processMetrics(metrics);
       } catch (error) {
-        logger.error('Error collecting metrics:', error);
+        logger.error({ error: error }, 'Error collecting metrics:');
       }
     }, this.config.refreshInterval);
 
@@ -399,7 +399,7 @@ export class PerformanceMonitoringDashboard extends EventEmitter {
       
       writeFileSync(`${this.config.outputDirectory}/dashboard.html`, html);
     } catch (error) {
-      logger.error('Error writing dashboard HTML:', error);
+      logger.error({ error: error }, 'Error writing dashboard HTML:');
     }
   }
 

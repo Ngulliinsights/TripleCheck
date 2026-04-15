@@ -152,7 +152,7 @@ export class FileStorageService {
       await this.initializeProvider();
       this.initialized = true;
     } catch (error) {
-      logger.warn('File storage service falling back to local storage:', error);
+      logger.warn({ error: error }, 'File storage service falling back to local storage:');
       this.fallbackMode = true;
       await this.initializeLocal();
       this.initialized = true;
@@ -379,7 +379,7 @@ export class FileStorageService {
       optimizeImage?: boolean;
     }
   ): Promise<UploadResult> {
-    logger.error('File upload failed:', error);
+    logger.error({ error: error }, 'File upload failed:');
 
     // Try fallback to local storage
     if (!this.fallbackMode && this.config.provider !== 'local') {
@@ -416,7 +416,7 @@ export class FileStorageService {
       result.fallbackUsed = true;
       return result;
     } catch (fallbackError) {
-      logger.error('Fallback upload also failed:', fallbackError);
+      logger.error({ error: fallbackError }, 'Fallback upload also failed:');
       return null;
     }
   }
@@ -590,7 +590,7 @@ export class FileStorageService {
       const thumbnailKey = `thumbnails/${fileId}_thumb.jpg`;
       return `${bucketUrl}/${thumbnailKey}`;
     } catch (error) {
-      logger.warn('Thumbnail generation failed:', error);
+      logger.warn({ error: error }, 'Thumbnail generation failed:');
       return undefined;
     }
   }
@@ -658,7 +658,7 @@ export class FileStorageService {
       const baseUrl = process.env.BASE_URL || DEFAULT_BASE_URL;
       return `${baseUrl}/uploads/thumbnails/${fileId}_thumb.jpg`;
     } catch (error) {
-      logger.warn('Thumbnail generation failed:', error);
+      logger.warn({ error: error }, 'Thumbnail generation failed:');
       return undefined;
     }
   }
@@ -687,7 +687,7 @@ export class FileStorageService {
           return false;
       }
     } catch (error) {
-      logger.error('File deletion failed:', error);
+      logger.error({ error: error }, 'File deletion failed:');
       return false;
     }
   }
@@ -721,7 +721,7 @@ export class FileStorageService {
       }
       return false;
     } catch (error) {
-      logger.error('Local file deletion failed:', error);
+      logger.error({ error: error }, 'Local file deletion failed:');
       return false;
     }
   }
@@ -749,7 +749,7 @@ export class FileStorageService {
           return null;
       }
     } catch (error) {
-      logger.error('Failed to get file URL:', error);
+      logger.error({ error: error }, 'Failed to get file URL:');
       return null;
     }
   }

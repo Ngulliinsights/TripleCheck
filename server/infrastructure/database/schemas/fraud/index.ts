@@ -327,37 +327,37 @@ const safeDecimalRegex = /^\d+$|^\d+\.\d+$/;
 
 // Zod schemas for validation
 export const insertFraudAlertSchema = createInsertSchema(fraudAlerts, {
-    alertId: z.string().min(1).max(50),
-    title: z.string().min(1).max(255),
-    description: z.string().min(1),
-    riskScore: z.number().min(0).max(100),
-    confidence: z.string().regex(safeDecimalRegex),
+    alertId: (schema) => schema.min(1).max(50),
+    title: (schema) => schema.min(1).max(255),
+    description: (schema) => schema.min(1),
+    riskScore: (schema) => schema.min(0).max(100),
+    confidence: (schema) => schema.regex(safeDecimalRegex),
 });
 
 export const selectFraudAlertSchema = createSelectSchema(fraudAlerts);
 
 export const insertFraudCaseSchema = createInsertSchema(fraudCases, {
-    caseNumber: z.string().min(1).max(50),
-    title: z.string().min(1).max(255),
-    description: z.string().min(1),
+    caseNumber: (schema) => schema.min(1).max(50),
+    title: (schema) => schema.min(1).max(255),
+    description: (schema) => schema.min(1),
 });
 
 export const selectFraudCaseSchema = createSelectSchema(fraudCases);
 
 export const insertFraudPatternSchema = createInsertSchema(fraudPatterns, {
-    patternId: z.string().min(1).max(50),
-    name: z.string().min(1).max(255),
-    description: z.string().min(1),
-    confidence: z.string().regex(safeDecimalRegex),
+    patternId: (schema) => schema.min(1).max(50),
+    name: (schema) => schema.min(1).max(255),
+    description: (schema) => schema.min(1),
+    confidence: (schema) => schema.regex(safeDecimalRegex),
 });
 
 export const selectFraudPatternSchema = createSelectSchema(fraudPatterns);
 
 export const insertComplianceReportSchema = createInsertSchema(complianceReports, {
-    reportId: z.string().min(1).max(50),
-    reportType: z.string().min(1).max(100),
-    regulatoryBody: z.string().min(1).max(255),
-    summary: z.string().min(1),
+    reportId: (schema) => schema.min(1).max(50),
+    reportType: (schema) => schema.min(1).max(100),
+    regulatoryBody: (schema) => schema.min(1).max(255),
+    summary: (schema) => schema.min(1),
 });
 
 export const selectComplianceReportSchema = createSelectSchema(complianceReports);

@@ -261,7 +261,7 @@ async function executeProductionDeployment(config: ProductionDeploymentConfig = 
 
   } catch (error) {
     console.error('❌ Production deployment failed:', error);
-    logger.error('Production deployment failed', error);
+    logger.error({ error: error }, 'Production deployment failed');
     
     deploymentResults.endTime = new Date();
     deploymentResults.success = false;

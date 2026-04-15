@@ -779,7 +779,7 @@ export class DeploymentMonitor {
           }
 
         } catch (error) {
-          logger.error('Error monitoring migration progress:', error);
+          logger.error({ error: error }, 'Error monitoring migration progress:');
           clearInterval(interval);
         }
       }, 1000);

@@ -316,33 +316,33 @@ export const trustDisputesRelations = relations(trustDisputes, ({ one }) => ({
 
 // Zod schemas for validation
 export const insertTrustScoreSchema = createInsertSchema(trustScores, {
-  previousScore: z.number().min(0).max(100),
-  newScore: z.number().min(0).max(100),
-  scoreDelta: z.number().min(-100).max(100),
+  previousScore: (schema) => schema.min(0).max(100),
+  newScore: (schema) => schema.min(0).max(100),
+  scoreDelta: (schema) => schema.min(-100).max(100),
 });
 
 export const selectTrustScoreSchema = createSelectSchema(trustScores);
 
 export const insertReputationEventSchema = createInsertSchema(reputationEvents, {
-  impact: z.number().min(-100).max(100),
-  title: z.string().min(1).max(255),
-  description: z.string().min(1),
+  impact: (schema) => schema.min(-100).max(100),
+  title: (schema) => schema.min(1).max(255),
+  description: (schema) => schema.min(1),
 });
 
 export const selectReputationEventSchema = createSelectSchema(reputationEvents);
 
 export const insertCommunityReferenceSchema = createInsertSchema(communityReferences, {
-  rating: z.number().min(1).max(5),
-  title: z.string().min(1).max(255),
-  description: z.string().min(1),
-  relationshipDuration: z.number().min(0).optional(),
+  rating: (schema) => schema.min(1).max(5),
+  title: (schema) => schema.min(1).max(255),
+  description: (schema) => schema.min(1),
+  relationshipDuration: (schema) => schema.min(0).optional(),
 });
 
 export const selectCommunityReferenceSchema = createSelectSchema(communityReferences);
 
 export const insertTrustDisputeSchema = createInsertSchema(trustDisputes, {
-  title: z.string().min(1).max(255),
-  description: z.string().min(1),
+  title: (schema) => schema.min(1).max(255),
+  description: (schema) => schema.min(1),
 });
 
 export const selectTrustDisputeSchema = createSelectSchema(trustDisputes);

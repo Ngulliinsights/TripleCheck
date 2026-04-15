@@ -262,7 +262,7 @@ export class ProductionReadinessAssessment extends EventEmitter {
 
     } catch (error) {
       this.emit('assessment_failed', { assessmentId: this.assessmentId, error });
-      logger.error(`❌ Production readiness assessment failed: ${this.assessmentId}`, error);
+      logger.error({ error: error }, '❌ Production readiness assessment failed: ${this.assessmentId}');
       throw error;
     }
   }

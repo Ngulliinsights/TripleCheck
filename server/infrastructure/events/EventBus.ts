@@ -334,7 +334,7 @@ export class EventBus extends EventEmitter {
       await this.processQueuedEvents();
     }, 100); // Process every 100ms
 
-    logger.info('Event processing started', 'EVENT_BUS');
+    logger.info('Event processing started');
   }
 
   /**
@@ -347,7 +347,7 @@ export class EventBus extends EventEmitter {
     }
     this.isProcessing = false;
     
-    logger.info('Event processing stopped', 'EVENT_BUS');
+    logger.info('Event processing stopped');
   }
 
   /**
@@ -523,7 +523,7 @@ export class EventBus extends EventEmitter {
    * Shutdown the event bus
    */
   async shutdown(): Promise<void> {
-    logger.info('Shutting down event bus...', 'EVENT_BUS');
+    logger.info('Shutting down event bus...');
     
     this.stopProcessing();
     
@@ -542,7 +542,7 @@ export class EventBus extends EventEmitter {
     this.eventHistory = [];
     this.snapshots.clear();
     
-    logger.info('Event bus shutdown completed', 'EVENT_BUS');
+    logger.info('Event bus shutdown completed');
   }
 }
 

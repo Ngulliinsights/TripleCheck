@@ -254,7 +254,7 @@ export class LoadTestingFramework extends EventEmitter {
 
     } catch (error) {
       this.emit('test_failed', { testId: this.testId, error });
-      logger.error(`❌ Load test failed: ${this.testId}`, error);
+      logger.error({ error: error }, '❌ Load test failed: ${this.testId}');
       throw error;
     } finally {
       await this.cleanup();

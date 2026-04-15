@@ -36,7 +36,7 @@ export class AnalyticsCache {
       await this.cache.set(key, result, { ttl: ttl || this.DEFAULT_TTL });
       logger.info(`Cached event result for ${eventId}`);
     } catch (error) {
-      logger.error('Failed to cache event result:', error);
+      logger.error({ error: error }, 'Failed to cache event result:');
     }
   }
 
@@ -48,7 +48,7 @@ export class AnalyticsCache {
       const key = `analytics:event:${eventId}`;
       return await this.cache.get(key);
     } catch (error) {
-      logger.error('Failed to get cached event result:', error);
+      logger.error({ error: error }, 'Failed to get cached event result:');
       return null;
     }
   }
@@ -75,7 +75,7 @@ export class AnalyticsCache {
       
       logger.info(`Cached metrics for ${metricType} with TTL ${ttl}s`);
     } catch (error) {
-      logger.error('Failed to cache metrics:', error);
+      logger.error({ error: error }, 'Failed to cache metrics:');
     }
   }
 
@@ -105,7 +105,7 @@ export class AnalyticsCache {
       logger.info(`Retrieved cached metrics for ${metricType}`);
       return cached.data;
     } catch (error) {
-      logger.error('Failed to get cached metrics:', error);
+      logger.error({ error: error }, 'Failed to get cached metrics:');
       return null;
     }
   }
@@ -140,7 +140,7 @@ export class AnalyticsCache {
       
       logger.info(`Cached time series data for ${metric} (${data.length} points)`);
     } catch (error) {
-      logger.error('Failed to cache time series data:', error);
+      logger.error({ error: error }, 'Failed to cache time series data:');
     }
   }
 
@@ -172,7 +172,7 @@ export class AnalyticsCache {
       logger.info(`Retrieved cached time series data for ${metric} (${cached.originalLength} points)`);
       return data;
     } catch (error) {
-      logger.error('Failed to get cached time series data:', error);
+      logger.error({ error: error }, 'Failed to get cached time series data:');
       return null;
     }
   }
@@ -200,7 +200,7 @@ export class AnalyticsCache {
       
       logger.info(`Cached user analytics for user ${userId} (${analyticsType})`);
     } catch (error) {
-      logger.error('Failed to cache user analytics:', error);
+      logger.error({ error: error }, 'Failed to cache user analytics:');
     }
   }
 
@@ -222,7 +222,7 @@ export class AnalyticsCache {
       
       return null;
     } catch (error) {
-      logger.error('Failed to get cached user analytics:', error);
+      logger.error({ error: error }, 'Failed to get cached user analytics:');
       return null;
     }
   }
@@ -250,7 +250,7 @@ export class AnalyticsCache {
       
       logger.info(`Cached performance metrics for ${metricName}`);
     } catch (error) {
-      logger.error('Failed to cache performance metrics:', error);
+      logger.error({ error: error }, 'Failed to cache performance metrics:');
     }
   }
 
@@ -272,7 +272,7 @@ export class AnalyticsCache {
       await Promise.all(promises);
       logger.info(`Batch cached ${operations.length} analytics items`);
     } catch (error) {
-      logger.error('Failed to batch cache metrics:', error);
+      logger.error({ error: error }, 'Failed to batch cache metrics:');
     }
   }
 
@@ -287,7 +287,7 @@ export class AnalyticsCache {
         logger.info(`Invalidated ${keys.length} cache entries matching pattern: ${pattern}`);
       }
     } catch (error) {
-      logger.error('Failed to invalidate cache pattern:', error);
+      logger.error({ error: error }, 'Failed to invalidate cache pattern:');
     }
   }
 
@@ -331,7 +331,7 @@ export class AnalyticsCache {
         keysByType,
       };
     } catch (error) {
-      logger.error('Failed to get cache stats:', error);
+      logger.error({ error: error }, 'Failed to get cache stats:');
       return {
         totalKeys: 0,
         memoryUsage: 0,
@@ -415,7 +415,7 @@ export class AnalyticsCache {
       await Promise.all(promises);
       logger.info(`Warmed up cache with ${commonQueries.length} common queries`);
     } catch (error) {
-      logger.error('Failed to warm up cache:', error);
+      logger.error({ error: error }, 'Failed to warm up cache:');
     }
   }
 }

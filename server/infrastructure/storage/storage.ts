@@ -18,16 +18,18 @@ import {
   properties, 
   reviews, 
   validateAIVerificationResults 
-} from "../../../src/shared/schema";
+} from "../database/schemas/consolidated";
 import type {
-  Property,
-  User,
-  Review,
-  InsertUser,
-  InsertProperty,
-  InsertReview,
   AIVerificationResults,
-} from "../../../src/shared/schema";
+} from "../database/schemas/consolidated";
+
+// Type aliases for compatibility
+type Property = typeof properties.$inferSelect;
+type User = typeof users.$inferSelect;
+type Review = typeof reviews.$inferSelect;
+type InsertUser = typeof users.$inferInsert;
+type InsertProperty = typeof properties.$inferInsert;
+type InsertReview = typeof reviews.$inferInsert;
 // Enhanced PropertyFilter interface with better type safety
 export interface PropertyFilter {
   type?: string[];
@@ -574,7 +576,7 @@ export class DatabaseStorage implements IStorage {
             | "pending"
             | "unverified"
             | "draft",
-          aiVerificationResults: validatedResults,
+          aiVerificationResults: validatedResults as any,
           updatedAt: new Date(),
         })
         .where(eq(properties.id, id))

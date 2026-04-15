@@ -342,25 +342,25 @@ export const propertyViewsRelations = relations(propertyViews, ({ one }) => ({
 
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users, {
-  email: z.string().email(),
-  username: z.string().min(3).max(50),
-  trustScore: z.number().min(0).max(100),
+  email: (schema) => schema.email(),
+  username: (schema) => schema.min(3).max(50),
+  trustScore: (schema) => schema.min(0).max(100),
 });
 
 export const selectUserSchema = createSelectSchema(users);
 
 export const insertPropertySchema = createInsertSchema(properties, {
-  title: z.string().min(1).max(255),
-  description: z.string().min(1),
-  price: z.string().regex(/^\d+(\.\d{1,2})?$/),
-  location: z.string().min(1).max(255),
+  title: (schema) => schema.min(1).max(255),
+  description: (schema) => schema.min(1),
+  price: (schema) => schema.regex(/^\d+(\.\d{1,2})?$/),
+  location: (schema) => schema.min(1).max(255),
 });
 
 export const selectPropertySchema = createSelectSchema(properties);
 
 export const insertReviewSchema = createInsertSchema(reviews, {
-  rating: z.number().min(1).max(5),
-  comment: z.string().min(1),
+  rating: (schema) => schema.min(1).max(5),
+  comment: (schema) => schema.min(1),
 });
 
 export const selectReviewSchema = createSelectSchema(reviews);
@@ -615,17 +615,17 @@ export const updatedUsersRelations = relations(users, ({ many }) => ({
 
 // Zod schemas for new tables
 export const insertTransactionSchema = createInsertSchema(transactions, {
-  amount: z.string().regex(/^\d+(\.\d{1,2})?$/),
-  fraudScore: z.number().min(0).max(100),
+  amount: (schema) => schema.regex(/^\d+(\.\d{1,2})?$/),
+  fraudScore: (schema) => schema.min(0).max(100),
 });
 
 export const selectTransactionSchema = createSelectSchema(transactions);
 
 export const insertProfessionalSchema = createInsertSchema(professionals, {
-  email: z.string().email(),
-  yearsOfExperience: z.number().min(0),
-  hourlyRate: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
-  projectMinimum: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+  email: (schema) => schema.email(),
+  yearsOfExperience: (schema) => schema.min(0),
+  hourlyRate: (schema) => schema.regex(/^\d+(\.\d{1,2})?$/).optional(),
+  projectMinimum: (schema) => schema.regex(/^\d+(\.\d{1,2})?$/).optional(),
 });
 
 export const selectProfessionalSchema = createSelectSchema(professionals);

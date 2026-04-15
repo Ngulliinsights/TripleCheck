@@ -148,7 +148,7 @@ export class IntegrationTestRunner {
       return report;
       
     } catch (error) {
-      logger.error(`❌ Integration test suite failed: ${this.testId}`, error);
+      logger.error({ error: error }, '❌ Integration test suite failed: ${this.testId}');
       throw error;
     }
   }

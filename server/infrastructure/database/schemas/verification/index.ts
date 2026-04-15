@@ -363,8 +363,8 @@ export const expertAssignmentsRelations = relations(expertAssignments, ({ one })
 const safeDecimalRegex = /^\d+$|^\d+\.\d+$/;
 
 export const insertLandVerificationSessionSchema = createInsertSchema(landVerificationSessions, {
-    overallRiskScore: z.number().min(0).max(100),
-    confidence: z.string().regex(safeDecimalRegex),
+    overallRiskScore: (schema) => schema.min(0).max(100),
+    confidence: (schema) => schema.regex(safeDecimalRegex),
 });
 
 export const selectLandVerificationSessionSchema = createSelectSchema(landVerificationSessions);
@@ -373,8 +373,8 @@ export const insertVerificationLayerSchema = createInsertSchema(verificationLaye
 export const selectVerificationLayerSchema = createSelectSchema(verificationLayers);
 
 export const insertRiskFactorSchema = createInsertSchema(riskFactors, {
-    confidence: z.string().regex(safeDecimalRegex),
-    likelihood: z.string().regex(safeDecimalRegex),
+    confidence: (schema) => schema.regex(safeDecimalRegex),
+    likelihood: (schema) => schema.regex(safeDecimalRegex),
 });
 
 export const selectRiskFactorSchema = createSelectSchema(riskFactors);
@@ -383,13 +383,13 @@ export const insertGovernmentDesignationSchema = createInsertSchema(governmentDe
 export const selectGovernmentDesignationSchema = createSelectSchema(governmentDesignations);
 
 export const insertCommunityFeedbackSchema = createInsertSchema(communityFeedback, {
-    reliability: z.string().regex(safeDecimalRegex),
+    reliability: (schema) => schema.regex(safeDecimalRegex),
 });
 
 export const selectCommunityFeedbackSchema = createSelectSchema(communityFeedback);
 
 export const insertExpertAssignmentSchema = createInsertSchema(expertAssignments, {
-    cost: z.string().regex(safeDecimalRegex).optional(),
+    cost: (schema) => schema.regex(safeDecimalRegex).optional(),
 });
 
 export const selectExpertAssignmentSchema = createSelectSchema(expertAssignments);

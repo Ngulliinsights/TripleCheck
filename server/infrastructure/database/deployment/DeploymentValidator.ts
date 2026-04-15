@@ -201,7 +201,7 @@ export class DeploymentValidator extends EventEmitter {
       logger.info('✅ Deployment Validator initialized');
 
     } catch (error) {
-      logger.error('❌ Failed to initialize Deployment Validator:', error);
+      logger.error({ error: error }, '❌ Failed to initialize Deployment Validator:');
       this.emit('initialization_error', error);
       throw error;
     }
@@ -307,7 +307,7 @@ export class DeploymentValidator extends EventEmitter {
       const totalDuration = endTime.getTime() - startTime.getTime();
 
       this.emit('validation_error', error);
-      logger.error('❌ Comprehensive validation failed:', error);
+      logger.error({ error: error }, '❌ Comprehensive validation failed:');
 
       throw error;
     }

@@ -72,7 +72,7 @@ program
       }
       
     } catch (error) {
-      logger.error('❌ Integration test suite failed:', error);
+      logger.error({ error: error }, '❌ Integration test suite failed:');
       process.exit(1);
     }
   });
@@ -145,7 +145,7 @@ program
       }
       
     } catch (error) {
-      logger.error('❌ Production readiness assessment failed:', error);
+      logger.error({ error: error }, '❌ Production readiness assessment failed:');
       process.exit(1);
     }
   });
@@ -248,7 +248,7 @@ program
       }
       
     } catch (error) {
-      logger.error('❌ Full system validation failed:', error);
+      logger.error({ error: error }, '❌ Full system validation failed:');
       process.exit(1);
     }
   });
@@ -302,7 +302,7 @@ program
       }
       
     } catch (error) {
-      logger.error('❌ System health check failed:', error);
+      logger.error({ error: error }, '❌ System health check failed:');
       process.exit(1);
     }
   });
@@ -354,7 +354,7 @@ program
       console.log(`\n✅ Reports generated in: ${options.outputDir}`);
       
     } catch (error) {
-      logger.error('❌ Report generation failed:', error);
+      logger.error({ error: error }, '❌ Report generation failed:');
       process.exit(1);
     }
   });
@@ -398,7 +398,7 @@ program
       console.log('✅ Cleanup completed');
       
     } catch (error) {
-      logger.error('❌ Cleanup failed:', error);
+      logger.error({ error: error }, '❌ Cleanup failed:');
       process.exit(1);
     }
   });

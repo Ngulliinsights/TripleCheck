@@ -145,22 +145,14 @@ export {
 // Re-export analytics tables for convenience
 export {
   analyticsEvents,
-  performanceMetrics,
-  businessReports,
-  auditLogs,
+  analyticsMetrics,
   // Relations
   analyticsEventsRelations,
-  businessReportsRelations,
-  auditLogsRelations,
   // Schemas
   insertAnalyticsEventSchema,
   selectAnalyticsEventSchema,
-  insertPerformanceMetricSchema,
-  selectPerformanceMetricSchema,
-  insertBusinessReportSchema,
-  selectBusinessReportSchema,
-  insertAuditLogSchema,
-  selectAuditLogSchema
+  insertAnalyticsMetricSchema,
+  selectAnalyticsMetricSchema
 } from './analytics';
 
 // Import core tables first
@@ -231,9 +223,7 @@ import {
 // Import analytics tables
 import {
   analyticsEvents,
-  performanceMetrics,
-  businessReports,
-  auditLogs,
+  analyticsMetrics,
 } from './analytics';
 
 // Export all schemas as a single object for easy access
@@ -276,9 +266,7 @@ export const allSchemas = {
   
   // Analytics tables
   analyticsEvents,
-  performanceMetrics,
-  businessReports,
-  auditLogs,
+  analyticsMetrics,
 };
 
 // Export all relations as a single object
@@ -442,6 +430,32 @@ export type TableName = typeof tableNames[number];
 // ============================================================================
 
 /**
+ * AI Verification Results Type
+ */
+export interface AIVerificationResults {
+  overallScore?: number;
+  imageAnalysis?: {
+    authenticity: number;
+    quality: number;
+    flags: string[];
+  };
+  textAnalysis?: {
+    sentiment: number;
+    credibility: number;
+    flags: string[];
+  };
+  priceAnalysis?: {
+    fairness: number;
+    marketComparison: number;
+    reasonableness?: number;
+    flags: string[];
+  };
+  lastVerified?: string;
+  verificationId?: string;
+  [key: string]: unknown;
+}
+
+/**
  * Validates AI verification results structure
  */
 export function validateAIVerificationResults(results: unknown): AIVerificationResults | null {
@@ -479,6 +493,7 @@ export function validateAIVerificationResults(results: unknown): AIVerificationR
   if (data.priceAnalysis && typeof data.priceAnalysis === 'object') {
     const priceAnalysis = data.priceAnalysis as Record<string, unknown>;
     validated.priceAnalysis = {
+      fairness: typeof priceAnalysis.fairness === 'number' ? priceAnalysis.fairness : 0,
       marketComparison: typeof priceAnalysis.marketComparison === 'number' ? priceAnalysis.marketComparison : 0,
       reasonableness: typeof priceAnalysis.reasonableness === 'number' ? priceAnalysis.reasonableness : 0,
       flags: Array.isArray(priceAnalysis.flags) ? priceAnalysis.flags.filter(f => typeof f === 'string') : []

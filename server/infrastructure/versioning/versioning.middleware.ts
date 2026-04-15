@@ -81,7 +81,7 @@ export const versioningMiddleware = (
 
     next();
   } catch (error) {
-    logger.error('Versioning middleware error', 'API_VERSIONING', { error });
+    logger.error({ error }, 'Versioning middleware error');
     ResponseHelper.error(
       res,
       'API versioning error',

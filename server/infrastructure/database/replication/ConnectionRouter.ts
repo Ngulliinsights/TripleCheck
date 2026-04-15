@@ -137,7 +137,7 @@ export class ConnectionRouter {
       };
 
     } catch (error) {
-      logger.error('Error in connection routing:', error);
+      logger.error({ error: error }, 'Error in connection routing:');
       throw error;
     }
   }

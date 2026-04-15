@@ -147,7 +147,7 @@ export class TestFramework extends EventEmitter {
       );
     }
 
-    logger.info(`Starting test suite: ${suite.name}`, 'TEST_FRAMEWORK');
+    logger.info('Starting test suite: ${suite.name}');
     const startTime = new Date();
     const results: TestCaseResult[] = [];
 
@@ -176,7 +176,7 @@ export class TestFramework extends EventEmitter {
       }
 
     } catch (error) {
-      logger.error(`Test suite failed: ${suite.name}`, 'TEST_FRAMEWORK', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Test suite failed: ${suite.name}');
     }
 
     const endTime = new Date();

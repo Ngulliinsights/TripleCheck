@@ -252,7 +252,7 @@ export class BlueGreenDeploymentManager extends EventEmitter {
       logger.info('✅ Blue-Green Deployment Manager initialized');
 
     } catch (error) {
-      logger.error('❌ Failed to initialize Blue-Green Deployment Manager:', error);
+      logger.error({ error: error }, '❌ Failed to initialize Blue-Green Deployment Manager:');
       this.emit('initialization_error', error);
       throw error;
     }
@@ -423,7 +423,7 @@ export class BlueGreenDeploymentManager extends EventEmitter {
           if (step.critical) {
             throw stepError;
           } else {
-            logger.warn(`⚠️  Non-critical step failed: ${step.name}`, stepError);
+            logger.warn({ error: stepError }, '⚠️  Non-critical step failed: ${step.name}');
           }
         }
       }
@@ -906,7 +906,7 @@ export class BlueGreenDeploymentManager extends EventEmitter {
       });
 
     } catch (error) {
-      logger.error(`❌ Deployment rollback failed: ${executionId}`, error);
+      logger.error({ error: error }, '❌ Deployment rollback failed: ${executionId}');
       throw error;
     }
   }
@@ -972,7 +972,7 @@ export class BlueGreenDeploymentManager extends EventEmitter {
           errorCount: environment.healthStatus.errorCount + 1
         };
 
-        logger.error(`❌ ${name} environment connection failed:`, error);
+        logger.error({ error: error }, '❌ ${name} environment connection failed:');
         throw error;
       }
     }
@@ -1047,7 +1047,7 @@ export class BlueGreenDeploymentManager extends EventEmitter {
             labels: { environment: name }
           });
 
-          logger.error(`❌ Health check failed for ${name} environment:`, error);
+          logger.error({ error: error }, '❌ Health check failed for ${name} environment:');
           this.emit('environment_unhealthy', { environment: name, error });
         }
       }

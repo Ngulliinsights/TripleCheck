@@ -5,7 +5,6 @@
  * and maintenance tasks.
  */
 
-export * from './validators';
 export * from './generators';
 export * from './analyzers';
 export * from './QueryOptimizer';

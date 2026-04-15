@@ -61,7 +61,7 @@ export class QueryOptimizer {
       return result;
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      logger.error(`Query ${queryName} failed after ${executionTime}ms:`, error);
+      logger.error({ error: error }, 'Query ${queryName} failed after ${executionTime}ms:');
 
       // Retry logic
       if (retries > 0 && this.isRetryableError(error)) {

@@ -126,7 +126,7 @@ export class PerformanceMonitor extends EventEmitter {
     
     const timer = this.timers.get(operationId);
     if (!timer) {
-      logger.warn(`Timer not found for operation: ${operationId}`, 'PERFORMANCE_MONITOR');
+      logger.warn('Timer not found for operation: ${operationId}');
       return 0;
     }
 
@@ -490,7 +490,7 @@ export class PerformanceMonitor extends EventEmitter {
       }
     }
 
-    logger.debug('Performance monitoring cleanup completed', 'PERFORMANCE_MONITOR');
+    logger.debug('Performance monitoring cleanup completed');
   }
 
   // Private helper methods
@@ -654,7 +654,7 @@ export class PerformanceMonitor extends EventEmitter {
     this.alerts.clear();
     this.timers.clear();
     this.counters.clear();
-    logger.info('Performance monitor shutdown completed', 'PERFORMANCE_MONITOR');
+    logger.info('Performance monitor shutdown completed');
   }
 }
 

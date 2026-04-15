@@ -43,7 +43,7 @@ export class PrometheusMetrics {
       
       logger.info('PrometheusMetrics initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize PrometheusMetrics:', error);
+      logger.error({ error: error }, 'Failed to initialize PrometheusMetrics:');
       throw error;
     }
   }
@@ -278,7 +278,7 @@ export class PrometheusMetrics {
 
       logger.debug('Collected system metrics');
     } catch (error) {
-      logger.error('Error collecting system metrics:', error);
+      logger.error({ error: error }, 'Error collecting system metrics:');
     }
   }
 
@@ -295,7 +295,7 @@ export class PrometheusMetrics {
 
       logger.debug('Collected business metrics');
     } catch (error) {
-      logger.error('Error collecting business metrics:', error);
+      logger.error({ error: error }, 'Error collecting business metrics:');
     }
   }
 
@@ -314,7 +314,7 @@ export class PrometheusMetrics {
 
       logger.debug('Collected database metrics');
     } catch (error) {
-      logger.error('Error collecting database metrics:', error);
+      logger.error({ error: error }, 'Error collecting database metrics:');
     }
   }
 
@@ -323,7 +323,7 @@ export class PrometheusMetrics {
     try {
       return await observabilitySystem.getMetrics();
     } catch (error) {
-      logger.error('Error getting metrics:', error);
+      logger.error({ error: error }, 'Error getting metrics:');
       throw error;
     }
   }
