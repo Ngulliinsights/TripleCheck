@@ -46,7 +46,7 @@ async function startFraudDetectionSystem() {
     logger.info('System is now monitoring for fraudulent activity...');
     
   } catch (error) {
-    logger.error('Failed to start Fraud Detection System', error);
+    logger.error({ error: error }, 'Failed to start Fraud Detection System');
     process.exit(1);
   }
 }

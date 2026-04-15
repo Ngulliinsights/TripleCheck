@@ -58,7 +58,7 @@ export class FraudDetectionAPI {
         const status = await this.fraudEngine.getSystemStatus();
         res.json(status);
       } catch (error) {
-        this.logger.error('Failed to get system status', error);
+        this.logger.error({ error: error }, 'Failed to get system status');
         res.status(500).json({ error: 'Failed to get system status' });
       }
     });
@@ -82,7 +82,7 @@ export class FraudDetectionAPI {
           processedAt: new Date().toISOString()
         });
       } catch (error) {
-        this.logger.error('Transaction analysis failed', error);
+        this.logger.error({ error: error }, 'Transaction analysis failed');
         res.status(500).json({ error: 'Transaction analysis failed' });
       }
     });
@@ -122,7 +122,7 @@ export class FraudDetectionAPI {
           processedAt: new Date().toISOString()
         });
       } catch (error) {
-        this.logger.error('Batch analysis failed', error);
+        this.logger.error({ error: error }, 'Batch analysis failed');
         res.status(500).json({ error: 'Batch analysis failed' });
       }
     });
@@ -143,7 +143,7 @@ export class FraudDetectionAPI {
 
         res.json(metrics);
       } catch (error) {
-        this.logger.error('Failed to get metrics', error);
+        this.logger.error({ error: error }, 'Failed to get metrics');
         res.status(500).json({ error: 'Failed to get metrics' });
       }
     });
@@ -200,7 +200,7 @@ export class FraudDetectionAPI {
           createdAt: new Date().toISOString()
         });
       } catch (error) {
-        this.logger.error('Webhook registration failed', error);
+        this.logger.error({ error: error }, 'Webhook registration failed');
         res.status(500).json({ error: 'Webhook registration failed' });
       }
     });
@@ -237,7 +237,7 @@ export class FraudDetectionAPI {
           status: 'updated'
         });
       } catch (error) {
-        this.logger.error('Threshold update failed', error);
+        this.logger.error({ error: error }, 'Threshold update failed');
         res.status(500).json({ error: 'Threshold update failed' });
       }
     });
@@ -266,7 +266,7 @@ export class FraudDetectionAPI {
             alerts: alerts.map(alert => this.sanitizeAlert(alert))
           });
         } catch (error) {
-          this.logger.error('Test alert generation failed', error);
+          this.logger.error({ error: error }, 'Test alert generation failed');
           res.status(500).json({ error: 'Test alert generation failed' });
         }
       });
@@ -285,7 +285,7 @@ export class FraudDetectionAPI {
 
     // Global error handler
     this.app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
-      this.logger.error('Unhandled error', error);
+      this.logger.error({ error: error }, 'Unhandled error');
       
       res.status(500).json({
         error: 'Internal server error',

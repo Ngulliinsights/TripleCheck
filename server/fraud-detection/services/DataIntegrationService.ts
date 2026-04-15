@@ -298,7 +298,7 @@ export class DataIntegrationService {
           await this.processPropertyRecord(record);
           processedCount++;
         } catch (error) {
-          this.logger.error('Error processing county record', error);
+          this.logger.error({ error: error }, 'Error processing county record');
           source.errorCount++;
         }
       }
@@ -308,7 +308,7 @@ export class DataIntegrationService {
       this.logger.info(`Synced ${processedCount} county records`);
       
     } catch (error) {
-      this.logger.error('County records sync failed', error);
+      this.logger.error({ error: error }, 'County records sync failed');
       const source = this.dataSources.get('county_recorder')!;
       source.status = 'error';
       source.errorCount++;
@@ -331,7 +331,7 @@ export class DataIntegrationService {
           await this.processMLSListing(listing);
           processedCount++;
         } catch (error) {
-          this.logger.error('Error processing MLS listing', error);
+          this.logger.error({ error: error }, 'Error processing MLS listing');
           source.errorCount++;
         }
       }
@@ -341,7 +341,7 @@ export class DataIntegrationService {
       this.logger.info(`Synced ${processedCount} MLS listings`);
       
     } catch (error) {
-      this.logger.error('MLS sync failed', error);
+      this.logger.error({ error: error }, 'MLS sync failed');
       const source = this.dataSources.get('mls_data')!;
       source.status = 'error';
       source.errorCount++;
@@ -364,7 +364,7 @@ export class DataIntegrationService {
           await this.processMortgageRecord(mortgage);
           processedCount++;
         } catch (error) {
-          this.logger.error('Error processing mortgage record', error);
+          this.logger.error({ error: error }, 'Error processing mortgage record');
           source.errorCount++;
         }
       }
@@ -374,7 +374,7 @@ export class DataIntegrationService {
       this.logger.info(`Synced ${processedCount} mortgage records`);
       
     } catch (error) {
-      this.logger.error('Mortgage sync failed', error);
+      this.logger.error({ error: error }, 'Mortgage sync failed');
       const source = this.dataSources.get('mortgage_databases')!;
       source.status = 'error';
       source.errorCount++;
@@ -398,7 +398,7 @@ export class DataIntegrationService {
           await this.processCourtRecord(record);
           processedCount++;
         } catch (error) {
-          this.logger.error('Error processing court record', error);
+          this.logger.error({ error: error }, 'Error processing court record');
           source.errorCount++;
         }
       }
@@ -408,7 +408,7 @@ export class DataIntegrationService {
       this.logger.info(`Synced ${processedCount} court records`);
       
     } catch (error) {
-      this.logger.error('Court records sync failed', error);
+      this.logger.error({ error: error }, 'Court records sync failed');
       const source = this.dataSources.get('court_records')!;
       source.status = 'error';
       source.errorCount++;
@@ -432,7 +432,7 @@ export class DataIntegrationService {
           await this.processProfessionalLicense(license);
           processedCount++;
         } catch (error) {
-          this.logger.error('Error processing professional license', error);
+          this.logger.error({ error: error }, 'Error processing professional license');
           source.errorCount++;
         }
       }
@@ -442,7 +442,7 @@ export class DataIntegrationService {
       this.logger.info(`Synced ${processedCount} professional licenses`);
       
     } catch (error) {
-      this.logger.error('Professional licensing sync failed', error);
+      this.logger.error({ error: error }, 'Professional licensing sync failed');
       const source = this.dataSources.get('professional_licensing')!;
       source.status = 'error';
       source.errorCount++;
@@ -453,21 +453,21 @@ export class DataIntegrationService {
     // Financial institution transaction reports
     this.externalAPI.subscribeToFinancialReports((report) => {
       this.processFinancialReport(report).catch(error => {
-        this.logger.error('Error processing financial report', error);
+        this.logger.error({ error: error }, 'Error processing financial report');
       });
     });
 
     // News and media monitoring
     this.externalAPI.subscribeToNewsFeeds((article) => {
       this.processNewsArticle(article).catch(error => {
-        this.logger.error('Error processing news article', error);
+        this.logger.error({ error: error }, 'Error processing news article');
       });
     });
 
     // Social media monitoring
     this.externalAPI.subscribeToSocialMedia((post) => {
       this.processSocialMediaPost(post).catch(error => {
-        this.logger.error('Error processing social media post', error);
+        this.logger.error({ error: error }, 'Error processing social media post');
       });
     });
   }

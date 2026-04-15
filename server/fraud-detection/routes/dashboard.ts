@@ -110,7 +110,7 @@ export class FraudDetectionDashboardRoutes {
         data: activeScans,
       });
     } catch (error) {
-      this.logger.error('Failed to get active scans', error);
+      this.logger.error({ error: error }, 'Failed to get active scans');
       res.status(500).json({
         success: false,
         message: 'Failed to retrieve active scans',
@@ -194,7 +194,7 @@ export class FraudDetectionDashboardRoutes {
         data: recentReports,
       });
     } catch (error) {
-      this.logger.error('Failed to get recent reports', error);
+      this.logger.error({ error: error }, 'Failed to get recent reports');
       res.status(500).json({
         success: false,
         message: 'Failed to retrieve recent reports',
@@ -222,7 +222,7 @@ export class FraudDetectionDashboardRoutes {
         data: stats,
       });
     } catch (error) {
-      this.logger.error('Failed to get user stats', error);
+      this.logger.error({ error: error }, 'Failed to get user stats');
       res.status(500).json({
         success: false,
         message: 'Failed to retrieve user statistics',
@@ -293,7 +293,7 @@ export class FraudDetectionDashboardRoutes {
         data: reportDetails,
       });
     } catch (error) {
-      this.logger.error('Failed to get report details', error);
+      this.logger.error({ error: error }, 'Failed to get report details');
       res.status(500).json({
         success: false,
         message: 'Failed to retrieve report details',
@@ -325,7 +325,7 @@ export class FraudDetectionDashboardRoutes {
 
       res.send(pdfBuffer);
     } catch (error) {
-      this.logger.error('Failed to download report', error);
+      this.logger.error({ error: error }, 'Failed to download report');
       res.status(500).json({
         success: false,
         message: 'Failed to download report',
@@ -350,7 +350,7 @@ export class FraudDetectionDashboardRoutes {
         refreshedAt: new Date().toISOString(),
       });
     } catch (error) {
-      this.logger.error('Failed to refresh scans', error);
+      this.logger.error({ error: error }, 'Failed to refresh scans');
       res.status(500).json({
         success: false,
         message: 'Failed to refresh scan status',
@@ -392,7 +392,7 @@ export class FraudDetectionDashboardRoutes {
         message: 'Fraud detection scan started successfully',
       });
     } catch (error) {
-      this.logger.error('Failed to start scan', error);
+      this.logger.error({ error: error }, 'Failed to start scan');
       res.status(500).json({
         success: false,
         message: 'Failed to start fraud detection scan',

@@ -437,7 +437,7 @@ export class FraudIntelligenceService {
       // Async alert analysis - don't block response
       this.analyzeForAlert(mockReport).catch(error => {
         // Log error in production, don't throw - using the logger interface
-        this.logger.error('Alert analysis failed:', error);
+        this.logger.error({ error: error }, 'Alert analysis failed:');
       });
 
       return mockReport;
@@ -772,7 +772,7 @@ export class FraudIntelligenceService {
         recommendations: this.parseRecommendationsData(alert.recommendations)
       };
     } catch (parseError) {
-      this.logger.error('Failed to parse alert data:', parseError);
+      this.logger.error({ error: parseError }, 'Failed to parse alert data:');
       return {
         id: String(alert.id || 'unknown'),
         type: 'area_warning',
@@ -977,7 +977,7 @@ export class FraudIntelligenceService {
         }
       } catch (error) {
         // Log individual property analysis errors but continue processing
-        this.logger.error(`Failed to analyze property ${property.id}:`, error);
+        this.logger.error({ error: error }, 'Failed to analyze property ${property.id}:');
       }
     }
 
@@ -1037,7 +1037,7 @@ export class FraudIntelligenceService {
         riskScore += 20;
       }
     } catch (error) {
-      this.logger.error('Failed to analyze owner properties:', error);
+      this.logger.error({ error: error }, 'Failed to analyze owner properties:');
       riskScore += 10; // Add modest risk for analysis failure
     }
 
@@ -1058,7 +1058,7 @@ export class FraudIntelligenceService {
         riskScore += 35;
       }
     } catch (error) {
-      this.logger.error('Failed to check for duplicates:', error);
+      this.logger.error({ error: error }, 'Failed to check for duplicates:');
     }
 
     // Enhanced risk type determination
@@ -1128,7 +1128,7 @@ export class FraudIntelligenceService {
 
       return locationMap;
     } catch (error) {
-      this.logger.error('Failed to get location averages:', error);
+      this.logger.error({ error: error }, 'Failed to get location averages:');
       return new Map(); // Return empty map on failure
     }
   }
@@ -1181,12 +1181,12 @@ export class FraudIntelligenceService {
 
         // Notify subscribers asynchronously
         this.notifySubscribers(report).catch(error => {
-          this.logger.error('Failed to notify subscribers:', error);
+          this.logger.error({ error: error }, 'Failed to notify subscribers:');
         });
       }
     } catch (error) {
       // Log error but don't throw to avoid breaking the main flow
-      this.logger.error('Alert analysis failed:', error);
+      this.logger.error({ error: error }, 'Alert analysis failed:');
     }
   }
 
@@ -1373,13 +1373,13 @@ export class FraudIntelligenceService {
             data: { reportId: report.id }
           });
         } catch (error) {
-          this.logger.error(`Failed to notify user ${subscription.userId}:`, error);
+          this.logger.error({ error: error }, 'Failed to notify user ${subscription.userId}:');
         }
       });
 
       await Promise.allSettled(notificationPromises);
     } catch (error) {
-      this.logger.error('Failed to process subscriber notifications:', error);
+      this.logger.error({ error: error }, 'Failed to process subscriber notifications:');
     }
   }
 
@@ -1422,7 +1422,7 @@ export class FraudIntelligenceService {
       // Use Node.js crypto module for cryptographically secure random generation
       return crypto.randomBytes(4).toString('hex');
     } catch (error) {
-      this.logger.warn('Crypto module unavailable, falling back to Math.random:', error);
+      this.logger.warn({ error: error }, 'Crypto module unavailable, falling back to Math.random:');
       // Fallback to Math.random with timestamp for better uniqueness
       // This addresses the ESLint security warning by acknowledging the limitation
       // Note: This is only used as a fallback when crypto is unavailable
@@ -1443,7 +1443,7 @@ export class FraudIntelligenceService {
     }
     
     // Handle non-Error objects
-    this.logger.error(`${context}:`, error);
+    this.logger.error({ error: error }, '${context}:');
     return new Error(context);
   }
 
@@ -1467,7 +1467,7 @@ export class FraudIntelligenceService {
           await db.select({ count: count() }).from(fraudAlerts).limit(1);
           checks.databaseQuery = true;
         } catch (dbError) {
-          this.logger.error('Database query health check failed:', dbError);
+          this.logger.error({ error: dbError }, 'Database query health check failed:');
           checks.databaseQuery = false;
         }
       } else {
@@ -1498,7 +1498,7 @@ export class FraudIntelligenceService {
         timestamp: new Date()
       };
     } catch (error) {
-      this.logger.error('Health check failed:', error);
+      this.logger.error({ error: error }, 'Health check failed:');
       return {
         status: 'unhealthy',
         checks: { error: true },
@@ -1515,7 +1515,7 @@ export class FraudIntelligenceService {
       // Perform any necessary cleanup operations
       this.logger.info('FraudIntelligenceService cleanup completed');
     } catch (error) {
-      this.logger.error('Error during FraudIntelligenceService cleanup:', error);
+      this.logger.error({ error: error }, 'Error during FraudIntelligenceService cleanup:');
     }
   }
 }

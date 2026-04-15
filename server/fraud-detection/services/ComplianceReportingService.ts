@@ -804,7 +804,7 @@ export class ComplianceReportingService extends EventEmitter {
       this.emit('compliance_metrics', metrics);
       this.logger.info('Compliance metrics generated');
     } catch (error) {
-      this.logger.error('Failed to generate compliance metrics', error);
+      this.logger.error({ error: error }, 'Failed to generate compliance metrics');
     }
   }
 

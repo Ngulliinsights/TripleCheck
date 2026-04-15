@@ -312,7 +312,7 @@ export class CaseManagementService extends EventEmitter {
       return investigationCase;
       
     } catch (error) {
-      this.logger.error('Failed to create investigation case', error);
+      this.logger.error({ error: error }, 'Failed to create investigation case');
       throw error;
     }
   }
@@ -868,7 +868,7 @@ export class CaseManagementService extends EventEmitter {
       this.emit('periodic_report', metrics);
       this.logger.info('Periodic case management report generated');
     } catch (error) {
-      this.logger.error('Failed to generate periodic report', error);
+      this.logger.error({ error: error }, 'Failed to generate periodic report');
     }
   }
 

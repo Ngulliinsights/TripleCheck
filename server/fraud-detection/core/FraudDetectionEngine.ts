@@ -163,7 +163,7 @@ export class FraudDetectionEngine extends EventEmitter {
       this.logger.info('Fraud Detection Engine initialized successfully');
       this.emit('initialized');
     } catch (error) {
-      this.logger.error('Failed to initialize Fraud Detection Engine', error);
+      this.logger.error({ error: error }, 'Failed to initialize Fraud Detection Engine');
       throw error;
     }
   }
@@ -223,7 +223,7 @@ export class FraudDetectionEngine extends EventEmitter {
 
       return alerts;
     } catch (error) {
-      this.logger.error(`Error processing transaction ${transactionId}`, error);
+      this.logger.error({ error: error }, 'Error processing transaction ${transactionId}');
       this.processingQueue.set(transactionId, {
         ...this.processingQueue.get(transactionId),
         status: 'error',
