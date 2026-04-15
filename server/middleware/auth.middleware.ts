@@ -163,7 +163,7 @@ export class UserContext {
         return true;
       }
     } catch (error) {
-      logger.error('Error loading user context:', error);
+      logger.error({ error: error }, 'Error loading user context:');
     }
 
     return false;
@@ -275,7 +275,7 @@ export const requireAuth = async (
     
     next();
   } catch (error) {
-    logger.error('Authentication middleware error:', error);
+    logger.error({ error: error }, 'Authentication middleware error:');
     ResponseHelper.error(res, 'Authentication error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };
@@ -297,7 +297,7 @@ export const optionalAuth = async (
     
     next();
   } catch (error) {
-    logger.error('Optional authentication middleware error:', error);
+    logger.error({ error: error }, 'Optional authentication middleware error:');
     // Don't block request on error, just continue without user context
     next();
   }
@@ -333,7 +333,7 @@ export const requireRole = (roles: UserRole | UserRole[]) => {
 
       next();
     } catch (error) {
-      logger.error('Role authorization middleware error:', error);
+      logger.error({ error: error }, 'Role authorization middleware error:');
       ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   };
@@ -370,7 +370,7 @@ export const requireVerifiedAgent = async (
 
     next();
   } catch (error) {
-    logger.error('Verified agent middleware error:', error);
+    logger.error({ error: error }, 'Verified agent middleware error:');
     ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };
@@ -404,7 +404,7 @@ export const requireMinTrustScore = (minScore: number) => {
 
       next();
     } catch (error) {
-      logger.error('Trust score middleware error:', error);
+      logger.error({ error: error }, 'Trust score middleware error:');
       ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   };
@@ -621,7 +621,7 @@ export const requirePermissions = (requirements: {
 
       next();
     } catch (error) {
-      logger.error('Permission authorization middleware error:', error);
+      logger.error({ error: error }, 'Permission authorization middleware error:');
       ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   };
@@ -655,7 +655,7 @@ export const requireMinRole = (minRole: UserRole) => {
 
       next();
     } catch (error) {
-      logger.error('Role hierarchy middleware error:', error);
+      logger.error({ error: error }, 'Role hierarchy middleware error:');
       ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   };
@@ -690,7 +690,7 @@ export const enhancedSessionValidation = async (
     
     next();
   } catch (error) {
-    logger.error('Enhanced session validation error:', error);
+    logger.error({ error: error }, 'Enhanced session validation error:');
     next(); // Don't block request on session validation errors
   }
 };
@@ -738,7 +738,7 @@ export const requireResourceOwnership = (getResourceOwnerId: (req: Authenticated
 
       next();
     } catch (error) {
-      logger.error('Resource ownership middleware error:', error);
+      logger.error({ error: error }, 'Resource ownership middleware error:');
       ResponseHelper.error(res, AUTHORIZATION_ERROR_MESSAGE, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   };

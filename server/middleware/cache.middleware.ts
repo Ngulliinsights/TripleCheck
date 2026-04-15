@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 import { cacheService, CacheKeys, CacheOptions } from '..\cache\CacheService'
-import { Logger } from '../infrastructure/monitoring/logger';
+import { Logger } from '../infrastructure/observability/telemetry';
 
 export interface CacheMiddlewareOptions {
   ttl?: number; // Time to live in seconds
@@ -104,7 +104,7 @@ export function cacheResponse(options: CacheMiddlewareOptions = {}) {
           if (!options.condition || options.condition(req, res)) {
             cacheResponseData(cacheKey, statusCode, res.getHeaders(), body, options)
               .catch(error => {
-                logger.error(`Failed to cache response for key: ${cacheKey}`, error);
+                logger.error({ error: error }, 'Failed to cache response for key: ${cacheKey}');
                 if (options.onError) {
                   options.onError(error, cacheKey);
                 }
@@ -121,7 +121,7 @@ export function cacheResponse(options: CacheMiddlewareOptions = {}) {
 
       next();
     } catch (error) {
-      logger.error(`Cache middleware error for key: ${cacheKey}`, error);
+      logger.error({ error: error }, 'Cache middleware error for key: ${cacheKey}');
       if (options.onError) {
         options.onError(error as Error, cacheKey);
       }
@@ -148,7 +148,7 @@ export function invalidateCache(options: {
       if (res.statusCode >= 200 && res.statusCode < 300) {
         invalidateCacheEntries(req, options)
           .catch(error => {
-            logger.error('Cache invalidation error', error);
+            logger.error({ error: error }, 'Cache invalidation error');
           });
       }
 
@@ -228,7 +228,7 @@ async function cacheResponseData(
 
     await cacheService.set(key, cachedResponse, cacheOptions);
   } catch (error) {
-    logger.error(`Failed to cache response for key: ${key}`, error);
+    logger.error({ error: error }, 'Failed to cache response for key: ${key}');
     throw error;
   }
 }
@@ -265,7 +265,7 @@ async function invalidateCacheEntries(req: Request, options: {
       // Implementation would require SCAN command and pattern matching
     }
   } catch (error) {
-    logger.error('Cache invalidation error', error);
+    logger.error({ error: error }, 'Cache invalidation error');
     throw error;
   }
 }
