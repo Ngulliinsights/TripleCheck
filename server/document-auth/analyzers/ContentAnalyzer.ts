@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 
 import { PDFDocument } from 'pdf-lib';
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';
 
 export interface ContentAnalysisResult {
@@ -19,9 +19,9 @@ export class ContentAnalyzer {
   }
 
   async initialize(): Promise<void> {
-    logger.info('Initializing Content Analyzer...', 'ContentAnalyzer');
+    logger.info('Initializing Content Analyzer...');
     this.isInitialized = true;
-    logger.info('Content Analyzer initialized', 'ContentAnalyzer');
+    logger.info('Content Analyzer initialized');
   }
 
   async analyze(request: DocumentVerificationRequest): Promise<ContentAnalysisResult> {
@@ -31,7 +31,7 @@ export class ContentAnalyzer {
       throw new Error('Content Analyzer not initialized');
     }
 
-    logger.info(`Starting content analysis for document: ${request.id}`, 'ContentAnalyzer');
+    logger.info('Starting content analysis for document: ${request.id}');
 
     try {
       const checks: VerificationCheck[] = [];
@@ -68,7 +68,7 @@ export class ContentAnalyzer {
       };
 
     } catch (error) {
-      logger.error(`Content analysis failed for document: ${request.id}`, 'ContentAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Content analysis failed for document: ${request.id}');
       throw error;
     }
   }
@@ -100,7 +100,7 @@ export class ContentAnalyzer {
           if (hasMixedEncodings) consistencyScore -= 25;
           
         } catch (error) {
-          logger.warn('Failed to extract PDF text', 'ContentAnalyzer', { error: (error as Error).message });
+          logger.warn('Failed to extract PDF text', { error: (error as Error).message });
           consistencyScore = 40;
         }
       }
@@ -125,7 +125,7 @@ export class ContentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Text consistency analysis failed', 'ContentAnalyzer', undefined, error as Error);
+      logger.error('Text consistency analysis failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Text Consistency', 'content', startTime);
     }
   }
@@ -170,7 +170,7 @@ export class ContentAnalyzer {
           }
           
         } catch (error) {
-          logger.warn('Failed to analyze PDF fonts', 'ContentAnalyzer', { error: (error as Error).message });
+          logger.warn('Failed to analyze PDF fonts', { error: (error as Error).message });
           fontScore = 50;
         }
       }
@@ -195,7 +195,7 @@ export class ContentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Font analysis failed', 'ContentAnalyzer', undefined, error as Error);
+      logger.error('Font analysis failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Font Analysis', 'content', startTime);
     }
   }
@@ -231,7 +231,7 @@ export class ContentAnalyzer {
           }
           
         } catch (error) {
-          logger.warn('Failed to analyze PDF layout', 'ContentAnalyzer', { error: (error as Error).message });
+          logger.warn('Failed to analyze PDF layout', { error: (error as Error).message });
           layoutScore = 45;
         }
       }
@@ -256,7 +256,7 @@ export class ContentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Layout analysis failed', 'ContentAnalyzer', undefined, error as Error);
+      logger.error('Layout analysis failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Layout Analysis', 'content', startTime);
     }
   }
@@ -314,7 +314,7 @@ export class ContentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Content validation failed', 'ContentAnalyzer', undefined, error as Error);
+      logger.error('Content validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Content Validation', 'content', startTime);
     }
   }
@@ -356,7 +356,7 @@ export class ContentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Language analysis failed', 'ContentAnalyzer', undefined, error as Error);
+      logger.error('Language analysis failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Language Analysis', 'content', startTime);
     }
   }
@@ -391,8 +391,8 @@ export class ContentAnalyzer {
   }
 
   async shutdown(): Promise<void> {
-    logger.info('Shutting down Content Analyzer...', 'ContentAnalyzer');
+    logger.info('Shutting down Content Analyzer...');
     this.isInitialized = false;
-    logger.info('Content Analyzer shutdown complete', 'ContentAnalyzer');
+    logger.info('Content Analyzer shutdown complete');
   }
 }

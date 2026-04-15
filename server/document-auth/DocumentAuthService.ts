@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 
-import { logger } from "../infrastructure/monitoring/logger";
+import { logger } from "../infrastructure/observability/telemetry";
 
 import { ContentAnalyzer } from "./analyzers/ContentAnalyzer";
 import {

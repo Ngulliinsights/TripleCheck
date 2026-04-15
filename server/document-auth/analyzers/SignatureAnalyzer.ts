@@ -2,7 +2,7 @@ import * as crypto from './LandDocumentAnalyzer.test';
 
 import { PDFDocument } from 'pdf-lib';
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';
 
 export interface SignatureAnalysisResult {
@@ -19,9 +19,9 @@ export class SignatureAnalyzer {
   }
 
   async initialize(): Promise<void> {
-    logger.info('Initializing Signature Analyzer...', 'SignatureAnalyzer');
+    logger.info('Initializing Signature Analyzer...');
     this.isInitialized = true;
-    logger.info('Signature Analyzer initialized', 'SignatureAnalyzer');
+    logger.info('Signature Analyzer initialized');
   }
 
   async analyze(request: DocumentVerificationRequest): Promise<SignatureAnalysisResult> {
@@ -31,7 +31,7 @@ export class SignatureAnalyzer {
       throw new Error('Signature Analyzer not initialized');
     }
 
-    logger.info(`Starting signature analysis for document: ${request.id}`, 'SignatureAnalyzer');
+    logger.info('Starting signature analysis for document: ${request.id}');
 
     try {
       const checks: VerificationCheck[] = [];
@@ -64,7 +64,7 @@ export class SignatureAnalyzer {
       };
 
     } catch (error) {
-      logger.error(`Signature analysis failed for document: ${request.id}`, 'SignatureAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Signature analysis failed for document: ${request.id}');
       throw error;
     }
   }
@@ -97,7 +97,7 @@ export class SignatureAnalyzer {
             signerInfo = 'Certificate Authority Example';
           }
         } catch (error) {
-          logger.warn('Failed to analyze PDF signatures', 'SignatureAnalyzer', { error: (error as Error).message });
+          logger.warn({ error: (error as Error).message }, 'Failed to analyze PDF signatures');
         }
       }
 
@@ -121,7 +121,7 @@ export class SignatureAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Digital signature verification failed', 'SignatureAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Digital signature verification failed');
       return this.createFailedCheck('Digital Signature', 'signature', startTime);
     }
   }
@@ -156,7 +156,7 @@ export class SignatureAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Certificate chain validation failed', 'SignatureAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Certificate chain validation failed');
       return this.createFailedCheck('Certificate Chain', 'signature', startTime);
     }
   }
@@ -189,7 +189,7 @@ export class SignatureAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Timestamp verification failed', 'SignatureAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Timestamp verification failed');
       return this.createFailedCheck('Timestamp Verification', 'signature', startTime);
     }
   }
@@ -224,7 +224,7 @@ export class SignatureAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Document integrity check failed', 'SignatureAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Document integrity check failed');
       return this.createFailedCheck('Document Integrity', 'signature', startTime);
     }
   }
@@ -258,8 +258,8 @@ export class SignatureAnalyzer {
   }
 
   async shutdown(): Promise<void> {
-    logger.info('Shutting down Signature Analyzer...', 'SignatureAnalyzer');
+    logger.info('Shutting down Signature Analyzer...');
     this.isInitialized = false;
-    logger.info('Signature Analyzer shutdown complete', 'SignatureAnalyzer');
+    logger.info('Signature Analyzer shutdown complete');
   }
 }

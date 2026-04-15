@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 
-import { Logger } from '../infrastructure/monitoring/logger';
+import { Logger } from '../infrastructure/observability/telemetry';
 
 import { DocumentAuthService, DocumentVerificationRequest } from './DocumentAuthService';
 
@@ -41,9 +41,9 @@ async function ensureServiceInitialized() {
     try {
       await documentAuthService.initialize();
       serviceInitialized = true;
-      logger.info('Document Authentication Service initialized', 'DocumentAuthRoutes');
+      logger.info('Document Authentication Service initialized');
     } catch (error) {
-      logger.error('Failed to initialize Document Authentication Service', 'DocumentAuthRoutes', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to initialize Document Authentication Service');
       throw error;
     }
   }
@@ -79,7 +79,7 @@ router.post('/verify', requireInitializedService, upload.array('documents', 10),
       });
     }
 
-    logger.info(`Processing ${files.length} documents for verification`, 'DocumentAuthRoutes');
+    logger.info('Processing ${files.length} documents for verification');
 
     const verificationPromises = files.map(async (file, index) => {
       const documentId = req.body[`documentId_${index}`] || `doc_${Date.now()}_${index}`;
@@ -117,7 +117,7 @@ router.post('/verify', requireInitializedService, upload.array('documents', 10),
           processingTime: result.processingTime
         };
       } catch (error) {
-        logger.error(`Document verification failed for ${file.originalname}`, 'DocumentAuthRoutes', undefined, error as Error);
+        logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Document verification failed for ${file.originalname}');
         
         return {
           id: documentId,
@@ -147,7 +147,7 @@ router.post('/verify', requireInitializedService, upload.array('documents', 10),
     });
 
   } catch (error) {
-    logger.error('Document verification request failed', 'DocumentAuthRoutes', undefined, error as Error);
+    logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Document verification request failed');
     
     res.status(500).json({
       success: false,
@@ -193,7 +193,7 @@ router.get('/result/:documentId', requireInitializedService, async (req: Request
     });
 
   } catch (error) {
-    logger.error('Failed to retrieve verification result', 'DocumentAuthRoutes', undefined, error as Error);
+    logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to retrieve verification result');
     
     res.status(500).json({
       success: false,
@@ -220,7 +220,7 @@ router.get('/status/:documentId', requireInitializedService, async (req: Request
     });
 
   } catch (error) {
-    logger.error('Failed to retrieve processing status', 'DocumentAuthRoutes', undefined, error as Error);
+    logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to retrieve processing status');
     
     res.status(500).json({
       success: false,
@@ -244,7 +244,7 @@ router.get('/stats', requireInitializedService, async (req: Request, res: Respon
     });
 
   } catch (error) {
-    logger.error('Failed to retrieve system stats', 'DocumentAuthRoutes', undefined, error as Error);
+    logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to retrieve system stats');
     
     res.status(500).json({
       success: false,
@@ -272,7 +272,7 @@ router.post('/clear-results', requireInitializedService, async (req: Request, re
     });
 
   } catch (error) {
-    logger.error('Failed to clear results', 'DocumentAuthRoutes', undefined, error as Error);
+    logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to clear results');
     
     res.status(500).json({
       success: false,
@@ -301,7 +301,7 @@ router.get('/health', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.error('Health check failed', 'DocumentAuthRoutes', undefined, error as Error);
+    logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Health check failed');
     
     res.status(503).json({
       success: false,

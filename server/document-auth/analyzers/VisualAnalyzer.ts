@@ -1,6 +1,6 @@
 import sharp from '..\..\..\scripts\cleanup-redundancies';
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';
 // import * as cv from 'opencv4nodejs'; // Optional dependency - commented out for now
 
@@ -18,14 +18,14 @@ export class VisualAnalyzer {
   }
 
   async initialize(): Promise<void> {
-    logger.info('Initializing Visual Analyzer...', 'VisualAnalyzer');
+    logger.info('Initializing Visual Analyzer...');
     this.isInitialized = true;
-    logger.info('Visual Analyzer initialized', 'VisualAnalyzer');
+    logger.info('Visual Analyzer initialized');
   }
 
   async analyze(request: DocumentVerificationRequest): Promise<VisualAnalysisResult> {
     const startTime = Date.now();
-    logger.info(`Analyzing visual content for: ${request.filename}`, 'VisualAnalyzer');
+    logger.info('Analyzing visual content for: ${request.filename}');
 
     try {
       if (request.mimeType.startsWith('image/')) {
@@ -36,7 +36,7 @@ export class VisualAnalyzer {
         return this.createUnsupportedResult();
       }
     } catch (error) {
-      logger.error(`Visual analysis failed for ${request.filename}`, 'VisualAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Visual analysis failed for ${request.filename}');
       return this.createErrorResult();
     }
   }
@@ -193,7 +193,7 @@ export class VisualAnalyzer {
       }
 
     } catch (error) {
-      logger.error('PDF visual analysis failed', 'VisualAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'PDF visual analysis failed');
       return this.createErrorResult();
     }
 
@@ -292,9 +292,9 @@ export class VisualAnalyzer {
   }
 
   async shutdown(): Promise<void> {
-    logger.info('Shutting down Visual Analyzer...', 'VisualAnalyzer');
+    logger.info('Shutting down Visual Analyzer...');
     this.isInitialized = false;
-    logger.info('Visual Analyzer shutdown complete', 'VisualAnalyzer');
+    logger.info('Visual Analyzer shutdown complete');
   }
 
   private async extractPDFVisualElements(buffer: Buffer): Promise<any> {

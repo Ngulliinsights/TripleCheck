@@ -132,7 +132,7 @@ export class DocumentAuthEngine extends EventEmitter {
       this.logger.info('Document Authentication Engine initialized successfully');
       this.emit('initialized');
     } catch (error) {
-      this.logger.error('Failed to initialize Document Authentication Engine', error);
+      this.logger.error({ error: error }, 'Failed to initialize Document Authentication Engine');
       throw error;
     }
   }
@@ -184,7 +184,7 @@ export class DocumentAuthEngine extends EventEmitter {
       return combinedResult;
 
     } catch (error) {
-      this.logger.error(`Document analysis failed: ${request.filename}`, error);
+      this.logger.error({ error: error }, 'Document analysis failed: ${request.filename}');
       
       const errorResult: DocumentAnalysisResult = {
         id: request.id,

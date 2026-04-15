@@ -1,9 +1,13 @@
-import * as crypto from './LandDocumentAnalyzer.test';
+/**
+ * Enhanced Metadata Analyzer using exifr
+ * Replaces custom metadata extraction
+ */
 
-import * as exifParser from './LandDocumentAnalyzer.test';
+import crypto from 'crypto';
+import exifr from 'exifr';
 import { PDFDocument } from 'pdf-lib';
-
-import { logger } from '../../infrastructure/monitoring/logger';
+import pdfParse from 'pdf-parse';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';
 
 export interface MetadataAnalysisResult {
@@ -12,22 +16,18 @@ export interface MetadataAnalysisResult {
   confidence: number;
 }
 
-export class MetadataAnalyzer {
+export class MetadataAnalyzerV2 {
   private isInitialized: boolean = false;
 
-  constructor() {
-    // Using singleton logger
-  }
-
   async initialize(): Promise<void> {
-    logger.info('Initializing Metadata Analyzer...', 'MetadataAnalyzer');
+    logger.info('Initializing Enhanced Metadata Analyzer');
     this.isInitialized = true;
-    logger.info('Metadata Analyzer initialized', 'MetadataAnalyzer');
+    logger.info('Enhanced Metadata Analyzer initialized');
   }
 
   async analyze(request: DocumentVerificationRequest): Promise<MetadataAnalysisResult> {
     const startTime = Date.now();
-    logger.info(`Analyzing metadata for: ${request.filename}`, 'MetadataAnalyzer');
+    logger.info('Starting metadata analysis', { filename: request.filename });
 
     try {
       // Calculate file hash
@@ -38,6 +38,7 @@ export class MetadataAnalyzer {
       let modificationDate: Date | undefined;
       let software: string | undefined;
       let author: string | undefined;
+      let pageCount: number | undefined;
 
       // Extract metadata based on file type
       if (request.mimeType === 'application/pdf') {
@@ -47,20 +48,27 @@ export class MetadataAnalyzer {
       }
 
       // Parse common metadata fields
-      if (extractedMetadata.CreationDate) {
-        creationDate = new Date(extractedMetadata.CreationDate);
+      if (extractedMetadata.CreationDate || extractedMetadata.CreateDate) {
+        creationDate = new Date(extractedMetadata.CreationDate || extractedMetadata.CreateDate);
       }
-      if (extractedMetadata.ModDate || extractedMetadata.ModificationDate) {
-        modificationDate = new Date(extractedMetadata.ModDate || extractedMetadata.ModificationDate);
+      
+      if (extractedMetadata.ModDate || extractedMetadata.ModifyDate) {
+        modificationDate = new Date(extractedMetadata.ModDate || extractedMetadata.ModifyDate);
       }
+      
       if (extractedMetadata.Creator || extractedMetadata.Producer || extractedMetadata.Software) {
         software = extractedMetadata.Creator || extractedMetadata.Producer || extractedMetadata.Software;
       }
-      if (extractedMetadata.Author) {
-        author = extractedMetadata.Author;
+      
+      if (extractedMetadata.Author || extractedMetadata.Artist) {
+        author = extractedMetadata.Author || extractedMetadata.Artist;
       }
 
-      // Analyze metadata for authenticity indicators
+      if (extractedMetadata.PageCount) {
+        pageCount = extractedMetadata.PageCount;
+      }
+
+      // Analyze metadata for authenticity
       const analysis = this.analyzeMetadataAuthenticity(extractedMetadata, request);
 
       // Create verification check
@@ -73,10 +81,10 @@ export class MetadataAnalyzer {
         details: [
           analysis.summary,
           ...analysis.issues,
-          ...analysis.recommendations
+          ...analysis.recommendations,
         ],
         confidence: 0.85,
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
       };
 
       return {
@@ -88,14 +96,16 @@ export class MetadataAnalyzer {
           software,
           fileSize: request.size,
           hash: fileHash,
-          pageCount: extractedMetadata.PageCount
+          pageCount,
         },
-        confidence: 0.85
+        confidence: 0.85,
       };
+    } catch (error: any) {
+      logger.error('Metadata analysis failed', {
+        filename: request.filename,
+        error: error.message,
+      });
 
-    } catch (error) {
-      logger.error(`Metadata analysis failed for ${request.filename}`, 'MetadataAnalyzer', undefined, error as Error);
-      
       const failedCheck: VerificationCheck = {
         type: 'metadata',
         name: 'Metadata Analysis',
@@ -104,26 +114,35 @@ export class MetadataAnalyzer {
         description: 'Metadata analysis failed due to technical error',
         details: ['Failed to extract metadata', 'Ensure document is not corrupted'],
         confidence: 0.1,
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
       };
 
       return {
         checks: [failedCheck],
         metadata: {
           fileSize: request.size,
-          hash: crypto.createHash('sha256').update(request.file).digest('hex')
+          hash: crypto.createHash('sha256').update(request.file).digest('hex'),
         },
-        confidence: 0.1
+        confidence: 0.1,
       };
     }
   }
 
+  /**
+   * Extract PDF metadata using pdf-parse and pdf-lib
+   */
   private async extractPDFMetadata(buffer: Buffer): Promise<Record<string, any>> {
     try {
-      const pdfDoc = await PDFDocument.load(buffer);
       const metadata: Record<string, any> = {};
 
-      // Extract basic PDF metadata
+      // Use pdf-parse for comprehensive extraction
+      const pdfData = await pdfParse(buffer);
+      metadata.PageCount = pdfData.numpages;
+      metadata.TextContent = pdfData.text;
+
+      // Use pdf-lib for additional metadata
+      const pdfDoc = await PDFDocument.load(buffer);
+      
       const title = pdfDoc.getTitle();
       const author = pdfDoc.getAuthor();
       const subject = pdfDoc.getSubject();
@@ -140,51 +159,58 @@ export class MetadataAnalyzer {
       if (creationDate) metadata.CreationDate = creationDate;
       if (modificationDate) metadata.ModDate = modificationDate;
 
-      // Extract additional PDF-specific metadata
-      metadata.PageCount = pdfDoc.getPageCount();
-      // Note: pdf-lib doesn't provide getVersion() method
+      logger.debug('PDF metadata extracted', {
+        pageCount: metadata.PageCount,
+        hasAuthor: !!author,
+        hasCreator: !!creator,
+      });
 
       return metadata;
-    } catch (error) {
-      logger.warn('Failed to extract PDF metadata', 'MetadataAnalyzer', { error: (error as Error).message });
+    } catch (error: any) {
+      logger.warn('Failed to extract PDF metadata', { error: error.message });
       return {};
     }
   }
 
+  /**
+   * Extract image metadata using exifr
+   */
   private async extractImageMetadata(buffer: Buffer): Promise<Record<string, any>> {
     try {
-      const parser = exifParser.create(buffer);
-      const result = parser.parse();
-      
-      const metadata: Record<string, any> = {};
+      // exifr extracts all available metadata
+      const metadata = await exifr.parse(buffer, {
+        tiff: true,
+        exif: true,
+        gps: true,
+        iptc: true,
+        icc: true,
+        jfif: true,
+        ihdr: true,
+      });
 
-      if (result.tags) {
-        // Map common EXIF tags
-        if (result.tags.DateTime) metadata.CreationDate = new Date(result.tags.DateTime * 1000);
-        if (result.tags.DateTimeOriginal) metadata.DateTimeOriginal = new Date(result.tags.DateTimeOriginal * 1000);
-        if (result.tags.DateTimeDigitized) metadata.DateTimeDigitized = new Date(result.tags.DateTimeDigitized * 1000);
-        if (result.tags.Software) metadata.Software = result.tags.Software;
-        if (result.tags.Artist) metadata.Author = result.tags.Artist;
-        if (result.tags.Copyright) metadata.Copyright = result.tags.Copyright;
-        if (result.tags.Make) metadata.CameraMake = result.tags.Make;
-        if (result.tags.Model) metadata.CameraModel = result.tags.Model;
-        if (result.tags.ImageWidth) metadata.Width = result.tags.ImageWidth;
-        if (result.tags.ImageHeight) metadata.Height = result.tags.ImageHeight;
-        if (result.tags.XResolution) metadata.XResolution = result.tags.XResolution;
-        if (result.tags.YResolution) metadata.YResolution = result.tags.YResolution;
-        if (result.tags.ColorSpace) metadata.ColorSpace = result.tags.ColorSpace;
-        if (result.tags.GPS) metadata.GPS = result.tags.GPS;
+      if (!metadata) {
+        logger.warn('No EXIF data found in image');
+        return {};
       }
 
+      logger.debug('Image metadata extracted', {
+        hasGPS: !!metadata.latitude,
+        hasMake: !!metadata.Make,
+        hasDateTime: !!metadata.DateTime,
+      });
+
       return metadata;
-    } catch (error) {
-      logger.warn('Failed to extract image metadata', 'MetadataAnalyzer', { error: (error as Error).message });
+    } catch (error: any) {
+      logger.warn('Failed to extract image metadata', { error: error.message });
       return {};
     }
   }
 
+  /**
+   * Analyze metadata for authenticity indicators
+   */
   private analyzeMetadataAuthenticity(
-    metadata: Record<string, any>, 
+    metadata: Record<string, any>,
     request: DocumentVerificationRequest
   ): {
     score: number;
@@ -199,45 +225,54 @@ export class MetadataAnalyzer {
     const recommendations: string[] = [];
 
     // Check for missing critical metadata
-    if (!metadata.CreationDate && !metadata.DateTimeOriginal) {
+    if (!metadata.CreationDate && !metadata.CreateDate && !metadata.DateTime) {
       score -= 20;
       issues.push('Missing creation date metadata');
       evidence.push({
         type: 'missing_metadata',
         description: 'Document lacks creation timestamp',
         severity: 'medium',
-        confidence: 0.8
+        confidence: 0.8,
       });
     }
 
     // Check for suspicious software signatures
-    if (metadata.Creator || metadata.Producer || metadata.Software) {
-      const software = (metadata.Creator || metadata.Producer || metadata.Software).toLowerCase();
-      
-      // Known forgery tools
+    const softwareField = metadata.Creator || metadata.Producer || metadata.Software || '';
+    if (softwareField) {
+      const software = softwareField.toLowerCase();
       const suspiciousSoftware = [
-        'photoshop', 'gimp', 'paint.net', 'canva', 'figma',
-        'pdf editor', 'pdf creator', 'fake document', 'document generator'
+        'photoshop',
+        'gimp',
+        'paint.net',
+        'canva',
+        'figma',
+        'pdf editor',
+        'pdf creator',
+        'fake document',
+        'document generator',
       ];
-      
-      const foundSuspicious = suspiciousSoftware.some(sus => software.includes(sus));
+
+      const foundSuspicious = suspiciousSoftware.some((sus) => software.includes(sus));
       if (foundSuspicious) {
         score -= 30;
-        issues.push(`Document created with potentially suspicious software: ${software}`);
+        issues.push(`Document created with potentially suspicious software: ${softwareField}`);
         evidence.push({
           type: 'suspicious_software',
-          description: `Created with ${software}`,
+          description: `Created with ${softwareField}`,
           severity: 'high',
-          confidence: 0.9
+          confidence: 0.9,
         });
       }
     }
 
     // Check for metadata inconsistencies
-    if (metadata.CreationDate && metadata.ModDate) {
-      const created = new Date(metadata.CreationDate);
-      const modified = new Date(metadata.ModDate);
-      
+    const creationDate = metadata.CreationDate || metadata.CreateDate || metadata.DateTime;
+    const modDate = metadata.ModDate || metadata.ModifyDate;
+
+    if (creationDate && modDate) {
+      const created = new Date(creationDate);
+      const modified = new Date(modDate);
+
       if (modified < created) {
         score -= 25;
         issues.push('Modification date is before creation date');
@@ -245,81 +280,62 @@ export class MetadataAnalyzer {
           type: 'timestamp_inconsistency',
           description: 'Impossible timestamp sequence',
           severity: 'high',
-          confidence: 0.95
+          confidence: 0.95,
         });
       }
-      
-      // Check for very recent modifications (potential tampering)
+
+      // Check for very recent modifications
       const now = new Date();
       const timeSinceModification = now.getTime() - modified.getTime();
       const timeSinceUpload = now.getTime() - request.uploadedAt.getTime();
-      
-      if (timeSinceModification < timeSinceUpload - 60000) { // Modified more than 1 minute before upload
+
+      if (timeSinceModification < timeSinceUpload - 60000) {
         score -= 15;
         issues.push('Document was recently modified before upload');
         evidence.push({
           type: 'recent_modification',
           description: 'Document modified shortly before verification',
           severity: 'medium',
-          confidence: 0.7
+          confidence: 0.7,
         });
       }
     }
 
-    // Check for missing author information in formal documents
-    if (request.mimeType === 'application/pdf' && !metadata.Author && !metadata.Creator) {
-      score -= 10;
-      issues.push('Missing author information for PDF document');
-      evidence.push({
-        type: 'missing_author',
-        description: 'Formal document lacks author metadata',
-        severity: 'low',
-        confidence: 0.6
-      });
-    }
-
-    // Check for suspicious GPS data in images
-    if (metadata.GPS && request.mimeType.startsWith('image/')) {
-      // Check if GPS coordinates are in suspicious locations (known stock photo locations, etc.)
-      const suspiciousLocations = [
-        { lat: 40.7128, lng: -74.0060, name: 'New York Stock Photo Location' },
-        { lat: 34.0522, lng: -118.2437, name: 'Los Angeles Stock Photo Location' }
-      ];
-      
-      // This would be expanded with a comprehensive database of known stock photo locations
-      score -= 5; // Minor deduction for having GPS data (could be stock photo)
+    // Check for GPS data in images (potential stock photo)
+    if (metadata.latitude && metadata.longitude) {
+      score -= 5;
       evidence.push({
         type: 'gps_metadata',
         description: 'Image contains GPS location data',
         severity: 'low',
-        confidence: 0.5
+        confidence: 0.5,
       });
     }
 
-    // Check for metadata that's too perfect (potential template)
+    // Check for excessive metadata (potential template)
     const metadataKeys = Object.keys(metadata);
-    if (metadataKeys.length > 20) {
+    if (metadataKeys.length > 30) {
       score -= 10;
       issues.push('Unusually comprehensive metadata (potential template)');
       evidence.push({
         type: 'excessive_metadata',
         description: 'Document has unusually complete metadata',
         severity: 'low',
-        confidence: 0.6
+        confidence: 0.6,
       });
     }
 
-    // Generate recommendations based on issues found
+    // Generate recommendations
     if (issues.length === 0) {
       recommendations.push('Metadata appears authentic and consistent');
     } else {
-      if (issues.some(issue => issue.includes('software'))) {
+      if (issues.some((issue) => issue.includes('software'))) {
         recommendations.push('Verify document source and creation method');
       }
-      if (issues.some(issue => issue.includes('timestamp'))) {
+      if (issues.some((issue) => issue.includes('timestamp'))) {
         recommendations.push('Request original document with unmodified timestamps');
       }
-      if (issues.some(issue => issue.includes('author'))) {
+      if (issues.some((issue) => issue.includes('author') || issue.includes('Author'))) {
         recommendations.push('Obtain document with proper author attribution');
       }
     }
@@ -343,30 +359,33 @@ export class MetadataAnalyzer {
       summary,
       evidence,
       issues,
-      recommendations
+      recommendations,
     };
   }
 
   async getStatus(): Promise<any> {
     return {
       initialized: this.isInitialized,
-      name: 'Metadata Analyzer',
-      version: '1.0.0',
-      supportedFormats: ['PDF', 'JPEG', 'PNG', 'TIFF'],
+      name: 'Enhanced Metadata Analyzer',
+      version: '2.0.0',
+      supportedFormats: ['PDF', 'JPEG', 'PNG', 'TIFF', 'WEBP', 'HEIC'],
       capabilities: [
-        'File hash calculation',
-        'EXIF data extraction',
+        'Comprehensive EXIF extraction',
         'PDF metadata parsing',
+        'GPS data analysis',
         'Timestamp validation',
         'Software signature analysis',
-        'Metadata consistency checking'
-      ]
+        'Metadata consistency checking',
+      ],
     };
   }
 
   async shutdown(): Promise<void> {
-    logger.info('Shutting down Metadata Analyzer...', 'MetadataAnalyzer');
+    logger.info('Shutting down Enhanced Metadata Analyzer');
     this.isInitialized = false;
-    logger.info('Metadata Analyzer shutdown complete', 'MetadataAnalyzer');
+    logger.info('Enhanced Metadata Analyzer shutdown complete');
   }
 }
+
+export const metadataAnalyzer = new MetadataAnalyzerV2();
+export default metadataAnalyzer;

@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 
 import { PDFDocument } from 'pdf-lib';
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';
 
 export interface LandDocumentAnalysisResult {
@@ -69,9 +69,9 @@ export class LandDocumentAnalyzer {
   }
 
   async initialize(): Promise<void> {
-    logger.info('Initializing Land Document Analyzer...', 'LandDocumentAnalyzer');
+    logger.info('Initializing Land Document Analyzer...');
     this.isInitialized = true;
-    logger.info('Land Document Analyzer initialized', 'LandDocumentAnalyzer');
+    logger.info('Land Document Analyzer initialized');
   }
 
   async analyze(request: DocumentVerificationRequest): Promise<LandDocumentAnalysisResult> {
@@ -81,7 +81,7 @@ export class LandDocumentAnalyzer {
       throw new Error('Land Document Analyzer not initialized');
     }
 
-    logger.info(`Starting land document analysis for document: ${request.id}`, 'LandDocumentAnalyzer');
+    logger.info('Starting land document analysis for document: ${request.id}');
 
     try {
       const checks: VerificationCheck[] = [];
@@ -135,7 +135,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error(`Land document analysis failed for document: ${request.id}`, 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Land document analysis failed for document: ${request.id}');
       throw error;
     }
   }
@@ -236,7 +236,7 @@ export class LandDocumentAnalyzer {
           }
           
         } catch (error) {
-          logger.warn('Failed to identify document type', 'LandDocumentAnalyzer', { error: (error as Error).message });
+          logger.warn('Failed to identify document type', { error: (error as Error).message });
           identificationScore = 20;
         }
       }
@@ -261,7 +261,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Document type identification failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Document type identification failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Land Document Type Identification', 'content', startTime);
     }
   }
@@ -373,7 +373,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Title number validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Title number validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Title Number Validation', 'content', startTime);
     }
   }
@@ -441,7 +441,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Registration details validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Registration details validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Registration Details Validation', 'content', startTime);
     }
   }
@@ -513,7 +513,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Ownership details validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Ownership details validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Ownership Details Validation', 'content', startTime);
     }
   }
@@ -581,7 +581,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Legal instruments validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Legal instruments validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Legal Instruments Validation', 'content', startTime);
     }
   }
@@ -660,7 +660,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Survey details validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Survey details validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Survey Details Validation', 'content', startTime);
     }
   }
@@ -725,7 +725,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Boundary validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Boundary validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Boundary Validation', 'content', startTime);
     }
   }
@@ -783,7 +783,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Beacon references validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Beacon references validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Beacon References Validation', 'content', startTime);
     }
   }
@@ -857,7 +857,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Coordinate system validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Coordinate system validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Coordinate System Validation', 'content', startTime);
     }
   }
@@ -922,7 +922,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Template validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Template validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Template Validation', 'format', startTime);
     }
   }
@@ -990,7 +990,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Coordinate validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Coordinate validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Coordinate Validation', 'content', startTime);
     }
   }
@@ -1057,7 +1057,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Legal format validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Legal format validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Legal Format Validation', 'format', startTime);
     }
   }
@@ -1141,7 +1141,7 @@ export class LandDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Cross-reference validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
+      logger.error('Cross-reference validation failed', { error: (error as Error).message, stack: (error as Error).stack });
       return this.createFailedCheck('Cross-Reference Validation', 'content', startTime);
     }
   }  
@@ -1451,9 +1451,9 @@ export class LandDocumentAnalyzer {
   }
 
   async shutdown(): Promise<void> {
-    logger.info('Shutting down Land Document Analyzer...', 'LandDocumentAnalyzer');
+    logger.info('Shutting down Land Document Analyzer...');
     this.isInitialized = false;
     this.kenyaLandTemplates.clear();
-    logger.info('Land Document Analyzer shutdown complete', 'LandDocumentAnalyzer');
+    logger.info('Land Document Analyzer shutdown complete');
   }
 }

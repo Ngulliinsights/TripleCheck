@@ -1,5 +1,5 @@
 // import * as tf from '@tensorflow/tfjs-node'; // Commented out due to Windows compatibility issues
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';
 
 export interface MLAnalysisResult {
@@ -17,7 +17,7 @@ export class MLDocumentAnalyzer {
   }
 
   async initialize(): Promise<void> {
-    logger.info('Initializing ML Document Analyzer...', 'MLDocumentAnalyzer');
+    logger.info('Initializing ML Document Analyzer...');
     
     try {
       // Simulate TensorFlow initialization without actual TensorFlow
@@ -27,9 +27,9 @@ export class MLDocumentAnalyzer {
       await this.loadModels();
       
       this.isInitialized = true;
-      logger.info('ML Document Analyzer initialized successfully', 'MLDocumentAnalyzer');
+      logger.info('ML Document Analyzer initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize ML Document Analyzer', 'MLDocumentAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to initialize ML Document Analyzer');
       throw error;
     }
   }
@@ -60,9 +60,9 @@ export class MLDocumentAnalyzer {
       try {
         const model = await this.createPlaceholderModel(config.inputShape);
         this.models.set(config.name, model);
-        logger.info(`Loaded ML model: ${config.name}`, 'MLDocumentAnalyzer');
+        logger.info('Loaded ML model: ${config.name}');
       } catch (error) {
-        logger.error(`Failed to load model: ${config.name}`, 'MLDocumentAnalyzer', undefined, error as Error);
+        logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to load model: ${config.name}');
       }
     }
   }
@@ -86,7 +86,7 @@ export class MLDocumentAnalyzer {
       throw new Error('ML Document Analyzer not initialized');
     }
 
-    logger.info(`Starting ML analysis for document: ${request.id}`, 'MLDocumentAnalyzer');
+    logger.info('Starting ML analysis for document: ${request.id}');
 
     try {
       const checks: VerificationCheck[] = [];
@@ -127,7 +127,7 @@ export class MLDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error(`ML analysis failed for document: ${request.id}`, 'MLDocumentAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'ML analysis failed for document: ${request.id}');
       throw error;
     }
   }
@@ -168,7 +168,7 @@ export class MLDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Document authenticity analysis failed', 'MLDocumentAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Document authenticity analysis failed');
       return this.createFailedCheck('Document Authenticity', 'visual', startTime);
     }
   }
@@ -208,7 +208,7 @@ export class MLDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Text consistency analysis failed', 'MLDocumentAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Text consistency analysis failed');
       return this.createFailedCheck('Text Consistency', 'content', startTime);
     }
   }
@@ -247,7 +247,7 @@ export class MLDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Layout analysis failed', 'MLDocumentAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Layout analysis failed');
       return this.createFailedCheck('Layout Analysis', 'format', startTime);
     }
   }
@@ -277,7 +277,7 @@ export class MLDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('Image manipulation analysis failed', 'MLDocumentAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Image manipulation analysis failed');
       return this.createFailedCheck('Image Manipulation Detection', 'visual', startTime);
     }
   }
@@ -307,7 +307,7 @@ export class MLDocumentAnalyzer {
       };
 
     } catch (error) {
-      logger.error('PDF structure analysis failed', 'MLDocumentAnalyzer', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'PDF structure analysis failed');
       return this.createFailedCheck('PDF Structure Analysis', 'format', startTime);
     }
   }
@@ -380,20 +380,20 @@ export class MLDocumentAnalyzer {
   }
 
   async shutdown(): Promise<void> {
-    logger.info('Shutting down ML Document Analyzer...', 'MLDocumentAnalyzer');
+    logger.info('Shutting down ML Document Analyzer...');
     
     // Dispose of TensorFlow models
     this.models.forEach((model, name) => {
       try {
         model.dispose();
-        logger.debug(`Disposed ML model: ${name}`, 'MLDocumentAnalyzer');
+        logger.debug('Disposed ML model: ${name}');
       } catch (error) {
-        logger.warn(`Failed to dispose model: ${name}`, 'MLDocumentAnalyzer', { error: (error as Error).message });
+        logger.warn({ error: (error as Error).message }, 'Failed to dispose model: ${name}');
       }
     });
     
     this.models.clear();
     this.isInitialized = false;
-    logger.info('ML Document Analyzer shutdown complete', 'MLDocumentAnalyzer');
+    logger.info('ML Document Analyzer shutdown complete');
   }
 }

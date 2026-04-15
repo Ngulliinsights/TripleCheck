@@ -1,19 +1,19 @@
 import * as fs from './authentication-business.service';
 import * as path from './authentication-business.service';
 
-import { logger } from '../infrastructure/monitoring/logger';
+import { logger } from '../infrastructure/observability/telemetry';
 
 import { DocumentAuthService, DocumentVerificationRequest } from './DocumentAuthService';
 
 async function testDocumentAuth() {
-  logger.info('Starting Document Authentication Service test...', 'DocumentAuthTest');
+  logger.info('Starting Document Authentication Service test...');
 
   try {
     // Initialize the service
     const documentAuthService = new DocumentAuthService();
     await documentAuthService.initialize();
     
-    logger.info('Document Authentication Service initialized successfully', 'DocumentAuthTest');
+    logger.info('Document Authentication Service initialized successfully');
 
     // Create a test document (simple text file for testing)
     const testContent = Buffer.from('This is a test document for authentication testing.');
@@ -29,7 +29,7 @@ async function testDocumentAuth() {
       propertyId: 'test_property'
     };
 
-    logger.info('Starting document verification...', 'DocumentAuthTest');
+    logger.info('Starting document verification...');
 
     // Verify the test document
     const result = await documentAuthService.verifyDocument(testRequest);
@@ -48,14 +48,14 @@ async function testDocumentAuth() {
     // Test getting verification result
     const retrievedResult = await documentAuthService.getVerificationResult(testRequest.id);
     if (retrievedResult) {
-      logger.info('Successfully retrieved verification result', 'DocumentAuthTest');
+      logger.info('Successfully retrieved verification result');
     } else {
-      logger.error('Failed to retrieve verification result', 'DocumentAuthTest');
+      logger.error('Failed to retrieve verification result');
     }
 
     // Test processing status
     const status = await documentAuthService.getProcessingStatus(testRequest.id);
-    logger.info(`Processing status: ${status}`, 'DocumentAuthTest');
+    logger.info('Processing status: ${status}');
 
     // Test system stats
     const stats = await documentAuthService.getSystemStats();
@@ -63,12 +63,12 @@ async function testDocumentAuth() {
 
     // Shutdown the service
     await documentAuthService.shutdown();
-    logger.info('Document Authentication Service test completed successfully', 'DocumentAuthTest');
+    logger.info('Document Authentication Service test completed successfully');
 
     return true;
 
   } catch (error) {
-    logger.error('Document Authentication Service test failed', 'DocumentAuthTest', undefined, error as Error);
+    logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Document Authentication Service test failed');
     return false;
   }
 }
