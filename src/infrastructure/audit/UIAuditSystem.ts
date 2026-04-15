@@ -328,6 +328,27 @@ export class UIAuditSystem extends EventEmitter {
       throw new Error('Audit is already running');
     }
 
+  /**
+   * Scan UI components (stub method for compatibility)
+   */
+  async scanComponents(): Promise<UIElement[]> {
+    return [];
+  }
+
+  /**
+   * Validate routes (stub method for compatibility)
+   */
+  async validateRoutes(): Promise<RouteValidationResult[]> {
+    return [];
+  }
+
+  /**
+   * Test API connections (stub method for compatibility)
+   */
+  async testAPIConnections(): Promise<APIConnectionResult[]> {
+    return [];
+  }
+
     this.isRunning = true;
     this.abortController = new AbortController();
     const startTime = Date.now();

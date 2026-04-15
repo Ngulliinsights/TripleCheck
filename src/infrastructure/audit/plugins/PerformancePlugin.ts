@@ -61,7 +61,7 @@ export class PerformancePlugin implements AuditPlugin {
         
         results.push({
           pluginName: this.name,
-          elementId: element.id,
+          elementId: element.id || 'unknown',
           findings,
           metadata: {
             performanceScore: this.calculatePerformanceScore(metrics),
@@ -97,7 +97,7 @@ export class PerformancePlugin implements AuditPlugin {
     findings.push(await this.checkMemoryUsage(element));
     
     // Check API performance
-    if (element.apiCalls.length > 0) {
+    if ((element.apiCalls?.length || 0) > 0) {
       findings.push(await this.checkAPIPerformance(element));
     }
     
@@ -189,7 +189,7 @@ export class PerformancePlugin implements AuditPlugin {
   }
   
   private async checkAPIPerformance(element: UIElement): Promise<AuditRuleResult> {
-    const slowAPIs = element.apiCalls.filter((api: any) => 
+    const slowAPIs = (element.apiCalls || []).filter((api: any) => 
       api.responseTime && api.responseTime > 2000
     );
     
@@ -206,7 +206,7 @@ export class PerformancePlugin implements AuditPlugin {
       };
     }
     
-    const moderateAPIs = element.apiCalls.filter((api: any) => 
+    const moderateAPIs = (element.apiCalls || []).filter((api: any) => 
       api.responseTime && api.responseTime > 1000
     );
     
@@ -226,15 +226,15 @@ export class PerformancePlugin implements AuditPlugin {
   
   private async checkLazyLoadingOpportunities(element: UIElement): Promise<AuditRuleResult> {
     // Check if component is above the fold
-    const isAboveFold = element.location.elementPath?.includes('header') || 
-                       element.location.elementPath?.includes('nav') ||
-                       element.id.includes('hero');
+    const isAboveFold = element.location?.elementPath?.includes('header') || 
+                       element.location?.elementPath?.includes('nav') ||
+                       element.id?.includes('hero');
     
     // Check if component is large
     const isLarge = (element.performance?.bundleImpact || 0) > 30;
     
     // Check if component is already lazy loaded
-    const isLazyLoaded = element.location.filePath?.includes('lazy') ||
+    const isLazyLoaded = element.location?.filePath?.includes('lazy') ||
                         element.props.loading === 'lazy';
     
     if (!isAboveFold && isLarge && !isLazyLoaded) {
@@ -315,10 +315,10 @@ export class PerformancePlugin implements AuditPlugin {
     });
     
     // API response time metric (if applicable)
-    if (element.apiCalls.length > 0) {
-      const avgResponseTime = element.apiCalls.reduce((sum: number, api: any) => 
+    if ((element.apiCalls?.length || 0) > 0) {
+      const avgResponseTime = (element.apiCalls || []).reduce((sum: number, api: any) => 
         sum + (api.responseTime || 0), 0
-      ) / element.apiCalls.length;
+      ) / (element.apiCalls?.length || 1);
       
       metrics.push({
         name: 'API Response Time',
@@ -337,8 +337,8 @@ export class PerformancePlugin implements AuditPlugin {
     // This would use actual bundle analysis in real implementation
     return {
       componentSize: element.performance?.bundleImpact || Math.random() * 100,
-      dependencies: element.dependencies || [],
-      lazyLoadable: !element.location.elementPath?.includes('header'),
+      dependencies: (element as any).dependencies || [],
+      lazyLoadable: !element.location?.elementPath?.includes('header'),
       treeShakeable: Math.random() > 0.3,
       duplicateDependencies: Math.random() > 0.7 ? ['lodash', 'moment'] : []
     };

@@ -49,7 +49,7 @@ export class AccessibilityPlugin implements AuditPlugin {
       if (findings.length > 0) {
         results.push({
           pluginName: this.name,
-          elementId: element.id,
+          elementId: element.id || 'unknown',
           findings,
           metadata: {
             wcagLevel: this.calculateWCAGLevel(findings),
@@ -151,7 +151,7 @@ export class AccessibilityPlugin implements AuditPlugin {
                        !element.props.disabled &&
                        element.type !== 'div'; // div elements need tabIndex to be focusable
     
-    if (!isFocusable && element.handlers.length > 0) {
+    if (!isFocusable && (element.handlers?.length || 0) > 0) {
       return {
         passed: false,
         message: `High: Interactive ${element.type} is not keyboard accessible`,
@@ -161,11 +161,11 @@ export class AccessibilityPlugin implements AuditPlugin {
     }
     
     // Check for keyboard event handlers
-    const hasKeyboardHandlers = element.handlers.some((h: any) => 
+    const hasKeyboardHandlers = element.handlers?.some((h: any) => 
       h.event === 'onKeyDown' || h.event === 'onKeyPress' || h.event === 'onKeyUp'
     );
     
-    if (element.handlers.length > 0 && !hasKeyboardHandlers) {
+    if ((element.handlers?.length || 0) > 0 && !hasKeyboardHandlers) {
       return {
         passed: false,
         message: `Medium: Interactive element missing keyboard event handlers`,
@@ -200,7 +200,7 @@ export class AccessibilityPlugin implements AuditPlugin {
     const hasFocusStyles = element.props.className?.includes('focus:') || 
                           element.props.style?.outline;
     
-    if (element.handlers.length > 0 && !hasFocusStyles) {
+    if ((element.handlers?.length || 0) > 0 && !hasFocusStyles) {
       return {
         passed: false,
         message: 'Medium: Interactive element missing focus indicator',
@@ -258,7 +258,7 @@ export class AccessibilityPlugin implements AuditPlugin {
     const interactiveElements = ['button', 'a', 'input', 'select', 'textarea'];
     
     // Check if div/span is used for interactive content
-    if (element.type === 'div' && element.handlers.length > 0) {
+    if (element.type === 'div' && (element.handlers?.length || 0) > 0) {
       return {
         passed: false,
         message: 'Medium: Using div for interactive content instead of semantic element',
@@ -313,7 +313,7 @@ export class AccessibilityPlugin implements AuditPlugin {
     if (element.type === 'form') {
       // Check for form validation
       const hasValidation = element.props.noValidate === false || 
-                           element.handlers.some((h: any) => h.event === 'onSubmit');
+                           element.handlers?.some((h: any) => h.event === 'onSubmit');
       
       if (!hasValidation) {
         return {
