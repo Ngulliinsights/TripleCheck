@@ -321,14 +321,6 @@ export class UIAuditSystem extends EventEmitter {
   }
 
   /**
-   * Main audit execution with progress tracking and error recovery
-   */
-  async runFullAudit(): Promise<EnhancedAuditReport> {
-    if (this.isRunning) {
-      throw new Error('Audit is already running');
-    }
-
-  /**
    * Scan UI components (stub method for compatibility)
    */
   async scanComponents(): Promise<UIElement[]> {
@@ -348,6 +340,14 @@ export class UIAuditSystem extends EventEmitter {
   async testAPIConnections(): Promise<APIConnectionResult[]> {
     return [];
   }
+
+  /**
+   * Main audit execution with progress tracking and error recovery
+   */
+  async runFullAudit(): Promise<EnhancedAuditReport> {
+    if (this.isRunning) {
+      throw new Error('Audit is already running');
+    }
 
     this.isRunning = true;
     this.abortController = new AbortController();
