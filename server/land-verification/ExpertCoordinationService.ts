@@ -10,7 +10,7 @@ import {
   expertReports
 } from '../../src/shared/schema';
 import { db } from '../infrastructure/database/connection';
-import { logger } from '../infrastructure/monitoring/logger';
+import { logger } from '../infrastructure/observability/telemetry';
 
 
 export interface Expert {
@@ -154,7 +154,7 @@ export class ExpertCoordinationService extends EventEmitter {
   }
 
   async initialize(): Promise<void> {
-    logger.info('Initializing Expert Coordination Service...', 'ExpertCoordinationService');
+    logger.info('Initializing Expert Coordination Service...');
     
     // Load expert profiles from database
     await this.loadExpertProfiles();
@@ -162,7 +162,7 @@ export class ExpertCoordinationService extends EventEmitter {
     // Load active assignments
     await this.loadActiveAssignments();
     
-    logger.info('Expert Coordination Service initialized', 'ExpertCoordinationService');
+    logger.info('Expert Coordination Service initialized');
   }
 
   /**
@@ -171,7 +171,7 @@ export class ExpertCoordinationService extends EventEmitter {
    * Requirement 6.3: WHEN choosing legal counsel THEN the system SHALL offer guidance on selecting property law specialists with local experience
    */
   async findMatchingExperts(criteria: ExpertSelectionCriteria): Promise<Expert[]> {
-    logger.info(`Finding experts matching criteria: ${criteria.expertType} in ${criteria.location}`, 'ExpertCoordinationService');
+    logger.info('Finding experts matching criteria: ${criteria.expertType} in ${criteria.location}');
 
     try {
       const allExperts = Array.from(this.expertDatabase.values());
@@ -244,11 +244,11 @@ export class ExpertCoordinationService extends EventEmitter {
       // Sort by relevance score
       matchingExperts = this.sortExpertsByRelevance(matchingExperts, criteria);
 
-      logger.info(`Found ${matchingExperts.length} matching experts for criteria`, 'ExpertCoordinationService');
+      logger.info('Found ${matchingExperts.length} matching experts for criteria');
       return matchingExperts;
 
     } catch (error) {
-      logger.error('Failed to find matching experts', 'ExpertCoordinationService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to find matching experts');
       throw error;
     }
   }
@@ -258,7 +258,7 @@ export class ExpertCoordinationService extends EventEmitter {
    * Requirement 6.4: WHEN managing expert activities THEN the system SHALL provide coordination tools for multiple verification processes
    */
   async assignExpert(request: ExpertAssignmentRequest): Promise<ExpertAssignmentResult> {
-    logger.info(`Assigning expert for session ${request.sessionId}`, 'ExpertCoordinationService');
+    logger.info('Assigning expert for session ${request.sessionId}');
 
     try {
       // Find matching experts
@@ -315,11 +315,11 @@ export class ExpertCoordinationService extends EventEmitter {
         expertName: selectedExpert.name 
       });
 
-      logger.info(`Expert ${selectedExpert.name} assigned to session ${request.sessionId}`, 'ExpertCoordinationService');
+      logger.info('Expert ${selectedExpert.name} assigned to session ${request.sessionId}');
       return assignment;
 
     } catch (error) {
-      logger.error(`Failed to assign expert for session ${request.sessionId}`, 'ExpertCoordinationService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to assign expert for session ${request.sessionId}');
       throw error;
     }
   }
@@ -329,7 +329,7 @@ export class ExpertCoordinationService extends EventEmitter {
    * Requirement 6.4: WHEN managing expert activities THEN the system SHALL provide coordination tools for multiple verification processes
    */
   async coordinateExpertActivities(sessionId: string): Promise<ExpertAssignmentResult[]> {
-    logger.info(`Coordinating expert activities for session ${sessionId}`, 'ExpertCoordinationService');
+    logger.info('Coordinating expert activities for session ${sessionId}');
 
     try {
       // Get all assignments for the session
@@ -337,14 +337,14 @@ export class ExpertCoordinationService extends EventEmitter {
         .filter(assignment => assignment.sessionId === sessionId);
 
       if (sessionAssignments.length === 0) {
-        logger.info(`No expert assignments found for session ${sessionId}`, 'ExpertCoordinationService');
+        logger.info('No expert assignments found for session ${sessionId}');
         return [];
       }
 
       // Check for scheduling conflicts
       const conflicts = this.detectSchedulingConflicts(sessionAssignments);
       if (conflicts.length > 0) {
-        logger.warn(`Scheduling conflicts detected for session ${sessionId}`, 'ExpertCoordinationService');
+        logger.warn('Scheduling conflicts detected for session ${sessionId}');
         await this.resolveSchedulingConflicts(sessionId, conflicts);
       }
 
@@ -365,11 +365,11 @@ export class ExpertCoordinationService extends EventEmitter {
         sequence: optimizedSequence.map(a => ({ id: a.id, expertType: a.expert.type }))
       });
 
-      logger.info(`Coordinated ${sessionAssignments.length} expert activities for session ${sessionId}`, 'ExpertCoordinationService');
+      logger.info('Coordinated ${sessionAssignments.length} expert activities for session ${sessionId}');
       return sessionAssignments;
 
     } catch (error) {
-      logger.error(`Failed to coordinate expert activities for session ${sessionId}`, 'ExpertCoordinationService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to coordinate expert activities for session ${sessionId}');
       throw error;
     }
   }
@@ -379,7 +379,7 @@ export class ExpertCoordinationService extends EventEmitter {
    * Requirement 6.5: WHEN expert reports are received THEN the system SHALL integrate findings into comprehensive risk assessment
    */
   async integrateExpertReport(assignmentId: string, report: Omit<ExpertReport, 'id' | 'submittedAt' | 'reviewStatus'>): Promise<ExpertReport> {
-    logger.info(`Integrating expert report for assignment ${assignmentId}`, 'ExpertCoordinationService');
+    logger.info('Integrating expert report for assignment ${assignmentId}');
 
     try {
       const assignment = this.activeAssignments.get(assignmentId);
@@ -430,11 +430,11 @@ export class ExpertCoordinationService extends EventEmitter {
         qualityScore 
       });
 
-      logger.info(`Expert report integrated for assignment ${assignmentId} with quality score ${qualityScore}`, 'ExpertCoordinationService');
+      logger.info('Expert report integrated for assignment ${assignmentId} with quality score ${qualityScore}');
       return expertReport;
 
     } catch (error) {
-      logger.error(`Failed to integrate expert report for assignment ${assignmentId}`, 'ExpertCoordinationService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to integrate expert report for assignment ${assignmentId}');
       throw error;
     }
   }
@@ -444,7 +444,7 @@ export class ExpertCoordinationService extends EventEmitter {
    * Requirement 6.6: WHEN expert recommendations conflict THEN the system SHALL provide framework for resolving discrepancies
    */
   async resolveExpertConflicts(sessionId: string): Promise<ConflictResolution[]> {
-    logger.info(`Resolving expert conflicts for session ${sessionId}`, 'ExpertCoordinationService');
+    logger.info('Resolving expert conflicts for session ${sessionId}');
 
     try {
       // Get all expert reports for the session
@@ -452,7 +452,7 @@ export class ExpertCoordinationService extends EventEmitter {
         .filter(assignment => assignment.sessionId === sessionId && assignment.status === 'completed');
 
       if (sessionAssignments.length < 2) {
-        logger.info(`No conflicts to resolve - insufficient expert reports for session ${sessionId}`, 'ExpertCoordinationService');
+        logger.info('No conflicts to resolve - insufficient expert reports for session ${sessionId}');
         return [];
       }
 
@@ -474,11 +474,11 @@ export class ExpertCoordinationService extends EventEmitter {
         resolutionCount: resolutions.length 
       });
 
-      logger.info(`Resolved ${resolutions.length} expert conflicts for session ${sessionId}`, 'ExpertCoordinationService');
+      logger.info('Resolved ${resolutions.length} expert conflicts for session ${sessionId}');
       return resolutions;
 
     } catch (error) {
-      logger.error(`Failed to resolve expert conflicts for session ${sessionId}`, 'ExpertCoordinationService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to resolve expert conflicts for session ${sessionId}');
       throw error;
     }
   }
@@ -593,9 +593,9 @@ export class ExpertCoordinationService extends EventEmitter {
         this.expertDatabase.set(expert.id, expert);
       }
 
-      logger.info(`Loaded ${sampleExperts.length} expert profiles`, 'ExpertCoordinationService');
+      logger.info('Loaded ${sampleExperts.length} expert profiles');
     } catch (error) {
-      logger.error('Failed to load expert profiles', 'ExpertCoordinationService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to load expert profiles');
     }
   }
 
@@ -603,9 +603,9 @@ export class ExpertCoordinationService extends EventEmitter {
     try {
       // In a real implementation, this would load from database
       // For now, initialize empty
-      logger.info('Loaded active expert assignments', 'ExpertCoordinationService');
+      logger.info('Loaded active expert assignments');
     } catch (error) {
-      logger.error('Failed to load active assignments', 'ExpertCoordinationService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to load active assignments');
     }
   }
 
@@ -675,12 +675,12 @@ export class ExpertCoordinationService extends EventEmitter {
   }
 
   private async resolveSchedulingConflicts(sessionId: string, conflicts: string[]): Promise<void> {
-    logger.warn(`Resolving ${conflicts.length} scheduling conflicts for session ${sessionId}`, 'ExpertCoordinationService');
+    logger.warn('Resolving ${conflicts.length} scheduling conflicts for session ${sessionId}');
     
     // In a real implementation, this would implement conflict resolution logic
     // For now, just log the conflicts
     for (const conflict of conflicts) {
-      logger.warn(`Scheduling conflict: ${conflict}`, 'ExpertCoordinationService');
+      logger.warn('Scheduling conflict: ${conflict}');
     }
   }
 
@@ -727,12 +727,12 @@ export class ExpertCoordinationService extends EventEmitter {
 
   private async saveExpertAssignment(assignment: ExpertAssignmentResult): Promise<void> {
     // In a real implementation, this would save to database
-    logger.info(`Saving expert assignment ${assignment.id}`, 'ExpertCoordinationService');
+    logger.info('Saving expert assignment ${assignment.id}');
   }
 
   private async saveExpertReport(report: ExpertReport): Promise<void> {
     // In a real implementation, this would save to database
-    logger.info(`Saving expert report ${report.id}`, 'ExpertCoordinationService');
+    logger.info('Saving expert report ${report.id}');
   }
 
   private async checkForReportConflicts(sessionId: string, newReport: ExpertReport): Promise<void> {
@@ -741,7 +741,7 @@ export class ExpertCoordinationService extends EventEmitter {
       .filter(assignment => assignment.sessionId === sessionId && assignment.status === 'completed');
 
     // In a real implementation, this would analyze report conflicts
-    logger.info(`Checking for report conflicts in session ${sessionId}`, 'ExpertCoordinationService');
+    logger.info('Checking for report conflicts in session ${sessionId}');
   }
 
   private async detectExpertConflicts(sessionId: string, assignments: ExpertAssignmentResult[]): Promise<any[]> {

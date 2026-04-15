@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { db } from '..\..\infrastructure\database\connection\index';
 
 export interface AuditEvent {
@@ -342,7 +342,7 @@ export class AuditLogger {
       return events.slice(offset, offset + limit);
 
     } catch (error) {
-      logger.error('Failed to query audit events', 'AuditLogger', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to query audit events');
       return [];
     }
   }
@@ -384,7 +384,7 @@ export class AuditLogger {
       };
 
     } catch (error) {
-      logger.error('Failed to generate audit summary', 'AuditLogger', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to generate audit summary');
       return {
         totalEvents: 0,
         successfulEvents: 0,
@@ -447,11 +447,11 @@ export class AuditLogger {
       this.eventBuffer = this.eventBuffer.filter(event => event.timestamp > cutoffDate);
       const removedCount = initialCount - this.eventBuffer.length;
 
-      logger.info(`Cleaned up ${removedCount} old audit events`, 'AuditLogger');
+      logger.info('Cleaned up ${removedCount} old audit events');
       return removedCount;
 
     } catch (error) {
-      logger.error('Failed to cleanup old audit events', 'AuditLogger', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to cleanup old audit events');
       return 0;
     }
   }
@@ -479,7 +479,7 @@ export class AuditLogger {
       });
 
     } catch (error) {
-      logger.error('Failed to log audit event', 'AuditLogger', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to log audit event');
     }
   }
 
@@ -491,13 +491,13 @@ export class AuditLogger {
     try {
       // In a real implementation, this would batch insert to database
       // For now, just log the flush operation
-      logger.info(`Flushing ${this.eventBuffer.length} audit events to storage`, 'AuditLogger');
+      logger.info('Flushing ${this.eventBuffer.length} audit events to storage');
 
       // Clear the buffer
       this.eventBuffer = [];
 
     } catch (error) {
-      logger.error('Failed to flush audit events', 'AuditLogger', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to flush audit events');
     }
   }
 

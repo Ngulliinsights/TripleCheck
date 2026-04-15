@@ -1,6 +1,6 @@
 import crypto from './SecurityIntegration';
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 
 import { encryptionService } from './EncryptionService';
 
@@ -86,7 +86,7 @@ export class PrivacyProtectionService {
       return protectedData;
 
     } catch (error) {
-      logger.error('Failed to protect community feedback privacy', 'PrivacyProtectionService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to protect community feedback privacy');
       throw error;
     }
   }
@@ -461,7 +461,7 @@ export class PrivacyProtectionService {
    */
   clearCache(): void {
     this.pseudonymCache.clear();
-    logger.info('Privacy protection cache cleared', 'PrivacyProtectionService');
+    logger.info('Privacy protection cache cleared');
   }
 }
 

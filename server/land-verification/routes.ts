@@ -221,7 +221,7 @@ const reportingService = {
 
 // Initialize mock services
 landVerificationService.initialize().catch(error => {
-  logger.error('Failed to initialize Land Verification Service', error);
+  logger.error({ error: error }, 'Failed to initialize Land Verification Service');
 });
 
 const router = Router();
@@ -334,7 +334,7 @@ router.post('/sessions',
     const { propertyId, requestedLayers, priority, notes } = req.body;
     const userId = req.user!.id.toString();
 
-    logger.info(`Initiating land verification for property ${propertyId}`, 'LandVerificationAPI');
+    logger.info('Initiating land verification for property ${propertyId}');
 
     try {
       const session = await landVerificationService.initiateVerification({
@@ -390,7 +390,7 @@ router.get('/sessions',
     const userId = req.user!.id.toString();
     const { page, limit, status, riskLevel, sortBy, sortOrder } = req.query;
 
-    logger.info(`Fetching land verification sessions for user ${userId}`, 'LandVerificationAPI');
+    logger.info('Fetching land verification sessions for user ${userId}');
 
     try {
       // Create data fetcher function for pagination service
@@ -439,7 +439,7 @@ router.get('/sessions',
       });
 
     } catch (error) {
-      logger.error('Failed to fetch verification sessions', error);
+      logger.error({ error: error }, 'Failed to fetch verification sessions');
       throw error;
     }
   })
@@ -457,7 +457,7 @@ router.get('/sessions/:sessionId',
     const { sessionId } = req.params;
     const userId = req.user!.id.toString();
 
-    logger.info(`Fetching verification session ${sessionId}`, 'LandVerificationAPI');
+    logger.info('Fetching verification session ${sessionId}');
 
     try {
       // Check cache first
@@ -525,7 +525,7 @@ router.post('/sessions/:sessionId/layers',
     const { layerType } = req.body;
     const userId = req.user!.id.toString();
 
-    logger.info(`Executing verification layer ${layerType} for session ${sessionId}`, 'LandVerificationAPI');
+    logger.info('Executing verification layer ${layerType} for session ${sessionId}');
 
     try {
       // Check if layer result is already cached
@@ -608,7 +608,7 @@ router.post('/sessions/:sessionId/risk-assessment',
     const { sessionId } = req.params;
     const userId = req.user!.id.toString();
 
-    logger.info(`Generating risk assessment for session ${sessionId}`, 'LandVerificationAPI');
+    logger.info('Generating risk assessment for session ${sessionId}');
 
     try {
       const riskAssessment = await landVerificationService.generateRiskAssessment(sessionId);
@@ -661,7 +661,7 @@ router.post('/properties/:propertyId/monitoring',
     const monitoringConfig = req.body;
     const userId = req.user!.id.toString();
 
-    logger.info(`Scheduling monitoring for property ${propertyId}`, 'LandVerificationAPI');
+    logger.info('Scheduling monitoring for property ${propertyId}');
 
     try {
       await landVerificationService.scheduleMonitoring(propertyId, monitoringConfig);
@@ -707,7 +707,7 @@ router.get('/properties/:propertyId/history',
     const { propertyId } = req.params;
     const userId = req.user!.id.toString();
 
-    logger.info(`Fetching verification history for property ${propertyId}`, 'LandVerificationAPI');
+    logger.info('Fetching verification history for property ${propertyId}');
 
     // This would typically query historical verification sessions and risk assessments
     // For now, return placeholder structure
@@ -746,7 +746,7 @@ router.post('/sessions/:sessionId/reports',
     const { templateId, format, includeConfidential, customSections, audience } = req.body;
     const userId = req.user!.id.toString();
 
-    logger.info(`Generating report for session ${sessionId} with template ${templateId}`, 'ReportingAPI');
+    logger.info('Generating report for session ${sessionId} with template ${templateId}');
 
     try {
       const report = await reportingService.generateReport({
@@ -811,7 +811,7 @@ router.get('/sessions/:sessionId/executive-summary',
     const { sessionId } = req.params;
     const userId = req.user!.id.toString();
 
-    logger.info(`Generating executive summary for session ${sessionId}`, 'ReportingAPI');
+    logger.info('Generating executive summary for session ${sessionId}');
 
     try {
       const summary = await reportingService.generateExecutiveSummary(sessionId);
@@ -854,7 +854,7 @@ router.get('/sessions/:sessionId/expert-reports',
     const { sessionId } = req.params;
     const userId = req.user!.id.toString();
 
-    logger.info(`Compiling expert reports for session ${sessionId}`, 'ReportingAPI');
+    logger.info('Compiling expert reports for session ${sessionId}');
 
     try {
       const compiledReport = await reportingService.compileExpertReports(sessionId);
@@ -892,7 +892,7 @@ router.get('/sessions/:sessionId/expert-reports',
 router.get('/report-templates',
   requireAuth,
   asyncHandler(async (req, res) => {
-    logger.info('Fetching available report templates', 'ReportingAPI');
+    logger.info('Fetching available report templates');
 
     const templates = reportingService.getAvailableTemplates();
 
@@ -920,7 +920,7 @@ router.get('/report-templates/:templateId',
   asyncHandler(async (req, res) => {
     const { templateId } = req.params;
 
-    logger.info(`Fetching report template ${templateId}`, 'ReportingAPI');
+    logger.info('Fetching report template ${templateId}');
 
     const template = reportingService.getTemplate(templateId);
 

@@ -2,7 +2,7 @@ import { eq, and, or } from 'drizzle-orm';
 import { Request, Response, NextFunction } from 'express';
 
 import { landVerificationSessions, users, properties } from '../../../src/shared/schema';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { db } from '..\..\infrastructure\database\connection\index';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 
@@ -110,7 +110,7 @@ export class AccessControlService {
         next();
 
       } catch (error) {
-        logger.error('Error checking session access', 'AccessControlService', undefined, error as Error);
+        logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Error checking session access');
         res.status(500).json({
           success: false,
           error: {
@@ -184,7 +184,7 @@ export class AccessControlService {
         next();
 
       } catch (error) {
-        logger.error('Error checking property access', 'AccessControlService', undefined, error as Error);
+        logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Error checking property access');
         res.status(500).json({
           success: false,
           error: {
@@ -248,7 +248,7 @@ export class AccessControlService {
         next();
 
       } catch (error) {
-        logger.error('Error checking feedback access', 'AccessControlService', undefined, error as Error);
+        logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Error checking feedback access');
         res.status(500).json({
           success: false,
           error: {
@@ -306,7 +306,7 @@ export class AccessControlService {
       return { allowed: true };
 
     } catch (error) {
-      logger.error('Error checking session access', 'AccessControlService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Error checking session access');
       return {
         allowed: false,
         reason: 'Failed to verify session access'
@@ -363,7 +363,7 @@ export class AccessControlService {
       return { allowed: true };
 
     } catch (error) {
-      logger.error('Error checking property access', 'AccessControlService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Error checking property access');
       return {
         allowed: false,
         reason: 'Failed to verify property access'
@@ -412,7 +412,7 @@ export class AccessControlService {
       };
 
     } catch (error) {
-      logger.error('Error checking feedback access', 'AccessControlService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Error checking feedback access');
       return {
         allowed: false,
         reason: 'Failed to verify feedback access'
@@ -487,7 +487,7 @@ export class AccessControlService {
       return permissions;
 
     } catch (error) {
-      logger.error('Error getting user permissions', 'AccessControlService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Error getting user permissions');
       return permissions;
     }
   }
@@ -586,7 +586,7 @@ export class AccessControlService {
       }
 
     } catch (error) {
-      logger.error('Error getting session permissions', 'AccessControlService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Error getting session permissions');
     }
 
     return permissions;
@@ -610,7 +610,7 @@ export class AccessControlService {
       }
 
     } catch (error) {
-      logger.error('Error getting property permissions', 'AccessControlService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Error getting property permissions');
     }
 
     return permissions;

@@ -3,7 +3,7 @@
  * Provides configurable retry strategies with exponential backoff
  */
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { LandVerificationErrorCode } from '../errors/LandVerificationErrors';
 
 export interface RetryConfig {

@@ -3,7 +3,7 @@
  * Provides graceful degradation when primary services are unavailable
  */
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { LandVerificationErrorCode } from '../errors/LandVerificationErrors';
 
 export interface FallbackConfig {
@@ -329,7 +329,7 @@ export class FallbackMechanisms {
     }
 
     if (cleared > 0) {
-      logger.info(`Cleared ${cleared} expired cache entries`, 'FallbackMechanisms');
+      logger.info('Cleared ${cleared} expired cache entries');
     }
 
     return cleared;

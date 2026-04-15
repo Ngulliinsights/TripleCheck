@@ -7,7 +7,7 @@ import {
   LayerExecutionResult,
 } from "../../src/types/land-verification";
 import { db } from "../infrastructure/database/connection";
-import { logger } from "../infrastructure/monitoring/logger";
+import { logger } from "../infrastructure/observability/telemetry";
 
 import * as gpsUtils from "./utils/gps-calculations";
 
@@ -417,7 +417,7 @@ export class PhysicalVerificationService extends EventEmitter {
 
       return result;
     } catch (error) {
-      logger.error("Physical verification failed:", error);
+      logger.error({ error: error }, 'Physical verification failed:');
       throw new Error(`Physical verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -893,7 +893,7 @@ export class PhysicalVerificationService extends EventEmitter {
         `Stored physical verification results for session ${result.sessionId}`
       );
     } catch (error) {
-      logger.error("Failed to store verification results:", error);
+      logger.error({ error: error }, 'Failed to store verification results:');
       throw error;
     }
   }

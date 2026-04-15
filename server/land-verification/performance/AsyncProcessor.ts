@@ -5,7 +5,7 @@ import type {
   LayerExecutionResult,
   VerificationLayer
 } from '../../../src/types/land-verification';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { landVerificationCache } from '../cache/LandVerificationCache';
 
 export interface AsyncTask {

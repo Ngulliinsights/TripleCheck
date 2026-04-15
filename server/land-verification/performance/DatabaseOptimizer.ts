@@ -1,6 +1,6 @@
 import { sql, SQL, and, or, eq, desc, asc, count } from 'drizzle-orm';
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { db } from '..\..\infrastructure\database\connection\index';
 import { landVerificationCache } from '../cache/LandVerificationCache';
 
@@ -137,7 +137,7 @@ export class DatabaseOptimizer {
 
       return result;
     } catch (error) {
-      logger.error('Optimized verification sessions query failed', error);
+      logger.error({ error: error }, 'Optimized verification sessions query failed');
       throw error;
     }
   }
@@ -198,7 +198,7 @@ export class DatabaseOptimizer {
       logger.info(`Government data query completed in ${Date.now() - startTime}ms (${cachedResults.filter(r => r).length}/${cacheRequests.length} from cache)`);
       return result;
     } catch (error) {
-      logger.error('Optimized government data query failed', error);
+      logger.error({ error: error }, 'Optimized government data query failed');
       throw error;
     }
   }
@@ -244,7 +244,7 @@ export class DatabaseOptimizer {
       logger.info(`Risk assessments query completed in ${Date.now() - startTime}ms (${sessionIds.length - missingSessionIds.length}/${sessionIds.length} from cache)`);
       return result;
     } catch (error) {
-      logger.error('Optimized risk assessments query failed', error);
+      logger.error({ error: error }, 'Optimized risk assessments query failed');
       throw error;
     }
   }
@@ -291,7 +291,7 @@ export class DatabaseOptimizer {
 
       logger.info(`Batch insert completed in ${Date.now() - startTime}ms (${layers.length} total records)`);
     } catch (error) {
-      logger.error('Batch insert failed', error);
+      logger.error({ error: error }, 'Batch insert failed');
       throw error;
     }
   }
@@ -332,7 +332,7 @@ export class DatabaseOptimizer {
 
       logger.info(`Batch update completed in ${Date.now() - startTime}ms (${updates.length} records)`);
     } catch (error) {
-      logger.error('Batch update failed', error);
+      logger.error({ error: error }, 'Batch update failed');
       throw error;
     }
   }
@@ -364,7 +364,7 @@ export class DatabaseOptimizer {
         usage: idx.idx_tup_read + idx.idx_tup_fetch
       }));
     } catch (error) {
-      logger.error(`Failed to analyze indexes for table ${tableName}`, error);
+      logger.error({ error: error }, 'Failed to analyze indexes for table ${tableName}');
       return [];
     }
   }
@@ -406,7 +406,7 @@ export class DatabaseOptimizer {
         await db.execute(sql.raw(indexDef));
         logger.info(`Created index: ${indexDef.split(' ')[5]}`);
       } catch (error) {
-        logger.warn(`Failed to create index: ${indexDef}`, error);
+        logger.warn({ error: error }, 'Failed to create index: ${indexDef}');
       }
     }
   }
@@ -418,7 +418,7 @@ export class DatabaseOptimizer {
       const result = await db.execute(explainQuery);
       return result[0];
     } catch (error) {
-      logger.error('Query performance analysis failed', error);
+      logger.error({ error: error }, 'Query performance analysis failed');
       return null;
     }
   }
@@ -441,7 +441,7 @@ export class DatabaseOptimizer {
 
       return await db.execute(slowQueryQuery);
     } catch (error) {
-      logger.error('Failed to get slow queries', error);
+      logger.error({ error: error }, 'Failed to get slow queries');
       return [];
     }
   }

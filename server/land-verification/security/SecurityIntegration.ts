@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 
 import { accessControlService } from './AccessControlService';
@@ -427,7 +427,7 @@ export class SecurityIntegration {
       const dataString = JSON.stringify(data);
       return encryptionService.verifyHash(dataString, expectedHash);
     } catch (error) {
-      logger.error('Data integrity validation failed', 'SecurityIntegration', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Data integrity validation failed');
       return false;
     }
   }

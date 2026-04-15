@@ -7,7 +7,7 @@ import type {
   PhysicalVerificationResult
 } from '../../../src/types/land-verification';
 import { cacheService, CacheKeys } from "..\..\cache\CacheService"
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 
 export interface LandVerificationCacheConfig {
   sessionTTL: number;
@@ -39,7 +39,7 @@ export class LandVerificationCache {
       const cacheKey = this.getSessionCacheKey(sessionId);
       return await cacheService.get<VerificationSession>(cacheKey);
     } catch (error) {
-      logger.error('Failed to get verification session from cache', error);
+      logger.error({ error: error }, 'Failed to get verification session from cache');
       return null;
     }
   }
@@ -52,7 +52,7 @@ export class LandVerificationCache {
         tags: ['verification-session', `property-${session.propertyId}`, `user-${session.userId}`]
       });
     } catch (error) {
-      logger.error('Failed to cache verification session', error);
+      logger.error({ error: error }, 'Failed to cache verification session');
     }
   }
 
@@ -61,7 +61,7 @@ export class LandVerificationCache {
       const cacheKey = this.getSessionCacheKey(sessionId);
       await cacheService.delete(cacheKey);
     } catch (error) {
-      logger.error('Failed to invalidate verification session cache', error);
+      logger.error({ error: error }, 'Failed to invalidate verification session cache');
     }
   }
 
@@ -71,7 +71,7 @@ export class LandVerificationCache {
       const cacheKey = this.getGovernmentDataCacheKey(propertyId, dataType);
       return await cacheService.get<GovernmentDataResult>(cacheKey);
     } catch (error) {
-      logger.error('Failed to get government data from cache', error);
+      logger.error({ error: error }, 'Failed to get government data from cache');
       return null;
     }
   }
@@ -84,7 +84,7 @@ export class LandVerificationCache {
         tags: ['government-data', `property-${propertyId}`, `data-type-${dataType}`]
       });
     } catch (error) {
-      logger.error('Failed to cache government data', error);
+      logger.error({ error: error }, 'Failed to cache government data');
     }
   }
 
@@ -94,7 +94,7 @@ export class LandVerificationCache {
       const cacheKey = this.getRiskAssessmentCacheKey(sessionId);
       return await cacheService.get<RiskAssessment>(cacheKey);
     } catch (error) {
-      logger.error('Failed to get risk assessment from cache', error);
+      logger.error({ error: error }, 'Failed to get risk assessment from cache');
       return null;
     }
   }
@@ -107,7 +107,7 @@ export class LandVerificationCache {
         tags: ['risk-assessment', `session-${sessionId}`]
       });
     } catch (error) {
-      logger.error('Failed to cache risk assessment', error);
+      logger.error({ error: error }, 'Failed to cache risk assessment');
     }
   }
 
@@ -117,7 +117,7 @@ export class LandVerificationCache {
       const cacheKey = this.getCommunityIntelligenceCacheKey(propertyId);
       return await cacheService.get<CommunityIntelligence>(cacheKey);
     } catch (error) {
-      logger.error('Failed to get community intelligence from cache', error);
+      logger.error({ error: error }, 'Failed to get community intelligence from cache');
       return null;
     }
   }
@@ -130,7 +130,7 @@ export class LandVerificationCache {
         tags: ['community-intelligence', `property-${propertyId}`]
       });
     } catch (error) {
-      logger.error('Failed to cache community intelligence', error);
+      logger.error({ error: error }, 'Failed to cache community intelligence');
     }
   }
 
@@ -140,7 +140,7 @@ export class LandVerificationCache {
       const cacheKey = this.getPhysicalVerificationCacheKey(sessionId);
       return await cacheService.get<PhysicalVerificationResult>(cacheKey);
     } catch (error) {
-      logger.error('Failed to get physical verification from cache', error);
+      logger.error({ error: error }, 'Failed to get physical verification from cache');
       return null;
     }
   }
@@ -153,7 +153,7 @@ export class LandVerificationCache {
         tags: ['physical-verification', `session-${sessionId}`, `property-${result.propertyId}`]
       });
     } catch (error) {
-      logger.error('Failed to cache physical verification', error);
+      logger.error({ error: error }, 'Failed to cache physical verification');
     }
   }
 
@@ -163,7 +163,7 @@ export class LandVerificationCache {
       const cacheKey = this.getLayerResultCacheKey(sessionId, layerType);
       return await cacheService.get<LayerExecutionResult>(cacheKey);
     } catch (error) {
-      logger.error('Failed to get layer result from cache', error);
+      logger.error({ error: error }, 'Failed to get layer result from cache');
       return null;
     }
   }
@@ -176,7 +176,7 @@ export class LandVerificationCache {
         tags: ['layer-result', `session-${sessionId}`, `layer-${layerType}`]
       });
     } catch (error) {
-      logger.error('Failed to cache layer result', error);
+      logger.error({ error: error }, 'Failed to cache layer result');
     }
   }
 
@@ -186,7 +186,7 @@ export class LandVerificationCache {
       const cacheKeys = requests.map(req => this.getGovernmentDataCacheKey(req.propertyId, req.dataType));
       return await cacheService.mget<GovernmentDataResult>(cacheKeys);
     } catch (error) {
-      logger.error('Failed to get multiple government data from cache', error);
+      logger.error({ error: error }, 'Failed to get multiple government data from cache');
       return requests.map(() => null);
     }
   }
@@ -204,7 +204,7 @@ export class LandVerificationCache {
 
       await cacheService.mset(cacheEntries);
     } catch (error) {
-      logger.error('Failed to cache multiple government data', error);
+      logger.error({ error: error }, 'Failed to cache multiple government data');
     }
   }
 
@@ -214,7 +214,7 @@ export class LandVerificationCache {
       await cacheService.invalidateByTags([`property-${propertyId}`]);
       logger.info(`Invalidated cache for property ${propertyId}`);
     } catch (error) {
-      logger.error('Failed to invalidate property cache', error);
+      logger.error({ error: error }, 'Failed to invalidate property cache');
     }
   }
 
@@ -223,7 +223,7 @@ export class LandVerificationCache {
       await cacheService.invalidateByTags([`user-${userId}`]);
       logger.info(`Invalidated cache for user ${userId}`);
     } catch (error) {
-      logger.error('Failed to invalidate user cache', error);
+      logger.error({ error: error }, 'Failed to invalidate user cache');
     }
   }
 
@@ -233,7 +233,7 @@ export class LandVerificationCache {
       await cacheService.invalidateByTags(tags);
       logger.info(`Invalidated government data cache${dataType ? ` for type ${dataType}` : ''}`);
     } catch (error) {
-      logger.error('Failed to invalidate government data cache', error);
+      logger.error({ error: error }, 'Failed to invalidate government data cache');
     }
   }
 
@@ -281,7 +281,7 @@ export class LandVerificationCache {
         landVerificationCacheSize
       };
     } catch (error) {
-      logger.error('Failed to get cache stats', error);
+      logger.error({ error: error }, 'Failed to get cache stats');
       return {
         hitRate: 0,
         totalOperations: 0,
@@ -300,7 +300,7 @@ export class LandVerificationCache {
       
       logger.info('Cache warm-up completed');
     } catch (error) {
-      logger.error('Cache warm-up failed', error);
+      logger.error({ error: error }, 'Cache warm-up failed');
     }
   }
 }

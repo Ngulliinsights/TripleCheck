@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { asyncProcessor } from '../AsyncProcessor';
 import { landVerificationCache } from '../cache/LandVerificationCache';
 import { databaseOptimizer } from '../DatabaseOptimizer';
@@ -20,7 +20,7 @@ router.get('/metrics', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Failed to get performance metrics', error);
+    logger.error({ error: error }, 'Failed to get performance metrics');
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve performance metrics',
@@ -43,7 +43,7 @@ router.get('/metrics/history', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Failed to get metrics history', error);
+    logger.error({ error: error }, 'Failed to get metrics history');
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve metrics history',
@@ -65,7 +65,7 @@ router.get('/health', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Health check failed', error);
+    logger.error({ error: error }, 'Health check failed');
     res.status(503).json({
       success: false,
       message: 'Health check failed',
@@ -85,7 +85,7 @@ router.get('/cache/stats', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Failed to get cache stats', error);
+    logger.error({ error: error }, 'Failed to get cache stats');
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve cache statistics',
@@ -118,7 +118,7 @@ router.post('/cache/invalidate', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Cache invalidation failed', error);
+    logger.error({ error: error }, 'Cache invalidation failed');
     res.status(500).json({
       success: false,
       message: 'Cache invalidation failed',
@@ -146,7 +146,7 @@ router.post('/cache/warm-up', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Cache warm-up failed', error);
+    logger.error({ error: error }, 'Cache warm-up failed');
     res.status(500).json({
       success: false,
       message: 'Cache warm-up failed',
@@ -166,7 +166,7 @@ router.get('/async/stats', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Failed to get async processor stats', error);
+    logger.error({ error: error }, 'Failed to get async processor stats');
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve async processor statistics',
@@ -191,7 +191,7 @@ router.get('/async/task/:taskId', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Failed to get task status', error);
+    logger.error({ error: error }, 'Failed to get task status');
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve task status',
@@ -212,7 +212,7 @@ router.delete('/async/task/:taskId', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Failed to cancel task', error);
+    logger.error({ error: error }, 'Failed to cancel task');
     res.status(500).json({
       success: false,
       message: 'Failed to cancel task',
@@ -236,7 +236,7 @@ router.get('/database/slow-queries', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Failed to get slow queries', error);
+    logger.error({ error: error }, 'Failed to get slow queries');
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve slow queries',
@@ -260,7 +260,7 @@ router.get('/database/indexes/:tableName', async (req: Request, res: Response) =
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Failed to analyze table indexes', error);
+    logger.error({ error: error }, 'Failed to analyze table indexes');
     res.status(500).json({
       success: false,
       message: 'Failed to analyze table indexes',
@@ -279,7 +279,7 @@ router.post('/database/optimize-indexes', async (req: Request, res: Response) =>
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Database index optimization failed', error);
+    logger.error({ error: error }, 'Database index optimization failed');
     res.status(500).json({
       success: false,
       message: 'Database index optimization failed',
@@ -310,7 +310,7 @@ router.post('/database/analyze-query', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Query analysis failed', error);
+    logger.error({ error: error }, 'Query analysis failed');
     res.status(500).json({
       success: false,
       message: 'Query analysis failed',
@@ -330,7 +330,7 @@ router.post('/monitoring/start', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Failed to start performance monitoring', error);
+    logger.error({ error: error }, 'Failed to start performance monitoring');
     res.status(500).json({
       success: false,
       message: 'Failed to start performance monitoring',
@@ -349,7 +349,7 @@ router.post('/monitoring/stop', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Failed to stop performance monitoring', error);
+    logger.error({ error: error }, 'Failed to stop performance monitoring');
     res.status(500).json({
       success: false,
       message: 'Failed to stop performance monitoring',
@@ -368,7 +368,7 @@ router.post('/optimize/cache', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Cache optimization failed', error);
+    logger.error({ error: error }, 'Cache optimization failed');
     res.status(500).json({
       success: false,
       message: 'Cache optimization failed',
@@ -387,7 +387,7 @@ router.post('/optimize/database', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Database optimization failed', error);
+    logger.error({ error: error }, 'Database optimization failed');
     res.status(500).json({
       success: false,
       message: 'Database optimization failed',
@@ -406,7 +406,7 @@ router.post('/optimize/async', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Async processing optimization failed', error);
+    logger.error({ error: error }, 'Async processing optimization failed');
     res.status(500).json({
       success: false,
       message: 'Async processing optimization failed',
@@ -439,7 +439,7 @@ router.post('/bulk/verification-layers', async (req: Request, res: Response) => 
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Bulk verification layers insert failed', error);
+    logger.error({ error: error }, 'Bulk verification layers insert failed');
     res.status(500).json({
       success: false,
       message: 'Bulk insert failed',
@@ -471,7 +471,7 @@ router.post('/bulk/verification-status', async (req: Request, res: Response) => 
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('Bulk verification status update failed', error);
+    logger.error({ error: error }, 'Bulk verification status update failed');
     res.status(500).json({
       success: false,
       message: 'Bulk update failed',

@@ -11,7 +11,7 @@ import {
 } from "../../src/shared/schema";
 import { DocumentAuthService } from "../document-auth/DocumentAuthService";
 import { db } from "../infrastructure/database/connection";
-import { logger } from "../infrastructure/monitoring/logger";
+import { logger } from "../infrastructure/observability/telemetry";
 
 import { CommunityIntelligenceService } from "./CommunityIntelligenceService";
 import {

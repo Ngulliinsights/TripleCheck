@@ -4,7 +4,7 @@
  */
 
 import { generateCorrelationId } from '../../../src/shared/error-handling';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { db } from '..\..\infrastructure\database\connection\index';
 
 export interface AuditEvent {

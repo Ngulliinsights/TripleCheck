@@ -1,5 +1,5 @@
 import { DocumentAuthService, DocumentVerificationRequest, DocumentVerificationResult } from '../document-auth/DocumentAuthService';
-import { logger } from '../infrastructure/monitoring/logger';
+import { logger } from '../infrastructure/observability/telemetry';
 
 import { LandVerificationService, VerificationLayer, LayerResult } from './LandVerificationService';
 
@@ -48,7 +48,7 @@ export class DocumentIntegration {
   }
 
   async verifyLandDocument(request: LandDocumentVerificationRequest): Promise<LandDocumentVerificationResult> {
-    logger.info(`Starting land document verification for session ${request.sessionId}`, 'DocumentIntegration');
+    logger.info('Starting land document verification for session ${request.sessionId}');
 
     try {
       // Create document verification request
@@ -98,11 +98,11 @@ export class DocumentIntegration {
         layerResults
       });
 
-      logger.info(`Land document verification completed for session ${request.sessionId} - Status: ${landResult.status}`, 'DocumentIntegration');
+      logger.info('Land document verification completed for session ${request.sessionId} - Status: ${landResult.status}');
       return landResult;
 
     } catch (error) {
-      logger.error(`Land document verification failed for session ${request.sessionId}`, 'DocumentIntegration', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Land document verification failed for session ${request.sessionId}');
       throw error;
     }
   }

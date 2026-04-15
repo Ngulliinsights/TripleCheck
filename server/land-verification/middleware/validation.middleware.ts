@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 
 import { ValidationError } from '../../../src/shared/error-handling';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 
 /**
  * Comprehensive validation schemas for Kenya Land Verification System

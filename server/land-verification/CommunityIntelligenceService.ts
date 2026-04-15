@@ -9,7 +9,7 @@ import {
   verificationLayers
 } from '../../src/shared/schema';
 import { db } from '../infrastructure/database/connection';
-import { logger } from '../infrastructure/monitoring/logger';
+import { logger } from '../infrastructure/observability/telemetry';
 
 
 export interface InterviewTemplate {
@@ -130,12 +130,12 @@ export class CommunityIntelligenceService extends EventEmitter {
   }
 
   async initialize(): Promise<void> {
-    logger.info('Initializing Community Intelligence Service...', 'CommunityIntelligenceService');
+    logger.info('Initializing Community Intelligence Service...');
     
     // Pre-load common templates
     await this.loadCommonTemplates();
     
-    logger.info('Community Intelligence Service initialized', 'CommunityIntelligenceService');
+    logger.info('Community Intelligence Service initialized');
   }
 
   /**
@@ -144,13 +144,13 @@ export class CommunityIntelligenceService extends EventEmitter {
    */
   async generateInterviewTemplates(propertyType: string, location: string): Promise<InterviewTemplate[]> {
     const startTime = Date.now();
-    logger.info(`Generating interview templates for property type: ${propertyType}, location: ${location}`, 'CommunityIntelligenceService');
+    logger.info('Generating interview templates for property type: ${propertyType}, location: ${location}');
 
     try {
       // Check cache first
       const cacheKey = `${propertyType}_${location}`;
       if (this.templateCache.has(cacheKey)) {
-        logger.info(`Retrieved interview templates from cache for ${cacheKey}`, 'CommunityIntelligenceService');
+        logger.info('Retrieved interview templates from cache for ${cacheKey}');
         return this.templateCache.get(cacheKey)!;
       }
 
@@ -177,12 +177,12 @@ export class CommunityIntelligenceService extends EventEmitter {
       this.emit('templates_generated', { propertyType, location, templateCount: templates.length });
 
       const processingTime = Date.now() - startTime;
-      logger.info(`Generated ${templates.length} interview templates in ${processingTime}ms`, 'CommunityIntelligenceService');
+      logger.info('Generated ${templates.length} interview templates in ${processingTime}ms');
 
       return templates;
 
     } catch (error) {
-      logger.error(`Failed to generate interview templates for ${propertyType} in ${location}`, 'CommunityIntelligenceService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to generate interview templates for ${propertyType} in ${location}');
       throw error;
     }
   }
@@ -192,7 +192,7 @@ export class CommunityIntelligenceService extends EventEmitter {
    * Requirements: 3.3, 3.6
    */
   async recordCommunityFeedback(sessionId: string, feedback: CommunityFeedback): Promise<void> {
-    logger.info(`Recording community feedback for session ${sessionId}`, 'CommunityIntelligenceService');
+    logger.info('Recording community feedback for session ${sessionId}');
 
     try {
       // Validate session exists
@@ -236,10 +236,10 @@ export class CommunityIntelligenceService extends EventEmitter {
       // Emit event
       this.emit('feedback_recorded', { sessionId, source: feedback.source, reliability: reliabilityScore });
 
-      logger.info(`Community feedback recorded for session ${sessionId} from ${feedback.source}`, 'CommunityIntelligenceService');
+      logger.info('Community feedback recorded for session ${sessionId} from ${feedback.source}');
 
     } catch (error) {
-      logger.error(`Failed to record community feedback for session ${sessionId}`, 'CommunityIntelligenceService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to record community feedback for session ${sessionId}');
       throw error;
     }
   }
@@ -249,12 +249,12 @@ export class CommunityIntelligenceService extends EventEmitter {
    * Requirements: 3.4, 3.5
    */
   async analyzeCommunityIntelligence(sessionId: string): Promise<CommunityAnalysis> {
-    logger.info(`Analyzing community intelligence for session ${sessionId}`, 'CommunityIntelligenceService');
+    logger.info('Analyzing community intelligence for session ${sessionId}');
 
     try {
       // Check cache first
       if (this.analysisCache.has(sessionId)) {
-        logger.info(`Retrieved community analysis from cache for session ${sessionId}`, 'CommunityIntelligenceService');
+        logger.info('Retrieved community analysis from cache for session ${sessionId}');
         return this.analysisCache.get(sessionId)!;
       }
 
@@ -308,12 +308,12 @@ export class CommunityIntelligenceService extends EventEmitter {
       // Emit event
       this.emit('analysis_completed', { sessionId, analysis });
 
-      logger.info(`Community intelligence analysis completed for session ${sessionId} - Confidence: ${confidenceLevel}`, 'CommunityIntelligenceService');
+      logger.info('Community intelligence analysis completed for session ${sessionId} - Confidence: ${confidenceLevel}');
 
       return analysis;
 
     } catch (error) {
-      logger.error(`Failed to analyze community intelligence for session ${sessionId}`, 'CommunityIntelligenceService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to analyze community intelligence for session ${sessionId}');
       throw error;
     }
   }
@@ -323,7 +323,7 @@ export class CommunityIntelligenceService extends EventEmitter {
    * Requirements: 3.4, 3.5
    */
   async validateCommunityInformation(feedback: CommunityFeedback, officialRecords: any[]): Promise<ValidationResult> {
-    logger.info(`Validating community information against official records`, 'CommunityIntelligenceService');
+    logger.info('Validating community information against official records');
 
     try {
       const discrepancies: Discrepancy[] = [];
@@ -358,12 +358,12 @@ export class CommunityIntelligenceService extends EventEmitter {
         recommendations
       };
 
-      logger.info(`Community information validation completed - Valid: ${validationResult.isValid}, Confidence: ${confidence}`, 'CommunityIntelligenceService');
+      logger.info('Community information validation completed - Valid: ${validationResult.isValid}, Confidence: ${confidence}');
 
       return validationResult;
 
     } catch (error) {
-      logger.error('Failed to validate community information', 'CommunityIntelligenceService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to validate community information');
       throw error;
     }
   }
@@ -380,7 +380,7 @@ export class CommunityIntelligenceService extends EventEmitter {
         try {
           await this.generateInterviewTemplates(propertyType, location);
         } catch (error) {
-          logger.warn(`Failed to pre-load template for ${propertyType} in ${location}`, 'CommunityIntelligenceService');
+          logger.warn('Failed to pre-load template for ${propertyType} in ${location}');
         }
       }
     }
@@ -605,7 +605,7 @@ export class CommunityIntelligenceService extends EventEmitter {
           .where(eq(verificationLayers.id, layer.id));
       }
     } catch (error) {
-      logger.warn(`Failed to update community layer progress for session ${sessionId}`, 'CommunityIntelligenceService');
+      logger.warn('Failed to update community layer progress for session ${sessionId}');
     }
   }
 
@@ -991,11 +991,11 @@ export class CommunityIntelligenceService extends EventEmitter {
   }
 
   async shutdown(): Promise<void> {
-    logger.info('Shutting down Community Intelligence Service...', 'CommunityIntelligenceService');
+    logger.info('Shutting down Community Intelligence Service...');
     
     this.templateCache.clear();
     this.analysisCache.clear();
 
-    logger.info('Community Intelligence Service shutdown complete', 'CommunityIntelligenceService');
+    logger.info('Community Intelligence Service shutdown complete');
   }
 }

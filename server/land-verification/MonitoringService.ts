@@ -10,7 +10,7 @@ import {
   users
 } from '../../src/shared/schema';
 import { db } from '../infrastructure/database/connection';
-import { logger } from '../infrastructure/monitoring/logger';
+import { logger } from '../infrastructure/observability/telemetry';
 
 
 export interface MonitoringConfig {
@@ -114,7 +114,7 @@ export class MonitoringService extends EventEmitter {
   }
 
   async initialize(): Promise<void> {
-    logger.info('Initializing Monitoring Service...', 'MonitoringService');
+    logger.info('Initializing Monitoring Service...');
     
     // Load active monitoring sessions from database
     await this.loadActiveMonitoringSessions();
@@ -122,7 +122,7 @@ export class MonitoringService extends EventEmitter {
     // Start monitoring intervals for active sessions
     await this.startMonitoringIntervals();
     
-    logger.info('Monitoring Service initialized', 'MonitoringService');
+    logger.info('Monitoring Service initialized');
   }
 
   /**
@@ -134,7 +134,7 @@ export class MonitoringService extends EventEmitter {
     userId: string, 
     config: MonitoringConfig
   ): Promise<MonitoringSession[]> {
-    logger.info(`Scheduling monitoring for property ${propertyId}`, 'MonitoringService');
+    logger.info('Scheduling monitoring for property ${propertyId}');
 
     try {
       // Validate inputs
@@ -195,12 +195,12 @@ export class MonitoringService extends EventEmitter {
         .where(eq(landVerificationSessions.id, parseInt(sessionId)));
 
       this.emit('monitoring_scheduled', { propertyId, sessionId, monitoringSessions });
-      logger.info(`Monitoring scheduled for property ${propertyId} with ${monitoringSessions.length} monitoring types`, 'MonitoringService');
+      logger.info('Monitoring scheduled for property ${propertyId} with ${monitoringSessions.length} monitoring types');
 
       return monitoringSessions;
 
     } catch (error) {
-      logger.error(`Failed to schedule monitoring for property ${propertyId}`, 'MonitoringService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to schedule monitoring for property ${propertyId}');
       throw error;
     }
   }
@@ -220,7 +220,7 @@ export class MonitoringService extends EventEmitter {
     actionDeadline?: Date,
     relatedDocuments: string[] = []
   ): Promise<MonitoringAlert> {
-    logger.info(`Creating alert for monitoring session ${monitoringId}`, 'MonitoringService');
+    logger.info('Creating alert for monitoring session ${monitoringId}');
 
     try {
       // Get monitoring session
@@ -279,12 +279,12 @@ export class MonitoringService extends EventEmitter {
       await this.sendNotifications(alert, monitoringSession);
 
       this.emit('alert_created', { alert, monitoringSession });
-      logger.info(`Alert created for monitoring session ${monitoringId}: ${title}`, 'MonitoringService');
+      logger.info('Alert created for monitoring session ${monitoringId}: ${title}');
 
       return alert;
 
     } catch (error) {
-      logger.error(`Failed to create alert for monitoring session ${monitoringId}`, 'MonitoringService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to create alert for monitoring session ${monitoringId}');
       throw error;
     }
   }
@@ -293,7 +293,7 @@ export class MonitoringService extends EventEmitter {
    * Requirement 8.3: Provide tools for staying connected with verification professionals
    */
   async maintainProfessionalRelationships(propertyId: string): Promise<void> {
-    logger.info(`Maintaining professional relationships for property ${propertyId}`, 'MonitoringService');
+    logger.info('Maintaining professional relationships for property ${propertyId}');
 
     try {
       // This would integrate with the ExpertCoordinationService
@@ -329,10 +329,10 @@ export class MonitoringService extends EventEmitter {
         );
       }
 
-      logger.info(`Professional relationship maintenance completed for property ${propertyId}`, 'MonitoringService');
+      logger.info('Professional relationship maintenance completed for property ${propertyId}');
 
     } catch (error) {
-      logger.error(`Failed to maintain professional relationships for property ${propertyId}`, 'MonitoringService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to maintain professional relationships for property ${propertyId}');
       throw error;
     }
   }
@@ -341,7 +341,7 @@ export class MonitoringService extends EventEmitter {
    * Requirement 8.4: Provide early warning systems for emerging legal challenges
    */
   async checkForLegalDisputes(propertyId: string): Promise<LegalDispute[]> {
-    logger.info(`Checking for legal disputes for property ${propertyId}`, 'MonitoringService');
+    logger.info('Checking for legal disputes for property ${propertyId}');
 
     try {
       // This would integrate with court systems and legal databases
@@ -391,11 +391,11 @@ export class MonitoringService extends EventEmitter {
         }
       }
 
-      logger.info(`Legal dispute check completed for property ${propertyId} - Found ${disputes.length} disputes`, 'MonitoringService');
+      logger.info('Legal dispute check completed for property ${propertyId} - Found ${disputes.length} disputes');
       return disputes;
 
     } catch (error) {
-      logger.error(`Failed to check legal disputes for property ${propertyId}`, 'MonitoringService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to check legal disputes for property ${propertyId}');
       throw error;
     }
   }
@@ -404,7 +404,7 @@ export class MonitoringService extends EventEmitter {
    * Requirement 8.5: Update risk assessments based on new legal requirements
    */
   async updateRiskAssessments(propertyId: string, regulatoryUpdates: RegulatoryUpdate[]): Promise<void> {
-    logger.info(`Updating risk assessments for property ${propertyId} based on regulatory changes`, 'MonitoringService');
+    logger.info('Updating risk assessments for property ${propertyId} based on regulatory changes');
 
     try {
       // Get the latest verification session for the property
@@ -415,7 +415,7 @@ export class MonitoringService extends EventEmitter {
         .limit(1);
 
       if (!latestSession) {
-        logger.warn(`No verification session found for property ${propertyId}`, 'MonitoringService');
+        logger.warn('No verification session found for property ${propertyId}');
         return;
       }
 
@@ -459,10 +459,10 @@ export class MonitoringService extends EventEmitter {
       }
 
       this.emit('risk_assessments_updated', { propertyId, regulatoryUpdates });
-      logger.info(`Risk assessments updated for property ${propertyId}`, 'MonitoringService');
+      logger.info('Risk assessments updated for property ${propertyId}');
 
     } catch (error) {
-      logger.error(`Failed to update risk assessments for property ${propertyId}`, 'MonitoringService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to update risk assessments for property ${propertyId}');
       throw error;
     }
   }
@@ -471,7 +471,7 @@ export class MonitoringService extends EventEmitter {
    * Requirement 8.6: Recommend adjustments to ongoing monitoring approaches
    */
   async recommendMonitoringAdjustments(propertyId: string): Promise<string[]> {
-    logger.info(`Generating monitoring adjustment recommendations for property ${propertyId}`, 'MonitoringService');
+    logger.info('Generating monitoring adjustment recommendations for property ${propertyId}');
 
     try {
       const recommendations: string[] = [];
@@ -551,11 +551,11 @@ export class MonitoringService extends EventEmitter {
         );
       }
 
-      logger.info(`Generated ${recommendations.length} monitoring recommendations for property ${propertyId}`, 'MonitoringService');
+      logger.info('Generated ${recommendations.length} monitoring recommendations for property ${propertyId}');
       return recommendations;
 
     } catch (error) {
-      logger.error(`Failed to generate monitoring recommendations for property ${propertyId}`, 'MonitoringService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to generate monitoring recommendations for property ${propertyId}');
       throw error;
     }
   }
@@ -599,7 +599,7 @@ export class MonitoringService extends EventEmitter {
       };
 
     } catch (error) {
-      logger.error(`Failed to get monitoring status for property ${propertyId}`, 'MonitoringService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to get monitoring status for property ${propertyId}');
       throw error;
     }
   }
@@ -652,9 +652,9 @@ export class MonitoringService extends EventEmitter {
         this.activeMonitoringSessions.set(session.id, session);
       }
 
-      logger.info(`Loaded ${sessions.length} active monitoring sessions`, 'MonitoringService');
+      logger.info('Loaded ${sessions.length} active monitoring sessions');
     } catch (error) {
-      logger.error('Failed to load active monitoring sessions', 'MonitoringService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to load active monitoring sessions');
     }
   }
 
@@ -671,7 +671,7 @@ export class MonitoringService extends EventEmitter {
       try {
         await this.executeMonitoringCheck(session);
       } catch (error) {
-        logger.error(`Monitoring check failed for session ${session.id}`, 'MonitoringService', undefined, error as Error);
+        logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Monitoring check failed for session ${session.id}');
       }
     }, intervalMs);
 
@@ -679,7 +679,7 @@ export class MonitoringService extends EventEmitter {
   }
 
   private async executeMonitoringCheck(session: MonitoringSession): Promise<void> {
-    logger.info(`Executing monitoring check for session ${session.id} (${session.monitoringType})`, 'MonitoringService');
+    logger.info('Executing monitoring check for session ${session.id} (${session.monitoringType})');
 
     try {
       // Update last check time
@@ -716,7 +716,7 @@ export class MonitoringService extends EventEmitter {
       this.emit('monitoring_check_completed', { sessionId: session.id, monitoringType: session.monitoringType });
 
     } catch (error) {
-      logger.error(`Monitoring check failed for session ${session.id}`, 'MonitoringService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Monitoring check failed for session ${session.id}');
       throw error;
     }
   }
@@ -786,19 +786,19 @@ export class MonitoringService extends EventEmitter {
   private async checkInfrastructureDevelopment(propertyId: string): Promise<void> {
     // Simulate checking infrastructure development plans
     // This would integrate with various government agencies
-    logger.info(`Checking infrastructure development for property ${propertyId}`, 'MonitoringService');
+    logger.info('Checking infrastructure development for property ${propertyId}');
   }
 
   private async checkEnvironmentalDesignations(propertyId: string): Promise<void> {
     // Simulate checking environmental designations
     // This would integrate with environmental authorities
-    logger.info(`Checking environmental designations for property ${propertyId}`, 'MonitoringService');
+    logger.info('Checking environmental designations for property ${propertyId}');
   }
 
   private async checkMarketChanges(propertyId: string): Promise<void> {
     // Simulate checking market changes
     // This would integrate with market data providers
-    logger.info(`Checking market changes for property ${propertyId}`, 'MonitoringService');
+    logger.info('Checking market changes for property ${propertyId}');
   }
 
   private getIntervalMs(frequency: 'daily' | 'weekly' | 'monthly'): number {
@@ -856,17 +856,17 @@ export class MonitoringService extends EventEmitter {
     // Send notifications based on user preferences
     if (monitoringSession.notificationPreferences.email) {
       // Send email notification
-      logger.info(`Sending email notification for alert ${alert.id}`, 'MonitoringService');
+      logger.info('Sending email notification for alert ${alert.id}');
     }
 
     if (monitoringSession.notificationPreferences.sms) {
       // Send SMS notification
-      logger.info(`Sending SMS notification for alert ${alert.id}`, 'MonitoringService');
+      logger.info('Sending SMS notification for alert ${alert.id}');
     }
 
     if (monitoringSession.notificationPreferences.inApp) {
       // Send in-app notification
-      logger.info(`Sending in-app notification for alert ${alert.id}`, 'MonitoringService');
+      logger.info('Sending in-app notification for alert ${alert.id}');
     }
   }
 

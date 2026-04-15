@@ -10,7 +10,7 @@ import {
   communityFeedback
 } from '../../src/shared/schema';
 import { db } from '../infrastructure/database/connection';
-import { logger } from '../infrastructure/monitoring/logger';
+import { logger } from '../infrastructure/observability/telemetry';
 
 
 // Core interfaces for risk assessment

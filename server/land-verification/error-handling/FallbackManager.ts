@@ -58,7 +58,7 @@ export class FallbackManager {
    */
   private initializeDefaultFallbacks(): void {
     // Government API fallbacks will be registered by services
-    logger.info('Fallback manager initialized', 'FALLBACK_MANAGER');
+    logger.info('Fallback manager initialized');
   }
 
   /**
@@ -449,7 +449,7 @@ export class FallbackManager {
     this.serviceHealth.clear();
     this.healthCheckIntervals.clear();
     
-    logger.info('Cleared all fallback providers', 'FALLBACK_MANAGER');
+    logger.info('Cleared all fallback providers');
   }
 
   /**

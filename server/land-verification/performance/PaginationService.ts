@@ -1,4 +1,4 @@
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { landVerificationCache } from '../cache/LandVerificationCache';
 
 export interface PaginationConfig {
@@ -124,7 +124,7 @@ export class PaginationService {
 
       return response;
     } catch (error) {
-      logger.error('Pagination failed', error);
+      logger.error({ error: error }, 'Pagination failed');
       throw error;
     }
   }
@@ -189,7 +189,7 @@ export class PaginationService {
 
       return response;
     } catch (error) {
-      logger.error('Cursor-based pagination failed', error);
+      logger.error({ error: error }, 'Cursor-based pagination failed');
       throw error;
     }
   }
@@ -229,7 +229,7 @@ export class PaginationService {
         hasMore: data.length < total
       };
     } catch (error) {
-      logger.error('Lazy load initialization failed', error);
+      logger.error({ error: error }, 'Lazy load initialization failed');
       throw error;
     }
   }
@@ -287,7 +287,7 @@ export class PaginationService {
         totalLoaded: newOffset + data.length
       };
     } catch (error) {
-      logger.error('Load more failed', error);
+      logger.error({ error: error }, 'Load more failed');
       throw error;
     }
   }
@@ -332,7 +332,7 @@ export class PaginationService {
       await this.cacheResult(cacheKey, response);
       logger.info(`Preloaded page ${nextPageParams.page}`);
     } catch (error) {
-      logger.warn('Preloading failed', error);
+      logger.warn({ error: error }, 'Preloading failed');
       // Don't throw - preloading is optional
     }
   }
@@ -369,7 +369,7 @@ export class PaginationService {
         nextOffset
       };
     } catch (error) {
-      logger.error('Infinite scroll data fetch failed', error);
+      logger.error({ error: error }, 'Infinite scroll data fetch failed');
       throw error;
     }
   }
@@ -381,7 +381,7 @@ export class PaginationService {
       await landVerificationCache.invalidatePropertyCache(pattern);
       logger.info(`Invalidated pagination cache for pattern: ${pattern}`);
     } catch (error) {
-      logger.error('Cache invalidation failed', error);
+      logger.error({ error: error }, 'Cache invalidation failed');
     }
   }
 
@@ -446,7 +446,7 @@ export class PaginationService {
       // For now, returning null to indicate cache miss
       return null;
     } catch (error) {
-      logger.warn('Cache retrieval failed', error);
+      logger.warn({ error: error }, 'Cache retrieval failed');
       return null;
     }
   }
@@ -457,7 +457,7 @@ export class PaginationService {
       // Implementation would depend on the cache service API
       logger.debug(`Cached result for key: ${cacheKey}`);
     } catch (error) {
-      logger.warn('Cache storage failed', error);
+      logger.warn({ error: error }, 'Cache storage failed');
     }
   }
 

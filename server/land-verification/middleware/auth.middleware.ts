@@ -7,7 +7,7 @@ import {
   AuthorizationError,
   ValidationError 
 } from '../../../src/shared/error-handling';
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { db } from '..\..\infrastructure\database\connection\index';
 
 // Extend Request interface for land verification context
@@ -69,11 +69,11 @@ export const landVerificationAuth = async (
       trustScore: user.trustScore
     };
 
-    logger.info(`Land verification auth successful for user ${user.id}`, 'LandVerificationAuth');
+    logger.info('Land verification auth successful for user ${user.id}');
     next();
 
   } catch (error) {
-    logger.error('Land verification authentication failed', 'LandVerificationAuth', undefined, error as Error);
+    logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Land verification authentication failed');
     next(error);
   }
 };
@@ -129,11 +129,11 @@ export const sessionAuthorization = async (
       req.landVerificationContext.canModify = session.userId === userId || req.landVerificationContext.userRole === 'admin';
     }
 
-    logger.info(`Session authorization successful for session ${sessionId}`, 'LandVerificationAuth');
+    logger.info('Session authorization successful for session ${sessionId}');
     next();
 
   } catch (error) {
-    logger.error('Session authorization failed', 'LandVerificationAuth', undefined, error as Error);
+    logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Session authorization failed');
     next(error);
   }
 };
@@ -159,11 +159,11 @@ export const trustScoreValidation = (minimumTrustScore: number = 30) => {
         );
       }
 
-      logger.info(`Trust score validation passed for user ${req.user?.id}`, 'LandVerificationAuth');
+      logger.info('Trust score validation passed for user ${req.user?.id}');
       next();
 
     } catch (error) {
-      logger.error('Trust score validation failed', 'LandVerificationAuth', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Trust score validation failed');
       next(error);
     }
   };
@@ -190,11 +190,11 @@ export const roleAuthorization = (allowedRoles: Array<'user' | 'agent' | 'admin'
         );
       }
 
-      logger.info(`Role authorization successful for user ${req.user?.id} with role ${userRole}`, 'LandVerificationAuth');
+      logger.info('Role authorization successful for user ${req.user?.id} with role ${userRole}');
       next();
 
     } catch (error) {
-      logger.error('Role authorization failed', 'LandVerificationAuth', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Role authorization failed');
       next(error);
     }
   };
@@ -254,11 +254,11 @@ export const propertyOwnershipValidation = async (
       req.landVerificationContext.propertyId = propertyId;
     }
 
-    logger.info(`Property ownership validation successful for property ${propertyId}`, 'LandVerificationAuth');
+    logger.info('Property ownership validation successful for property ${propertyId}');
     next();
 
   } catch (error) {
-    logger.error('Property ownership validation failed', 'LandVerificationAuth', undefined, error as Error);
+    logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Property ownership validation failed');
     next(error);
   }
 };
@@ -307,11 +307,11 @@ export const verificationRateLimit = () => {
       userLimit.count++;
       userRequestCounts.set(userId, userLimit);
 
-      logger.info(`Rate limit check passed for user ${userId} (${userLimit.count}/${RATE_LIMIT})`, 'LandVerificationAuth');
+      logger.info('Rate limit check passed for user ${userId} (${userLimit.count}/${RATE_LIMIT})');
       next();
 
     } catch (error) {
-      logger.error('Rate limit validation failed', 'LandVerificationAuth', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Rate limit validation failed');
       next(error);
     }
   };

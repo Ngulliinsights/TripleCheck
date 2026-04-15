@@ -8,7 +8,7 @@ import type {
   GovernmentDesignation,
   PropertyUpdate
 } from '../../src/types/land-verification';
-import { logger } from '../infrastructure/monitoring/logger';
+import { logger } from '../infrastructure/observability/telemetry';
 
 export interface ReportTemplate {
   id: string;
@@ -247,14 +247,14 @@ export class ReportingService {
       this.templates.set(template.id, template);
     });
 
-    logger.info(`Initialized ${templates.length} report templates`, 'ReportingService');
+    logger.info('Initialized ${templates.length} report templates');
   }
 
   /**
    * Generate a comprehensive verification report
    */
   async generateReport(request: ReportGenerationRequest): Promise<GeneratedReport> {
-    logger.info(`Generating report for session ${request.sessionId}`, 'ReportingService');
+    logger.info('Generating report for session ${request.sessionId}');
 
     const template = this.templates.get(request.templateId);
     if (!template) {
@@ -283,7 +283,7 @@ export class ReportingService {
         }
       };
 
-      logger.info(`Report generated successfully: ${report.id}`, 'ReportingService');
+      logger.info('Report generated successfully: ${report.id}');
       return report;
 
     } catch (error) {
@@ -296,7 +296,7 @@ export class ReportingService {
    * Generate executive summary for quick decision making
    */
   async generateExecutiveSummary(sessionId: string): Promise<ExecutiveSummary> {
-    logger.info(`Generating executive summary for session ${sessionId}`, 'ReportingService');
+    logger.info('Generating executive summary for session ${sessionId}');
 
     try {
       const reportData = await this.gatherReportData(sessionId);
@@ -325,7 +325,7 @@ export class ReportingService {
    * Compile expert reports into unified document
    */
   async compileExpertReports(sessionId: string): Promise<string> {
-    logger.info(`Compiling expert reports for session ${sessionId}`, 'ReportingService');
+    logger.info('Compiling expert reports for session ${sessionId}');
 
     try {
       const reportData = await this.gatherReportData(sessionId);

@@ -3,7 +3,7 @@
  * Handles partial data scenarios and service degradation
  */
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { LandVerificationErrorCode } from '../errors/LandVerificationErrors';
 
 export interface DegradationLevel {
@@ -81,7 +81,7 @@ export class GracefulDegradation {
       this.performHealthCheck();
     }, intervalMs);
 
-    logger.info('Started graceful degradation health monitoring', 'GracefulDegradation');
+    logger.info('Started graceful degradation health monitoring');
   }
 
   /**
@@ -93,7 +93,7 @@ export class GracefulDegradation {
       this.healthCheckInterval = undefined;
     }
 
-    logger.info('Stopped graceful degradation health monitoring', 'GracefulDegradation');
+    logger.info('Stopped graceful degradation health monitoring');
   }
 
   /**
@@ -296,7 +296,7 @@ export class GracefulDegradation {
    * Perform health check on all services
    */
   private async performHealthCheck(): Promise<void> {
-    logger.debug('Performing service health check', 'GracefulDegradation');
+    logger.debug('Performing service health check');
 
     for (const serviceName of this.config.enabledServices) {
       try {

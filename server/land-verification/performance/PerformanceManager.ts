@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 
 import { cacheService } from '..\..\cache\CacheService'
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 import { asyncProcessor } from './AsyncProcessor';
 import { landVerificationCache } from '../cache/LandVerificationCache';
 import { databaseOptimizer } from './DatabaseOptimizer';
@@ -99,7 +99,7 @@ export class PerformanceManager extends EventEmitter {
           await this.performAutoOptimizations();
         }
       } catch (error) {
-        logger.error('Performance monitoring error', error);
+        logger.error({ error: error }, 'Performance monitoring error');
       }
     }, this.config.metricsCollectionInterval);
 
@@ -166,7 +166,7 @@ export class PerformanceManager extends EventEmitter {
       this.emit('metricsCollected', metrics);
       return metrics;
     } catch (error) {
-      logger.error('Failed to collect performance metrics', error);
+      logger.error({ error: error }, 'Failed to collect performance metrics');
       throw error;
     }
   }
@@ -207,7 +207,7 @@ export class PerformanceManager extends EventEmitter {
 
     // Emit alerts
     if (alerts.length > 0) {
-      logger.warn('Performance alerts:', alerts);
+      logger.warn({ error: alerts }, 'Performance alerts:');
       this.emit('performanceAlert', { alerts, metrics: latest });
     }
   }
@@ -233,7 +233,7 @@ export class PerformanceManager extends EventEmitter {
 
       logger.info('Auto-optimizations completed');
     } catch (error) {
-      logger.error('Auto-optimization failed', error);
+      logger.error({ error: error }, 'Auto-optimization failed');
     }
   }
 
@@ -255,7 +255,7 @@ export class PerformanceManager extends EventEmitter {
 
       logger.info('Cache optimization completed');
     } catch (error) {
-      logger.error('Cache optimization failed', error);
+      logger.error({ error: error }, 'Cache optimization failed');
     }
   }
 
@@ -275,7 +275,7 @@ export class PerformanceManager extends EventEmitter {
 
       logger.info('Database optimization completed');
     } catch (error) {
-      logger.error('Database optimization failed', error);
+      logger.error({ error: error }, 'Database optimization failed');
     }
   }
 
@@ -293,7 +293,7 @@ export class PerformanceManager extends EventEmitter {
 
       logger.info('Async processing optimization completed');
     } catch (error) {
-      logger.error('Async processing optimization failed', error);
+      logger.error({ error: error }, 'Async processing optimization failed');
     }
   }
 
@@ -309,7 +309,7 @@ export class PerformanceManager extends EventEmitter {
       
       logger.info('Cache warm-up completed');
     } catch (error) {
-      logger.error('Cache warm-up failed', error);
+      logger.error({ error: error }, 'Cache warm-up failed');
     }
   }
 
@@ -447,7 +447,7 @@ export class PerformanceManager extends EventEmitter {
         }
       };
     } catch (error) {
-      logger.error('Health check failed', error);
+      logger.error({ error: error }, 'Health check failed');
       return {
         status: 'unhealthy',
         checks: {

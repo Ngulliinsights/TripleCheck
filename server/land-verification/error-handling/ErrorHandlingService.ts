@@ -73,7 +73,7 @@ export class ErrorHandlingService {
     };
 
     this.initializeServiceHealth();
-    logger.info('Error handling service initialized', 'ERROR_HANDLER', { config: this.config });
+    logger.info({ config: this.config }, 'Error handling service initialized');
   }
 
   /**

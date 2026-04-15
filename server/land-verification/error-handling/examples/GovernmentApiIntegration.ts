@@ -67,7 +67,7 @@ export class GovernmentApiService {
       retryableStatusCodes: [408, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524]
     });
 
-    logger.info('Government API error handling configured', 'GOV_API_SERVICE');
+    logger.info('Government API error handling configured');
   }
 
   /**
@@ -131,7 +131,7 @@ export class GovernmentApiService {
       }
     });
 
-    logger.info('Government API fallback providers registered', 'GOV_API_SERVICE');
+    logger.info('Government API fallback providers registered');
   }
 
   /**
@@ -323,7 +323,7 @@ export class GovernmentApiService {
    * Fallback: Get cached registry data
    */
   private async getCachedRegistryData(): Promise<RegistrySearchResult> {
-    logger.info('Using cached registry data fallback', 'GOV_API_SERVICE');
+    logger.info('Using cached registry data fallback');
     
     // Simulate cached data retrieval
     return {
@@ -339,7 +339,7 @@ export class GovernmentApiService {
    * Fallback: Query alternative registry endpoint
    */
   private async queryAlternativeRegistryEndpoint(): Promise<RegistrySearchResult> {
-    logger.info('Using alternative registry endpoint fallback', 'GOV_API_SERVICE');
+    logger.info('Using alternative registry endpoint fallback');
     
     // Simulate alternative endpoint call
     return {
@@ -355,7 +355,7 @@ export class GovernmentApiService {
    * Fallback: Escalate to manual verification
    */
   private async escalateToManualVerification(): Promise<RegistrySearchResult> {
-    logger.warn('Escalating to manual verification', 'GOV_API_SERVICE');
+    logger.warn('Escalating to manual verification');
     
     // Create manual verification task
     return {

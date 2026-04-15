@@ -1,6 +1,6 @@
 import crypto from './SecurityIntegration';
 
-import { logger } from '../../infrastructure/monitoring/logger';
+import { logger } from '../../infrastructure/observability/telemetry';
 
 export interface EncryptionConfig {
   algorithm: string;
@@ -78,7 +78,7 @@ export class EncryptionService {
         tag: tag
       };
     } catch (error) {
-      logger.error('Failed to encrypt data', 'EncryptionService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to encrypt data');
       throw new Error('Encryption failed');
     }
   }
@@ -108,7 +108,7 @@ export class EncryptionService {
 
       return decrypted;
     } catch (error) {
-      logger.error('Failed to decrypt data', 'EncryptionService', undefined, error as Error);
+      logger.error({ error: (error as Error).message, stack: (error as Error).stack }, 'Failed to decrypt data');
       throw new Error('Decryption failed');
     }
   }
@@ -152,7 +152,7 @@ export class EncryptionService {
           const decryptedValue = this.decrypt(encryptedValue, additionalData);
           this.setNestedValue(result, fieldPath, decryptedValue);
         } catch (error) {
-          logger.warn(`Failed to decrypt field ${fieldPath}`, 'EncryptionService');
+          logger.warn('Failed to decrypt field ${fieldPath}');
           // Leave encrypted data in place if decryption fails
         }
       }
