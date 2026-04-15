@@ -22,7 +22,7 @@ export { default as PropertyImageGallery } from './components/images/ImageGaller
 export { PropertyImageValidationService } from './services/images/PropertyImageValidationService'
 export { PropertyImageUploadService } from './services/images/PropertyImageUploadService'
 // Legacy export for backward compatibility
-export { PropertyImageUploadCoordinator } from './services/images/PropertyImageUploadCoordinator'
+// export { PropertyImageUploadCoordinator } from './services/images/PropertyImageUploadCoordinator' // File doesn't exist
 export { PropertyImageWorkflowManager } from './services/images/PropertyImageWorkflowManager'
 export { Logo } from './components/ui/logo'
 

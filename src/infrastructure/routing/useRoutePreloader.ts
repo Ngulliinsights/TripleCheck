@@ -124,11 +124,18 @@ export function useRoutePreloader(_options: UseRoutePreloaderOptions = {}) {
 /**
  * Disabled useRouteLoadingTracker hook
  */
-export function useRouteLoadingTracker() {
+export function useRouteLoadingTracker(): {
+  currentRoute: string;
+  loadingMetrics: RouteLoadingMetrics[];
+  getAverageLoadTime: () => number;
+  getSlowestRoute: () => RouteLoadingMetrics | null;
+  getFastestRoute: () => RouteLoadingMetrics | null;
+  cacheHitRate: number;
+} {
   return useMemo(
     () => ({
       currentRoute: "",
-      loadingMetrics: [],
+      loadingMetrics: [] as RouteLoadingMetrics[],
       getAverageLoadTime: () => 0,
       getSlowestRoute: () => null,
       getFastestRoute: () => null,

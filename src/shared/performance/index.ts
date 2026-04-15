@@ -4,7 +4,7 @@
  */
 
 // Services
-export { default as cacheService } from "../services/CacheService"
+// export { default as cacheService } from "../services/CacheService" // File doesn't exist
 export { default as performanceService } from '../services/PerformanceService'
 
 // Hooks
@@ -30,11 +30,11 @@ export {
 } from '../components/LazyComponents'
 
 // Types
-export type {
-  CacheEntry,
-  CacheConfig,
-  CacheStats
-} from "../services/CacheService"
+// export type {
+//   CacheEntry,
+//   CacheConfig,
+//   CacheStats
+// } from "../services/CacheService" // File doesn't exist
 
 export type {
   PerformanceMetric,

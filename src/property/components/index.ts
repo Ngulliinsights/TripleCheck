@@ -13,12 +13,12 @@
 // Custom exports
 export { PropertyMap, PropertyMapEmbedded, PropertyMapPage } from './PropertyMap'
 
-// Standard exports
-export { default as CompareBar } from './CompareBar'
-export { default as CompareModal } from './CompareModal'
-export { default as EnhancedLandCard } from './LandCard'
-export { default as PerformanceTestPanel } from './PerformanceTestPanel'
-export { default as PropertyCardShowcase } from './PropertyCardShowcase'
-export { default as PropertyListingWizard } from './PropertyListingWizard'
-export { default as PropertyReviews } from './PropertyReviews'
-export { default as PropertyTestComponent } from './PropertyTestComponent'
+// Standard exports - using named exports
+export { CompareBar } from './CompareBar'
+export { CompareModal } from './CompareModal'
+export { EnhancedLandCard } from './LandCard'
+export { PerformanceTestPanel } from './PerformanceTestPanel'
+export { PropertyCardShowcase } from './PropertyCardShowcase'
+export { PropertyListingWizard } from './PropertyListingWizard'
+export { PropertyReviews } from './PropertyReviews'
+export { PropertyTestComponent } from './PropertyTestComponent'

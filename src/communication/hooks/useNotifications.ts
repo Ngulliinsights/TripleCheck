@@ -384,8 +384,9 @@ function showBrowserNotification(notification: Notification) {
     requireInteraction: notification.priority === 'urgent',
   };
 
+  // Note: 'image' property is not standard in all browsers
   if (notification.data?.imageUrl) {
-    options.image = notification.data.imageUrl;
+    (options as any).image = notification.data.imageUrl;
   }
 
   const browserNotification = new Notification(notification.title, options);

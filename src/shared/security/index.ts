@@ -4,7 +4,7 @@
  */
 
 // Services
-export { default as validationService } from '../services/ValidationService'
+// export { default as validationService } from '../services/ValidationService' // File doesn't exist
 export { default as authTokenService } from '../services/AuthTokenService'
 export { default as rateLimitService } from '../services/RateLimitService'
 export { default as auditLogService } from '../services/AuditLogService'
@@ -20,11 +20,11 @@ export {
 } from '../hooks/useSecurity'
 
 // Types
-export type {
-  ValidationRule,
-  ValidationResult,
-  ValidationSchema
-} from '../services/ValidationService'
+// export type {
+//   ValidationRule,
+//   ValidationResult,
+//   ValidationSchema
+// } from '../services/ValidationService' // File doesn't exist
 
 export type {
   TokenPayload,

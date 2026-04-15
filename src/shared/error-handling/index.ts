@@ -8,7 +8,7 @@ export * from './constants/error-codes'
 export { ErrorCategory } from './constants/error-categories'
 export * from './constants/http-status'
 export * from './constants/postgres-codes'
-export * from './constants/error-messages'
+// export * from './constants/error-messages' // File doesn't exist
 
 // Utilities
 export * from './utilities/error-factory'
@@ -24,5 +24,5 @@ export * from './client/error-handler'
 // Convenience exports
 export { AppError } from './errors/base-error'
 export { ErrorFactory } from './utilities/error-factory'
-export { ERROR_MESSAGES } from './constants/error-messages'
+// export { ERROR_MESSAGES } from './constants/error-messages' // File doesn't exist
 export { errorMetrics } from './utilities/error-metrics'

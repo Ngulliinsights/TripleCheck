@@ -78,10 +78,11 @@ export const loadExternalCSS = (url: string): Promise<void> => {
 export const preloadExternalDependencies = () => {
   const criticalDependencies = [
     EXTERNAL_DEPENDENCIES.icons.lucide,
-    EXTERNAL_DEPENDENCIES.styling.glassmorphism,
+    // Glassmorphism styles are now in design-system.css, not loaded from CDN
   ];
 
   criticalDependencies.forEach(url => {
+    if (!url) return; // Skip undefined URLs
     const link = document.createElement('link');
     link.rel = 'preload';
     link.href = url;

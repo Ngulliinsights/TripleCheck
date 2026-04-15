@@ -4,8 +4,8 @@
  * Simple audit runner to analyze project structure for redundancies
  */
 
-import * as fs from './audit.types'
-import * as path from './audit.types'
+import * as fs from 'fs'
+import * as path from 'path'
 
 interface ProjectAnalysis {
   redundantFiles: string[];

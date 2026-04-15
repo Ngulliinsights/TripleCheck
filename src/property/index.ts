@@ -42,5 +42,5 @@ export { default as PropertyEdit } from './pages/PropertyEdit'
 export { default as PropertyCompare } from './pages/PropertyCompare'
 export { default as PropertyPhotos } from './pages/PropertyPhotos'
 export { default as PropertyOptimize } from './pages/PropertyOptimize'
-export { default as PropertyMap } from './pages/PropertyMap'
+// export { default as PropertyMap } from './pages/PropertyMap' // File doesn't exist
 export { default as ListProperty } from './pages/ListProperty'

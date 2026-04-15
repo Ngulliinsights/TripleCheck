@@ -189,12 +189,12 @@ export class PerformancePlugin implements AuditPlugin {
   }
   
   private async checkAPIPerformance(element: UIElement): Promise<AuditRuleResult> {
-    const slowAPIs = element.apiCalls.filter(api => 
+    const slowAPIs = element.apiCalls.filter((api: any) => 
       api.responseTime && api.responseTime > 2000
     );
     
     if (slowAPIs.length > 0) {
-      const avgResponseTime = slowAPIs.reduce((sum, api) => 
+      const avgResponseTime = slowAPIs.reduce((sum: number, api: any) => 
         sum + (api.responseTime || 0), 0
       ) / slowAPIs.length;
       
@@ -206,7 +206,7 @@ export class PerformancePlugin implements AuditPlugin {
       };
     }
     
-    const moderateAPIs = element.apiCalls.filter(api => 
+    const moderateAPIs = element.apiCalls.filter((api: any) => 
       api.responseTime && api.responseTime > 1000
     );
     
@@ -316,7 +316,7 @@ export class PerformancePlugin implements AuditPlugin {
     
     // API response time metric (if applicable)
     if (element.apiCalls.length > 0) {
-      const avgResponseTime = element.apiCalls.reduce((sum, api) => 
+      const avgResponseTime = element.apiCalls.reduce((sum: number, api: any) => 
         sum + (api.responseTime || 0), 0
       ) / element.apiCalls.length;
       

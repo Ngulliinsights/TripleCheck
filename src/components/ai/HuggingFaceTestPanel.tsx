@@ -7,7 +7,7 @@
  */
 
 import React, { useState } from 'react'
-import { landVerificationAI } from "../../shared/services/unified-api-client"
+import { landVerificationAI } from "../../shared/services/huggingface-api-client"
 import { mockLandVerificationAI, sampleTestData } from '../../shared/services/mock-huggingface-client'
 
 // Define our test result interface with proper optional handling

@@ -11,19 +11,19 @@ import { logger } from '../infrastructure/observability/telemetry';
  * Validate request body
  */
 export function validateBody<T>(schema: z.ZodSchema<T>) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const validated = await schema.parseAsync(req.body);
       req.body = validated;
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        logger.warn('Request body validation failed', {
+        logger.warn({
           path: req.path,
           errors: error.errors,
-        });
+        }, 'Request body validation failed');
 
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation failed',
           details: error.errors.map((err) => ({
             field: err.path.join('.'),
@@ -31,10 +31,11 @@ export function validateBody<T>(schema: z.ZodSchema<T>) {
             code: err.code,
           })),
         });
+        return;
       }
 
-      logger.error('Validation error', { error });
-      return res.status(500).json({
+      logger.error({ error }, 'Validation error');
+      res.status(500).json({
         error: 'Internal server error',
       });
     }
@@ -45,19 +46,19 @@ export function validateBody<T>(schema: z.ZodSchema<T>) {
  * Validate request query parameters
  */
 export function validateQuery<T>(schema: z.ZodSchema<T>) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const validated = await schema.parseAsync(req.query);
       req.query = validated as any;
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        logger.warn('Request query validation failed', {
+        logger.warn({
           path: req.path,
           errors: error.errors,
-        });
+        }, 'Request query validation failed');
 
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation failed',
           details: error.errors.map((err) => ({
             field: err.path.join('.'),
@@ -65,10 +66,11 @@ export function validateQuery<T>(schema: z.ZodSchema<T>) {
             code: err.code,
           })),
         });
+        return;
       }
 
-      logger.error('Validation error', { error });
-      return res.status(500).json({
+      logger.error({ error }, 'Validation error');
+      res.status(500).json({
         error: 'Internal server error',
       });
     }
@@ -79,19 +81,19 @@ export function validateQuery<T>(schema: z.ZodSchema<T>) {
  * Validate request params
  */
 export function validateParams<T>(schema: z.ZodSchema<T>) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const validated = await schema.parseAsync(req.params);
       req.params = validated as any;
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        logger.warn('Request params validation failed', {
+        logger.warn({
           path: req.path,
           errors: error.errors,
-        });
+        }, 'Request params validation failed');
 
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation failed',
           details: error.errors.map((err) => ({
             field: err.path.join('.'),
@@ -99,10 +101,11 @@ export function validateParams<T>(schema: z.ZodSchema<T>) {
             code: err.code,
           })),
         });
+        return;
       }
 
-      logger.error('Validation error', { error });
-      return res.status(500).json({
+      logger.error({ error }, 'Validation error');
+      res.status(500).json({
         error: 'Internal server error',
       });
     }
@@ -117,7 +120,7 @@ export function validate<T extends {
   query?: z.ZodSchema;
   params?: z.ZodSchema;
 }>(schemas: T) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (schemas.body) {
         req.body = await schemas.body.parseAsync(req.body);
@@ -134,12 +137,12 @@ export function validate<T extends {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        logger.warn('Request validation failed', {
+        logger.warn({
           path: req.path,
           errors: error.errors,
-        });
+        }, 'Request validation failed');
 
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation failed',
           details: error.errors.map((err) => ({
             field: err.path.join('.'),
@@ -147,10 +150,11 @@ export function validate<T extends {
             code: err.code,
           })),
         });
+        return;
       }
 
-      logger.error('Validation error', { error });
-      return res.status(500).json({
+      logger.error({ error }, 'Validation error');
+      res.status(500).json({
         error: 'Internal server error',
       });
     }

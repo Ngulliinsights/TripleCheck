@@ -11,13 +11,13 @@
  */
 
 // Standard exports
-export { default as AppLayout } from './AppLayout'
-export { default as ContentGrid } from './ContentGrid'
-export { default as FloatingActionButton } from './FloatingActionButton'
-export { default as Footer } from './Footer'
-export { default as HeroSection } from './HeroSection'
-export { default as LayoutContainer } from './LayoutContainer'
-export { default as NavbarSpacer } from './NavbarSpacer'
-export { default as Navigation } from './Navigation'
-export { default as PageWrapper } from './PageWrapper'
-export { default as SectionDivider } from './SectionDivider'
+export { AppLayout } from './AppLayout'
+export { ContentGrid } from './ContentGrid'
+export { FloatingActionButton } from './FloatingActionButton'
+export { Footer } from './Footer'
+export { HeroSection } from './HeroSection'
+export { LayoutContainer } from './LayoutContainer'
+export { NavbarSpacer } from './NavbarSpacer'
+export { Navigation } from './Navigation'
+export { PageWrapper } from './PageWrapper'
+export { SectionDivider } from './SectionDivider'

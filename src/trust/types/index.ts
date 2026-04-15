@@ -3,9 +3,16 @@
 export interface DocumentVerificationResult {
   id: string;
   documentId: string;
+  propertyId?: string;
+  userId?: string;
   verificationStatus: 'verified' | 'pending' | 'failed' | 'suspicious';
+  status?: 'verified' | 'pending' | 'failed' | 'suspicious'; // Alias for verificationStatus
   confidence: number;
+  score?: number; // Alias for confidence
   riskScore: number;
+  riskLevel?: 'low' | 'medium' | 'high' | 'critical';
+  expertReviewRequired?: boolean;
+  communityFlagged?: boolean;
   findings: DocumentFinding[];
   metadata: DocumentMetadata;
   createdAt: Date;

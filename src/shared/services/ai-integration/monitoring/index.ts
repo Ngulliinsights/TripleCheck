@@ -39,20 +39,20 @@ export {
 } from './ai-performance-dashboard'
 
 // Testing Suite
-export {
-  AITestSuite,
-  aiTestUtils,
-  type AITestConfig,
-  type AITestResult,
-  type AITestSuiteReport
-} from '../__tests__/ai-test-suite'
+// export {
+//   AITestSuite,
+//   aiTestUtils,
+//   type AITestConfig,
+//   type AITestResult,
+//   type AITestSuiteReport
+// } from '../__tests__/ai-test-suite' // File doesn't exist
 
 // Comprehensive Test Runner
-export {
-  ComprehensiveAITestRunner,
-  type ComprehensiveTestConfig,
-  type ComprehensiveTestReport
-} from '../__tests__/comprehensive-ai-test-runner'
+// export {
+//   ComprehensiveAITestRunner,
+//   type ComprehensiveTestConfig,
+//   type ComprehensiveTestReport
+// } from '../__tests__/comprehensive-ai-test-runner' // File doesn't exist
 
 /**
  * Initialize all monitoring systems

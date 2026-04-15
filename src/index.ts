@@ -16,7 +16,7 @@ export * from './property/services'
 // Shared Module
 export * from './shared/components/ui'
 export * from './shared/components/layout'
-export * from './shared/components/navigation'
+// Navigation is exported from both layout and navigation, so we skip both wildcard exports to avoid conflicts
 export * from './shared/hooks'
 export * from './shared/utils'
 export * from './shared/services'
@@ -35,5 +35,5 @@ export * from './auth/hooks'
 
 // Re-export commonly used types and interfaces
 export type { Property } from './property/types'
-export type { User } from './user/types'
-export type { SearchFilters } from './search/types'
+// export type { User } from './user/types' // File doesn't exist
+// export type { SearchFilters } from './search/types' // File doesn't exist

@@ -221,7 +221,7 @@ export class DocumentCommunicationIntegrationService {
     return {
       type: notificationType,
       documentId: result.documentId,
-      propertyId: result.propertyId,
+      propertyId: result.propertyId || '',
       userId: result.userId,
       title: this.generateNotificationTitle(result),
       message: this.generateNotificationMessage(result),
@@ -269,7 +269,7 @@ export class DocumentCommunicationIntegrationService {
   }
 
   private generateSuggestedQuestions(context: DocumentMessageContext[]): string[] {
-    const questions = [];
+    const questions: string[] = [];
     
     context.forEach(doc => {
       if (doc.verificationStatus === 'pending') {
@@ -344,7 +344,7 @@ export class DocumentCommunicationIntegrationService {
   }
 
   private requiresUserAction(result: DocumentVerificationResult): boolean {
-    return result.status === 'failed' || result.expertReviewRequired;
+    return result.status === 'failed' || (result.expertReviewRequired ?? false);
   }
 
   private getEmptyEnhancement() {

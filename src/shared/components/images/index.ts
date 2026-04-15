@@ -80,7 +80,7 @@ export const IMAGE_COMPONENT_PRESETS = {
 } as const;
 
 // Service exports
-export { PropertyImageUploadCoordinator } from '../../services/images/PropertyImageUploadCoordinator'
+// export { PropertyImageUploadCoordinator } from '../../services/images/PropertyImageUploadCoordinator' // File doesn't exist
 export { PropertyImageValidationService } from '../../services/images/PropertyImageValidationService'
 export { PropertyImageWorkflowManager } from '../../services/images/PropertyImageWorkflowManager'
 export { ImageMetadataService } from '../../services/images/ImageMetadataService'

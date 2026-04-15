@@ -31,11 +31,14 @@ export type {
   MessageType,
   ThreadType,
   CreateThreadRequest,
-  SendMessageRequest,
+  SendMessageRequest
+} from './hooks/useMessaging'
+
+export type {
   Notification,
   NotificationType,
   NotificationSettings
-} from './hooks/useMessaging'
+} from './hooks/useNotifications'
 
 // WebSocket hooks from shared
 export { 

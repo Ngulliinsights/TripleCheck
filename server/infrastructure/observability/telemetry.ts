@@ -19,16 +19,22 @@ export function initializeTelemetry() {
     return; // Already initialized
   }
 
-  const prometheusExporter = new PrometheusExporter({
-    port: parseInt(process.env.PROMETHEUS_PORT || '9464'),
-  });
+  const prometheusPort = parseInt(process.env.PROMETHEUS_PORT || '9464');
+  const prometheusExporter = new PrometheusExporter(
+    {
+      port: prometheusPort,
+    },
+    () => {
+      logger.info({ port: prometheusPort }, 'Prometheus metrics server started');
+    }
+  );
 
   sdk = new NodeSDK({
     resource: new Resource({
       [ATTR_SERVICE_NAME]: 'triplecheck-api',
       [ATTR_SERVICE_VERSION]: process.env.APP_VERSION || '1.0.0',
     }),
-    metricReader: prometheusExporter,
+    metricReader: prometheusExporter as any,
     instrumentations: [
       getNodeAutoInstrumentations({
         '@opentelemetry/instrumentation-fs': { enabled: false },
@@ -48,14 +54,14 @@ export function initializeTelemetry() {
       await sdk?.shutdown();
       logger.info('OpenTelemetry SDK shut down successfully');
     } catch (error) {
-      logger.error('Error shutting down OpenTelemetry SDK', { error });
+      logger.error({ error }, 'Error shutting down OpenTelemetry SDK');
     }
   });
 
-  logger.info('OpenTelemetry initialized', {
+  logger.info({
     serviceName: 'triplecheck-api',
-    prometheusPort: prometheusExporter.port,
-  });
+    prometheusPort,
+  }, 'OpenTelemetry initialized');
 }
 
 // Pino logger with OpenTelemetry integration

@@ -22,7 +22,7 @@ import type {
 } from '../../types/audit.types'
 import type { EventHandler, APICall } from '../../types/event.types'
 import type { RouteValidationResult } from '../../types/route.types'
-import type { APIConnectionResult } from './LinkValidator'
+import type { APIConnectionResult } from './UIAuditSystem'
 
 export { UIAuditSystem } from './UIAuditSystem.js'
 export { RouteAnalyzer } from './RouteAnalyzer.js'
@@ -39,10 +39,15 @@ export type {
   PerformanceMetrics,
   AuditConfiguration,
   AuditRule,
-  AuditRuleResult,
-  RouteValidationResult,
-  APIConnectionResult,
-  Recommendation
+  AuditRuleResult
+} from '../../types/audit.types'
+
+export type {
+  RouteValidationResult
+} from '../../types/route.types'
+
+export type {
+  APIConnectionResult
 } from './UIAuditSystem'
 
 export type {
@@ -54,8 +59,6 @@ export type {
 export type {
   LinkValidationResult,
   LinkLocation,
-  APIEndpointInfo,
-  APIUsageLocation,
   ValidationSummary
 } from './LinkValidator'
 
@@ -128,7 +131,7 @@ export async function runCompleteAudit(): Promise<{
     // Step 6: Generate comprehensive report
     console.log('\n📊 Step 6: Generating comprehensive report...');
     const report = await auditReporter.generateComprehensiveReport(
-      elements,
+      elements as any,
       routes,
       apiConnections,
       routeAnalysis.mismatches,

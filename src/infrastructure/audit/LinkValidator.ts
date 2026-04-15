@@ -5,10 +5,10 @@
  * discovery, sophisticated error handling, and actionable insights.
  */
 
-import * as fs from './audit.types'
-import * as path from './audit.types'
+import * as fs from 'fs'
+import * as path from 'path'
 import { parse } from '@babel/parser'
-import traverse from '../../../scripts/cleanup-redundancies'
+import traverse from '@babel/traverse'
 import { APIConnectionResult } from './UIAuditSystem'
 
 export interface LinkValidationResult {

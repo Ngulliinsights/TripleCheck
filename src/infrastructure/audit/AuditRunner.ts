@@ -52,9 +52,9 @@ export interface AuditResult {
 
 export class EnhancedAuditRunner extends EventEmitter {
   private config: AuditConfig;
-  private auditSystem: OptimizedUIAuditSystem;
+  private auditSystem: InstanceType<typeof OptimizedUIAuditSystem>;
   private routeAnalyzer: RouteAnalyzer;
-  private linkValidator: LinkValidator;
+  private linkValidator: InstanceType<typeof EnhancedLinkValidator>;
   private auditReporter: AuditReporter;
   
   private isRunning = false;
@@ -66,9 +66,9 @@ export class EnhancedAuditRunner extends EventEmitter {
     this.config = config ? { ...getAuditConfig(), ...config } : getAuditConfig();
     
     // Initialize core components
-    this.auditSystem = new OptimizedUIAuditSystem(this.config);
+    this.auditSystem = new OptimizedUIAuditSystem(this.config as any);
     this.routeAnalyzer = new RouteAnalyzer();
-    this.linkValidator = new LinkValidator();
+    this.linkValidator = new EnhancedLinkValidator();
     this.auditReporter = new AuditReporter();
     
     // Set up event forwarding
@@ -227,7 +227,7 @@ export class EnhancedAuditRunner extends EventEmitter {
       maxConcurrentScans: 2,
       apiTimeout: 3000,
       enableCaching: false
-    };
+    } as any;
     
     const quickAuditSystem = new OptimizedUIAuditSystem(quickConfig);
     
@@ -248,7 +248,7 @@ export class EnhancedAuditRunner extends EventEmitter {
       scanDepth: 'deep' as const,
       includeAccessibility: options.focus?.includes('accessibility') ?? false,
       includePerformance: options.focus?.includes('performance') ?? false
-    };
+    } as any;
     
     const focusedAuditSystem = new OptimizedUIAuditSystem(focusedConfig);
     
@@ -421,8 +421,8 @@ ${this.generateDetailedFindings(report)}
       element.type,
       element.status,
       element.priority,
-      element.location.componentName,
-      element.location.filePath,
+      element.location?.componentName || '',
+      element.location?.filePath || '',
       element.currentBehavior,
       element.intendedBehavior
     ]);
@@ -473,15 +473,15 @@ ${this.generateDetailedFindings(report)}
   
   private setupEventForwarding(): void {
     // Forward events from audit system
-    this.auditSystem.on('phaseStarted', (phase) => {
+    this.auditSystem.on('phaseStarted', (phase: string) => {
       this.emit('progress', { phase, status: 'started' });
     });
     
-    this.auditSystem.on('phaseCompleted', (phase, count) => {
+    this.auditSystem.on('phaseCompleted', (phase: string, count: number) => {
       this.emit('progress', { phase, status: 'completed', count });
     });
     
-    this.auditSystem.on('progress', (progress) => {
+    this.auditSystem.on('progress', (progress: any) => {
       this.emit('progress', progress);
     });
   }

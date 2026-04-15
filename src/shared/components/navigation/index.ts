@@ -15,7 +15,7 @@ export { default as BreadcrumbNavigation } from './BreadcrumbNavigation'
 export { default as ContextualSidebar } from './ContextualSidebar'
 export { Navigation, Navigation as EnhancedNavigation } from './Navigation' // Named export with backward compatibility
 export { default as MobileNav } from './MobileNav'
-export { default as NavigationDebug } from './NavigationDebug'
+// export { default as NavigationDebug } from './NavigationDebug' // File doesn't exist
 export { default as NavigationErrorBoundary } from './NavigationErrorBoundary'
 export { default as NavigationSearch } from './NavigationSearch'
 export { default as SafeNavigation } from './SafeNavigation'

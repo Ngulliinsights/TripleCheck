@@ -144,7 +144,7 @@ export class SecurityPlugin implements AuditPlugin {
     }
     
     // Check for eval() usage (should never be used)
-    const hasEval = element.handlers.some(h => 
+    const hasEval = element.handlers.some((h: any) => 
       h.handlerName.includes('eval') || 
       h.targetEndpoint?.includes('eval')
     );
@@ -169,7 +169,7 @@ export class SecurityPlugin implements AuditPlugin {
     if (element.type === 'form') {
       const hasCSRFToken = element.props.children?.toString().includes('csrf') ||
                           element.props.children?.toString().includes('_token') ||
-                          element.handlers.some(h => h.handlerName.includes('csrf'));
+                          element.handlers.some((h: any) => h.handlerName.includes('csrf'));
       
       const isStateChangingForm = element.apiCalls.some(api => 
         api.method === 'POST' || api.method === 'PUT' || api.method === 'DELETE'
@@ -186,7 +186,7 @@ export class SecurityPlugin implements AuditPlugin {
     }
     
     // Check API calls for CSRF protection
-    const stateChangingAPIs = element.apiCalls.filter(api => 
+    const stateChangingAPIs = element.apiCalls.filter((api: any) => 
       api.method === 'POST' || api.method === 'PUT' || api.method === 'DELETE'
     );
     
@@ -234,7 +234,7 @@ export class SecurityPlugin implements AuditPlugin {
     }
     
     // Check for command injection
-    const hasSystemCalls = element.handlers.some(h => 
+    const hasSystemCalls = element.handlers.some((h: any) => 
       h.handlerName.includes('exec') || 
       h.handlerName.includes('system') ||
       h.handlerName.includes('shell')
@@ -272,7 +272,7 @@ export class SecurityPlugin implements AuditPlugin {
     }
     
     // Check for console.log with sensitive data
-    const hasConsoleLog = element.handlers.some(h => 
+    const hasConsoleLog = element.handlers.some((h: any) => 
       h.handlerName.includes('console.log') || h.handlerName.includes('console')
     );
     
@@ -286,7 +286,7 @@ export class SecurityPlugin implements AuditPlugin {
     }
     
     // Check for localStorage with sensitive data
-    const usesLocalStorage = element.handlers.some(h => 
+    const usesLocalStorage = element.handlers.some((h: any) => 
       h.handlerName.includes('localStorage') || h.handlerName.includes('sessionStorage')
     );
     
@@ -312,7 +312,7 @@ export class SecurityPlugin implements AuditPlugin {
                             element.navigationTarget?.includes('/admin');
     
     if (isProtectedRoute) {
-      const hasAuthCheck = element.handlers.some(h => 
+      const hasAuthCheck = element.handlers.some((h: any) => 
         h.handlerName.includes('auth') || 
         h.handlerName.includes('login') ||
         h.dependencies.includes('auth')
@@ -329,7 +329,7 @@ export class SecurityPlugin implements AuditPlugin {
     }
     
     // Check for API calls without authentication
-    const protectedAPIs = element.apiCalls.filter(api => 
+    const protectedAPIs = element.apiCalls.filter((api: any) => 
       api.endpoint.includes('/api/user') ||
       api.endpoint.includes('/api/admin') ||
       api.endpoint.includes('/api/protected')
@@ -414,7 +414,7 @@ export class SecurityPlugin implements AuditPlugin {
   private async checkFileUploadSecurity(element: UIElement): Promise<AuditRuleResult> {
     // Check file upload restrictions
     const hasFileTypeRestriction = element.props.accept;
-    const hasSizeLimit = element.props.maxSize || element.handlers.some(h => 
+    const hasSizeLimit = element.props.maxSize || element.handlers.some((h: any) => 
       h.handlerName.includes('size') || h.handlerName.includes('limit')
     );
     
@@ -458,10 +458,10 @@ export class SecurityPlugin implements AuditPlugin {
   
   private analyzeSecurityContext(element: UIElement): SecurityContext {
     return {
-      hasAuthentication: element.handlers.some(h => h.dependencies.includes('auth')),
+      hasAuthentication: element.handlers.some((h: any) => h.dependencies.includes('auth')),
       handlesUserInput: ['input', 'textarea', 'form'].includes(element.type),
       makesAPIRequests: element.apiCalls.length > 0,
-      storesData: element.handlers.some(h => 
+      storesData: element.handlers.some((h: any) => 
         h.handlerName.includes('localStorage') || h.handlerName.includes('sessionStorage')
       ),
       hasFileUpload: element.type === 'input' && element.props.type === 'file',

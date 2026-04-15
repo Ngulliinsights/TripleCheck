@@ -161,7 +161,7 @@ export class AccessibilityPlugin implements AuditPlugin {
     }
     
     // Check for keyboard event handlers
-    const hasKeyboardHandlers = element.handlers.some(h => 
+    const hasKeyboardHandlers = element.handlers.some((h: any) => 
       h.event === 'onKeyDown' || h.event === 'onKeyPress' || h.event === 'onKeyUp'
     );
     
@@ -313,7 +313,7 @@ export class AccessibilityPlugin implements AuditPlugin {
     if (element.type === 'form') {
       // Check for form validation
       const hasValidation = element.props.noValidate === false || 
-                           element.handlers.some(h => h.event === 'onSubmit');
+                           element.handlers.some((h: any) => h.event === 'onSubmit');
       
       if (!hasValidation) {
         return {

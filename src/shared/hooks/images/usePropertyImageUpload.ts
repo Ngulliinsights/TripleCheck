@@ -10,7 +10,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { getImageServiceOrchestrator, type DefaultImageServiceOrchestrator } from '../../services/images/ImageServiceOrchestrator'
 import { PropertyImageUploadService } from '../../services/images/PropertyImageUploadService'
 // Legacy import for backward compatibility
-import { PropertyImageUploadCoordinator } from '../../services/images/PropertyImageUploadCoordinator'
+// import { PropertyImageUploadCoordinator } from '../../services/images/PropertyImageUploadCoordinator' // File doesn't exist
 import { PropertyImageWorkflowManager } from '../../services/images/PropertyImageWorkflowManager'
 import type {
   UploadSession,

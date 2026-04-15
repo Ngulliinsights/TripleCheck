@@ -93,6 +93,18 @@ export type NotificationType =
 
 export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
 
+export type NotificationChannel = 'in_app' | 'email' | 'sms' | 'push';
+
+export interface DocumentContext {
+  documentId: string;
+  documentType: string;
+  verificationStatus: string;
+  trustScore?: number;
+  lastVerified?: Date;
+  issues?: string[];
+  recommendations?: string[];
+}
+
 // Metadata interfaces
 export interface MessageMetadata {
   propertyId?: string;

@@ -2,8 +2,12 @@
  * System health checker to validate that all critical components are working
  */
 
-import { parseError, logError } from "../../shared/utils/error-handling"
+// import { parseError, logError } from "../../shared/utils/error-handling" // File doesn't exist
 import { queryClient } from "../api/queryClient"
+
+// Fallback error handling functions
+const parseError = (error: any) => error?.message || String(error);
+const logError = (error: any) => console.error(error);
 
 export interface HealthCheck {
   name: string;

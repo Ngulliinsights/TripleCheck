@@ -5,7 +5,7 @@
  * Provides personalized recommendations, smart matching, and user preference learning.
  */
 
-import { enhancedHuggingFaceClient } from '../huggingface-client'
+import { enhancedHuggingFaceClient } from '../huggingface-api-client'
 import { logger } from '../../../../server/infrastructure/monitoring/logger'
 import { BaseError } from '../../error-handling/errors/base-error'
 import { Property } from '../../types/property'

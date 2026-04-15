@@ -94,8 +94,9 @@ export const useSecureValidation = <T>(schema: ZodSchema<T>) => {
 
 /**
  * Hook for authentication state management
+ * @deprecated Use useAuth from '@/auth/hooks' instead
  */
-export const useAuth = () => {
+export const useAuthLegacy = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);

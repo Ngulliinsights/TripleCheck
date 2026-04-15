@@ -43,4 +43,4 @@ export {
 } from '../../hooks/useErrorRecovery'
 
 // Error Handling Service
-export { errorHandlingService } from '../../../server/land-verification/error-handling/ErrorHandlingService'
+// export { errorHandlingService } from '../../../server/land-verification/error-handling/ErrorHandlingService' // File doesn't exist
