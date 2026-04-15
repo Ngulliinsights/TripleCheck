@@ -57,7 +57,25 @@ export interface CacheEntry<T = unknown> {
   ttl: number;
 }
 
-import { cacheService as enhancedCache } from "../../../server/cache/CacheService"
+// Simple in-memory cache for client-side use (no server imports)
+const simpleCache = new Map<string, { value: unknown; expiry: number }>();
+
+const cacheGet = async <T>(key: string): Promise<T | null> => {
+  const item = simpleCache.get(key);
+  if (!item) return null;
+  if (Date.now() > item.expiry) {
+    simpleCache.delete(key);
+    return null;
+  }
+  return item.value as T;
+};
+
+const cacheSet = async <T>(key: string, value: T, ttlSeconds: number): Promise<void> => {
+  simpleCache.set(key, {
+    value,
+    expiry: Date.now() + (ttlSeconds * 1000)
+  });
+};
 
 // Request cache for preventing duplicate requests
 const requestCache = new Map<string, Promise<ApiResponse<unknown>>>();
@@ -126,7 +144,13 @@ export class ApiClient {
   }
 
   private getCachedResponse<T>(cacheKey: string): ApiResponse<T> | null {
-    return enhancedCache.get<ApiResponse<T>>(cacheKey);
+    const item = simpleCache.get(cacheKey);
+    if (!item) return null;
+    if (Date.now() > item.expiry) {
+      simpleCache.delete(cacheKey);
+      return null;
+    }
+    return item.value as ApiResponse<T>;
   }
 
   private setCachedResponse<T>(
@@ -134,7 +158,10 @@ export class ApiClient {
     data: ApiResponse<T>,
     ttl = DEFAULT_CACHE_TTL
   ): void {
-    enhancedCache.set(cacheKey, data, ttl);
+    simpleCache.set(cacheKey, {
+      value: data,
+      expiry: Date.now() + ttl
+    });
   }
 
   private async sleep(ms: number): Promise<void> {
@@ -402,24 +429,29 @@ export class ApiClient {
   // Cache management methods
   clearCache(): void {
     requestCache.clear();
-    enhancedCache.clear();
+    simpleCache.clear();
   }
 
   clearCacheEntry(cacheKey: string): void {
     requestCache.delete(cacheKey);
-    enhancedCache.delete(cacheKey);
+    simpleCache.delete(cacheKey);
   }
 
   // Get cache statistics
   getCacheStats() {
-    return enhancedCache.getStats();
+    return {
+      size: simpleCache.size,
+      keys: Array.from(simpleCache.keys())
+    };
   }
 
   // Warm cache with data
   warmCache<T>(
     entries: Array<{ key: string; data: ApiResponse<T>; ttl?: number }>
   ) {
-    return enhancedCache.warm(entries);
+    entries.forEach(({ key, data, ttl }) => {
+      this.setCachedResponse(key, data, ttl);
+    });
   }
 }
 

@@ -1,4 +1,4 @@
-import * as crypto from './LandDocumentAnalyzer.test';
+import * as crypto from 'crypto';
 
 import { PDFDocument } from 'pdf-lib';
 

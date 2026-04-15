@@ -1,4 +1,4 @@
-import * as ProgressPrimitive from "./accordion"
+import * as ProgressPrimitive from "@radix-ui/react-progress"
 import { cn } from "../../lib/utils"
 import * as React from 'react'
 

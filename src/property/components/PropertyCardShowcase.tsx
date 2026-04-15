@@ -29,7 +29,7 @@ import {
 import type { NormalizedProperty } from "../../shared/types/property"
 import type { CSSProperties } from "react"
 
-import EnhancedLandCard from "./EnhancedLandCard"
+import EnhancedLandCard from "./LandCard"
 import styles from "./PropertyCardShowcase.module.css"
 
 /* ------------------------------------------------------------------ */

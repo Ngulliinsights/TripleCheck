@@ -31,7 +31,7 @@ export {
 export { PropertyMap } from './components/PropertyMap'
 export { PropertyReviews } from './components/PropertyReviews'
 export { PropertyCard } from '../shared/components/property/PropertyCard'
-export { default as EnhancedLandCard } from './components/EnhancedLandCard'
+export { default as EnhancedLandCard } from './components/LandCard'
 
 // Utilities
 // Image utilities moved to shared/components/images/ for better reusability

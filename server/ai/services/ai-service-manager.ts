@@ -20,7 +20,7 @@ import { PropertyAnalysisAI, PropertyData as PropertyAnalysisData, ValuationResu
 import { DocumentProcessingAI, DocumentInput, DocumentProcessingResult, OCRResult, AuthenticityResult, DocumentClassification } from './document-processing-ai.service';
 import { FraudDetectionAI, TransactionData, UserBehaviorData, DocumentFraudData, FraudAnalysisResult, PatternAnalysisResult } from './fraud-detection-ai.service';
 import { RecommendationAI, UserPreferences, PropertyData as RecommendationPropertyData, RecommendationResponse } from './recommendation-ai.service';
-import { AIServiceError } from '../../../src/shared/services/enhanced-huggingface-client';
+import { AIServiceError } from '../../../src/shared/services/huggingface-client';
 
 export interface AIServiceConfig {
   propertyAnalysis: {

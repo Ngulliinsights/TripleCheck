@@ -28,11 +28,13 @@ export { Logo } from './components/ui/logo'
 
 // Navigation Components
 export { MobileNav } from './components/navigation/MobileNav'
-export { EnhancedNavigation } from './components/navigation/EnhancedNavigation'
+export { Navigation } from './components/navigation/Navigation'
+export { Navigation as EnhancedNavigation } from './components/navigation/Navigation' // Backward compatibility
 
 // Other Shared Components
 export { NewsBlog } from './components/NewsBlog'
-export { EnhancedTestimonials as Testimonials } from './components/Testimonials'
+export { Testimonials } from './components/Testimonials'
+export { Testimonials as EnhancedTestimonials } from './components/Testimonials' // Backward compatibility
 export { ServiceCategories } from './components/ServiceCategories'
 export { TrustIndicators } from './components/TrustIndicators'
 export { DemoLoginHelper } from './components/DemoLoginHelper'
@@ -60,7 +62,7 @@ export { PropertyDataGrid } from './components/property/PropertyDataGrid'
 export { PropertySkeletonGrid, PropertyDetailsSkeleton } from './components/property/PropertySkeletonGrid'
 export { ResidentialFilters, ResidentialFiltersComponent } from './components/property/filters/ResidentialFilters'
 export { BasePropertyFiltersComponent as BasePropertyFilters } from './components/property/filters/BasePropertyFilters'
-export { EnhancedPhotoManagementButton } from './components/property/PhotoManagementButton'
+export { PhotoManagementButton, EnhancedPhotoManagementButton } from './components/property/PhotoManagementButton'
 
 // Property Utilities
 export * from './utils/property-mapper'

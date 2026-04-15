@@ -1,14 +1,17 @@
 # Project Structure
 
-**Generated:** 2/23/2026, 3:37:06 PM
+**Generated:** 4/15/2026, 2:51:11 PM
 **Max Depth:** 7 levels
 
 ```
 .
 ├── docs/
+│   ├── image-gallery-refactoring.md
 │   ├── import-analysis.md
 │   ├── import-resolution-report.md
-│   └── project-structure.md
+│   ├── migration-complete-summary.md
+│   ├── project-structure.md
+│   └── service-consolidation-plan.md
 ├── public/
 │   └── sw.js
 ├── scripts/
@@ -714,7 +717,6 @@
 │   │   ├── README.md
 │   │   ├── response-helpers.ts
 │   │   └── validators.ts
-│   ├── app-optimized.ts
 │   ├── app.ts
 │   ├── index.ts
 │   ├── main.ts
@@ -801,9 +803,9 @@
 │   │   │   │   └── SecurityPlugin.ts
 │   │   │   ├── audit.types.ts
 │   │   │   ├── AuditReporter.ts
+│   │   │   ├── AuditRunner.ts
 │   │   │   ├── cli.ts
 │   │   │   ├── config.ts
-│   │   │   ├── EnhancedAuditRunner.ts
 │   │   │   ├── index.ts
 │   │   │   ├── LinkValidator.ts
 │   │   │   ├── README.md
@@ -907,8 +909,8 @@
 │   │   │   │   └── UnifiedPropertyWizard.tsx
 │   │   │   ├── CompareBar.tsx
 │   │   │   ├── CompareModal.tsx
-│   │   │   ├── EnhancedLandCard.tsx
 │   │   │   ├── index.ts
+│   │   │   ├── LandCard.tsx
 │   │   │   ├── PerformanceTestPanel.tsx
 │   │   │   ├── PropertyCardShowcase.module.css
 │   │   │   ├── PropertyCardShowcase.module.css.d.ts
@@ -999,7 +1001,7 @@
 │   │   │   ├── error-handling/
 │   │   │   │   └── index.ts
 │   │   │   ├── examples/
-│   │   │   │   └── EnhancedHooksExample.tsx
+│   │   │   │   └── HooksExample.tsx
 │   │   │   ├── fallbacks/
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── MobileNavFallback.tsx
@@ -1010,11 +1012,27 @@
 │   │   │   │   └── FormField.tsx
 │   │   │   ├── hero/
 │   │   │   │   ├── ConversionHero.tsx
-│   │   │   │   └── EnhancedHero.tsx
+│   │   │   │   └── Hero.tsx
 │   │   │   ├── images/
-│   │   │   │   ├── EnhancedImageShowcase.tsx
+│   │   │   │   ├── gallery/
+│   │   │   │   │   ├── AdvancedGallery.tsx
+│   │   │   │   │   ├── BatchOperationsToolbar.tsx
+│   │   │   │   │   ├── constants.ts
+│   │   │   │   │   ├── ImageCard.tsx
+│   │   │   │   │   ├── ImageEngine.tsx
+│   │   │   │   │   ├── ImageGallery.tsx
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── LazyImage.tsx
+│   │   │   │   │   ├── Lightbox.tsx
+│   │   │   │   │   ├── SearchInterface.tsx
+│   │   │   │   │   ├── SimpleGallery.tsx
+│   │   │   │   │   ├── types.ts
+│   │   │   │   │   ├── useImageSearch.ts
+│   │   │   │   │   ├── utils.ts
+│   │   │   │   │   └── ValidationService.ts
 │   │   │   │   ├── ImageGallery.module.css
 │   │   │   │   ├── ImageGallery.tsx
+│   │   │   │   ├── ImageShowcase.tsx
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── MIGRATION_GUIDE.md
 │   │   │   │   ├── PropertyImageVault.tsx
@@ -1024,12 +1042,12 @@
 │   │   │   ├── navigation/
 │   │   │   │   ├── BreadcrumbNavigation.tsx
 │   │   │   │   ├── ContextualSidebar.tsx
-│   │   │   │   ├── EnhancedNavigation.tsx
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── MOBILE_NAV_VISIBILITY_IMPROVEMENTS.md
 │   │   │   │   ├── MobileNav.tsx
 │   │   │   │   ├── NAVIGATION_CRASH_FIXES_COMPLETE.md
 │   │   │   │   ├── NAVIGATION_FIXES_SUMMARY.md
+│   │   │   │   ├── Navigation.tsx
 │   │   │   │   ├── NavigationDebug.tsx
 │   │   │   │   ├── NavigationErrorBoundary.tsx
 │   │   │   │   ├── NavigationSearch.tsx
@@ -1057,7 +1075,6 @@
 │   │   │   │   ├── PhotoManagementButton.tsx
 │   │   │   │   ├── PropertyArchitectureComparison.tsx
 │   │   │   │   ├── PropertyCard.tsx
-│   │   │   │   ├── PropertyCardWithImageManagement.example.tsx
 │   │   │   │   ├── PropertyDataGrid.tsx
 │   │   │   │   ├── PropertyListingPage.tsx
 │   │   │   │   ├── PropertySkeletonGrid.tsx
@@ -1085,7 +1102,6 @@
 │   │   │   │   ├── dialog.tsx
 │   │   │   │   ├── drawer.tsx
 │   │   │   │   ├── dropdown-menu.tsx
-│   │   │   │   ├── enhanced-navigation.tsx
 │   │   │   │   ├── error-states.tsx
 │   │   │   │   ├── form.tsx
 │   │   │   │   ├── hover-card.tsx
@@ -1124,7 +1140,6 @@
 │   │   │   ├── AfricaCoverageMap.tsx
 │   │   │   ├── CommunityInsights.tsx
 │   │   │   ├── DemoLoginHelper.tsx
-│   │   │   ├── EnhancedVirtualizedPropertyList.tsx
 │   │   │   ├── ErrorBoundary.tsx
 │   │   │   ├── ErrorFeedback.tsx
 │   │   │   ├── GlobalPerformanceTestPanel.tsx
@@ -1217,7 +1232,6 @@
 │   │   │   ├── useConfigurableHook.ts
 │   │   │   ├── useDebounce.ts
 │   │   │   ├── useDebouncedCallback.ts
-│   │   │   ├── useEnhancedImageGallery.ts
 │   │   │   ├── useErrorRecovery.ts
 │   │   │   ├── useFileUpload.ts
 │   │   │   ├── useFilterState.ts
@@ -1336,10 +1350,10 @@
 │   │   │   ├── AuditLogService.ts
 │   │   │   ├── AuthTokenService.ts
 │   │   │   ├── DataMigrationService.ts
-│   │   │   ├── enhanced-huggingface-client.ts
 │   │   │   ├── FormService.ts
 │   │   │   ├── HealthCheckService.ts
 │   │   │   ├── huggingface-api-client.ts
+│   │   │   ├── huggingface-client.ts
 │   │   │   ├── huggingface-mock-client.ts
 │   │   │   ├── index.ts
 │   │   │   ├── mock-ai-data.ts
@@ -1349,7 +1363,7 @@
 │   │   │   ├── RateLimitService.ts
 │   │   │   ├── SearchService.ts
 │   │   │   ├── security-monitoring-service.ts
-│   │   │   ├── unified-api-client.ts
+│   │   │   └── unified-api-client.ts
 │   │   ├── styles/
 │   │   │   ├── design-system.css
 │   │   │   └── globals.css
@@ -1510,9 +1524,12 @@
 │   └── PropertyCardShowcase.css.d.ts
 ├── uploads/
 ├── Artmark.svg
+├── BUSINESS_MODEL_AND_COMPETITIVE_ANALYSIS.md
 ├── CLEANUP_SUMMARY.md
+├── CODEBASE_VALIDATION_REPORT.md
 ├── fix-imports.sh
 ├── generate-structure.mjs
+├── GRANT_APPLICATION_EXECUTIVE_SUMMARY.md
 ├── IMPORT_FIXES_APPLIED.md
 ├── import-resolver.mjs
 ├── import-tools.sh
@@ -1521,6 +1538,7 @@
 ├── ml_training_quickstart.md
 ├── package-lock.json
 ├── package.json
+├── PORTFOLIO_DESCRIPTION.md
 ├── triplecheck_development_framework.md
 ├── triplecheck_evaluation.md
 ├── TripleCheck.ico
@@ -1530,6 +1548,7 @@
 ├── tsc_errors_final.txt
 ├── tsc_errors_new.txt
 ├── tsc_errors.txt
+├── tsc-errors.txt
 ├── tsconfig.json
 ├── tsconfig.node.json
 └── vite.config.ts

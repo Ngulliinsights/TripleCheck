@@ -294,9 +294,9 @@ class AuditCache {
 }
 
 /**
- * Enhanced UI Audit System with optimization and extensibility
+ * UI Audit System with optimization and extensibility
  */
-export class OptimizedUIAuditSystem extends EventEmitter {
+export class UIAuditSystem extends EventEmitter {
   private discoveredElements: Map<string, UIElement> = new Map();
   private routeValidations: Map<string, RouteValidationResult> = new Map();
   private apiConnections: Map<string, APIConnectionResult> = new Map();
@@ -1393,8 +1393,8 @@ export class OptimizedUIAuditSystem extends EventEmitter {
   }
 }
 
-// Export enhanced singleton instance with configuration
-export const optimizedUIAuditSystem = new OptimizedUIAuditSystem({
+// Export singleton instance with configuration
+export const uiAuditSystem = new UIAuditSystem({
   scanDepth: 'deep',
   parallelism: 4,
   cacheResults: true,
@@ -1459,8 +1459,8 @@ export class AccessibilityAuditPlugin implements AuditPlugin {
 }
 
 // Example usage and configuration
-export const createOptimizedAuditSystem = (customConfig?: Partial<AuditConfiguration>) => {
-  const auditSystem = new OptimizedUIAuditSystem(customConfig);
+export const createAuditSystem = (customConfig?: Partial<AuditConfiguration>) => {
+  const auditSystem = new UIAuditSystem(customConfig);
 
   // Register default plugins
   auditSystem.registerPlugin(new AccessibilityAuditPlugin());
@@ -1477,3 +1477,8 @@ export const createOptimizedAuditSystem = (customConfig?: Partial<AuditConfigura
 
   return auditSystem;
 };
+
+// Backward compatibility exports
+export const optimizedUIAuditSystem = uiAuditSystem
+export const createOptimizedAuditSystem = createAuditSystem
+export const OptimizedUIAuditSystem = UIAuditSystem

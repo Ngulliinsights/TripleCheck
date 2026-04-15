@@ -55,7 +55,7 @@ interface ExtendedLandProperty extends NormalizedProperty {
   readonly isFeatured?: boolean;
 }
 
-interface EnhancedLandCardProps {
+interface LandCardProps {
   readonly property: NormalizedProperty;
   readonly className?: string;
   readonly showQuickActions?: boolean;
@@ -232,7 +232,7 @@ PriceSection.displayName = "PriceSection";
 /* Main Component - Optimized with better performance patterns      */
 /* ------------------------------------------------------------------ */
 
-export const EnhancedLandCard = memo<EnhancedLandCardProps>(
+export const LandCard = memo<LandCardProps>(
   ({
     property,
     className,
@@ -573,6 +573,6 @@ export const EnhancedLandCard = memo<EnhancedLandCardProps>(
   }
 );
 
-EnhancedLandCard.displayName = "EnhancedLandCard";
+LandCard.displayName = "LandCard";
 
-export default EnhancedLandCard;
+export default LandCard;

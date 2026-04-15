@@ -1,270 +1,389 @@
-import React, { forwardRef, memo, useMemo, useCallback } from "react"
+import React, {
+  forwardRef,
+  memo,
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+  useImperativeHandle,
+} from "react"
+import { Grid, List } from "react-window"
 
-import type { NormalizedProperty } from "../types/property"
+import type { NormalizedProperty, ViewMode } from "../types/property"
+import type { EnterpriseVirtualizedListHandle } from "./VirtualizedList"
 
-import { PropertyCard } from "./property/PropertyCard"
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-import {
-  EnterpriseVirtualizedList,
-  EnterpriseVirtualizedListHandle,
-} from "./VirtualizedList"
-
-// Define specific analytics event properties type for better type safety
-// Note: id can be string or number to match Property type flexibility
-interface PropertyAnalyticsEventProperties {
-  id: string | number;
-  variant: string;
-  timestamp: number;
-  [key: string]: string | number | boolean;
+interface CardComponentProps {
+  property: NormalizedProperty
+  onClick?: (property: NormalizedProperty) => void
+  className?: string
 }
 
-// Analytics tracking function type - more specific than Record<string, any>
-type AnalyticsTracker = (
-  eventName: string,
-  properties: PropertyAnalyticsEventProperties
-) => void;
+interface VirtualizedPropertyListProps {
+  properties: readonly NormalizedProperty[]
+  viewMode: ViewMode
+  height: number
+  width?: number
+  onPropertyClick?: (property: NormalizedProperty) => void
+  onEndReached?: () => void
+  loading?: boolean
+  className?: string
+  CardComponent: React.ComponentType<CardComponentProps>
+  // Grid-specific
+  itemsPerRow?: number
+  gridItemWidth?: number
+  gridItemHeight?: number
+  // List-specific
+  listItemHeight?: number
+}
 
-// Props interface for the property-specific list component
-// This extends the generic virtualized list with property-specific features
-export interface EnterprisePropertyListProps {
+// ─── Shared item data shapes ──────────────────────────────────────────────────
+
+interface GridItemData {
+  properties: readonly NormalizedProperty[]
+  itemsPerRow: number
+  onPropertyClick?: (property: NormalizedProperty) => void
+  CardComponent: React.ComponentType<CardComponentProps>
+}
+
+interface ListItemData {
+  properties: readonly NormalizedProperty[]
+  onPropertyClick?: (property: NormalizedProperty) => void
+  CardComponent: React.ComponentType<CardComponentProps>
+}
+
+// ─── Grid cell ────────────────────────────────────────────────────────────────
+
+interface GridCellProps {
+  ariaAttributes: {
+    "aria-colindex": number;
+    role: "gridcell";
+  };
+  columnIndex: number;
+  rowIndex: number;
+  style: React.CSSProperties;
   properties: readonly NormalizedProperty[];
-  height: number | string;
-  width?: number | string;
-  itemHeight?: number; // Defaults to 280px for property cards
-  overscanCount?: number;
+  itemsPerRow: number;
   onPropertyClick?: (property: NormalizedProperty) => void;
-  onEndReached?: () => void;
-  loading?: boolean;
-  className?: string | undefined;
-  scrollToIndex?: number;
-  scrollToAlignment?: "auto" | "smart" | "center" | "start" | "end";
-  // Performance optimizations
-  enableAnalytics?: boolean; // Toggle analytics tracking
-  viewMode?: "grid" | "list"; // Layout mode for proper styling
+  CardComponent: React.ComponentType<CardComponentProps>;
 }
 
-// Props interface for PropertyRow - explicitly handling optional properties
-interface PropertyRowProps {
-  property: NormalizedProperty;
-  index: number;
-  style: React.CSSProperties; // Positioning styles from react-window
-  onPropertyClick: ((property: NormalizedProperty) => void) | undefined; // Explicitly allow undefined
-  onAnalyticsTrack: AnalyticsTracker;
-  viewMode?: "grid" | "list"; // Layout mode for proper styling
-}
+const GridCell = memo<GridCellProps>(
+  ({ columnIndex, rowIndex, style, properties, itemsPerRow, onPropertyClick, CardComponent }) => {
+    const index = rowIndex * itemsPerRow + columnIndex
+    const property = properties[index]
 
-// Memoized property row component - this is where each property gets rendered
-// Memoization is critical here because without it, every property card would
-// re-render whenever any part of the list changes
-const PropertyRow = memo<PropertyRowProps>(
-  ({
-    property,
-    style,
-    onPropertyClick,
-    onAnalyticsTrack,
-    viewMode = "grid",
-  }) => {
-    // Memoized click handler that combines user action with analytics
-    // This prevents creating a new function on every render
-    const handleViewDetails = useCallback(() => {
-      // Only call onPropertyClick if it's defined - this handles the optional nature safely
-      if (onPropertyClick) {
-        onPropertyClick(property);
-      }
+    const handleClick = useCallback(
+      () => onPropertyClick?.(property),
+      [property, onPropertyClick]
+    )
 
-      // Track the interaction for business intelligence
-      onAnalyticsTrack("property_card_click", {
-        id: property.id,
-        variant: "list",
-        timestamp: Date.now(),
-      });
-    }, [property, onPropertyClick, onAnalyticsTrack]);
-
-    // Create a positioned wrapper that applies the react-window positioning
-    const PositionedWrapper = ({
-      children,
-      ...props
-    }: {
-      children: React.ReactNode;
-      style: React.CSSProperties;
-      className?: string;
-    }) => <div {...props}>{children}</div>;
+    if (!property) return <div style={style} />
 
     return (
-      <PositionedWrapper style={style} className="property-row-container">
-        <div
-          className="px-2 py-2 cursor-pointer property-grid-item"
-          onClick={handleViewDetails}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              handleViewDetails();
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label={`View details for ${property.title}`}
-        >
-          <PropertyCard
+      <div style={style}>
+        <div className="p-2">
+          <CardComponent property={property} onClick={handleClick} />
+        </div>
+      </div>
+    )
+  }
+)
+GridCell.displayName = "GridCell"
+
+// ─── List row ─────────────────────────────────────────────────────────────────
+
+interface ListRowProps {
+  ariaAttributes: {
+    "aria-posinset": number;
+    "aria-setsize": number;
+    role: "listitem";
+  };
+  index: number;
+  style: React.CSSProperties;
+  properties: readonly NormalizedProperty[];
+  onPropertyClick?: (property: NormalizedProperty) => void;
+  CardComponent: React.ComponentType<CardComponentProps>;
+}
+
+const ListRow = memo<ListRowProps>(
+  ({ index, style, properties, onPropertyClick, CardComponent }) => {
+    const property = properties[index]
+
+    const handleClick = useCallback(
+      () => onPropertyClick?.(property),
+      [property, onPropertyClick]
+    )
+
+    if (!property) return <div style={style} />
+
+    return (
+      <div style={style}>
+        <div className="p-2 w-full">
+          <CardComponent
             property={property}
-            {...(onPropertyClick && { onClick: onPropertyClick })}
-            viewMode={viewMode}
-            showQuickActions={false}
+            onClick={handleClick}
+            className="flex flex-row w-full"
           />
         </div>
-      </PositionedWrapper>
-    );
+      </div>
+    )
   }
-);
+)
+ListRow.displayName = "ListRow"
 
-PropertyRow.displayName = "PropertyRow";
+// ─── Responsive grid hook ─────────────────────────────────────────────────────
 
-// Main component using forwardRef to allow parent components to control scrolling
-export const EnterprisePropertyList = memo(
-  forwardRef<EnterpriseVirtualizedListHandle, EnterprisePropertyListProps>(
+function useResponsiveGrid(
+  containerWidth: number,
+  itemWidth: number,
+  minItemsPerRow = 1,
+  maxItemsPerRow = 6
+) {
+  return useMemo(() => {
+    const available = Math.max(0, containerWidth - 32)
+    const count = Math.max(
+      minItemsPerRow,
+      Math.min(maxItemsPerRow, Math.floor(available / itemWidth))
+    )
+    return {
+      itemsPerRow: count,
+      actualItemWidth: Math.floor(available / count),
+    }
+  }, [containerWidth, itemWidth, minItemsPerRow, maxItemsPerRow])
+}
+
+// ─── Loading / empty states ───────────────────────────────────────────────────
+
+const LoadingState = memo(() => (
+  <div className="flex items-center justify-center h-full">
+    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    <span className="ml-3 text-sm text-muted-foreground">Loading properties…</span>
+  </div>
+))
+LoadingState.displayName = "LoadingState"
+
+const EmptyState = memo(() => (
+  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+    <div className="w-24 h-24 mb-4 bg-muted rounded-full flex items-center justify-center">
+      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+        />
+      </svg>
+    </div>
+    <p className="font-medium text-base mb-2">No properties found</p>
+    <p className="text-sm">Try adjusting your search or filters.</p>
+  </div>
+))
+EmptyState.displayName = "EmptyState"
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export const VirtualizedPropertyList = memo(
+  forwardRef<EnterpriseVirtualizedListHandle, VirtualizedPropertyListProps>(
     (
       {
         properties,
+        viewMode,
         height,
         width,
-        itemHeight = 280, // Standard height for property cards
-        overscanCount = 5, // Render 5 extra items above/below visible area
         onPropertyClick,
         onEndReached,
         loading = false,
-        className,
-        scrollToIndex,
-        scrollToAlignment = "auto",
-        enableAnalytics = true,
-        viewMode = "grid",
+        className = "",
+        CardComponent,
+        itemsPerRow: propItemsPerRow,
+        gridItemWidth = 320,
+        gridItemHeight = 400,
+        listItemHeight = 200,
       },
-      ref // This ref gets passed through to the underlying virtualized list
+      ref
     ) => {
-      // Simple analytics tracking - can be enhanced later
-      const track = useCallback(
-        (eventName: string, properties: Record<string, unknown>) => {
-          // For now, just log to console - can be replaced with real analytics
-          if (process.env.NODE_ENV === "development") {
-            // eslint-disable-next-line no-console
-            console.log("Analytics:", eventName, properties);
+      const containerRef = useRef<HTMLDivElement>(null)
+      const [containerWidth, setContainerWidth] = useState(width ?? 1200)
+
+      // Sync container width via ResizeObserver when width is not explicitly provided
+      useEffect(() => {
+        if (width !== undefined) {
+          setContainerWidth(width)
+          return
+        }
+        if (!containerRef.current) return
+
+        const observer = new ResizeObserver(([entry]) => {
+          setContainerWidth(entry.contentRect.width)
+        })
+        observer.observe(containerRef.current)
+        return () => observer.disconnect()
+      }, [width])
+
+      // Expose scroll-to-top for parent consumers via ref
+      useImperativeHandle(ref, () => ({
+        scrollToTop: () => containerRef.current?.scrollTo({ top: 0 }),
+        scrollToItem: (index: number) => {
+          // For grid mode, calculate row and scroll to it
+          if (viewMode === "grid") {
+            const row = Math.floor(index / (propItemsPerRow ?? 1));
+            containerRef.current?.scrollTo({ top: row * gridItemHeight });
+          } else {
+            // For list mode, scroll to the item
+            containerRef.current?.scrollTo({ top: index * listItemHeight });
           }
         },
-        []
-      );
+        recompute: () => {
+          // No-op for fixed size lists
+        },
+        getScrollOffset: () => containerRef.current?.scrollTop ?? 0,
+        getTotalSize: () => {
+          if (viewMode === "grid") {
+            const rows = Math.ceil(properties.length / (propItemsPerRow ?? 1));
+            return rows * gridItemHeight;
+          }
+          return properties.length * listItemHeight;
+        },
+      }))
 
-      // Memoized key extractor - this tells React how to identify each property
-      // Using both ID and index ensures uniqueness even if properties have duplicate IDs
-      const keyExtractor = useCallback(
-        (property: NormalizedProperty, index: number) => `${property.id}-${index}`,
-        [] // Empty dependency array since this logic never changes
-      );
+      const { itemsPerRow: calculatedItemsPerRow, actualItemWidth } =
+        useResponsiveGrid(containerWidth, gridItemWidth, 1, 6)
 
-      // Memoized analytics handler that respects the enableAnalytics flag
-      // This abstraction allows us to easily disable analytics in development or for privacy
-      const handleAnalyticsTrack = useCallback<AnalyticsTracker>(
-        (
-          eventName: string,
-          eventProperties: PropertyAnalyticsEventProperties
-        ) => {
-          if (enableAnalytics) {
-            track(eventName, eventProperties);
+      const finalItemsPerRow = propItemsPerRow ?? calculatedItemsPerRow
+      const numericWidth = width ?? containerWidth
+
+      const rowCount = Math.ceil(properties.length / finalItemsPerRow)
+
+      // Fire onEndReached when the last row is rendered
+      const handleGridItemsRendered = useCallback(
+        ({ visibleRowStopIndex }: { visibleRowStopIndex: number }) => {
+          if (onEndReached && visibleRowStopIndex >= rowCount - 1) {
+            onEndReached()
           }
         },
-        [track, enableAnalytics]
-      );
+        [onEndReached, rowCount]
+      )
 
-      // Optimized render function that creates each property row
-      // This is where the magic happens - each property gets wrapped in our PropertyRow
-      const renderProperty = useCallback(
-        (property: NormalizedProperty, index: number, style: React.CSSProperties) => (
-          <PropertyRow
-            property={property}
-            index={index}
-            style={style} // Critical: this contains positioning from react-window
-            onPropertyClick={onPropertyClick} // Now properly typed to allow undefined
-            onAnalyticsTrack={handleAnalyticsTrack}
-            viewMode={viewMode}
+      const handleListItemsRendered = useCallback(
+        ({ visibleStopIndex }: { visibleStopIndex: number }) => {
+          if (onEndReached && visibleStopIndex >= properties.length - 1) {
+            onEndReached()
+          }
+        },
+        [onEndReached, properties.length]
+      )
+
+      const gridData = useMemo<GridItemData>(
+        () => ({ properties, itemsPerRow: finalItemsPerRow, onPropertyClick, CardComponent }),
+        [properties, finalItemsPerRow, onPropertyClick, CardComponent]
+      )
+
+      const listData = useMemo<ListItemData>(
+        () => ({ properties, onPropertyClick, CardComponent }),
+        [properties, onPropertyClick, CardComponent]
+      )
+
+      if (loading) {
+        return (
+          <div ref={containerRef} className={`${className} h-full`}>
+            <LoadingState />
+          </div>
+        )
+      }
+
+      if (properties.length === 0) {
+        return (
+          <div ref={containerRef} className={`${className} h-full`}>
+            <EmptyState />
+          </div>
+        )
+      }
+
+      if (viewMode === "grid") {
+        return (
+          <div ref={containerRef} className={`${className} w-full`}>
+            <Grid
+              columnCount={finalItemsPerRow}
+              columnWidth={actualItemWidth}
+              rowCount={rowCount}
+              rowHeight={gridItemHeight}
+              cellComponent={GridCell as any}
+              cellProps={gridData}
+              overscanCount={2}
+              style={{
+                width: numericWidth,
+                height: height,
+              }}
+            />
+          </div>
+        )
+      }
+
+      return (
+        <div ref={containerRef} className={`${className} w-full`}>
+          <List
+            rowCount={properties.length}
+            rowHeight={listItemHeight}
+            rowComponent={ListRow as any}
+            rowProps={listData}
+            overscanCount={5}
+            style={{
+              width: numericWidth,
+              height: height,
+            }}
           />
-        ),
-        [onPropertyClick, handleAnalyticsTrack, viewMode]
-      );
-
-      // Memoized loading component with accessible design
-      // This shows while properties are being fetched from the server
-      const loadingComponent = useMemo(
-        () => (
-          <div className="flex items-center justify-center h-full">
-            <div
-              className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"
-              aria-label="Loading properties"
-            />
-            <span className="ml-3 text-sm text-gray-600">
-              Loading properties…
-            </span>
-          </div>
-        ),
-        [] // Never changes, so empty dependency array is safe
-      );
-
-      // Memoized empty state component with helpful messaging
-      // This shows when no properties match the current filters/search
-      const emptyComponent = useMemo(
-        () => (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <img
-              src="/empty-state/properties.svg"
-              alt="No properties available"
-              className="w-24 h-24 mb-4"
-              loading="lazy" // Optimize image loading
-            />
-            <p className="font-medium text-base">No properties found</p>
-            <p className="text-sm">Try adjusting your search or filters.</p>
-          </div>
-        ),
-        []
-      );
-
-      // Enhanced end reached handler that includes analytics tracking
-      // This is called when the user scrolls near the bottom - perfect for infinite scroll
-      const handleEndReached = useCallback(() => {
-        // Call the parent's handler (likely to load more properties) if it exists
-        if (onEndReached) {
-          onEndReached();
-        }
-
-        // Track this event for understanding user engagement patterns
-        if (enableAnalytics) {
-          track("property_list_end_reached", {
-            totalProperties: properties.length,
-            timestamp: Date.now(),
-          });
-        }
-      }, [onEndReached, enableAnalytics, track, properties.length]);
-
-      // The main render - this is where we connect our property-specific logic
-      // to the generic virtualized list component
-      const listProps = {
-        ref,
-        items: properties,
-        itemHeight,
-        containerHeight: height,
-        containerWidth: width ?? "100%",
-        renderItem: renderProperty,
-        keyExtractor,
-        overscanCount,
-        onEndReached: handleEndReached,
-        loading,
-        loadingComponent,
-        emptyComponent,
-        className: className ?? "",
-        debounceMs: 100,
-        ...(scrollToIndex != undefined && { scrollToIndex }),
-        ...(scrollToAlignment != undefined && { scrollToAlignment }),
-      };
-
-      return <EnterpriseVirtualizedList<NormalizedProperty> {...listProps} />;
+        </div>
+      )
     }
   )
-);
+)
+VirtualizedPropertyList.displayName = "VirtualizedPropertyList"
 
-EnterprisePropertyList.displayName = "EnterprisePropertyList";
+// Export with both names for backward compatibility
+export const EnhancedVirtualizedPropertyList = VirtualizedPropertyList
+export const EnterprisePropertyList = VirtualizedPropertyList
+export type EnhancedVirtualizedPropertyListProps = VirtualizedPropertyListProps
+export type EnterprisePropertyListProps = VirtualizedPropertyListProps
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export function useVirtualizedPropertyList(
+  properties: readonly NormalizedProperty[],
+  viewMode: ViewMode,
+  containerRef?: React.RefObject<HTMLDivElement>
+) {
+  const [dimensions, setDimensions] = useState({ width: 1200, height: 600 })
+
+  useEffect(() => {
+    if (!containerRef?.current) return
+
+    const updateDimensions = () => {
+      if (!containerRef.current) return
+      const { width, top } = containerRef.current.getBoundingClientRect()
+      setDimensions({
+        width,
+        height: Math.max(400, window.innerHeight - top - 100),
+      })
+    }
+
+    const observer = new ResizeObserver(updateDimensions)
+    observer.observe(containerRef.current)
+    updateDimensions()
+    return () => observer.disconnect()
+  }, [containerRef])
+
+  const itemsPerRow = useMemo(() => {
+    if (viewMode === "list") return 1
+    const available = Math.max(0, dimensions.width - 32)
+    return Math.max(1, Math.min(6, Math.floor(available / 320)))
+  }, [viewMode, dimensions.width])
+
+  return {
+    dimensions,
+    itemsPerRow,
+    isEmpty: properties.length === 0,
+  }
+}

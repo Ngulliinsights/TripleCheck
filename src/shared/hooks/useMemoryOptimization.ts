@@ -474,9 +474,9 @@ export const useMemoryMonitor = () => {
 };
 
 // ------------------------------------------------------------------
-// 8. Optimized Array Operations Hook
+// 8. Array Operations Hook
 // ------------------------------------------------------------------
-export const useOptimizedArray = <T extends BaseEntity>(
+export const useArrayOperations = <T extends BaseEntity>(
   initialArray: T[] = [],
   keyExtractor: (item: T) => string | number
 ) => {
@@ -614,3 +614,6 @@ export const useCleanup = () => {
 
   return { addCleanup, runCleanup };
 };
+
+// Backward compatibility
+export const useOptimizedArray = useArrayOperations

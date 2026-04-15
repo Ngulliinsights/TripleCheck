@@ -115,9 +115,9 @@ export function useCleanupManager(): {
 }
 
 /**
- * Enhanced cleanup manager with automatic cleanup registration for common patterns
+ * Cleanup manager with automatic cleanup registration for common patterns
  */
-export function useEnhancedCleanupManager(): {
+export function useCleanupManager(): {
   addCleanup: (cleanup: CleanupFunction, key?: string) => void;
   removeCleanup: (key: string) => void;
   runCleanup: (key?: string) => Promise<void>;
@@ -211,3 +211,7 @@ export function useEnhancedCleanupManager(): {
     addAbortController,
   };
 }
+
+
+// Backward compatibility
+export const useEnhancedCleanupManager = useCleanupManager

@@ -219,7 +219,7 @@ class AuditLogService {
     }
 
     if (filter.action) {
-      events = events.filter(e => e.action.includes(filter.action));
+      events = events.filter(e => e.action.includes(filter.action!));
     }
 
     if (filter.resource) {

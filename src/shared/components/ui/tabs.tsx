@@ -1,4 +1,4 @@
-import * as TabsPrimitive from "./accordion"
+import * as TabsPrimitive from "@radix-ui/react-tabs"
 import { cn } from "../../lib/utils"
 import * as React from 'react'
 

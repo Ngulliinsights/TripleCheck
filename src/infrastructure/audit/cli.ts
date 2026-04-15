@@ -7,7 +7,7 @@
  * This tool can be used during development and in CI/CD pipelines.
  */
 
-import { EnhancedAuditRunner, AuditRunOptions } from './EnhancedAuditRunner'
+import { EnhancedAuditRunner, AuditRunOptions } from './AuditRunner'
 import { getAuditConfig } from './config'
 
 interface CLIOptions {

@@ -1,865 +1,878 @@
 /**
  * Recommendation AI Integration Service
- * 
- * Integrates AI recommendation capabilities with property discovery and matching features.
- * Provides personalized property recommendations, smart matching, and user preference learning.
+ *
+ * Integrates AI recommendation capabilities with property discovery and matching.
+ * Provides personalized recommendations, smart matching, and user preference learning.
  */
 
-import { enhancedHuggingFaceClient } from '../enhanced-huggingface-client'
-import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
-import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
-import { Property, PropertySearchFilters } from '../../types/property'
+import { enhancedHuggingFaceClient } from '../huggingface-client'
+import { logger } from '../../../../server/infrastructure/monitoring/logger'
+import { BaseError } from '../../error-handling/errors/base-error'
+import { Property } from '../../types/property'
 import { User } from '../../types/contracts/user-contracts'
 
-// Recommendation result interfaces
+// ─── Domain Interfaces ────────────────────────────────────────────────────────
+
+export interface RecommendationReason {
+  factor: string
+  weight: number
+  description: string
+  impact: 'positive' | 'negative' | 'neutral'
+}
+
+export interface MatchingCriterion {
+  criterion: string
+  userPreference: unknown
+  propertyValue: unknown
+  matchStrength: number
+}
+
 export interface PropertyRecommendation {
-  propertyId: string;
-  score: number; // 0-100
-  confidence: number; // 0-1
-  reasons: Array<{
-    factor: string;
-    weight: number;
-    description: string;
-    impact: 'positive' | 'negative' | 'neutral';
-  }>;
-  matchingCriteria: Array<{
-    criterion: string;
-    userPreference: any;
-    propertyValue: any;
-    matchStrength: number;
-  }>;
+  propertyId: string
+  score: number        // 0–100
+  confidence: number   // 0–1
+  reasons: RecommendationReason[]
+  matchingCriteria: MatchingCriterion[]
   aiInsights: {
-    summary: string;
-    keyHighlights: string[];
-    potentialConcerns: string[];
-    investmentPotential: 'excellent' | 'good' | 'fair' | 'poor';
-  };
+    summary: string
+    keyHighlights: string[]
+    potentialConcerns: string[]
+    investmentPotential: 'excellent' | 'good' | 'fair' | 'poor'
+  }
 }
 
 export interface UserPreferenceProfile {
-  userId: string;
+  userId: string
   preferences: {
     location: {
-      preferred: string[];
-      avoided: string[];
-      importance: number;
-    };
+      preferred: string[]
+      avoided: string[]
+      importance: number
+    }
     priceRange: {
-      min: number;
-      max: number;
-      flexibility: number;
-    };
+      min: number
+      max: number
+      flexibility: number
+    }
     propertyType: {
-      preferred: string[];
-      importance: number;
-    };
+      preferred: string[]
+      importance: number
+    }
     features: {
-      mustHave: string[];
-      niceToHave: string[];
-      dealBreakers: string[];
-    };
+      mustHave: string[]
+      niceToHave: string[]
+      dealBreakers: string[]
+    }
     lifestyle: {
-      workLocation?: string;
-      familySize?: number;
-      transportPreference?: string;
-      amenityPreferences?: string[];
-    };
-  };
+      workLocation?: string
+      familySize?: number
+      transportPreference?: string
+      amenityPreferences?: string[]
+    }
+  }
   behaviorPatterns: {
     searchHistory: Array<{
-      filters: PropertySearchFilters;
-      timestamp: Date;
-      resultInteractions: string[];
-    }>;
+      filters: Record<string, unknown>
+      timestamp: Date
+      resultInteractions: string[]
+    }>
     viewingHistory: Array<{
-      propertyId: string;
-      timestamp: Date;
-      duration: number;
-      actions: string[];
-    }>;
+      propertyId: string
+      timestamp: Date
+      duration: number
+      actions: string[]
+    }>
     inquiryPatterns: Array<{
-      propertyId: string;
-      inquiryType: string;
-      timestamp: Date;
-    }>;
-  };
+      propertyId: string
+      inquiryType: string
+      timestamp: Date
+    }>
+  }
   learningMetrics: {
-    profileCompleteness: number;
-    predictionAccuracy: number;
-    lastUpdated: Date;
-  };
+    profileCompleteness: number
+    predictionAccuracy: number
+    lastUpdated: Date
+  }
 }
 
 export interface SmartMatchResult {
-  userId: string;
-  recommendations: PropertyRecommendation[];
+  userId: string
+  recommendations: PropertyRecommendation[]
   matchingStrategy: {
-    algorithm: 'collaborative_filtering' | 'content_based' | 'hybrid' | 'ai_enhanced';
-    confidence: number;
-    factors: string[];
-  };
+    algorithm: 'collaborative_filtering' | 'content_based' | 'hybrid' | 'ai_enhanced'
+    confidence: number
+    factors: string[]
+  }
   personalization: {
-    adaptedToUser: boolean;
-    learningFromHistory: boolean;
-    customWeights: Record<string, number>;
-  };
+    adaptedToUser: boolean
+    learningFromHistory: boolean
+    customWeights: Record<string, number>
+  }
   marketInsights: {
-    trendingProperties: string[];
+    trendingProperties: string[]
     priceOpportunities: Array<{
-      propertyId: string;
-      opportunity: string;
-      potentialSavings: number;
-    }>;
-    marketConditions: string;
-  };
+      propertyId: string
+      opportunity: string
+      potentialSavings: number
+    }>
+    marketConditions: string
+  }
 }
 
 export interface RecommendationFeedback {
-  userId: string;
-  propertyId: string;
-  recommendationId: string;
-  feedbackType: 'interested' | 'not_interested' | 'viewed' | 'inquired' | 'contacted';
-  rating?: number; // 1-5
-  comments?: string;
-  timestamp: Date;
+  userId: string
+  propertyId: string
+  recommendationId: string
+  feedbackType: 'interested' | 'not_interested' | 'viewed' | 'inquired' | 'contacted'
+  rating?: number  // 1–5
+  comments?: string
+  timestamp: Date
 }
 
-class RecommendationIntegrationError extends BaseError {
-  constructor(message: string, operation: string, cause?: Error) {
-    super(message, {
-      code: 'RECOMMENDATION_ERROR',
-      domain: ErrorDomain.BUSINESS,
-      severity: ErrorSeverity.MEDIUM,
-      cause,
-      details: { operation }
-    });
+// ─── Internal Types ───────────────────────────────────────────────────────────
+
+interface ScoredProperty {
+  property: Property
+  score: number
+  factors: RecommendationReason[]
+}
+
+interface SimilarityResult {
+  overallSimilarity: number
+  factors: Array<{
+    factor: string
+    similarity: number
+    description: string
+  }>
+}
+
+interface FeedbackAnalysis {
+  preferenceStrength: number
+  feedbackWeight: number
+  adjustmentDirection: 'positive' | 'negative'
+}
+
+interface ActivityEvent {
+  type: 'search' | 'view' | 'inquiry'
+  [key: string]: unknown
+}
+
+// ─── Error ────────────────────────────────────────────────────────────────────
+
+/**
+ * BaseError is an interface in this project — we extend Error and implement it.
+ */
+class RecommendationIntegrationError extends Error implements BaseError {
+  readonly code = 'RECOMMENDATION_ERROR'
+  readonly details: Record<string, unknown> | undefined
+  readonly timestamp: string
+  readonly correlationId: string | undefined
+  readonly cause?: Error
+
+  constructor(
+    message: string,
+    public readonly operation: string,
+    cause?: Error,
+  ) {
+    super(message)
+    this.name = 'RecommendationIntegrationError'
+    this.timestamp = new Date().toISOString()
+    this.correlationId = undefined
+    this.details = { operation }
+    this.cause = cause
+    Object.setPrototypeOf(this, RecommendationIntegrationError.prototype)
   }
 }
 
+// ─── Property Field Helpers ───────────────────────────────────────────────────
+// Property fields (id, price, location, features) are typed as unions in this
+// project's Property model. These helpers normalise them for safe comparisons.
+
+/** Extracts a plain string from `id: string | number`. */
+function propertyId(p: Property): string {
+  return String(p.id)
+}
+
+/** Extracts a numeric price from `price: string | number`. */
+function numericPrice(p: Property): number {
+  return Number(p.price)
+}
+
+/**
+ * Extracts a searchable location string from `location: string | LocationData`.
+ * Falls back to serialising known fields for structured location objects.
+ */
+function locationString(p: Property): string {
+  const loc = p.location
+  if (typeof loc === 'string') return loc
+  if (loc && typeof loc === 'object') {
+    const l = loc as unknown as Record<string, unknown>
+    return [l['city'], l['area'], l['suburb'], l['name']]
+      .filter((v): v is string => typeof v === 'string')
+      .join(', ')
+  }
+  return ''
+}
+
+/**
+ * Returns a typed string array from `features: unknown`.
+ * Returns [] for any non-array or non-string-element value.
+ */
+function propertyFeatures(p: Property): string[] {
+  const f = p.features
+  if (!Array.isArray(f)) return []
+  return f.filter((v): v is string => typeof v === 'string')
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
+
 export class RecommendationIntegrationService {
-  private static instance: RecommendationIntegrationService;
+  private static instance: RecommendationIntegrationService
+
+  private constructor() {}
 
   public static getInstance(): RecommendationIntegrationService {
     if (!RecommendationIntegrationService.instance) {
-      RecommendationIntegrationService.instance = new RecommendationIntegrationService();
+      RecommendationIntegrationService.instance = new RecommendationIntegrationService()
     }
-    return RecommendationIntegrationService.instance;
+    return RecommendationIntegrationService.instance
   }
 
+  // ─── Public API ─────────────────────────────────────────────────────────────
+
   /**
-   * Generate personalized property recommendations for a user
+   * Generate personalized property recommendations for a user.
    */
   async generatePersonalizedRecommendations(
     user: User,
     availableProperties: Property[],
     userProfile?: UserPreferenceProfile,
-    limit: number = 10
+    limit = 10,
   ): Promise<SmartMatchResult> {
     try {
-      loggingService.info('Generating personalized property recommendations', {
-        module: 'RecommendationIntegration',
-        userId: user.id,
-        availablePropertiesCount: availableProperties.length,
-        hasUserProfile: !!userProfile,
-        limit
-      });
+      logger.info(
+        `[RecommendationIntegration] Generating recommendations — userId=${user.id} ` +
+        `properties=${availableProperties.length} hasProfile=${!!userProfile} limit=${limit}`,
+      )
 
-      // Build or update user preference profile
-      const profile = userProfile || await this.buildUserPreferenceProfile(user);
-
-      // Score and rank properties
-      const scoredProperties = await this.scoreProperties(availableProperties, profile, user);
-
-      // Apply AI-enhanced filtering and ranking
-      const aiEnhancedRankings = await this.applyAIEnhancedRanking(scoredProperties, profile, user);
-
-      // Generate recommendations with insights
-      const recommendations = await this.generateRecommendationsWithInsights(
-        aiEnhancedRankings.slice(0, limit),
-        profile,
-        user
-      );
-
-      // Analyze market conditions
-      const marketInsights = await this.analyzeMarketInsights(availableProperties, profile);
+      const profile         = userProfile ?? await this.buildUserPreferenceProfile(user)
+      const scored          = await this.scoreProperties(availableProperties, profile)
+      const ranked          = await this.applyAIEnhancedRanking(scored, profile)
+      const recommendations = await this.buildRecommendations(ranked.slice(0, limit), profile)
+      const marketInsights  = this.buildMarketInsights(availableProperties)
 
       const result: SmartMatchResult = {
         userId: user.id,
         recommendations,
         matchingStrategy: {
           algorithm: 'ai_enhanced',
-          confidence: this.calculateMatchingConfidence(recommendations),
-          factors: this.getMatchingFactors(profile)
+          confidence: this.averageConfidence(recommendations),
+          factors: this.matchingFactors(profile),
         },
         personalization: {
           adaptedToUser: !!userProfile,
           learningFromHistory: profile.behaviorPatterns.searchHistory.length > 0,
-          customWeights: this.calculateCustomWeights(profile)
+          customWeights: this.customWeights(profile),
         },
-        marketInsights
-      };
+        marketInsights,
+      }
 
-      loggingService.info('Personalized recommendations generated', {
-        module: 'RecommendationIntegration',
-        userId: user.id,
-        recommendationsCount: recommendations.length,
-        averageScore: recommendations.reduce((sum, r) => sum + r.score, 0) / recommendations.length,
-        algorithm: result.matchingStrategy.algorithm
-      });
+      logger.info(
+        `[RecommendationIntegration] Recommendations generated — userId=${user.id} ` +
+        `count=${recommendations.length} avgScore=${this.averageScore(recommendations).toFixed(1)}`,
+      )
 
-      return result;
+      return result
     } catch (error) {
-      loggingService.error('Personalized recommendation generation failed', {
-        module: 'RecommendationIntegration',
-        userId: user.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-
+      logger.error(
+        `[RecommendationIntegration] Recommendation generation failed — userId=${user.id} ` +
+        `error=${error instanceof Error ? error.message : String(error)}`,
+      )
       throw new RecommendationIntegrationError(
         'Failed to generate personalized recommendations',
         'generatePersonalizedRecommendations',
-        error instanceof Error ? error : new Error(String(error))
-      );
+        error instanceof Error ? error : new Error(String(error)),
+      )
     }
   }
 
   /**
-   * Build user preference profile from behavior and explicit preferences
+   * Build a user preference profile from behaviour history and explicit settings.
    */
-  async buildUserPreferenceProfile(user: User, activityHistory?: any[]): Promise<UserPreferenceProfile> {
+  async buildUserPreferenceProfile(
+    user: User,
+    activityHistory?: ActivityEvent[],
+  ): Promise<UserPreferenceProfile> {
     try {
-      loggingService.info('Building user preference profile', {
-        module: 'RecommendationIntegration',
-        userId: user.id,
-        hasActivityHistory: !!activityHistory?.length
-      });
+      logger.info(`[RecommendationIntegration] Building preference profile — userId=${user.id}`)
 
-      // Analyze user behavior patterns using AI
-      const behaviorAnalysis = await this.analyzeUserBehavior(user, activityHistory);
-
-      // Extract preferences from user data and behavior
-      const preferences = await this.extractUserPreferences(user, behaviorAnalysis);
-
-      // Calculate learning metrics
-      const learningMetrics = this.calculateLearningMetrics(behaviorAnalysis);
+      const behavior        = this.extractBehavior(activityHistory)
+      const preferences     = this.derivePreferences(user, behavior)
+      const learningMetrics = this.computeLearningMetrics(behavior)
 
       const profile: UserPreferenceProfile = {
         userId: user.id,
         preferences,
-        behaviorPatterns: behaviorAnalysis,
-        learningMetrics
-      };
+        behaviorPatterns: behavior,
+        learningMetrics,
+      }
 
-      loggingService.info('User preference profile built', {
-        module: 'RecommendationIntegration',
-        userId: user.id,
-        profileCompleteness: profile.learningMetrics.profileCompleteness,
-        searchHistoryCount: profile.behaviorPatterns.searchHistory.length
-      });
+      logger.info(
+        `[RecommendationIntegration] Profile built — userId=${user.id} ` +
+        `completeness=${profile.learningMetrics.profileCompleteness}`,
+      )
 
-      return profile;
+      return profile
     } catch (error) {
-      loggingService.error('User preference profile building failed', {
-        module: 'RecommendationIntegration',
-        userId: user.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-
+      logger.error(
+        `[RecommendationIntegration] Profile build failed — userId=${user.id} ` +
+        `error=${error instanceof Error ? error.message : String(error)}`,
+      )
       throw new RecommendationIntegrationError(
         'Failed to build user preference profile',
         'buildUserPreferenceProfile',
-        error instanceof Error ? error : new Error(String(error))
-      );
+        error instanceof Error ? error : new Error(String(error)),
+      )
     }
   }
 
   /**
-   * Process recommendation feedback to improve future recommendations
+   * Process user feedback to refine future recommendations.
    */
   async processFeedback(feedback: RecommendationFeedback): Promise<{
-    profileUpdated: boolean;
-    learningImpact: number;
-    nextRecommendationAdjustments: string[];
+    profileUpdated: boolean
+    learningImpact: number
+    nextRecommendationAdjustments: string[]
   }> {
     try {
-      loggingService.info('Processing recommendation feedback', {
-        module: 'RecommendationIntegration',
-        userId: feedback.userId,
-        propertyId: feedback.propertyId,
-        feedbackType: feedback.feedbackType,
-        hasRating: !!feedback.rating
-      });
+      logger.info(
+        `[RecommendationIntegration] Processing feedback — userId=${feedback.userId} ` +
+        `propertyId=${feedback.propertyId} type=${feedback.feedbackType}`,
+      )
 
-      // Analyze feedback impact
-      const feedbackAnalysis = await this.analyzeFeedbackImpact(feedback);
+      const analysis       = this.analyzeFeedback(feedback)
+      const profileUpdated = await this.persistProfileUpdate(feedback, analysis)
+      const learningImpact = this.computeLearningImpact(feedback, analysis)
+      const adjustments    = this.deriveAdjustments(feedback)
 
-      // Update user preference profile
-      const profileUpdated = await this.updateUserProfile(feedback, feedbackAnalysis);
+      logger.info(
+        `[RecommendationIntegration] Feedback processed — userId=${feedback.userId} ` +
+        `impact=${learningImpact.toFixed(2)} profileUpdated=${profileUpdated}`,
+      )
 
-      // Calculate learning impact
-      const learningImpact = this.calculateLearningImpact(feedback, feedbackAnalysis);
-
-      // Generate adjustment recommendations
-      const adjustments = this.generateRecommendationAdjustments(feedback, feedbackAnalysis);
-
-      loggingService.info('Recommendation feedback processed', {
-        module: 'RecommendationIntegration',
-        userId: feedback.userId,
-        profileUpdated,
-        learningImpact,
-        adjustmentsCount: adjustments.length
-      });
-
-      return {
-        profileUpdated,
-        learningImpact,
-        nextRecommendationAdjustments: adjustments
-      };
+      return { profileUpdated, learningImpact, nextRecommendationAdjustments: adjustments }
     } catch (error) {
-      loggingService.error('Recommendation feedback processing failed', {
-        module: 'RecommendationIntegration',
-        userId: feedback.userId,
-        error: error instanceof Error ? error.message : String(error)
-      });
-
+      logger.error(
+        `[RecommendationIntegration] Feedback processing failed — userId=${feedback.userId} ` +
+        `error=${error instanceof Error ? error.message : String(error)}`,
+      )
       throw new RecommendationIntegrationError(
         'Failed to process recommendation feedback',
         'processFeedback',
-        error instanceof Error ? error : new Error(String(error))
-      );
+        error instanceof Error ? error : new Error(String(error)),
+      )
     }
   }
 
   /**
-   * Find similar properties based on AI analysis
+   * Find properties most similar to a target property using AI + rule-based scoring.
    */
   async findSimilarProperties(
-    targetProperty: Property,
-    candidateProperties: Property[],
-    limit: number = 5
+    target: Property,
+    candidates: Property[],
+    limit = 5,
   ): Promise<Array<{
-    property: Property;
-    similarity: number;
-    similarityFactors: Array<{
-      factor: string;
-      similarity: number;
-      description: string;
-    }>;
+    property: Property
+    similarity: number
+    similarityFactors: SimilarityResult['factors']
   }>> {
+    const targetIdStr = propertyId(target)
+
     try {
-      loggingService.info('Finding similar properties', {
-        module: 'RecommendationIntegration',
-        targetPropertyId: targetProperty.id,
-        candidateCount: candidateProperties.length,
-        limit
-      });
+      logger.info(
+        `[RecommendationIntegration] Finding similar properties — targetId=${targetIdStr} ` +
+        `candidates=${candidates.length}`,
+      )
 
-      // Create property descriptions for AI analysis
-      const targetDescription = this.createPropertyDescription(targetProperty);
+      const targetDesc = this.describeProperty(target)
 
-      const similarities = [];
+      const scored = await Promise.all(
+        candidates
+          .filter(c => propertyId(c) !== targetIdStr)
+          .map(async candidate => {
+            const result = await this.computeSimilarity(
+              targetDesc,
+              this.describeProperty(candidate),
+              target,
+              candidate,
+            )
+            return {
+              property: candidate,
+              similarity: result.overallSimilarity,
+              similarityFactors: result.factors,
+            }
+          }),
+      )
 
-      for (const candidate of candidateProperties) {
-        if (candidate.id === targetProperty.id) continue;
-
-        const candidateDescription = this.createPropertyDescription(candidate);
-        const similarity = await this.calculatePropertySimilarity(
-          targetDescription,
-          candidateDescription,
-          targetProperty,
-          candidate
-        );
-
-        similarities.push({
-          property: candidate,
-          similarity: similarity.overallSimilarity,
-          similarityFactors: similarity.factors
-        });
-      }
-
-      // Sort by similarity and return top results
-      const sortedSimilarities = similarities
+      const results = scored
         .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, limit);
+        .slice(0, limit)
 
-      loggingService.info('Similar properties found', {
-        module: 'RecommendationIntegration',
-        targetPropertyId: targetProperty.id,
-        foundCount: sortedSimilarities.length,
-        averageSimilarity: sortedSimilarities.reduce((sum, s) => sum + s.similarity, 0) / sortedSimilarities.length
-      });
+      logger.info(
+        `[RecommendationIntegration] Similar properties found — targetId=${targetIdStr} found=${results.length}`,
+      )
 
-      return sortedSimilarities;
+      return results
     } catch (error) {
-      loggingService.error('Similar properties search failed', {
-        module: 'RecommendationIntegration',
-        targetPropertyId: targetProperty.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-
+      logger.error(
+        `[RecommendationIntegration] Similarity search failed — targetId=${targetIdStr} ` +
+        `error=${error instanceof Error ? error.message : String(error)}`,
+      )
       throw new RecommendationIntegrationError(
         'Failed to find similar properties',
         'findSimilarProperties',
-        error instanceof Error ? error : new Error(String(error))
-      );
+        error instanceof Error ? error : new Error(String(error)),
+      )
     }
   }
 
-  // Private helper methods
-
-  private async analyzeUserBehavior(user: User, activityHistory?: any[]): Promise<any> {
-    // Mock behavior analysis - in real implementation, this would analyze actual user data
-    return {
-      searchHistory: activityHistory?.filter(a => a.type === 'search').slice(0, 10) || [],
-      viewingHistory: activityHistory?.filter(a => a.type === 'view').slice(0, 20) || [],
-      inquiryPatterns: activityHistory?.filter(a => a.type === 'inquiry').slice(0, 15) || []
-    };
-  }
-
-  private async extractUserPreferences(user: User, behaviorAnalysis: any): Promise<any> {
-    // Extract preferences from user profile and behavior
-    return {
-      location: {
-        preferred: ['Nairobi', 'Westlands'], // Mock data
-        avoided: [],
-        importance: 0.8
-      },
-      priceRange: {
-        min: 1000000,
-        max: 10000000,
-        flexibility: 0.2
-      },
-      propertyType: {
-        preferred: ['apartment', 'house'],
-        importance: 0.6
-      },
-      features: {
-        mustHave: ['parking', 'security'],
-        niceToHave: ['gym', 'pool'],
-        dealBreakers: ['no_parking']
-      },
-      lifestyle: {
-        workLocation: 'CBD',
-        familySize: 2,
-        transportPreference: 'car',
-        amenityPreferences: ['shopping', 'restaurants']
-      }
-    };
-  }
-
-  private calculateLearningMetrics(behaviorAnalysis: any): any {
-    const totalInteractions = 
-      behaviorAnalysis.searchHistory.length +
-      behaviorAnalysis.viewingHistory.length +
-      behaviorAnalysis.inquiryPatterns.length;
-
-    return {
-      profileCompleteness: Math.min(100, totalInteractions * 5), // 5% per interaction, max 100%
-      predictionAccuracy: 75, // Mock accuracy
-      lastUpdated: new Date()
-    };
-  }
+  // ─── Scoring ─────────────────────────────────────────────────────────────────
 
   private async scoreProperties(
     properties: Property[],
     profile: UserPreferenceProfile,
-    user: User
-  ): Promise<Array<{ property: Property; score: number; factors: any[] }>> {
-    const scoredProperties = [];
-
-    for (const property of properties) {
-      const score = this.calculatePropertyScore(property, profile);
-      const factors = this.getScoreFactors(property, profile);
-
-      scoredProperties.push({
-        property,
-        score,
-        factors
-      });
-    }
-
-    return scoredProperties;
+  ): Promise<ScoredProperty[]> {
+    return properties.map(property => ({
+      property,
+      score:   this.ruleScore(property, profile),
+      factors: this.scoreFactors(property, profile),
+    }))
   }
 
-  private calculatePropertyScore(property: Property, profile: UserPreferenceProfile): number {
-    let score = 0;
+  private ruleScore(property: Property, profile: UserPreferenceProfile): number {
+    const { location, priceRange, propertyType, features } = profile.preferences
+    const loc      = locationString(property)
+    const price    = numericPrice(property)
+    const propType = typeof property.type === 'string' ? property.type : ''
+    const feats    = propertyFeatures(property)
 
-    // Location scoring
-    if (profile.preferences.location.preferred.some(loc => 
-      property.location.toLowerCase().includes(loc.toLowerCase())
-    )) {
-      score += 30 * profile.preferences.location.importance;
+    let score = 0
+
+    if (location.preferred.some(pref => loc.toLowerCase().includes(pref.toLowerCase()))) {
+      score += 30 * location.importance
     }
 
-    // Price range scoring
-    const priceInRange = property.price >= profile.preferences.priceRange.min &&
-                        property.price <= profile.preferences.priceRange.max;
-    if (priceInRange) {
-      score += 25;
-    }
+    if (price >= priceRange.min && price <= priceRange.max) score += 25
 
-    // Property type scoring
-    if (profile.preferences.propertyType.preferred.includes(property.type)) {
-      score += 20 * profile.preferences.propertyType.importance;
-    }
+    if (propertyType.preferred.includes(propType)) score += 20 * propertyType.importance
 
-    // Features scoring
-    const hasFeatures = property.features?.some(feature =>
-      profile.preferences.features.mustHave.includes(feature)
-    ) || false;
-    if (hasFeatures) {
-      score += 15;
-    }
+    if (feats.some(f => features.mustHave.includes(f)))    score += 15
+    if (feats.some(f => features.dealBreakers.includes(f))) score -= 40
 
-    // Random factor for demo
-    score += Math.random() * 10;
-
-    return Math.min(100, Math.max(0, score));
+    return Math.min(100, Math.max(0, score))
   }
 
-  private getScoreFactors(property: Property, profile: UserPreferenceProfile): any[] {
+  private scoreFactors(
+    property: Property,
+    profile: UserPreferenceProfile,
+  ): RecommendationReason[] {
+    const { location, priceRange, propertyType } = profile.preferences
+    const loc      = locationString(property)
+    const price    = numericPrice(property)
+    const propType = typeof property.type === 'string' ? property.type : ''
+
+    const locationMatch  = location.preferred.some(pref => loc.toLowerCase().includes(pref.toLowerCase()))
+    const priceMatch     = price >= priceRange.min && price <= priceRange.max
+    const typeMatch      = propertyType.preferred.includes(propType)
+
     return [
       {
-        factor: 'Location Match',
-        weight: 0.3,
-        description: 'Property location matches user preferences',
-        impact: 'positive'
+        factor: 'Location',
+        weight: location.importance,
+        description: locationMatch
+          ? `Located in a preferred area (${loc})`
+          : 'Location outside preferred areas',
+        impact: locationMatch ? 'positive' : 'neutral',
       },
       {
-        factor: 'Price Range',
+        factor: 'Price range',
         weight: 0.25,
-        description: 'Property price within user budget',
-        impact: 'positive'
+        description: priceMatch
+          ? 'Price falls within your budget'
+          : 'Price outside your specified range',
+        impact: priceMatch ? 'positive' : 'negative',
       },
       {
-        factor: 'Property Type',
-        weight: 0.2,
-        description: 'Property type matches user preference',
-        impact: 'positive'
-      }
-    ];
+        factor: 'Property type',
+        weight: propertyType.importance,
+        description: typeMatch
+          ? `${propType} is one of your preferred types`
+          : `${propType} is not among your preferred types`,
+        impact: typeMatch ? 'positive' : 'neutral',
+      },
+    ]
   }
+
+  // ─── AI-Enhanced Ranking ──────────────────────────────────────────────────────
 
   private async applyAIEnhancedRanking(
-    scoredProperties: Array<{ property: Property; score: number; factors: any[] }>,
-    profile: UserPreferenceProfile,
-    user: User
-  ): Promise<Array<{ property: Property; score: number; factors: any[] }>> {
-    // AI-enhanced ranking using sentiment analysis and property descriptions
-    for (const item of scoredProperties) {
-      try {
-        const propertyDescription = this.createPropertyDescription(item.property);
-        
-        // Analyze property description sentiment
-        const sentiment = await enhancedHuggingFaceClient.analyzePropertyReviewSentiment(propertyDescription);
-        
-        // Adjust score based on sentiment
-        if (sentiment.label === 'POSITIVE') {
-          item.score += 5;
-        } else if (sentiment.label === 'NEGATIVE') {
-          item.score -= 5;
-        }
+    items: ScoredProperty[],
+    _profile: UserPreferenceProfile,
+  ): Promise<ScoredProperty[]> {
+    const enhanced = await Promise.all(
+      items.map(async item => {
+        try {
+          const sentiment = await enhancedHuggingFaceClient.analyzePropertyReviewSentiment(
+            this.describeProperty(item.property),
+          )
 
-        // Add AI factor
-        item.factors.push({
-          factor: 'AI Sentiment Analysis',
-          weight: 0.1,
-          description: `Property description sentiment: ${sentiment.label}`,
-          impact: sentiment.label === 'POSITIVE' ? 'positive' : 'neutral'
-        });
-      } catch (error) {
-        // Continue without AI enhancement if it fails
-        continue;
-      }
-    }
+          const delta: number =
+            sentiment.label === 'POSITIVE' ?  5 :
+            sentiment.label === 'NEGATIVE' ? -5 : 0
 
-    return scoredProperties.sort((a, b) => b.score - a.score);
-  }
+          const impact: RecommendationReason['impact'] =
+            sentiment.label === 'POSITIVE' ? 'positive' :
+            sentiment.label === 'NEGATIVE' ? 'negative' : 'neutral'
 
-  private async generateRecommendationsWithInsights(
-    rankedProperties: Array<{ property: Property; score: number; factors: any[] }>,
-    profile: UserPreferenceProfile,
-    user: User
-  ): Promise<PropertyRecommendation[]> {
-    const recommendations = [];
-
-    for (const item of rankedProperties) {
-      try {
-        const insights = await this.generatePropertyInsights(item.property, profile);
-        
-        const recommendation: PropertyRecommendation = {
-          propertyId: item.property.id,
-          score: item.score,
-          confidence: 0.8,
-          reasons: item.factors,
-          matchingCriteria: this.getMatchingCriteria(item.property, profile),
-          aiInsights: insights
-        };
-
-        recommendations.push(recommendation);
-      } catch (error) {
-        // Continue with basic recommendation if AI insights fail
-        const recommendation: PropertyRecommendation = {
-          propertyId: item.property.id,
-          score: item.score,
-          confidence: 0.6,
-          reasons: item.factors,
-          matchingCriteria: this.getMatchingCriteria(item.property, profile),
-          aiInsights: {
-            summary: 'Property matches your preferences',
-            keyHighlights: ['Good location', 'Within budget'],
-            potentialConcerns: [],
-            investmentPotential: 'good'
+          return {
+            ...item,
+            score: Math.min(100, Math.max(0, item.score + delta)),
+            factors: [
+              ...item.factors,
+              {
+                factor: 'AI sentiment',
+                weight: 0.1,
+                description: `Property description sentiment: ${sentiment.label.toLowerCase()}`,
+                impact,
+              },
+            ],
           }
-        };
+        } catch {
+          return item
+        }
+      }),
+    )
 
-        recommendations.push(recommendation);
+    return enhanced.sort((a, b) => b.score - a.score)
+  }
+
+  // ─── Recommendation Building ──────────────────────────────────────────────────
+
+  private async buildRecommendations(
+    ranked: ScoredProperty[],
+    profile: UserPreferenceProfile,
+  ): Promise<PropertyRecommendation[]> {
+    return Promise.all(
+      ranked.map(async item => {
+        const insights = await this.fetchPropertyInsights(item.property, profile)
+        return {
+          propertyId: propertyId(item.property),
+          score:      item.score,
+          confidence: insights.confidence,
+          reasons:    item.factors,
+          matchingCriteria: this.buildMatchingCriteria(item.property, profile),
+          aiInsights: insights.data,
+        }
+      }),
+    )
+  }
+
+  private async fetchPropertyInsights(
+    property: Property,
+    _profile: UserPreferenceProfile,
+  ): Promise<{ confidence: number; data: PropertyRecommendation['aiInsights'] }> {
+    try {
+      const summary = await enhancedHuggingFaceClient.summarizePropertyDocument(
+        this.describeProperty(property),
+      )
+      return {
+        confidence: 0.85,
+        data: {
+          summary,
+          keyHighlights:     ['Matches location preferences', 'Within price range'],
+          potentialConcerns: [],
+          investmentPotential: 'good',
+        },
+      }
+    } catch {
+      return {
+        confidence: 0.60,
+        data: {
+          summary:           'Property matches your primary search criteria.',
+          keyHighlights:     ['Meets basic criteria'],
+          potentialConcerns: ['Detailed AI analysis unavailable'],
+          investmentPotential: 'fair',
+        },
       }
     }
-
-    return recommendations;
   }
 
-  private async generatePropertyInsights(property: Property, profile: UserPreferenceProfile): Promise<any> {
-    try {
-      const propertyDescription = this.createPropertyDescription(property);
-      
-      // Generate summary using AI
-      const summary = await enhancedHuggingFaceClient.summarizePropertyDocument(propertyDescription);
+  private buildMatchingCriteria(
+    property: Property,
+    profile: UserPreferenceProfile,
+  ): MatchingCriterion[] {
+    const { location, priceRange } = profile.preferences
+    const loc   = locationString(property)
+    const price = numericPrice(property)
 
-      return {
-        summary,
-        keyHighlights: [
-          'Matches location preferences',
-          'Within price range',
-          'Good investment potential'
-        ],
-        potentialConcerns: [],
-        investmentPotential: 'good' as const
-      };
-    } catch (error) {
-      return {
-        summary: 'Property analysis unavailable',
-        keyHighlights: ['Matches basic criteria'],
-        potentialConcerns: ['Limited analysis available'],
-        investmentPotential: 'fair' as const
-      };
-    }
-  }
-
-  private getMatchingCriteria(property: Property, profile: UserPreferenceProfile): any[] {
     return [
       {
         criterion: 'Location',
-        userPreference: profile.preferences.location.preferred,
-        propertyValue: property.location,
-        matchStrength: 0.8
+        userPreference: location.preferred,
+        propertyValue: loc,
+        matchStrength: location.preferred.some(pref =>
+          loc.toLowerCase().includes(pref.toLowerCase()),
+        ) ? 1.0 : 0.0,
       },
       {
         criterion: 'Price',
-        userPreference: `${profile.preferences.priceRange.min} - ${profile.preferences.priceRange.max}`,
-        propertyValue: property.price,
-        matchStrength: 0.9
+        userPreference: `${priceRange.min}–${priceRange.max}`,
+        propertyValue: price,
+        matchStrength: price >= priceRange.min && price <= priceRange.max ? 1.0 : 0.0,
+      },
+    ]
+  }
+
+  // ─── Similarity ───────────────────────────────────────────────────────────────
+
+  private async computeSimilarity(
+    targetDesc: string,
+    candidateDesc: string,
+    target: Property,
+    candidate: Property,
+  ): Promise<SimilarityResult> {
+    const ruleBased = this.ruleSimilarity(target, candidate)
+
+    try {
+      const context  = `Property A: ${targetDesc}\n\nProperty B: ${candidateDesc}`
+      const question = 'How similar are these two properties on a scale of 0 to 100?'
+      const result   = await enhancedHuggingFaceClient.extractPropertyInfo(context, question)
+      const match    = result.answer.match(/\d+/)
+      const aiScore  = match ? Math.min(100, parseInt(match[0], 10)) / 100 : 0.5
+
+      return {
+        overallSimilarity: aiScore * 0.6 + ruleBased * 0.4,
+        factors: [
+          { factor: 'AI analysis', similarity: aiScore,    description: 'AI-based comparison' },
+          { factor: 'Rule-based',  similarity: ruleBased,  description: 'Feature-based comparison' },
+        ],
       }
-    ];
+    } catch {
+      return {
+        overallSimilarity: ruleBased,
+        factors: [
+          { factor: 'Rule-based', similarity: ruleBased, description: 'Feature-based comparison' },
+        ],
+      }
+    }
   }
 
-  private async analyzeMarketInsights(properties: Property[], profile: UserPreferenceProfile): Promise<any> {
+  private ruleSimilarity(a: Property, b: Property): number {
+    let score = 0
+
+    const aType = typeof a.type === 'string' ? a.type : ''
+    const bType = typeof b.type === 'string' ? b.type : ''
+    if (aType && aType === bType) score += 0.30
+
+    const aPrice = numericPrice(a)
+    const bPrice = numericPrice(b)
+    if (aPrice > 0 && bPrice > 0) {
+      const delta = Math.abs(aPrice - bPrice) / Math.max(aPrice, bPrice)
+      if (delta < 0.2) score += 0.25
+    }
+
+    if (locationString(a) === locationString(b)) score += 0.20
+
+    const aBeds = typeof a.bedrooms === 'number' ? a.bedrooms : undefined
+    const bBeds = typeof b.bedrooms === 'number' ? b.bedrooms : undefined
+    if (aBeds !== undefined && aBeds === bBeds) score += 0.15
+
+    const aFeats = propertyFeatures(a)
+    const bFeats = propertyFeatures(b)
+    const total  = Math.max(aFeats.length, bFeats.length)
+    if (total > 0) {
+      const common = aFeats.filter(f => bFeats.includes(f)).length
+      score += (common / total) * 0.10
+    }
+
+    return Math.min(1, score)
+  }
+
+  // ─── Profile Building ─────────────────────────────────────────────────────────
+
+  private extractBehavior(
+    activityHistory?: ActivityEvent[],
+  ): UserPreferenceProfile['behaviorPatterns'] {
+    const history = activityHistory ?? []
     return {
-      trendingProperties: properties.slice(0, 3).map(p => p.id),
-      priceOpportunities: [
-        {
-          propertyId: properties[0]?.id || 'prop-1',
-          opportunity: 'Below market average',
-          potentialSavings: 500000
-        }
-      ],
-      marketConditions: 'Favorable buyer market with good opportunities'
-    };
+      searchHistory:
+        history.filter(a => a.type === 'search').slice(0, 10) as unknown as
+          UserPreferenceProfile['behaviorPatterns']['searchHistory'],
+      viewingHistory:
+        history.filter(a => a.type === 'view').slice(0, 20) as unknown as
+          UserPreferenceProfile['behaviorPatterns']['viewingHistory'],
+      inquiryPatterns:
+        history.filter(a => a.type === 'inquiry').slice(0, 15) as unknown as
+          UserPreferenceProfile['behaviorPatterns']['inquiryPatterns'],
+    }
   }
 
-  private calculateMatchingConfidence(recommendations: PropertyRecommendation[]): number {
-    if (recommendations.length === 0) return 0;
-    
-    const avgConfidence = recommendations.reduce((sum, r) => sum + r.confidence, 0) / recommendations.length;
-    return avgConfidence;
+  private derivePreferences(
+    _user: User,
+    _behavior: UserPreferenceProfile['behaviorPatterns'],
+  ): UserPreferenceProfile['preferences'] {
+    // Replace with derivation logic sourced from user profile data and behavioural signals.
+    return {
+      location:     { preferred: ['Nairobi', 'Westlands'], avoided: [], importance: 0.8 },
+      priceRange:   { min: 1_000_000, max: 10_000_000, flexibility: 0.2 },
+      propertyType: { preferred: ['apartment', 'house'], importance: 0.6 },
+      features: {
+        mustHave:     ['parking', 'security'],
+        niceToHave:   ['gym', 'pool'],
+        dealBreakers: ['no_parking'],
+      },
+      lifestyle: {
+        workLocation:        'CBD',
+        familySize:          2,
+        transportPreference: 'car',
+        amenityPreferences:  ['shopping', 'restaurants'],
+      },
+    }
   }
 
-  private getMatchingFactors(profile: UserPreferenceProfile): string[] {
+  private computeLearningMetrics(
+    behavior: UserPreferenceProfile['behaviorPatterns'],
+  ): UserPreferenceProfile['learningMetrics'] {
+    const total =
+      behavior.searchHistory.length +
+      behavior.viewingHistory.length +
+      behavior.inquiryPatterns.length
+
+    return {
+      profileCompleteness: Math.min(100, total * 5),
+      predictionAccuracy:  75,
+      lastUpdated:         new Date(),
+    }
+  }
+
+  // ─── Feedback Processing ──────────────────────────────────────────────────────
+
+  private analyzeFeedback(feedback: RecommendationFeedback): FeedbackAnalysis {
+    const weights: Record<RecommendationFeedback['feedbackType'], number> = {
+      interested:     0.8,
+      not_interested: -0.6,
+      viewed:         0.3,
+      inquired:       0.9,
+      contacted:      1.0,
+    }
+    const feedbackWeight     = weights[feedback.feedbackType]
+    const preferenceStrength = feedback.rating != null ? feedback.rating / 5 : 0.5
+    return {
+      feedbackWeight,
+      preferenceStrength,
+      adjustmentDirection: feedbackWeight >= 0 ? 'positive' : 'negative',
+    }
+  }
+
+  private async persistProfileUpdate(
+    _feedback: RecommendationFeedback,
+    _analysis: FeedbackAnalysis,
+  ): Promise<boolean> {
+    // Replace with actual database write.
+    return true
+  }
+
+  private computeLearningImpact(
+    _feedback: RecommendationFeedback,
+    analysis: FeedbackAnalysis,
+  ): number {
+    return Math.abs(analysis.feedbackWeight) * analysis.preferenceStrength
+  }
+
+  private deriveAdjustments(feedback: RecommendationFeedback): string[] {
+    if (feedback.feedbackType === 'not_interested') {
+      return [
+        'Reduce weight for properties with similar characteristics',
+        'Broaden property type exploration',
+      ]
+    }
+    if (feedback.feedbackType === 'interested' || feedback.feedbackType === 'inquired') {
+      return [
+        'Increase weight for properties with similar characteristics',
+        'Prioritise features matching this property',
+      ]
+    }
+    return []
+  }
+
+  // ─── Market Insights ──────────────────────────────────────────────────────────
+
+  private buildMarketInsights(properties: Property[]): SmartMatchResult['marketInsights'] {
+    return {
+      trendingProperties: properties.slice(0, 3).map(p => propertyId(p)),
+      priceOpportunities: properties.slice(0, 1).map(p => ({
+        propertyId:       propertyId(p),
+        opportunity:      'Below market average',
+        potentialSavings: 500_000,
+      })),
+      marketConditions: 'Favourable buyer market with solid value opportunities.',
+    }
+  }
+
+  // ─── Utilities ────────────────────────────────────────────────────────────────
+
+  private describeProperty(property: Property): string {
+    const propType = typeof property.type === 'string' ? property.type : ''
+    const beds     = typeof property.bedrooms  === 'number' ? `${property.bedrooms} bedrooms`  : null
+    const baths    = typeof property.bathrooms === 'number' ? `${property.bathrooms} bathrooms` : null
+    const size     = property.size             ? `Size: ${property.size}`                       : null
+    const desc     = typeof property.description === 'string' ? property.description            : null
+    const feats    = propertyFeatures(property)
+
+    return [
+      `${propType} in ${locationString(property)}`,
+      `Price: ${numericPrice(property)}`,
+      beds,
+      baths,
+      size,
+      desc,
+      feats.length ? `Features: ${feats.join(', ')}` : null,
+    ]
+      .filter((v): v is string => v !== null)
+      .join('\n')
+  }
+
+  private averageConfidence(recommendations: PropertyRecommendation[]): number {
+    if (!recommendations.length) return 0
+    return recommendations.reduce((sum, r) => sum + r.confidence, 0) / recommendations.length
+  }
+
+  private averageScore(recommendations: PropertyRecommendation[]): number {
+    if (!recommendations.length) return 0
+    return recommendations.reduce((sum, r) => sum + r.score, 0) / recommendations.length
+  }
+
+  private matchingFactors(_profile: UserPreferenceProfile): string[] {
     return [
       'Location preferences',
       'Price range',
       'Property type',
       'Feature requirements',
-      'Behavioral patterns'
-    ];
+      'Behavioural patterns',
+    ]
   }
 
-  private calculateCustomWeights(profile: UserPreferenceProfile): Record<string, number> {
+  private customWeights(profile: UserPreferenceProfile): Record<string, number> {
     return {
-      location: profile.preferences.location.importance,
-      price: 0.25,
+      location:     profile.preferences.location.importance,
+      price:        0.25,
       propertyType: profile.preferences.propertyType.importance,
-      features: 0.15,
-      aiSentiment: 0.1
-    };
-  }
-
-  private createPropertyDescription(property: Property): string {
-    return `
-      ${property.type} in ${property.location}
-      Price: ${property.price}
-      ${property.bedrooms ? `${property.bedrooms} bedrooms` : ''}
-      ${property.bathrooms ? `${property.bathrooms} bathrooms` : ''}
-      ${property.size ? `Size: ${property.size}` : ''}
-      ${property.description || ''}
-      Features: ${property.features?.join(', ') || 'None listed'}
-    `.trim();
-  }
-
-  private async calculatePropertySimilarity(
-    targetDescription: string,
-    candidateDescription: string,
-    targetProperty: Property,
-    candidateProperty: Property
-  ): Promise<{ overallSimilarity: number; factors: any[] }> {
-    try {
-      // Use AI to analyze similarity
-      const question = `How similar are these two properties? Rate from 0 to 100.`;
-      const context = `Property 1: ${targetDescription}\n\nProperty 2: ${candidateDescription}`;
-      
-      const result = await enhancedHuggingFaceClient.extractPropertyInfo(context, question);
-      
-      // Parse similarity score from AI response
-      const similarityMatch = result.answer.match(/(\d+)/);
-      const aiSimilarity = similarityMatch ? parseInt(similarityMatch[1]) / 100 : 0.5;
-
-      // Calculate rule-based similarity
-      const ruleSimilarity = this.calculateRuleBasedSimilarity(targetProperty, candidateProperty);
-
-      // Combine AI and rule-based similarity
-      const overallSimilarity = (aiSimilarity * 0.6 + ruleSimilarity * 0.4);
-
-      return {
-        overallSimilarity,
-        factors: [
-          {
-            factor: 'AI Analysis',
-            similarity: aiSimilarity,
-            description: 'AI-based property comparison'
-          },
-          {
-            factor: 'Rule-based',
-            similarity: ruleSimilarity,
-            description: 'Feature-based comparison'
-          }
-        ]
-      };
-    } catch (error) {
-      // Fallback to rule-based similarity
-      const ruleSimilarity = this.calculateRuleBasedSimilarity(targetProperty, candidateProperty);
-      
-      return {
-        overallSimilarity: ruleSimilarity,
-        factors: [
-          {
-            factor: 'Rule-based',
-            similarity: ruleSimilarity,
-            description: 'Feature-based comparison'
-          }
-        ]
-      };
+      features:     0.15,
+      aiSentiment:  0.10,
     }
-  }
-
-  private calculateRuleBasedSimilarity(property1: Property, property2: Property): number {
-    let similarity = 0;
-    let factors = 0;
-
-    // Type similarity
-    if (property1.type === property2.type) {
-      similarity += 0.3;
-    }
-    factors++;
-
-    // Price similarity (within 20%)
-    const priceDiff = Math.abs(property1.price - property2.price) / Math.max(property1.price, property2.price);
-    if (priceDiff < 0.2) {
-      similarity += 0.25;
-    }
-    factors++;
-
-    // Location similarity (simple string comparison)
-    if (property1.location === property2.location) {
-      similarity += 0.2;
-    }
-    factors++;
-
-    // Bedrooms similarity
-    if (property1.bedrooms === property2.bedrooms) {
-      similarity += 0.15;
-    }
-    factors++;
-
-    // Features similarity
-    const commonFeatures = property1.features?.filter(f => 
-      property2.features?.includes(f)
-    ).length || 0;
-    const totalFeatures = Math.max(
-      property1.features?.length || 0,
-      property2.features?.length || 0
-    );
-    if (totalFeatures > 0) {
-      similarity += (commonFeatures / totalFeatures) * 0.1;
-    }
-    factors++;
-
-    return similarity;
-  }
-
-  private async analyzeFeedbackImpact(feedback: RecommendationFeedback): Promise<any> {
-    // Analyze how feedback should impact future recommendations
-    return {
-      preferenceStrength: feedback.rating ? feedback.rating / 5 : 0.5,
-      feedbackWeight: this.getFeedbackWeight(feedback.feedbackType),
-      adjustmentDirection: feedback.feedbackType === 'interested' ? 'positive' : 'negative'
-    };
-  }
-
-  private getFeedbackWeight(feedbackType: string): number {
-    const weights = {
-      'interested': 0.8,
-      'not_interested': -0.6,
-      'viewed': 0.3,
-      'inquired': 0.9,
-      'contacted': 1.0
-    };
-    return weights[feedbackType] || 0.1;
-  }
-
-  private async updateUserProfile(feedback: RecommendationFeedback, analysis: any): Promise<boolean> {
-    // Mock profile update - in real implementation, this would update the database
-    return true;
-  }
-
-  private calculateLearningImpact(feedback: RecommendationFeedback, analysis: any): number {
-    return Math.abs(analysis.feedbackWeight) * analysis.preferenceStrength;
-  }
-
-  private generateRecommendationAdjustments(feedback: RecommendationFeedback, analysis: any): string[] {
-    const adjustments = [];
-
-    if (feedback.feedbackType === 'not_interested') {
-      adjustments.push('Reduce weight for similar properties');
-      adjustments.push('Explore different property types');
-    } else if (feedback.feedbackType === 'interested' || feedback.feedbackType === 'inquired') {
-      adjustments.push('Increase weight for similar properties');
-      adjustments.push('Prioritize properties with similar features');
-    }
-
-    return adjustments;
   }
 }
 
-// Export singleton instance
-export const recommendationIntegration = RecommendationIntegrationService.getInstance();
+// ─── Singleton Export ─────────────────────────────────────────────────────────
+
+export const recommendationIntegration = RecommendationIntegrationService.getInstance()

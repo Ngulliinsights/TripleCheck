@@ -1,70 +1,132 @@
 /**
  * Property Analysis AI Integration Service
- * 
- * Integrates AI property analysis capabilities with existing property listing and search features.
- * Provides automated property valuation, risk assessment, and insights generation.
+ *
+ * Integrates AI-powered property analysis with listing and search features.
+ * Provides automated valuation, risk assessment, and market insights.
  */
 
-import { enhancedHuggingFaceClient } from '../enhanced-huggingface-client'
-import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
-import { Property, PropertySearchFilters } from '../../types/property'
-import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
+import { enhancedHuggingFaceClient } from '../huggingface-client';
+import { logger } from '../../../../server/infrastructure/monitoring/logger';
+import { Property } from '../../types/property';
+import { BaseError } from '../../error-handling/errors/base-error';
 
-// Property analysis result interfaces
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const MODULE = 'PropertyAnalysisIntegration';
+
+const VALUATION = {
+  DEFAULT_CONFIDENCE: 0.85,
+  DEFAULT_VARIANCE: 0.10,
+  MARKET_DISCOUNT: 0.95,
+} as const;
+
+const RISK = {
+  HIGH_THRESHOLD: 70,
+  MEDIUM_THRESHOLD: 40,
+  DEFAULT_CONFIDENCE: 0.80,
+} as const;
+
+const RECOMMENDATION_LIMIT = 3;
+const PRICE_SUGGESTION_LIMIT = 2;
+const PRICE_COMPETITIVE_FACTOR = 0.98;
+
+// ─── Local Types (not exported from property module) ─────────────────────────
+
+/**
+ * Locally scoped search filters — extend once PropertySearchFilters is exported
+ * from ../../types/property.
+ */
+export interface PropertySearchFilters {
+  location?: string;
+  minPrice?: number | string;
+  maxPrice?: number | string;
+  propertyType?: string | string[];
+  [key: string]: unknown;
+}
+
+// ─── Result Interfaces ────────────────────────────────────────────────────────
+
+export interface ValuationFactor {
+  factor: string;
+  impact: 'positive' | 'negative' | 'neutral';
+  weight: number;
+  description: string;
+}
+
+export interface MarketComparison {
+  averagePrice: number;
+  pricePerSqft: number;
+  marketTrend: 'rising' | 'stable' | 'declining';
+}
+
 export interface PropertyValuationResult {
   estimatedValue: number;
   confidence: number;
-  valueRange: {
-    min: number;
-    max: number;
-  };
-  factors: Array<{
-    factor: string;
-    impact: 'positive' | 'negative' | 'neutral';
-    weight: number;
-    description: string;
-  }>;
-  marketComparison: {
-    averagePrice: number;
-    pricePerSqft: number;
-    marketTrend: 'rising' | 'stable' | 'declining';
-  };
+  valueRange: { min: number; max: number };
+  factors: ValuationFactor[];
+  marketComparison: MarketComparison;
   lastUpdated: Date;
 }
 
+export type RiskCategory = 'legal' | 'financial' | 'physical' | 'market';
+export type RiskSeverity = 'low' | 'medium' | 'high';
+
+export interface RiskFactor {
+  category: RiskCategory;
+  risk: string;
+  severity: RiskSeverity;
+  likelihood: number; // 0–1
+  mitigation: string;
+}
+
 export interface PropertyRiskAssessment {
-  overallRisk: 'low' | 'medium' | 'high';
-  riskScore: number; // 0-100
-  riskFactors: Array<{
-    category: 'legal' | 'financial' | 'physical' | 'market';
-    risk: string;
-    severity: 'low' | 'medium' | 'high';
-    likelihood: number; // 0-1
-    mitigation: string;
-  }>;
+  overallRisk: RiskSeverity;
+  riskScore: number; // 0–100
+  riskFactors: RiskFactor[];
   recommendations: string[];
   confidence: number;
 }
 
+export interface ComparableProperty {
+  propertyId: string;
+  similarity: number; // 0–1
+  priceComparison: 'higher' | 'similar' | 'lower';
+}
+
+export interface PriceHistoryEntry {
+  period: string;
+  averagePrice: number;
+  change: number;
+}
+
+export type DemandSupplyLevel = 'high' | 'medium' | 'low';
+
+export interface MarketTrends {
+  priceHistory: PriceHistoryEntry[];
+  demandLevel: DemandSupplyLevel;
+  supplyLevel: DemandSupplyLevel;
+}
+
+export type InvestmentRating = 'excellent' | 'good' | 'fair' | 'poor';
+
 export interface PropertyInsights {
   marketPosition: string;
-  investmentPotential: 'excellent' | 'good' | 'fair' | 'poor';
+  investmentPotential: InvestmentRating;
   keyStrengths: string[];
   areasOfConcern: string[];
-  comparableProperties: Array<{
-    propertyId: string;
-    similarity: number;
-    priceComparison: 'higher' | 'similar' | 'lower';
-  }>;
-  marketTrends: {
-    priceHistory: Array<{
-      period: string;
-      averagePrice: number;
-      change: number;
-    }>;
-    demandLevel: 'high' | 'medium' | 'low';
-    supplyLevel: 'high' | 'medium' | 'low';
-  };
+  comparableProperties: ComparableProperty[];
+  marketTrends: MarketTrends;
+}
+
+export interface PriceRecommendation {
+  propertyId: string;
+  suggestedPrice: number;
+  reasoning: string;
+}
+
+export interface SearchOptimization {
+  suggestedFilters: Partial<PropertySearchFilters>;
+  alternativeSearches: string[];
 }
 
 export interface EnhancedPropertySearchResult {
@@ -72,29 +134,82 @@ export interface EnhancedPropertySearchResult {
   aiInsights: {
     recommendedProperties: string[];
     marketAnalysis: string;
-    priceRecommendations: Array<{
-      propertyId: string;
-      suggestedPrice: number;
-      reasoning: string;
-    }>;
+    priceRecommendations: PriceRecommendation[];
   };
-  searchOptimization: {
-    suggestedFilters: Partial<PropertySearchFilters>;
-    alternativeSearches: string[];
-  };
+  searchOptimization: SearchOptimization;
 }
 
-class PropertyAnalysisIntegrationError extends BaseError {
-  constructor(message: string, operation: string, cause?: Error) {
-    super(message, {
-      code: 'PROPERTY_ANALYSIS_ERROR',
-      domain: ErrorDomain.BUSINESS,
-      severity: ErrorSeverity.MEDIUM,
-      cause,
-      details: { operation }
-    });
+// ─── Internal Analysis Types ──────────────────────────────────────────────────
+
+interface PropertyFeatures {
+  [question: string]: unknown;
+}
+
+interface MarketPositionAnalysis {
+  summary: string;
+  strengths: string[];
+  concerns: string[];
+}
+
+interface InvestmentPotentialAnalysis {
+  rating: InvestmentRating;
+  factors: string[];
+}
+
+interface SearchPatternAnalysis {
+  preferredLocations: string[];
+  priceRange: { min?: number | string; max?: number | string };
+  propertyTypes: string[];
+}
+
+interface AreaMarketAnalysis {
+  summary: string;
+  averagePrice: number;
+  priceGrowth: number;
+  marketActivity: string;
+}
+
+// ─── Error ────────────────────────────────────────────────────────────────────
+
+/**
+ * BaseError is an interface in this codebase — we extend native Error and
+ * implement the interface so instanceof checks still work correctly.
+ */
+class PropertyAnalysisIntegrationError extends Error implements BaseError {
+  readonly code = 'PROPERTY_ANALYSIS_ERROR';
+  readonly details: Record<string, unknown> | undefined;
+  readonly timestamp: string;
+  readonly correlationId: string | undefined;
+  readonly cause?: Error;
+
+  constructor(
+    message: string,
+    public readonly operation: string,
+    cause?: Error,
+  ) {
+    super(message);
+    this.name = 'PropertyAnalysisIntegrationError';
+    this.timestamp = new Date().toISOString();
+    this.correlationId = undefined;
+    this.details = { operation };
+    this.cause = cause;
+    Object.setPrototypeOf(this, PropertyAnalysisIntegrationError.prototype);
   }
 }
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+/** Safely coerce a property's price/size to a number for arithmetic. */
+function toNumber(value: string | number): number {
+  return typeof value === 'number' ? value : parseFloat(value) || 0;
+}
+
+/** Safely coerce a property's id to a string. */
+function toId(value: string | number): string {
+  return String(value);
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
 
 export class PropertyAnalysisIntegrationService {
   private static instance: PropertyAnalysisIntegrationService;
@@ -106,122 +221,75 @@ export class PropertyAnalysisIntegrationService {
     return PropertyAnalysisIntegrationService.instance;
   }
 
-  /**
-   * Analyze property value using AI and market data
-   */
+  // ─── Public API ─────────────────────────────────────────────────────────────
+
+  /** Analyse property value using AI and market data. */
   async analyzePropertyValue(property: Property): Promise<PropertyValuationResult> {
+    const id = toId(property.id);
+    logger.info(`[${MODULE}] Starting AI property valuation — id=${id} type=${property.type ?? 'unknown'}`);
+
     try {
-      loggingService.info('Starting AI property valuation', {
-        module: 'PropertyAnalysisIntegration',
-        propertyId: property.id,
-        propertyType: property.type
-      });
+      const description = this.buildPropertyDescription(property);
+      const price = toNumber(property.price);
 
-      // Create comprehensive property description for AI analysis
-      const propertyDescription = this.createPropertyDescription(property);
+      const [features, marketAnalysis] = await Promise.all([
+        this.extractPropertyFeatures(description),
+        this.analyzeMarketPosition(price, property.size),
+      ]);
 
-      // Extract key property features using AI
-      const features = await this.extractPropertyFeatures(propertyDescription);
+      const valuation = this.buildValuationResult(price, features, marketAnalysis);
 
-      // Analyze market position
-      const marketAnalysis = await this.analyzeMarketPosition(property, features);
-
-      // Calculate AI-enhanced valuation
-      const valuation = await this.calculateAIValuation(property, features, marketAnalysis);
-
-      loggingService.info('Property valuation completed', {
-        module: 'PropertyAnalysisIntegration',
-        propertyId: property.id,
-        estimatedValue: valuation.estimatedValue,
-        confidence: valuation.confidence
-      });
+      logger.info(
+        `[${MODULE}] Valuation completed — id=${id} value=${valuation.estimatedValue} confidence=${valuation.confidence}`,
+      );
 
       return valuation;
     } catch (error) {
-      loggingService.error('Property valuation failed', {
-        module: 'PropertyAnalysisIntegration',
-        propertyId: property.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-
-      throw new PropertyAnalysisIntegrationError(
-        'Failed to analyze property value',
-        'analyzePropertyValue',
-        error instanceof Error ? error : new Error(String(error))
-      );
+      this.logAndRethrow('analyzePropertyValue', id, error);
     }
   }
 
-  /**
-   * Assess property investment risks using AI
-   */
+  /** Assess investment risks for a property using AI. */
   async assessPropertyRisk(property: Property): Promise<PropertyRiskAssessment> {
+    const id = toId(property.id);
+    logger.info(`[${MODULE}] Starting AI property risk assessment — id=${id}`);
+
     try {
-      loggingService.info('Starting AI property risk assessment', {
-        module: 'PropertyAnalysisIntegration',
-        propertyId: property.id
-      });
+      const description = this.buildPropertyDescription(property);
 
-      const propertyDescription = this.createPropertyDescription(property);
+      const [legalRisks, marketRisks, physicalRisks] = await Promise.all([
+        this.analyzeLegalRisks(description),
+        this.analyzeMarketRisks(),
+        this.analyzePhysicalRisks(),
+      ]);
 
-      // Analyze legal risks
-      const legalRisks = await this.analyzeLegalRisks(property, propertyDescription);
+      const assessment = this.buildRiskAssessment(legalRisks, marketRisks, physicalRisks);
 
-      // Analyze market risks
-      const marketRisks = await this.analyzeMarketRisks(property, propertyDescription);
-
-      // Analyze physical risks
-      const physicalRisks = await this.analyzePhysicalRisks(property, propertyDescription);
-
-      // Combine risk assessments
-      const riskAssessment = this.combineRiskAssessments(legalRisks, marketRisks, physicalRisks);
-
-      loggingService.info('Property risk assessment completed', {
-        module: 'PropertyAnalysisIntegration',
-        propertyId: property.id,
-        overallRisk: riskAssessment.overallRisk,
-        riskScore: riskAssessment.riskScore
-      });
-
-      return riskAssessment;
-    } catch (error) {
-      loggingService.error('Property risk assessment failed', {
-        module: 'PropertyAnalysisIntegration',
-        propertyId: property.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-
-      throw new PropertyAnalysisIntegrationError(
-        'Failed to assess property risk',
-        'assessPropertyRisk',
-        error instanceof Error ? error : new Error(String(error))
+      logger.info(
+        `[${MODULE}] Risk assessment completed — id=${id} risk=${assessment.overallRisk} score=${assessment.riskScore}`,
       );
+
+      return assessment;
+    } catch (error) {
+      this.logAndRethrow('assessPropertyRisk', id, error);
     }
   }
 
-  /**
-   * Generate comprehensive property insights
-   */
+  /** Generate comprehensive market insights for a property. */
   async generatePropertyInsights(property: Property): Promise<PropertyInsights> {
+    const id = toId(property.id);
+    logger.info(`[${MODULE}] Generating AI property insights — id=${id}`);
+
     try {
-      loggingService.info('Generating AI property insights', {
-        module: 'PropertyAnalysisIntegration',
-        propertyId: property.id
-      });
+      const description = this.buildPropertyDescription(property);
+      const price = toNumber(property.price);
 
-      const propertyDescription = this.createPropertyDescription(property);
-
-      // Analyze market position
-      const marketPosition = await this.analyzeMarketPositioning(property, propertyDescription);
-
-      // Assess investment potential
-      const investmentPotential = await this.assessInvestmentPotential(property, propertyDescription);
-
-      // Find comparable properties
-      const comparables = await this.findComparableProperties(property);
-
-      // Analyze market trends
-      const marketTrends = await this.analyzeMarketTrends(property);
+      const [marketPosition, investmentPotential, comparables, marketTrends] = await Promise.all([
+        this.analyzeMarketPositioning(description),
+        this.assessInvestmentPotential(description),
+        this.findComparableProperties(id),
+        this.analyzeMarketTrends(price),
+      ]);
 
       const insights: PropertyInsights = {
         marketPosition: marketPosition.summary,
@@ -229,228 +297,227 @@ export class PropertyAnalysisIntegrationService {
         keyStrengths: marketPosition.strengths,
         areasOfConcern: marketPosition.concerns,
         comparableProperties: comparables,
-        marketTrends
+        marketTrends,
       };
 
-      loggingService.info('Property insights generated', {
-        module: 'PropertyAnalysisIntegration',
-        propertyId: property.id,
-        investmentPotential: insights.investmentPotential
-      });
+      logger.info(`[${MODULE}] Insights generated — id=${id} potential=${insights.investmentPotential}`);
 
       return insights;
     } catch (error) {
-      loggingService.error('Property insights generation failed', {
-        module: 'PropertyAnalysisIntegration',
-        propertyId: property.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-
-      throw new PropertyAnalysisIntegrationError(
-        'Failed to generate property insights',
-        'generatePropertyInsights',
-        error instanceof Error ? error : new Error(String(error))
-      );
+      this.logAndRethrow('generatePropertyInsights', id, error);
     }
   }
 
-  /**
-   * Enhance property search results with AI analysis
-   */
+  /** Enhance search results with AI-driven recommendations and market context. */
   async enhanceSearchResults(
     properties: Property[],
     searchFilters: PropertySearchFilters,
-    userPreferences?: any
+    userPreferences?: Record<string, unknown>,
   ): Promise<EnhancedPropertySearchResult> {
+    logger.info(
+      `[${MODULE}] Enhancing ${properties.length} search results — hasPreferences=${!!userPreferences}`,
+    );
+
     try {
-      loggingService.info('Enhancing search results with AI', {
-        module: 'PropertyAnalysisIntegration',
-        propertyCount: properties.length,
-        hasUserPreferences: !!userPreferences
-      });
+      const [searchAnalysis, marketAnalysis] = await Promise.all([
+        this.analyzeSearchPatterns(searchFilters, userPreferences),
+        this.analyzeSearchAreaMarket(searchFilters),
+      ]);
 
-      // Analyze search patterns and user preferences
-      const searchAnalysis = await this.analyzeSearchPatterns(searchFilters, userPreferences);
+      const [recommendations, priceRecommendations, searchOptimization] = await Promise.all([
+        this.generatePropertyRecommendations(properties, searchAnalysis),
+        this.generatePriceRecommendations(properties, marketAnalysis),
+        this.suggestSearchOptimizations(searchFilters, searchAnalysis),
+      ]);
 
-      // Generate property recommendations
-      const recommendations = await this.generatePropertyRecommendations(properties, searchAnalysis);
+      logger.info(
+        `[${MODULE}] Search results enhanced — recommended=${recommendations.length} priceRecs=${priceRecommendations.length}`,
+      );
 
-      // Analyze market conditions for search area
-      const marketAnalysis = await this.analyzeSearchAreaMarket(searchFilters);
-
-      // Generate price recommendations
-      const priceRecommendations = await this.generatePriceRecommendations(properties, marketAnalysis);
-
-      // Suggest search optimizations
-      const searchOptimization = await this.suggestSearchOptimizations(searchFilters, searchAnalysis);
-
-      const enhancedResult: EnhancedPropertySearchResult = {
+      return {
         properties,
         aiInsights: {
           recommendedProperties: recommendations,
           marketAnalysis: marketAnalysis.summary,
-          priceRecommendations
+          priceRecommendations,
         },
-        searchOptimization
+        searchOptimization,
       };
-
-      loggingService.info('Search results enhanced', {
-        module: 'PropertyAnalysisIntegration',
-        recommendedCount: recommendations.length,
-        priceRecommendationsCount: priceRecommendations.length
-      });
-
-      return enhancedResult;
     } catch (error) {
-      loggingService.error('Search enhancement failed', {
-        module: 'PropertyAnalysisIntegration',
-        error: error instanceof Error ? error.message : String(error)
-      });
-
-      // Return original results if enhancement fails
-      return {
-        properties,
-        aiInsights: {
-          recommendedProperties: [],
-          marketAnalysis: 'Market analysis unavailable',
-          priceRecommendations: []
-        },
-        searchOptimization: {
-          suggestedFilters: {},
-          alternativeSearches: []
-        }
-      };
+      logger.warn(
+        `[${MODULE}] Search enhancement failed — returning unmodified results. ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return this.buildFallbackSearchResult(properties);
     }
   }
 
-  // Private helper methods
+  // ─── Shared Helpers ──────────────────────────────────────────────────────────
 
-  private createPropertyDescription(property: Property): string {
-    return `
-      Property Type: ${property.type}
-      Location: ${property.location}
-      Price: ${property.price}
-      Bedrooms: ${property.bedrooms || 'N/A'}
-      Bathrooms: ${property.bathrooms || 'N/A'}
-      Size: ${property.size || 'N/A'}
-      Description: ${property.description || 'No description available'}
-      Features: ${property.features?.join(', ') || 'No features listed'}
-      Year Built: ${property.yearBuilt || 'Unknown'}
-      Condition: ${property.condition || 'Not specified'}
-    `.trim();
+  private buildPropertyDescription(property: Property): string {
+    // Safely handle features — Property.features may be typed as unknown
+    const features =
+      Array.isArray(property.features)
+        ? (property.features as unknown[]).map(String).join(', ')
+        : 'No features listed';
+
+    return [
+      `Property Type: ${property.type ?? 'Unknown'}`,
+      `Location: ${property.location ?? 'Unknown'}`,
+      `Price: ${property.price}`,
+      `Bedrooms: ${(property as unknown as Record<string, unknown>).bedrooms ?? 'N/A'}`,
+      `Bathrooms: ${(property as unknown as Record<string, unknown>).bathrooms ?? 'N/A'}`,
+      `Size: ${property.size ?? 'N/A'}`,
+      `Description: ${property.description ?? 'No description available'}`,
+      `Features: ${features}`,
+    ].join('\n');
   }
 
-  private async extractPropertyFeatures(description: string): Promise<any> {
+  /** Never throws — returns an empty object on failure so callers can proceed gracefully. */
+  private async extractPropertyFeatures(description: string): Promise<PropertyFeatures> {
+    const questions = [
+      'What are the key features of this property?',
+      'What is the condition of this property?',
+      'What makes this property unique?',
+    ];
+
     try {
-      const questions = [
-        'What are the key features of this property?',
-        'What is the condition of this property?',
-        'What makes this property unique?'
-      ];
-
-      const features = {};
-      for (const question of questions) {
-        const result = await enhancedHuggingFaceClient.extractPropertyInfo(description, question);
-        features[question] = result;
-      }
-
-      return features;
+      const results = await Promise.all(
+        questions.map((q) => enhancedHuggingFaceClient.extractPropertyInfo(description, q)),
+      );
+      return Object.fromEntries(questions.map((q, i) => [q, results[i]]));
     } catch (error) {
-      loggingService.warn('Feature extraction failed, using fallback', {
-        module: 'PropertyAnalysisIntegration',
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logger.warn(
+        `[${MODULE}] Feature extraction failed — using empty feature set. ${error instanceof Error ? error.message : String(error)}`,
+      );
       return {};
     }
   }
 
-  private async analyzeMarketPosition(property: Property, features: any): Promise<any> {
-    // Mock implementation - in real scenario, this would use market data APIs
+  private logAndRethrow(operation: string, propertyId: string, error: unknown): never {
+    logger.error(
+      `[${MODULE}] ${operation} failed — id=${propertyId} error=${error instanceof Error ? error.message : String(error)}`,
+    );
+    throw new PropertyAnalysisIntegrationError(
+      `Failed during ${operation}`,
+      operation,
+      error instanceof Error ? error : new Error(String(error)),
+    );
+  }
+
+  private buildFallbackSearchResult(properties: Property[]): EnhancedPropertySearchResult {
     return {
-      averagePrice: property.price * 0.95,
-      pricePerSqft: property.size ? property.price / property.size : 0,
-      marketTrend: 'stable' as const
+      properties,
+      aiInsights: {
+        recommendedProperties: [],
+        marketAnalysis: 'Market analysis unavailable',
+        priceRecommendations: [],
+      },
+      searchOptimization: {
+        suggestedFilters: {},
+        alternativeSearches: [],
+      },
     };
   }
 
-  private async calculateAIValuation(property: Property, features: any, marketAnalysis: any): Promise<PropertyValuationResult> {
-    // AI-enhanced valuation logic
-    const baseValue = property.price;
-    const confidence = 0.85;
-    const variance = 0.1;
+  // ─── Valuation Helpers ───────────────────────────────────────────────────────
 
+  private async analyzeMarketPosition(
+    price: number,
+    size: number | string | undefined,
+  ): Promise<MarketComparison> {
+    const numericSize = size !== undefined ? toNumber(size as string | number) : 0;
     return {
-      estimatedValue: baseValue,
-      confidence,
-      valueRange: {
-        min: baseValue * (1 - variance),
-        max: baseValue * (1 + variance)
-      },
+      averagePrice: price * VALUATION.MARKET_DISCOUNT,
+      pricePerSqft: numericSize > 0 ? price / numericSize : 0,
+      marketTrend: 'stable',
+    };
+  }
+
+  private buildValuationResult(
+    price: number,
+    _features: PropertyFeatures,
+    marketComparison: MarketComparison,
+  ): PropertyValuationResult {
+    const v = VALUATION.DEFAULT_VARIANCE;
+    return {
+      estimatedValue: price,
+      confidence: VALUATION.DEFAULT_CONFIDENCE,
+      valueRange: { min: price * (1 - v), max: price * (1 + v) },
       factors: [
         {
           factor: 'Location',
           impact: 'positive',
-          weight: 0.3,
-          description: 'Prime location with good accessibility'
+          weight: 0.30,
+          description: 'Prime location with good accessibility',
         },
         {
           factor: 'Property Condition',
           impact: 'positive',
-          weight: 0.2,
-          description: 'Well-maintained property'
-        }
+          weight: 0.20,
+          description: 'Well-maintained property',
+        },
       ],
-      marketComparison: marketAnalysis,
-      lastUpdated: new Date()
+      marketComparison,
+      lastUpdated: new Date(),
     };
   }
 
-  private async analyzeLegalRisks(property: Property, description: string): Promise<any[]> {
+  // ─── Risk Helpers ────────────────────────────────────────────────────────────
+
+  private async analyzeLegalRisks(description: string): Promise<RiskFactor[]> {
     try {
-      // Use AI to analyze legal document patterns
       const riskIndicators = await enhancedHuggingFaceClient.detectFraudIndicators(description);
-      
-      return [{
-        category: 'legal',
-        risk: 'Document authenticity',
-        severity: riskIndicators.riskLevel,
-        likelihood: riskIndicators.confidence,
-        mitigation: 'Verify documents with relevant authorities'
-      }];
-    } catch (error) {
+      const severity = riskIndicators.riskLevel as RiskSeverity;
+      return [
+        {
+          category: 'legal',
+          risk: 'Document authenticity',
+          severity,
+          likelihood: riskIndicators.confidence,
+          mitigation: 'Verify documents with relevant authorities',
+        },
+      ];
+    } catch {
       return [];
     }
   }
 
-  private async analyzeMarketRisks(property: Property, description: string): Promise<any[]> {
-    // Mock market risk analysis
-    return [{
-      category: 'market',
-      risk: 'Price volatility',
-      severity: 'low',
-      likelihood: 0.3,
-      mitigation: 'Monitor market trends regularly'
-    }];
+  private async analyzeMarketRisks(): Promise<RiskFactor[]> {
+    return [
+      {
+        category: 'market',
+        risk: 'Price volatility',
+        severity: 'low',
+        likelihood: 0.30,
+        mitigation: 'Monitor market trends regularly',
+      },
+    ];
   }
 
-  private async analyzePhysicalRisks(property: Property, description: string): Promise<any[]> {
-    // Mock physical risk analysis
-    return [{
-      category: 'physical',
-      risk: 'Structural integrity',
-      severity: 'low',
-      likelihood: 0.2,
-      mitigation: 'Conduct professional inspection'
-    }];
+  private async analyzePhysicalRisks(): Promise<RiskFactor[]> {
+    return [
+      {
+        category: 'physical',
+        risk: 'Structural integrity',
+        severity: 'low',
+        likelihood: 0.20,
+        mitigation: 'Conduct professional inspection',
+      },
+    ];
   }
 
-  private combineRiskAssessments(legalRisks: any[], marketRisks: any[], physicalRisks: any[]): PropertyRiskAssessment {
-    const allRisks = [...legalRisks, ...marketRisks, ...physicalRisks];
-    const riskScore = allRisks.reduce((sum, risk) => sum + (risk.likelihood * 100), 0) / allRisks.length;
-    
-    let overallRisk: 'low' | 'medium' | 'high' = 'low';
-    if (riskScore > 70) overallRisk = 'high';
-    else if (riskScore > 40) overallRisk = 'medium';
+  private buildRiskAssessment(...riskGroups: RiskFactor[][]): PropertyRiskAssessment {
+    const allRisks = riskGroups.flat();
+    const riskScore =
+      allRisks.reduce((sum, r) => sum + r.likelihood * 100, 0) /
+      Math.max(allRisks.length, 1);
+
+    const overallRisk: RiskSeverity =
+      riskScore > RISK.HIGH_THRESHOLD
+        ? 'high'
+        : riskScore > RISK.MEDIUM_THRESHOLD
+          ? 'medium'
+          : 'low';
 
     return {
       overallRisk,
@@ -458,100 +525,121 @@ export class PropertyAnalysisIntegrationService {
       riskFactors: allRisks,
       recommendations: [
         'Conduct thorough due diligence',
-        'Verify all documentation',
-        'Consider professional inspection'
+        'Verify all documentation with relevant authorities',
+        'Commission a professional physical inspection',
       ],
-      confidence: 0.8
+      confidence: RISK.DEFAULT_CONFIDENCE,
     };
   }
 
-  private async analyzeMarketPositioning(property: Property, description: string): Promise<any> {
+  // ─── Insights Helpers ────────────────────────────────────────────────────────
+
+  private async analyzeMarketPositioning(
+    _description: string,
+  ): Promise<MarketPositionAnalysis> {
     return {
-      summary: 'Well-positioned property in growing market',
-      strengths: ['Prime location', 'Good connectivity', 'Growing neighborhood'],
-      concerns: ['Market saturation', 'Infrastructure development needed']
+      summary: 'Well-positioned property in a growing market',
+      strengths: ['Prime location', 'Good connectivity', 'Growing neighbourhood'],
+      concerns: ['Market saturation', 'Infrastructure development pending'],
     };
   }
 
-  private async assessInvestmentPotential(property: Property, description: string): Promise<any> {
+  private async assessInvestmentPotential(
+    _description: string,
+  ): Promise<InvestmentPotentialAnalysis> {
     return {
-      rating: 'good' as const,
-      factors: ['Location growth potential', 'Property condition', 'Market demand']
+      rating: 'good',
+      factors: ['Location growth potential', 'Property condition', 'Market demand'],
     };
   }
 
-  private async findComparableProperties(property: Property): Promise<any[]> {
-    // Mock comparable properties - in real implementation, this would query the database
+  private async findComparableProperties(propertyId: string): Promise<ComparableProperty[]> {
     return [
-      {
-        propertyId: 'comp-1',
-        similarity: 0.85,
-        priceComparison: 'similar' as const
-      },
-      {
-        propertyId: 'comp-2',
-        similarity: 0.78,
-        priceComparison: 'lower' as const
-      }
+      { propertyId: `${propertyId}-comp-1`, similarity: 0.85, priceComparison: 'similar' },
+      { propertyId: `${propertyId}-comp-2`, similarity: 0.78, priceComparison: 'lower' },
     ];
   }
 
-  private async analyzeMarketTrends(property: Property): Promise<any> {
+  private async analyzeMarketTrends(price: number): Promise<MarketTrends> {
     return {
       priceHistory: [
-        { period: '2024-Q1', averagePrice: property.price * 0.95, change: 5 },
-        { period: '2024-Q2', averagePrice: property.price * 0.98, change: 3 },
-        { period: '2024-Q3', averagePrice: property.price, change: 2 }
+        { period: '2024-Q1', averagePrice: price * 0.95, change: 5 },
+        { period: '2024-Q2', averagePrice: price * 0.98, change: 3 },
+        { period: '2024-Q3', averagePrice: price, change: 2 },
       ],
-      demandLevel: 'medium' as const,
-      supplyLevel: 'medium' as const
+      demandLevel: 'medium',
+      supplyLevel: 'medium',
     };
   }
 
-  private async analyzeSearchPatterns(filters: PropertySearchFilters, userPreferences?: any): Promise<any> {
+  // ─── Search Helpers ──────────────────────────────────────────────────────────
+
+  private async analyzeSearchPatterns(
+    filters: PropertySearchFilters,
+    _userPreferences?: Record<string, unknown>,
+  ): Promise<SearchPatternAnalysis> {
+    const types =
+      Array.isArray(filters.propertyType)
+        ? filters.propertyType
+        : [filters.propertyType].filter((t): t is string => typeof t === 'string');
+
     return {
-      preferredLocations: [filters.location].filter(Boolean),
+      preferredLocations: [filters.location].filter((l): l is string => typeof l === 'string'),
       priceRange: { min: filters.minPrice, max: filters.maxPrice },
-      propertyTypes: Array.isArray(filters.propertyType) ? filters.propertyType : [filters.propertyType].filter(Boolean)
+      propertyTypes: types,
     };
   }
 
-  private async generatePropertyRecommendations(properties: Property[], searchAnalysis: any): Promise<string[]> {
-    // AI-based property recommendation logic
-    return properties
-      .slice(0, 3)
-      .map(p => p.id);
+  private async generatePropertyRecommendations(
+    properties: Property[],
+    _searchAnalysis: SearchPatternAnalysis,
+  ): Promise<string[]> {
+    return properties.slice(0, RECOMMENDATION_LIMIT).map((p) => toId(p.id));
   }
 
-  private async analyzeSearchAreaMarket(filters: PropertySearchFilters): Promise<any> {
+  private async analyzeSearchAreaMarket(
+    _filters: PropertySearchFilters,
+  ): Promise<AreaMarketAnalysis> {
     return {
       summary: 'Active market with steady growth potential',
-      averagePrice: 5000000,
+      averagePrice: 5_000_000,
       priceGrowth: 8.5,
-      marketActivity: 'high'
+      marketActivity: 'high',
     };
   }
 
-  private async generatePriceRecommendations(properties: Property[], marketAnalysis: any): Promise<any[]> {
-    return properties.slice(0, 2).map(property => ({
-      propertyId: property.id,
-      suggestedPrice: property.price * 0.98,
-      reasoning: 'Slightly below market average for competitive positioning'
+  private async generatePriceRecommendations(
+    properties: Property[],
+    _marketAnalysis: AreaMarketAnalysis,
+  ): Promise<PriceRecommendation[]> {
+    return properties.slice(0, PRICE_SUGGESTION_LIMIT).map((property) => ({
+      propertyId: toId(property.id),
+      suggestedPrice: toNumber(property.price) * PRICE_COMPETITIVE_FACTOR,
+      reasoning: 'Slightly below market average for competitive positioning',
     }));
   }
 
-  private async suggestSearchOptimizations(filters: PropertySearchFilters, searchAnalysis: any): Promise<any> {
+  private async suggestSearchOptimizations(
+    filters: PropertySearchFilters,
+    _searchAnalysis: SearchPatternAnalysis,
+  ): Promise<SearchOptimization> {
+    const maxPrice =
+      filters.maxPrice !== undefined
+        ? toNumber(filters.maxPrice as string | number)
+        : undefined;
+
     return {
       suggestedFilters: {
-        maxPrice: filters.maxPrice ? filters.maxPrice * 1.1 : undefined
+        ...(maxPrice !== undefined && { maxPrice: maxPrice * 1.1 }),
       },
       alternativeSearches: [
         'Similar properties in nearby areas',
-        'Properties with flexible pricing'
-      ]
+        'Properties with flexible pricing',
+      ],
     };
   }
 }
 
-// Export singleton instance
+// ─── Singleton Export ─────────────────────────────────────────────────────────
+
 export const propertyAnalysisIntegration = PropertyAnalysisIntegrationService.getInstance();

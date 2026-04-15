@@ -297,7 +297,9 @@ export function CommercialPhotoManagementButton(
   return <PhotoManagementButton {...props} propertyType="commercial" />;
 }
 
-// Export with display name for debugging
+// Export with display names for debugging
 PhotoManagementButton.displayName = "PhotoManagementButton";
+EnhancedPhotoManagementButton.displayName = "EnhancedPhotoManagementButton";
+CompactPhotoManagementButton.displayName = "CompactPhotoManagementButton";
 
 export default PhotoManagementButton;

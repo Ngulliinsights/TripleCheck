@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 
-// Enhanced query client with advanced caching strategies and infinite query prevention
-export const createEnhancedQueryClient = () => {
+// Query client with advanced caching strategies and infinite query prevention
+export const createQueryClient = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -211,3 +211,7 @@ export const cachePerformanceMonitor = {
     return stats;
   },
 };
+
+
+// Backward compatibility
+export const createEnhancedQueryClient = createQueryClient

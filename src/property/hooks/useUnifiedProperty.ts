@@ -650,7 +650,7 @@ export function useUnifiedProperty() {
  * This provides backward compatibility while leveraging the unified hook
  * Think of this as a "preset configuration" for search-focused use cases
  */
-export function useEnhancedPropertySearch(
+export function usePropertySearch(
   initialQuery = "",
   initialFilters: Partial<PropertySearchParams> = {}
 ) {
@@ -666,7 +666,7 @@ export function useEnhancedPropertySearch(
  * Specialized hook for land properties with enhanced mock data support
  * This provides a focused interface for land-specific property operations
  */
-export function useEnhancedLandProperty(id: string) {
+export function useLandProperty(id: string) {
   const { useLandProperty } = useUnifiedProperty();
 
   return useLandProperty(id, {
@@ -676,3 +676,7 @@ export function useEnhancedLandProperty(id: string) {
 }
 
 export default useUnifiedProperty;
+
+// Backward compatibility
+export const useEnhancedPropertySearch = usePropertySearch
+export const useEnhancedLandProperty = useLandProperty

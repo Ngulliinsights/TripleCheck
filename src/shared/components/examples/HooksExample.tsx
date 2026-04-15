@@ -32,16 +32,16 @@ import { Loader2, CheckCircle, AlertCircle, Activity } from "lucide-react"
 // Import our enhanced hooks
 import React, { useState } from "react"
 
-export default function EnhancedHooksExample() {
+export default function HooksExample() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
 
   // 1. Component Performance Tracking
   const { renderCount, mountOperationId } = useComponentTracking(
-    "EnhancedHooksExample",
+    "HooksExample",
     [searchQuery, selectedPropertyId]
   );
-  const { trackInteraction } = useInteractionTracking("EnhancedHooksExample");
+  const { trackInteraction } = useInteractionTracking("HooksExample");
 
   // 2. Safe Data Fetching with Fallbacks
   const {
@@ -109,7 +109,7 @@ export default function EnhancedHooksExample() {
 
   // 6. Performance Debugging (Development Only)
   const { debugInfo, logTimeline, logRaceConditions } = useOperationDebug(
-    "EnhancedHooksExample"
+    "HooksExample"
   );
 
   // Event Handlers with Interaction Tracking
@@ -306,4 +306,4 @@ export default function EnhancedHooksExample() {
 }
 
 // Export for easy integration
-export { EnhancedHooksExample };
+export { HooksExample };

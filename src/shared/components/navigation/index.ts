@@ -13,7 +13,7 @@
 // Standard exports
 export { default as BreadcrumbNavigation } from './BreadcrumbNavigation'
 export { default as ContextualSidebar } from './ContextualSidebar'
-export { default as EnhancedNavigation } from './EnhancedNavigation'
+export { Navigation, Navigation as EnhancedNavigation } from './Navigation' // Named export with backward compatibility
 export { default as MobileNav } from './MobileNav'
 export { default as NavigationDebug } from './NavigationDebug'
 export { default as NavigationErrorBoundary } from './NavigationErrorBoundary'

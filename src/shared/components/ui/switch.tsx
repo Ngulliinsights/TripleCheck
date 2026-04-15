@@ -1,4 +1,4 @@
-import * as SwitchPrimitives from "./accordion"
+import * as SwitchPrimitives from "@radix-ui/react-switch"
 import { cn } from "../../lib/utils"
 import * as React from 'react'
 

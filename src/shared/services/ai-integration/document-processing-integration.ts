@@ -5,7 +5,7 @@
  * Provides automated document analysis, OCR, validation, and authenticity checking.
  */
 
-import { enhancedHuggingFaceClient } from '../enhanced-huggingface-client'
+import { enhancedHuggingFaceClient } from '../huggingface-client'
 import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
 import { LandVerificationSession, VerificationLayer } from '../../../types/land-verification'

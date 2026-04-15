@@ -1,8 +1,8 @@
 /**
  * Image Services - Modular Architecture
  * 
- * New modular approach that eliminates duplication while maintaining
- * clear service boundaries and testability.
+ * RECOMMENDED: Use ImageServiceOrchestrator for all new code.
+ * It provides a clean, modern API that coordinates all image services.
  * 
  * Migration Guide:
  * - Use ImageServiceOrchestrator for complex workflows
@@ -10,15 +10,24 @@
  * - Services share common functionality through ImageServiceCore
  */
 
-// Core architecture - these are the foundation services
-export { ImageServiceCore, ImageServiceRegistry } from './core/ImageServiceCore'
+// ============================================================================
+// RECOMMENDED: Modern Orchestrator Pattern
+// ============================================================================
 
-// Orchestrator for complex workflows - the main coordinator
+// Orchestrator for complex workflows - USE THIS FOR NEW CODE
 export {
     DefaultImageServiceOrchestrator,
     getImageServiceOrchestrator,
-    createImageServiceOrchestrator
+    createImageServiceOrchestrator,
+    type ImageServiceOrchestrator,
 } from './ImageServiceOrchestrator'
+
+// ============================================================================
+// Core Architecture
+// ============================================================================
+
+// Core architecture - foundation services
+export { ImageServiceCore, ImageServiceRegistry } from './core/ImageServiceCore'
 
 // Specialized services - each handles a specific domain
 export { PropertyImageUploadService } from './PropertyImageUploadService'
@@ -26,10 +35,29 @@ export { PropertyImageValidationService } from './PropertyImageValidationService
 export { PropertyImageWorkflowManager } from './PropertyImageWorkflowManager'
 export { ImageMetadataService } from './ImageMetadataService'
 
-// Legacy services (deprecated - use orchestrator instead)
-// These remain for backward compatibility during migration
+// ============================================================================
+// DEPRECATED: Legacy Services (DO NOT USE IN NEW CODE)
+// ============================================================================
+
+/**
+ * @deprecated Use ImageServiceOrchestrator.getUploadService() instead
+ * This coordinator will be removed in the next major version.
+ * 
+ * Migration:
+ * ```typescript
+ * // Old
+ * const coordinator = new PropertyImageUploadCoordinator()
+ * 
+ * // New
+ * const orchestrator = getImageServiceOrchestrator()
+ * const uploadService = orchestrator.getUploadService()
+ * ```
+ */
 export { PropertyImageUploadCoordinator } from './PropertyImageUploadCoordinator'
-export { UnifiedImageServiceFactory } from './UnifiedImageServiceFactory'
+
+// ============================================================================
+// Backward Compatibility Adapters (Temporary)
+// ============================================================================
 
 // Legacy service adapters for backward compatibility
 // These wrap old interfaces around new implementations
@@ -45,28 +73,29 @@ export {
     legacyImageMetadataService,
 } from './LegacyServiceAdapter'
 
+// ============================================================================
+// Convenience Exports
+// ============================================================================
+
 // Import the required dependencies for our convenience exports
-// We need to import these separately to use them in the lazy evaluation functions
 import { ImageServiceRegistry } from './core/ImageServiceCore'
 import { getImageServiceOrchestrator as getOrchestratorFn } from './ImageServiceOrchestrator'
 
 /**
  * Convenience exports for common use cases
  * 
- * These functions use lazy evaluation to ensure all dependencies are loaded
- * before attempting to use them. This prevents module resolution timing issues.
+ * RECOMMENDED: Use these helper functions for quick access to services
  */
 export const imageServices = {
     /**
-     * Get the orchestrator (recommended for most use cases)
+     * Get the orchestrator (RECOMMENDED for most use cases)
      * The orchestrator coordinates between all services and handles complex workflows
      */
     getOrchestrator: () => getOrchestratorFn(),
 
     /**
      * Get individual services from registry
-     * These functions provide direct access to specific services when you need
-     * fine-grained control over a particular aspect of image processing
+     * Use these when you need fine-grained control over specific operations
      */
     getUploadService: () => {
         const registry = ImageServiceRegistry.getInstance();
@@ -118,6 +147,5 @@ export const imageServices = {
     }
 };
 
-// Default export for convenience - provides the same interface as the named export
-// This allows both `import imageServices from './images'` and `import { imageServices } from './images'`
+// Default export for convenience
 export default imageServices;

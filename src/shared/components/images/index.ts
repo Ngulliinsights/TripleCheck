@@ -10,7 +10,10 @@ export { default as PropertyImageVault } from './PropertyImageVault'
 
 // Unified utilities and services
 export { ImageUtils } from '../../utils/images/unified-utils'
-export { UnifiedImageServiceFactory } from '../../services/images/UnifiedImageServiceFactory'
+
+// Note: UnifiedImageServiceFactory has been removed.
+// Use getImageServiceOrchestrator() instead:
+// import { getImageServiceOrchestrator } from '../../services/images'
 
 // Type exports
 export type {
@@ -34,9 +37,14 @@ export type {
 // Component-specific types
 export type {
   BaseImage,
+  AdvancedImage,
   GalleryImage,
-  Props as ImageGalleryProps,
-} from './ImageGallery'
+  GalleryProps as ImageGalleryProps,
+  ViewMode,
+  SortMode,
+  WatermarkConfig,
+  ValidationResult as ImageValidationResult,
+} from './gallery/types'
 
 // Preset configurations for common use cases
 export const IMAGE_COMPONENT_PRESETS = {

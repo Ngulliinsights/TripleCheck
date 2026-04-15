@@ -11,8 +11,8 @@
  */
 
 import { logger as loggingService } from '..\..\infrastructure\monitoring\logger';
-import { enhancedHuggingFaceClient } from '../../../src/shared/services/enhanced-huggingface-client';
-import { AIServiceError } from '../../../src/shared/services/enhanced-huggingface-client';
+import { enhancedHuggingFaceClient } from '../../../src/shared/services/huggingface-client';
+import { AIServiceError } from '../../../src/shared/services/huggingface-client';
 
 export interface DocumentInput {
   id: string;

@@ -23,7 +23,7 @@ import type {
 import {
   EnhancedVirtualizedPropertyList,
   useVirtualizedPropertyList,
-} from "../EnhancedVirtualizedPropertyList"
+} from "../VirtualizedPropertyList"
 import { Pagination } from "../Pagination"
 import { Button } from "../ui/button"
 import { Card, CardContent } from "../ui/card"

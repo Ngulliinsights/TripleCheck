@@ -47,6 +47,16 @@ export interface PerformanceBaseline {
   };
 }
 
+export interface BaselineComparison {
+  status: 'better' | 'similar' | 'worse' | 'no_baseline';
+  differences: {
+    responseTime: number; // percentage change
+    successRate: number;
+    errorRate: number;
+  };
+  alerts: string[];
+}
+
 class ApiClientMonitor {
   private metrics: ApiMetrics;
   private endpointMetrics = new Map<string, EndpointMetrics>();
@@ -306,15 +316,7 @@ class ApiClientMonitor {
   /**
    * Compare current performance to baseline
    */
-  compareToBaseline(): {
-    status: 'better' | 'similar' | 'worse' | 'no_baseline';
-    differences: {
-      responseTime: number; // percentage change
-      successRate: number;
-      errorRate: number;
-    };
-    alerts: string[];
-  } {
+  compareToBaseline(): BaselineComparison {
     if (!this.baseline) {
       return {
         status: 'no_baseline',
@@ -389,7 +391,7 @@ class ApiClientMonitor {
     metrics: ApiMetrics;
     endpointMetrics: EndpointMetrics[];
     baseline: PerformanceBaseline | null;
-    comparison: ReturnType<typeof this.compareToBaseline>;
+    comparison: BaselineComparison;
     recommendations: string[];
   } {
     const metrics = this.getCurrentMetrics();

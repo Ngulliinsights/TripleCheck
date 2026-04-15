@@ -1,4 +1,4 @@
-import * as crypto from './LandDocumentAnalyzer.test';
+import * as crypto from 'crypto';
 
 import { PDFDocument } from 'pdf-lib';
 
@@ -860,8 +860,9 @@ export class LandDocumentAnalyzer {
       logger.error('Coordinate system validation failed', 'LandDocumentAnalyzer', undefined, error as Error);
       return this.createFailedCheck('Coordinate System Validation', 'content', startTime);
     }
-  }  private 
-async validateAgainstTemplate(request: DocumentVerificationRequest, documentType: string): Promise<VerificationCheck> {
+  }
+  
+  private async validateAgainstTemplate(request: DocumentVerificationRequest, documentType: string): Promise<VerificationCheck> {
     const startTime = Date.now();
     
     try {

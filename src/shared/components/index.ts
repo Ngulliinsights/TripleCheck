@@ -11,8 +11,13 @@ export {
 } from "./VirtualizedList"
 
 export {
+  VirtualizedPropertyList,
   EnterprisePropertyList,
+  EnhancedVirtualizedPropertyList, // Backward compatibility
+  useVirtualizedPropertyList,
+  type VirtualizedPropertyListProps,
   type EnterprisePropertyListProps,
+  type EnhancedVirtualizedPropertyListProps, // Backward compatibility
 } from "./VirtualizedPropertyList"
 
 // Export virtualization helpers

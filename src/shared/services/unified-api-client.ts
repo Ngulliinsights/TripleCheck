@@ -3,9 +3,40 @@
  * Combines race condition protection, enterprise features, and performance optimizations
  */
 
-import { createCacheService, type CacheOptions, type CacheService } from "../../../core/src/cache"
 import { auditLogger } from './audit-trail-service'
 import { securityMonitor } from './security-monitoring-service'
+
+// Simple in-memory cache for client-side use
+class SimpleCache {
+    private cache = new Map<string, { value: unknown; expiry: number }>();
+
+    async get<T>(key: string): Promise<T | null> {
+        const item = this.cache.get(key);
+        if (!item) return null;
+        if (Date.now() > item.expiry) {
+            this.cache.delete(key);
+            return null;
+        }
+        return item.value as T;
+    }
+
+    async set<T>(key: string, value: T, options?: { ttl?: number }): Promise<boolean> {
+        const ttl = options?.ttl || 3600;
+        this.cache.set(key, {
+            value,
+            expiry: Date.now() + (ttl * 1000)
+        });
+        return true;
+    }
+
+    async delete(key: string): Promise<boolean> {
+        return this.cache.delete(key);
+    }
+
+    async clear(): Promise<void> {
+        this.cache.clear();
+    }
+}
 
 // Core types
 export interface ApiResponse<T = unknown> {
@@ -102,7 +133,7 @@ export class UnifiedApiClient {
     private requestCache = new Map<string, Promise<ApiResponse<unknown>>>();
     private circuitBreaker = new CircuitBreaker();
     private rateLimiter = new RateLimiter();
-    private cacheService: CacheService;
+    private cacheService: SimpleCache;
 
     constructor(config: { baseUrl?: string; defaultOptions?: ApiRequestOptions } = {}) {
         this.baseUrl = config.baseUrl || '/api';
@@ -113,16 +144,7 @@ export class UnifiedApiClient {
             useCache: false,
             ...config.defaultOptions,
         };
-        this.cacheService = createCacheService({
-            provider: 'memory',
-            defaultTtlSec: 3600,
-            maxMemoryMB: 100,
-            compressionThreshold: 1024,
-            enableCompression: true,
-            enableMetrics: true,
-            enableCircuitBreaker: true,
-            keyPrefix: 'api:'
-        });
+        this.cacheService = new SimpleCache();
     }
 
     private generateRequestId(): string {
@@ -292,7 +314,7 @@ export class UnifiedApiClient {
 
                     // Cache successful responses
                     if (mergedOptions.useCache && requestInit.method === 'GET') {
-                        await this.cacheService.set(cacheKey, result, mergedOptions.cacheTtl || 3600);
+                        await this.cacheService.set(cacheKey, result, { ttl: mergedOptions.cacheTtl || 3600 });
                     }
 
                     // Audit log

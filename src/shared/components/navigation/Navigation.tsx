@@ -43,8 +43,8 @@ interface SearchResult extends NavigationItem {
   section: string;
 }
 
-// Enhanced navigation with context awareness and micro-interactions
-export function EnhancedNavigation() {
+// Navigation with context awareness and micro-interactions
+export function Navigation() {
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);

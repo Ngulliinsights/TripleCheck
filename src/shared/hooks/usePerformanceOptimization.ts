@@ -4,8 +4,33 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { cacheService } from "../../../server/cache/CacheService"
 import { performanceService } from '../services/PerformanceService'
+
+// Simple client-side cache (no server imports)
+const clientCache = new Map<string, { value: unknown; expiry: number }>();
+
+const cacheService = {
+  async get<T>(key: string): Promise<T | null> {
+    const item = clientCache.get(key);
+    if (!item) return null;
+    if (Date.now() > item.expiry) {
+      clientCache.delete(key);
+      return null;
+    }
+    return item.value as T;
+  },
+  async set<T>(key: string, value: T, options?: { ttl?: number }): Promise<boolean> {
+    const ttl = options?.ttl || 3600;
+    clientCache.set(key, {
+      value,
+      expiry: Date.now() + (ttl * 1000)
+    });
+    return true;
+  },
+  async delete(key: string): Promise<boolean> {
+    return clientCache.delete(key);
+  }
+};
 
 /**
  * Hook for intelligent caching with React Query-like interface

@@ -1,4 +1,4 @@
-import { EnhancedLandCard } from '../../property/components/EnhancedLandCard'
+import { EnhancedLandCard } from '../../property/components/LandCard'
 import AllPropertiesFiltersComponent from '../components/property/filters/AllPropertiesFilters'
 import CommercialFiltersComponent from '../components/property/filters/CommercialFilters'
 import LandFiltersComponent from '../components/property/filters/LandFilters'

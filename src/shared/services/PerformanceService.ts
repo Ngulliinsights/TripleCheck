@@ -211,7 +211,7 @@ class PerformanceService {
       domProcessing: navigation.domContentLoadedEventStart - navigation.responseEnd,
       domComplete: navigation.domComplete - navigation.domContentLoadedEventStart,
       loadComplete: navigation.loadEventEnd - navigation.loadEventStart,
-      totalTime: navigation.loadEventEnd - navigation.navigationStart
+      totalTime: navigation.loadEventEnd - navigation.fetchStart
     };
   }
 

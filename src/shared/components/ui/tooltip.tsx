@@ -1,4 +1,4 @@
-import * as TooltipPrimitive from "./accordion"
+import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 import { cn } from "../../lib/utils"
 import * as React from 'react'
 

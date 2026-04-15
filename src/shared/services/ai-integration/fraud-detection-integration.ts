@@ -5,7 +5,7 @@
  * Provides pattern recognition, anomaly detection, and risk assessment for properties and users.
  */
 
-import { enhancedHuggingFaceClient } from '../enhanced-huggingface-client'
+import { enhancedHuggingFaceClient } from '../huggingface-client'
 import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
 import { Property } from '../../types/property'

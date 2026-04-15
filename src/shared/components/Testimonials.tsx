@@ -53,7 +53,7 @@ interface TestimonialStats {
   readonly color: string;
 }
 
-interface EnhancedTestimonialsProps {
+interface TestimonialsProps {
   readonly variant?: "carousel" | "grid" | "featured";
   readonly showStats?: boolean;
   readonly showFilters?: boolean;
@@ -239,16 +239,16 @@ const CATEGORY_FILTERS = [
 ] as const;
 
 /**
- * Enhanced Testimonials component with Thunes-inspired design
+ * Testimonials component with Thunes-inspired design
  * Features client photos, detailed profiles, and African market focus
  */
-export function EnhancedTestimonials({
+export function Testimonials({
   variant = "carousel",
   showStats = true,
   showFilters = true,
   autoPlay = true,
   className = "",
-}: EnhancedTestimonialsProps): JSX.Element {
+}: TestimonialsProps): JSX.Element {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(autoPlay);
   const [selectedCategory, setSelectedCategory] = useState("all");
