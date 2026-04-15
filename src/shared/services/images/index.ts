@@ -36,42 +36,11 @@ export { PropertyImageWorkflowManager } from './PropertyImageWorkflowManager'
 export { ImageMetadataService } from './ImageMetadataService'
 
 // ============================================================================
-// DEPRECATED: Legacy Services (DO NOT USE IN NEW CODE)
+// Backward Compatibility Adapters (Removed)
 // ============================================================================
 
-/**
- * @deprecated Use ImageServiceOrchestrator.getUploadService() instead
- * This coordinator will be removed in the next major version.
- * 
- * Migration:
- * ```typescript
- * // Old
- * const coordinator = new PropertyImageUploadCoordinator()
- * 
- * // New
- * const orchestrator = getImageServiceOrchestrator()
- * const uploadService = orchestrator.getUploadService()
- * ```
- */
-export { PropertyImageUploadCoordinator } from './PropertyImageUploadCoordinator'
-
-// ============================================================================
-// Backward Compatibility Adapters (Temporary)
-// ============================================================================
-
-// Legacy service adapters for backward compatibility
-// These wrap old interfaces around new implementations
-export {
-    LegacyPropertyImageUploadCoordinator,
-    LegacyPropertyImageValidationService,
-    LegacyPropertyImageWorkflowManager,
-    LegacyImageMetadataService,
-    LegacyUnifiedImageServiceFactory,
-    legacyPropertyImageUploadCoordinator,
-    legacyPropertyImageValidationService,
-    legacyPropertyImageWorkflowManager,
-    legacyImageMetadataService,
-} from './LegacyServiceAdapter'
+// Legacy adapters have been removed. Use ImageServiceOrchestrator directly.
+// Migration guide: docs/service-consolidation-plan.md
 
 // ============================================================================
 // Convenience Exports
