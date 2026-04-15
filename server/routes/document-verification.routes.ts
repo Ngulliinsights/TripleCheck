@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import multer from 'multer';
 
-import { DocumentAuthenticationService } from '../services/DocumentAuthenticationService';
-import type { DocumentFile } from '../services/DocumentAuthenticationService';
+import { DocumentAuthService } from '../document-auth/DocumentAuthService';
+import type { DocumentFile } from '../document-auth/DocumentAuthService';
 
 const router = Router();
-const documentService = new DocumentAuthenticationService();
+const documentService = new DocumentAuthService();
 
 // Configure multer for file uploads
 const upload = multer({

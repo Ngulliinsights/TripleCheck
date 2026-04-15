@@ -8,7 +8,7 @@ import session from "./app";
 import helmet from "./app";
 
 import { initializeDatabase, runMigrations, seedDatabase } from "./infrastructure/database/connection";
-import { logger } from "./infrastructure/monitoring/logger";
+import { logger } from "./infrastructure/observability/telemetry";
 import { errorHandler, notFoundHandler } from "./middleware/error";
 import { registerAIRoutes } from "./routes/ai-routes";
 import { registerRoutes } from "./routes/index";
@@ -123,7 +123,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         logLine = `${logLine.slice(0, 79)  }…`;
       }
 
-      logger.apiRequest(req.method, path, res.statusCode, duration);
+      logger.info({ 
+        method: req.method, 
+        path, 
+        statusCode: res.statusCode, 
+        duration 
+      }, 'API request');
     }
   });
 
@@ -231,13 +236,13 @@ function validateEnvironment(): void {
 
     // Setup static file serving and Vite BEFORE registering API routes
     if (isProduction) {
-      logger.info('Starting in production mode', 'SERVER');
+      logger.info('Starting in production mode');
       if (isVercel) {
-        logger.info('Vercel environment detected - static files handled by platform', 'SERVER');
+        logger.info('Vercel environment detected - static files handled by platform');
       }
       serveStatic(app);
     } else {
-      logger.info('Starting in development mode with Vite dev server', 'SERVER');
+      logger.info('Starting in development mode with Vite dev server');
       await setupVite(app, httpServer);
     }
 
@@ -274,7 +279,7 @@ function validateEnvironment(): void {
 
     // Now we can safely pass the numeric port to listen()
     httpServer.listen(port, host, () => {
-      logger.info(`Server running on port ${port} in ${isProduction ? 'production' : 'development'} mode`, 'SERVER');
+      logger.info({ port, host, mode: isProduction ? 'production' : 'development' }, 'Server running');
     });
 
   } catch (error) {

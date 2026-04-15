@@ -1,50 +1,10 @@
 import { z } from "zod";
+import type { properties } from "../infrastructure/database/schemas/consolidated";
 
-// import type { Property, InsertProperty } from "../../src/shared/schema";
+// Define types from database schema
+export type Property = typeof properties.$inferSelect;
+export type InsertProperty = typeof properties.$inferInsert;
 
-// Define types locally until schema export is fixed
-export interface Property {
-  id: number;
-  title: string;
-  description: string;
-  location: string;
-  price: string;
-  address?: string;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
-  features?: PropertyFeatures;
-  imageUrls?: string[];
-  ownerId: number;
-  verificationStatus: string;
-  isActive: boolean;
-  isFeatured: boolean;
-  viewCount: number;
-  favoriteCount: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface InsertProperty {
-  title: string;
-  description: string;
-  location: string;
-  price: string;
-  address?: string;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
-  features?: PropertyFeatures;
-  imageUrls?: string[];
-  ownerId: number;
-  verificationStatus: string;
-  isActive: boolean;
-  isFeatured: boolean;
-  viewCount: number;
-  favoriteCount: number;
-}
 import { storage } from "../infrastructure/storage/storage";
 import type { PropertyFilter, PaginationParams, PaginatedResult } from "../infrastructure/storage/storage";
 import { PropertyValidationSchemas } from "../middleware/validation.middleware";
@@ -82,7 +42,7 @@ export interface PropertyFeatures {
   squareFeet?: number;
   parkingSpaces?: number;
   yearBuilt?: number;
-  propertyType?: string;
+  propertyType?: 'apartment' | 'house' | 'townhouse' | 'land' | 'commercial' | 'studio' | 'condo';
   petFriendly?: boolean;
   furnished?: boolean;
   amenities?: string[] | undefined;

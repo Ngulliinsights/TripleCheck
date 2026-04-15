@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 import app from "./app";
 import { getPortConfig, validatePort, displayPortConfig } from "./config/ports";
 import { initializeDatabase } from "./infrastructure/database/init";
-import { logger } from "./infrastructure/monitoring/logger";
+import { logger } from "./infrastructure/observability/telemetry";
 import { cleanupManager } from "./utils/cleanup-manager";
 import { setupServer } from "./vite";
 
@@ -295,12 +295,12 @@ async function createHttpServer(): Promise<Server> {
 
   // Add error handling for the server
   server.on('error', (error: Error) => {
-    logger.error("Server error occurred", "SERVER", { error: error.message, stack: error.stack });
+    logger.error({ error: error.message, stack: error.stack }, 'Server error occurred');
     console.error('❌ Server error:', error);
   });
 
   server.on('close', () => {
-    logger.info("Server closed", "SERVER");
+    logger.info('Server closed');
     console.log('🔴 Server closed');
   });
 

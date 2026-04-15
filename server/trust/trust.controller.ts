@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 
-import { Logger } from '../infrastructure/monitoring/logger';
+import { Logger } from '../infrastructure/observability/telemetry';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 
 import { TrustScoringService } from './TrustScoringService';
@@ -11,7 +11,7 @@ const trustScoringService = new TrustScoringService();
 
 // Initialize trust scoring service
 trustScoringService.initialize().catch(error => {
-  logger.error('Failed to initialize trust scoring service', error);
+  logger.error({ error: error }, 'Failed to initialize trust scoring service');
 });
 
 // Get user trust score with detailed breakdown
@@ -33,7 +33,7 @@ router.get('/score/:userId', async (req: Request, res: Response) => {
       data: trustScore
     });
   } catch (error) {
-    logger.error(`Failed to get trust score for user ${req.params.userId}`, error);
+    logger.error({ error: error }, 'Failed to get trust score for user ${req.params.userId}');
     res.status(500).json({
       success: false,
       message: 'Failed to calculate trust score'
@@ -60,7 +60,7 @@ router.get('/property/:propertyId', async (req: Request, res: Response) => {
       data: propertyTrustScore
     });
   } catch (error) {
-    logger.error(`Failed to get property trust score for property ${req.params.propertyId}`, error);
+    logger.error({ error: error }, 'Failed to get property trust score for property ${req.params.propertyId}');
     res.status(500).json({
       success: false,
       message: 'Failed to calculate property trust score'
@@ -89,7 +89,7 @@ router.post('/update/:userId', async (req: AuthenticatedRequest, res: Response) 
       message: 'Trust score updated successfully'
     });
   } catch (error) {
-    logger.error(`Failed to update trust score for user ${req.params.userId}`, error);
+    logger.error({ error: error }, 'Failed to update trust score for user ${req.params.userId}');
     res.status(500).json({
       success: false,
       message: 'Failed to update trust score'
@@ -116,7 +116,7 @@ router.get('/analytics/:userId', async (req: Request, res: Response) => {
       data: analytics
     });
   } catch (error) {
-    logger.error(`Failed to get trust analytics for user ${req.params.userId}`, error);
+    logger.error({ error: error }, 'Failed to get trust analytics for user ${req.params.userId}');
     res.status(500).json({
       success: false,
       message: 'Failed to get trust analytics'
@@ -148,7 +148,7 @@ router.post('/verify', async (req: AuthenticatedRequest, res: Response) => {
       message: 'Verification processed successfully'
     });
   } catch (error) {
-    logger.error(`Failed to process verification for user ${req.body.userId}`, error);
+    logger.error({ error: error }, 'Failed to process verification for user ${req.body.userId}');
     res.status(500).json({
       success: false,
       message: 'Failed to process verification'
@@ -180,7 +180,7 @@ router.get('/history/:userId', async (req: Request, res: Response) => {
       data: history
     });
   } catch (error) {
-    logger.error(`Failed to get trust score history for user ${req.params.userId}`, error);
+    logger.error({ error: error }, 'Failed to get trust score history for user ${req.params.userId}');
     res.status(500).json({
       success: false,
       message: 'Failed to get trust score history'
@@ -194,7 +194,7 @@ router.get('/score/:userId', async (req: Request, res: Response) => {
     // Redirect to the new trust-integration endpoint
     res.redirect(307, `/api/trust-integration/score/${req.params.userId}?includeBreakdown=true`);
   } catch (error) {
-    logger.error('Error redirecting trust score request:', error);
+    logger.error({ error: error }, 'Error redirecting trust score request:');
     res.status(500).json({
       success: false,
       error: 'Failed to process trust score request',
@@ -213,7 +213,7 @@ router.get('/stats/system', async (req: Request, res: Response) => {
       data: stats
     });
   } catch (error) {
-    logger.error('Failed to get system trust statistics', error);
+    logger.error({ error: error }, 'Failed to get system trust statistics');
     res.status(500).json({
       success: false,
       message: 'Failed to get system trust statistics'

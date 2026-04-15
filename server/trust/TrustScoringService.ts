@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 
-import { Logger } from '../infrastructure/monitoring/logger';
+import { Logger } from '../infrastructure/observability/telemetry';
 import { storage } from '../infrastructure/storage/storage';
 
 export interface UserTrustScore {
@@ -192,7 +192,7 @@ export class TrustScoringService extends EventEmitter {
       this.logger.info('Trust Scoring Service initialized successfully');
       this.emit('initialized');
     } catch (error) {
-      this.logger.error('Failed to initialize Trust Scoring Service', error);
+      this.logger.error({ error: error }, 'Failed to initialize Trust Scoring Service');
       throw error;
     }
   }
@@ -265,7 +265,7 @@ export class TrustScoringService extends EventEmitter {
       return trustScore;
 
     } catch (error) {
-      this.logger.error(`Failed to calculate trust score for user ${userId}`, error);
+      this.logger.error({ error: error }, 'Failed to calculate trust score for user ${userId}');
       throw error;
     }
   }
@@ -318,7 +318,7 @@ export class TrustScoringService extends EventEmitter {
       return propertyTrustScore;
 
     } catch (error) {
-      this.logger.error(`Failed to calculate property trust score for property ${propertyId}`, error);
+      this.logger.error({ error: error }, 'Failed to calculate property trust score for property ${propertyId}');
       throw error;
     }
   }

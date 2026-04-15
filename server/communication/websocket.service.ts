@@ -1,555 +1,404 @@
 /**
- * WebSocket Service
- * Real-time messaging service for handling WebSocket connections
- * Integrates with MessagingService for real-time message delivery
+ * Socket.IO Real-time Communication Service
+ * Replaces custom WebSocket service
  */
 
-import { WebSocketServer, WebSocket } from 'ws';
-import { IncomingMessage } from 'http';
+import { Server, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createClient } from 'redis';
+import { instrument } from '@socket.io/admin-ui';
+import jwt from 'jsonwebtoken';
+import { logger } from '../infrastructure/observability/telemetry';
 import { messagingService } from './messaging.service';
-import {
-  WebSocketEvent,
-  WebSocketEventType,
-  TypingIndicator,
-  UserPresence
-} from '../types/messaging.types';
 
-interface WebSocketMessage {
-  type: string;
-  payload: any;
-  timestamp: number;
-  id?: string;
-}
-
-interface AuthenticatedWebSocket extends WebSocket {
+interface AuthenticatedSocket extends Socket {
   userId?: string;
-  isAlive?: boolean;
-  lastPing?: number;
+  user?: any;
 }
 
-interface WebSocketConnection {
-  ws: AuthenticatedWebSocket;
-  userId: string;
-  connectedAt: Date;
-  lastActivity: Date;
-}
-
-class WebSocketService {
-  private wss: WebSocketServer | null = null;
-  private connections: Map<string, WebSocketConnection[]> = new Map(); // userId -> connections
-  private heartbeatInterval: NodeJS.Timeout | null = null;
-  private cleanupInterval: NodeJS.Timeout | null = null;
-
-  constructor() {
-    this.setupMessagingServiceListeners();
-  }
+export class SocketIOService {
+  private io: Server | null = null;
+  private redisClient?: any;
+  private redisSub?: any;
 
   /**
-   * Initialize WebSocket server
+   * Initialize Socket.IO server
    */
-  public initialize(server: any): void {
-    this.wss = new WebSocketServer({ 
-      server,
-      path: '/ws',
-      verifyClient: this.verifyClient.bind(this)
+  async initialize(httpServer: any) {
+    this.io = new Server(httpServer, {
+      cors: {
+        origin: process.env.CLIENT_URL || 'http://localhost:5173',
+        credentials: true,
+      },
+      transports: ['websocket', 'polling'],
+      pingTimeout: 60000,
+      pingInterval: 25000,
     });
 
-    this.wss.on('connection', this.handleConnection.bind(this));
-    this.startHeartbeat();
-    this.startCleanup();
+    // Setup Redis adapter for horizontal scaling
+    if (process.env.REDIS_URL) {
+      try {
+        this.redisClient = createClient({ url: process.env.REDIS_URL });
+        this.redisSub = this.redisClient.duplicate();
 
-    console.log('WebSocket service initialized');
+        await Promise.all([
+          this.redisClient.connect(),
+          this.redisSub.connect(),
+        ]);
+
+        this.io.adapter(createAdapter(this.redisClient, this.redisSub));
+        logger.info('Socket.IO Redis adapter initialized');
+      } catch (error: any) {
+        logger.error('Failed to initialize Redis adapter', {
+          error: error.message,
+        });
+      }
+    }
+
+    // Setup admin UI in development
+    if (process.env.NODE_ENV === 'development') {
+      instrument(this.io, {
+        auth: false,
+        mode: 'development',
+      });
+      logger.info('Socket.IO Admin UI available at http://localhost:3000/admin');
+    }
+
+    // Authentication middleware
+    this.io.use(async (socket: AuthenticatedSocket, next) => {
+      try {
+        const token = socket.handshake.auth.token;
+
+        if (!token) {
+          return next(new Error('Authentication token required'));
+        }
+
+        // Verify JWT token
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET || 'your-secret-key'
+        ) as any;
+
+        socket.userId = decoded.sub;
+        socket.user = {
+          id: decoded.sub,
+          username: decoded.username,
+          email: decoded.email,
+          role: decoded.role,
+        };
+
+        logger.debug('Socket authenticated', { userId: socket.userId });
+        next();
+      } catch (error: any) {
+        logger.warn('Socket authentication failed', { error: error.message });
+        next(new Error('Invalid authentication token'));
+      }
+    });
+
+    // Connection handler
+    this.io.on('connection', (socket: AuthenticatedSocket) => {
+      this.handleConnection(socket);
+    });
+
+    // Setup messaging service listeners
+    this.setupMessagingListeners();
+
+    logger.info('Socket.IO service initialized');
   }
 
   /**
-   * Shutdown WebSocket service
+   * Handle new socket connection
    */
-  public shutdown(): void {
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = null;
+  private handleConnection(socket: AuthenticatedSocket) {
+    const userId = socket.userId!;
+    logger.info('User connected', { userId, socketId: socket.id });
+
+    // Join user's personal room
+    socket.join(`user:${userId}`);
+
+    // Send connection confirmation
+    socket.emit('connected', {
+      userId,
+      socketId: socket.id,
+      timestamp: Date.now(),
+    });
+
+    // Handle typing indicators
+    socket.on('typing:start', ({ threadId }) => {
+      logger.debug('User started typing', { userId, threadId });
+      socket.to(`thread:${threadId}`).emit('user:typing', {
+        userId,
+        threadId,
+        isTyping: true,
+        timestamp: Date.now(),
+      });
+
+      // Update typing indicator in messaging service
+      messagingService
+        .setTypingIndicator(threadId, userId, true)
+        .catch((error) => {
+          logger.error('Failed to set typing indicator', { error });
+        });
+    });
+
+    socket.on('typing:stop', ({ threadId }) => {
+      logger.debug('User stopped typing', { userId, threadId });
+      socket.to(`thread:${threadId}`).emit('user:typing', {
+        userId,
+        threadId,
+        isTyping: false,
+        timestamp: Date.now(),
+      });
+
+      messagingService
+        .setTypingIndicator(threadId, userId, false)
+        .catch((error) => {
+          logger.error('Failed to clear typing indicator', { error });
+        });
+    });
+
+    // Handle thread joining
+    socket.on('thread:join', ({ threadId }) => {
+      logger.debug('User joined thread', { userId, threadId });
+      socket.join(`thread:${threadId}`);
+      socket.to(`thread:${threadId}`).emit('user:joined', {
+        userId,
+        threadId,
+        timestamp: Date.now(),
+      });
+    });
+
+    socket.on('thread:leave', ({ threadId }) => {
+      logger.debug('User left thread', { userId, threadId });
+      socket.leave(`thread:${threadId}`);
+      socket.to(`thread:${threadId}`).emit('user:left', {
+        userId,
+        threadId,
+        timestamp: Date.now(),
+      });
+    });
+
+    // Handle presence updates
+    socket.on('presence:update', ({ status }) => {
+      logger.debug('User presence updated', { userId, status });
+      messagingService
+        .updateUserPresence(userId, status)
+        .catch((error) => {
+          logger.error('Failed to update presence', { error });
+        });
+    });
+
+    // Handle disconnection
+    socket.on('disconnect', (reason) => {
+      logger.info('User disconnected', { userId, socketId: socket.id, reason });
+
+      // Update user presence to offline
+      messagingService
+        .updateUserPresence(userId, 'offline')
+        .catch((error) => {
+          logger.error('Failed to update presence on disconnect', { error });
+        });
+    });
+
+    // Handle errors
+    socket.on('error', (error) => {
+      logger.error('Socket error', { userId, error: error.message });
+    });
+  }
+
+  /**
+   * Setup listeners for messaging service events
+   */
+  private setupMessagingListeners() {
+    if (!messagingService.on) {
+      logger.warn('Messaging service does not support event listeners');
+      return;
     }
 
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = null;
-    }
+    // New message
+    messagingService.on('message_sent', (event: any) => {
+      const message = event.data;
+      this.sendToUser(message.recipientId, 'message:new', message);
+    });
 
-    if (this.wss) {
-      this.wss.close();
-      this.wss = null;
-    }
+    // Message delivered
+    messagingService.on('message_delivered', (event: any) => {
+      const message = event.data;
+      this.sendToUser(message.senderId, 'message:delivered', {
+        messageId: message.id,
+        deliveredAt: message.deliveredAt,
+      });
+    });
 
-    this.connections.clear();
-    console.log('WebSocket service shutdown');
+    // Message read
+    messagingService.on('message_read', (event: any) => {
+      const message = event.data;
+      this.sendToUser(message.senderId, 'message:read', {
+        messageId: message.id,
+        readAt: message.readAt,
+      });
+    });
+
+    // New notification
+    messagingService.on('notification_received', (event: any) => {
+      const notification = event.data;
+      this.sendToUser(notification.userId, 'notification:new', notification);
+    });
+
+    // User presence changed
+    messagingService.on('user_online', (event: any) => {
+      const presence = event.data;
+      this.broadcast('presence:changed', presence, presence.userId);
+    });
+
+    messagingService.on('user_offline', (event: any) => {
+      const presence = event.data;
+      this.broadcast('presence:changed', presence, presence.userId);
+    });
   }
 
   /**
    * Send message to specific user
    */
-  public sendToUser(userId: string, message: WebSocketMessage): boolean {
-    const userConnections = this.connections.get(userId);
-    if (!userConnections || userConnections.length === 0) {
+  sendToUser(userId: string, event: string, data: any): boolean {
+    if (!this.io) {
+      logger.warn('Socket.IO not initialized');
       return false;
     }
 
-    let sent = false;
-    userConnections.forEach(connection => {
-      if (connection.ws.readyState === WebSocket.OPEN) {
-        try {
-          connection.ws.send(JSON.stringify(message));
-          connection.lastActivity = new Date();
-          sent = true;
-        } catch (error) {
-          console.error('Error sending message to user:', error);
-        }
-      }
-    });
-
-    return sent;
+    this.io.to(`user:${userId}`).emit(event, data);
+    logger.debug('Message sent to user', { userId, event });
+    return true;
   }
 
   /**
    * Send message to multiple users
    */
-  public sendToUsers(userIds: string[], message: WebSocketMessage): number {
+  sendToUsers(userIds: string[], event: string, data: any): number {
     let sentCount = 0;
-    userIds.forEach(userId => {
-      if (this.sendToUser(userId, message)) {
+    for (const userId of userIds) {
+      if (this.sendToUser(userId, event, data)) {
         sentCount++;
       }
-    });
+    }
     return sentCount;
   }
 
   /**
-   * Broadcast message to all connected users
+   * Send message to thread
    */
-  public broadcast(message: WebSocketMessage, excludeUserId?: string): number {
-    let sentCount = 0;
-    
-    this.connections.forEach((userConnections, userId) => {
-      if (excludeUserId && userId === excludeUserId) {
-        return;
-      }
+  sendToThread(threadId: string, event: string, data: any) {
+    if (!this.io) {
+      logger.warn('Socket.IO not initialized');
+      return;
+    }
 
-      if (this.sendToUser(userId, message)) {
-        sentCount++;
-      }
-    });
+    this.io.to(`thread:${threadId}`).emit(event, data);
+    logger.debug('Message sent to thread', { threadId, event });
+  }
 
-    return sentCount;
+  /**
+   * Broadcast to all connected users
+   */
+  broadcast(event: string, data: any, excludeUserId?: string): number {
+    if (!this.io) {
+      logger.warn('Socket.IO not initialized');
+      return 0;
+    }
+
+    if (excludeUserId) {
+      this.io.except(`user:${excludeUserId}`).emit(event, data);
+    } else {
+      this.io.emit(event, data);
+    }
+
+    logger.debug('Message broadcasted', { event, excludeUserId });
+    return this.io.sockets.sockets.size;
   }
 
   /**
    * Get online users
    */
-  public getOnlineUsers(): string[] {
-    return Array.from(this.connections.keys()).filter(userId => {
-      const userConnections = this.connections.get(userId);
-      return userConnections && userConnections.some(conn => 
-        conn.ws.readyState === WebSocket.OPEN
-      );
-    });
+  async getOnlineUsers(): Promise<string[]> {
+    if (!this.io) {
+      return [];
+    }
+
+    const sockets = await this.io.fetchSockets();
+    const userIds = new Set<string>();
+
+    for (const socket of sockets) {
+      const userId = (socket as any).userId;
+      if (userId) {
+        userIds.add(userId);
+      }
+    }
+
+    return Array.from(userIds);
   }
 
   /**
    * Check if user is online
    */
-  public isUserOnline(userId: string): boolean {
-    const userConnections = this.connections.get(userId);
-    return userConnections ? userConnections.some(conn => 
-      conn.ws.readyState === WebSocket.OPEN
-    ) : false;
+  async isUserOnline(userId: string): Promise<boolean> {
+    if (!this.io) {
+      return false;
+    }
+
+    const sockets = await this.io.in(`user:${userId}`).fetchSockets();
+    return sockets.length > 0;
   }
 
   /**
    * Get connection statistics
    */
-  public getStats(): {
-    totalConnections: number;
-    activeConnections: number;
-    onlineUsers: number;
-    connectionsByUser: Record<string, number>;
-  } {
-    let totalConnections = 0;
-    let activeConnections = 0;
-    const connectionsByUser: Record<string, number> = {};
+  async getStats() {
+    if (!this.io) {
+      return {
+        totalConnections: 0,
+        activeConnections: 0,
+        onlineUsers: 0,
+      };
+    }
 
-    this.connections.forEach((userConnections, userId) => {
-      const activeUserConnections = userConnections.filter(conn => 
-        conn.ws.readyState === WebSocket.OPEN
-      );
-      
-      totalConnections += userConnections.length;
-      activeConnections += activeUserConnections.length;
-      connectionsByUser[userId] = activeUserConnections.length;
-    });
+    const sockets = await this.io.fetchSockets();
+    const onlineUsers = new Set<string>();
+
+    for (const socket of sockets) {
+      const userId = (socket as any).userId;
+      if (userId) {
+        onlineUsers.add(userId);
+      }
+    }
 
     return {
-      totalConnections,
-      activeConnections,
-      onlineUsers: this.getOnlineUsers().length,
-      connectionsByUser
+      totalConnections: sockets.length,
+      activeConnections: sockets.length,
+      onlineUsers: onlineUsers.size,
     };
   }
 
-  private verifyClient(info: { origin: string; secure: boolean; req: IncomingMessage }): boolean {
-    // In production, implement proper authentication verification
-    // For now, allow all connections
-    return true;
-  }
-
-  private handleConnection(ws: AuthenticatedWebSocket, request: IncomingMessage): void {
-    console.log('New WebSocket connection');
-
-    // Extract user ID from query parameters or headers
-    const url = new URL(request.url || '', `http://${request.headers.host}`);
-    const userId = url.searchParams.get('userId') || 'anonymous';
-
-    ws.userId = userId;
-    ws.isAlive = true;
-    ws.lastPing = Date.now();
-
-    // Store connection
-    const connection: WebSocketConnection = {
-      ws,
-      userId,
-      connectedAt: new Date(),
-      lastActivity: new Date()
-    };
-
-    if (!this.connections.has(userId)) {
-      this.connections.set(userId, []);
-    }
-    this.connections.get(userId)!.push(connection);
-
-    // Set up event handlers
-    ws.on('message', (data: Buffer) => {
-      this.handleMessage(ws, data);
-    });
-
-    ws.on('close', () => {
-      this.handleDisconnection(ws);
-    });
-
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-      this.handleDisconnection(ws);
-    });
-
-    ws.on('pong', () => {
-      ws.isAlive = true;
-      ws.lastPing = Date.now();
-    });
-
-    // Update user presence
-    if (userId !== 'anonymous') {
-      messagingService.updateUserPresence(userId, 'online').catch(console.error);
+  /**
+   * Shutdown Socket.IO service
+   */
+  async shutdown() {
+    if (this.io) {
+      this.io.close();
+      this.io = null;
     }
 
-    // Send welcome message
-    this.sendToUser(userId, {
-      type: 'connection_established',
-      payload: {
-        userId,
-        timestamp: Date.now(),
-        message: 'WebSocket connection established'
-      },
-      timestamp: Date.now()
-    });
-  }
-
-  private handleMessage(ws: AuthenticatedWebSocket, data: Buffer): void {
-    try {
-      const message: WebSocketMessage = JSON.parse(data.toString());
-      const userId = ws.userId;
-
-      if (!userId) {
-        return;
-      }
-
-      // Update last activity
-      const userConnections = this.connections.get(userId);
-      if (userConnections) {
-        const connection = userConnections.find(conn => conn.ws === ws);
-        if (connection) {
-          connection.lastActivity = new Date();
-        }
-      }
-
-      // Handle different message types
-      switch (message.type) {
-        case 'ping':
-          this.handlePing(ws, message);
-          break;
-        
-        case 'typing_start':
-          this.handleTypingIndicator(userId, message.payload, true);
-          break;
-        
-        case 'typing_stop':
-          this.handleTypingIndicator(userId, message.payload, false);
-          break;
-        
-        case 'presence_update':
-          this.handlePresenceUpdate(userId, message.payload);
-          break;
-        
-        case 'join_thread':
-          this.handleJoinThread(userId, message.payload);
-          break;
-        
-        case 'leave_thread':
-          this.handleLeaveThread(userId, message.payload);
-          break;
-        
-        default:
-          console.log('Unknown WebSocket message type:', message.type);
-      }
-    } catch (error) {
-      console.error('Error handling WebSocket message:', error);
-    }
-  }
-
-  private handleDisconnection(ws: AuthenticatedWebSocket): void {
-    const userId = ws.userId;
-    if (!userId) {
-      return;
+    if (this.redisClient) {
+      await this.redisClient.quit();
     }
 
-    console.log(`WebSocket disconnected for user: ${userId}`);
-
-    // Remove connection
-    const userConnections = this.connections.get(userId);
-    if (userConnections) {
-      const index = userConnections.findIndex(conn => conn.ws === ws);
-      if (index > -1) {
-        userConnections.splice(index, 1);
-      }
-
-      // If no more connections for this user, update presence
-      if (userConnections.length === 0) {
-        this.connections.delete(userId);
-        if (userId !== 'anonymous') {
-          messagingService.updateUserPresence(userId, 'offline').catch(console.error);
-        }
-      }
-    }
-  }
-
-  private handlePing(ws: AuthenticatedWebSocket, message: WebSocketMessage): void {
-    // Respond with pong
-    const pongMessage: WebSocketMessage = {
-      type: 'pong',
-      payload: {
-        timestamp: Date.now(),
-        clientTimestamp: message.payload?.timestamp
-      },
-      timestamp: Date.now()
-    };
-
-    try {
-      ws.send(JSON.stringify(pongMessage));
-    } catch (error) {
-      console.error('Error sending pong:', error);
-    }
-  }
-
-  private handleTypingIndicator(userId: string, payload: any, isTyping: boolean): void {
-    const { threadId } = payload;
-    if (!threadId) {
-      return;
+    if (this.redisSub) {
+      await this.redisSub.quit();
     }
 
-    // Update typing indicator in messaging service
-    messagingService.setTypingIndicator(threadId, userId, isTyping).catch(console.error);
-
-    // Broadcast typing indicator to other thread participants
-    // In a real implementation, you'd get thread participants from the messaging service
-    const typingMessage: WebSocketMessage = {
-      type: isTyping ? 'user_typing_start' : 'user_typing_stop',
-      payload: {
-        threadId,
-        userId,
-        timestamp: Date.now()
-      },
-      timestamp: Date.now()
-    };
-
-    // For now, broadcast to all users except the sender
-    this.broadcast(typingMessage, userId);
-  }
-
-  private handlePresenceUpdate(userId: string, payload: any): void {
-    const { status } = payload;
-    if (!['online', 'offline', 'away'].includes(status)) {
-      return;
-    }
-
-    messagingService.updateUserPresence(userId, status).catch(console.error);
-  }
-
-  private handleJoinThread(userId: string, payload: any): void {
-    const { threadId } = payload;
-    if (!threadId) {
-      return;
-    }
-
-    // Notify other thread participants
-    const joinMessage: WebSocketMessage = {
-      type: 'user_joined_thread',
-      payload: {
-        threadId,
-        userId,
-        timestamp: Date.now()
-      },
-      timestamp: Date.now()
-    };
-
-    this.broadcast(joinMessage, userId);
-  }
-
-  private handleLeaveThread(userId: string, payload: any): void {
-    const { threadId } = payload;
-    if (!threadId) {
-      return;
-    }
-
-    // Notify other thread participants
-    const leaveMessage: WebSocketMessage = {
-      type: 'user_left_thread',
-      payload: {
-        threadId,
-        userId,
-        timestamp: Date.now()
-      },
-      timestamp: Date.now()
-    };
-
-    this.broadcast(leaveMessage, userId);
-  }
-
-  private setupMessagingServiceListeners(): void {
-    // Listen to messaging service events and broadcast to relevant users
-    messagingService.on('message_sent', (event: WebSocketEvent) => {
-      const message = event.data;
-      this.sendToUser(message.recipientId, {
-        type: 'new_message',
-        payload: message,
-        timestamp: Date.now()
-      });
-    });
-
-    messagingService.on('message_delivered', (event: WebSocketEvent) => {
-      const message = event.data;
-      this.sendToUser(message.senderId, {
-        type: 'message_delivered',
-        payload: { messageId: message.id, deliveredAt: message.deliveredAt },
-        timestamp: Date.now()
-      });
-    });
-
-    messagingService.on('message_read', (event: WebSocketEvent) => {
-      const message = event.data;
-      this.sendToUser(message.senderId, {
-        type: 'message_read',
-        payload: { messageId: message.id, readAt: message.readAt },
-        timestamp: Date.now()
-      });
-    });
-
-    messagingService.on('notification_received', (event: WebSocketEvent) => {
-      const notification = event.data;
-      this.sendToUser(notification.userId, {
-        type: 'new_notification',
-        payload: notification,
-        timestamp: Date.now()
-      });
-    });
-
-    messagingService.on('user_typing', (event: WebSocketEvent) => {
-      const { threadId, userId, isTyping } = event.data;
-      this.broadcast({
-        type: isTyping ? 'user_typing_start' : 'user_typing_stop',
-        payload: { threadId, userId },
-        timestamp: Date.now()
-      }, userId);
-    });
-
-    messagingService.on('user_online', (event: WebSocketEvent) => {
-      const presence = event.data;
-      this.broadcast({
-        type: 'user_presence_changed',
-        payload: presence,
-        timestamp: Date.now()
-      }, presence.userId);
-    });
-
-    messagingService.on('user_offline', (event: WebSocketEvent) => {
-      const presence = event.data;
-      this.broadcast({
-        type: 'user_presence_changed',
-        payload: presence,
-        timestamp: Date.now()
-      }, presence.userId);
-    });
-  }
-
-  private startHeartbeat(): void {
-    this.heartbeatInterval = setInterval(() => {
-      if (!this.wss) return;
-
-      this.wss.clients.forEach((ws: AuthenticatedWebSocket) => {
-        if (!ws.isAlive) {
-          ws.terminate();
-          return;
-        }
-
-        ws.isAlive = false;
-        ws.ping();
-      });
-    }, 30000); // 30 seconds
-  }
-
-  private startCleanup(): void {
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupStaleConnections();
-    }, 60000); // 1 minute
-  }
-
-  private cleanupStaleConnections(): void {
-    const now = Date.now();
-    const staleThreshold = 5 * 60 * 1000; // 5 minutes
-
-    this.connections.forEach((userConnections, userId) => {
-      const activeConnections = userConnections.filter(connection => {
-        const isStale = now - connection.lastActivity.getTime() > staleThreshold;
-        const isOpen = connection.ws.readyState === WebSocket.OPEN;
-        
-        if (isStale || !isOpen) {
-          if (isOpen) {
-            connection.ws.terminate();
-          }
-          return false;
-        }
-        return true;
-      });
-
-      if (activeConnections.length !== userConnections.length) {
-        if (activeConnections.length === 0) {
-          this.connections.delete(userId);
-          if (userId !== 'anonymous') {
-            messagingService.updateUserPresence(userId, 'offline').catch(console.error);
-          }
-        } else {
-          this.connections.set(userId, activeConnections);
-        }
-      }
-    });
+    logger.info('Socket.IO service shut down');
   }
 }
 
-// Export singleton instance
-export const webSocketService = new WebSocketService();
-export default webSocketService;
+// Singleton instance
+export const socketService = new SocketIOService();
+export default socketService;

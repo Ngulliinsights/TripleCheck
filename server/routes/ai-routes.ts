@@ -156,7 +156,7 @@ async function processDocuments(
     } catch (error) {
       const documentType = getSafeDocumentType(i, documentTypes);
 
-      logger.error(`Document verification error for ${document.name}:`, error);
+      logger.error({ error: error }, 'Document verification error for ${document.name}:');
       verificationResults.push({
         isVerified: false,
         confidence: 0,
@@ -218,7 +218,7 @@ export async function handleDocumentVerification(req: FileUploadRequest, res: Re
       }
     });
   } catch (error) {
-    logger.error("Document verification handler error:", error);
+    logger.error({ error: error }, 'Document verification handler error:');
     return res.status(500).json({
       success: false,
       error: "Document verification failed"
@@ -261,7 +261,7 @@ export async function handleFraudDetection(req: Request, res: Response) {
       }
     });
   } catch (error) {
-    logger.error("Fraud detection error:", error);
+    logger.error({ error: error }, 'Fraud detection error:');
     return res.status(500).json({
       success: false,
       error: "Fraud detection failed"
@@ -317,7 +317,7 @@ export async function handleGenerateReport(req: Request, res: Response) {
       report
     });
   } catch (error) {
-    logger.error("Report generation error:", error);
+    logger.error({ error: error }, 'Report generation error:');
     return res.status(500).json({
       success: false,
       error: "Report generation failed"
@@ -389,7 +389,7 @@ export async function verifyDocument(
         };
       }
     } catch (parseError) {
-      logger.error("Error parsing AI response:", parseError);
+      logger.error({ error: parseError }, 'Error parsing AI response:');
     }
 
     // Fallback for parsing errors
@@ -407,7 +407,7 @@ export async function verifyDocument(
       }
     };
   } catch (error) {
-    logger.error("AI verification error:", error);
+    logger.error({ error: error }, 'AI verification error:');
     throw error;
   }
 }
@@ -456,7 +456,7 @@ export async function detectFraud(property: Property): Promise<FraudDetectionRes
         };
       }
     } catch (parseError) {
-      logger.error("Error parsing AI response:", parseError);
+      logger.error({ error: parseError }, 'Error parsing AI response:');
     }
 
     // Fallback for parsing errors
@@ -469,7 +469,7 @@ export async function detectFraud(property: Property): Promise<FraudDetectionRes
       riskLevel: "low"
     };
   } catch (error) {
-    logger.error("AI fraud detection error:", error);
+    logger.error({ error: error }, 'AI fraud detection error:');
     throw error;
   }
 }
@@ -501,7 +501,7 @@ export async function generateVerificationReport(property: Property): Promise<st
     const { response } = result;
     return response.text();
   } catch (error) {
-    logger.error("AI report generation error:", error);
+    logger.error({ error: error }, 'AI report generation error:');
 
     // Fallback report for errors
     return `

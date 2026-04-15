@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import { alertingSystem } from '../infrastructure/monitoring/AlertingSystem';
-import { logger } from '../infrastructure/monitoring/logger';
+import { logger } from '../infrastructure/observability/telemetry';
 import { observabilitySystem } from '../infrastructure/monitoring/ObservabilitySystem';
 import { prometheusMetrics } from '../infrastructure/monitoring/PrometheusMetrics';
 
@@ -17,7 +17,7 @@ router.get('/prometheus', async (req, res) => {
     res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
     res.send(metrics);
   } catch (error) {
-    logger.error('Error serving Prometheus metrics:', error);
+    logger.error({ error: error }, 'Error serving Prometheus metrics:');
     res.status(500).json({ error: 'Failed to retrieve metrics' });
   }
 });
@@ -49,7 +49,7 @@ router.get('/health', async (req, res) => {
     const statusCode = overallStatus === 'healthy' ? 200 : 503;
     res.status(statusCode).json(response);
   } catch (error) {
-    logger.error('Error in health check:', error);
+    logger.error({ error: error }, 'Error in health check:');
     res.status(500).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
@@ -80,7 +80,7 @@ router.get('/alerts', async (req, res) => {
       }))
     });
   } catch (error) {
-    logger.error('Error getting active alerts:', error);
+    logger.error({ error: error }, 'Error getting active alerts:');
     res.status(500).json({ error: 'Failed to retrieve alerts' });
   }
 });
@@ -106,7 +106,7 @@ router.get('/incidents', async (req, res) => {
       }))
     });
   } catch (error) {
-    logger.error('Error getting active incidents:', error);
+    logger.error({ error: error }, 'Error getting active incidents:');
     res.status(500).json({ error: 'Failed to retrieve incidents' });
   }
 });
@@ -137,7 +137,7 @@ router.post('/alerts/webhook', async (req, res) => {
 
     res.json({ message: 'Alerts processed successfully', count: alerts.length });
   } catch (error) {
-    logger.error('Error processing webhook alerts:', error);
+    logger.error({ error: error }, 'Error processing webhook alerts:');
     res.status(500).json({ error: 'Failed to process alerts' });
   }
 });
