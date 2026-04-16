@@ -1,13 +1,11 @@
-import fsSync from "./app";
-import fs from "./app";
+import fs from "fs/promises";
+import fsSync from "fs";
 import { type Server } from "http";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 
 import express, { type Express } from "express";
-import { nanoid } from "nanoid";
-import vite from "./app";
-// import viteConfig from "../vite.config"; // Removed to fix import issues
+import { createServer as createViteServer } from "vite";
 
 // Calculate __dirname once at module level for better performance
 const __filename = fileURLToPath(import.meta.url);
@@ -67,19 +65,27 @@ export async function setupVite(app: Express, server: Server): Promise<void> {
     };
 
     // Create Vite server with enhanced error handling and logging
-    const viteServer = await vite.createServer({
+    const viteServer = await createViteServer({
       configFile: false,
       customLogger: {
-        // Simplified logger without viteLogger dependency
-        error: (msg) => {
+        // Simplified logger with all required methods
+        error: (msg: string) => {
           log(`Error occurred: ${msg}`, "vite");
         },
-        warn: (msg) => {
+        warn: (msg: string) => {
           log(`Warning: ${msg}`, "vite");
         },
-        info: (msg) => {
+        info: (msg: string) => {
           log(`Info: ${msg}`, "vite");
         },
+        warnOnce: (msg: string) => {
+          log(`Warning (once): ${msg}`, "vite");
+        },
+        clearScreen: () => {
+          // No-op for server environment
+        },
+        hasErrorLogged: (error: Error) => false,
+        hasWarned: false,
       },
       server: viteServerOptions,
       appType: "custom",
