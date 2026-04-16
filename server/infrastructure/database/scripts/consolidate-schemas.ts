@@ -7,7 +7,7 @@
  * fragmented schemas into a single, optimized structure.
  */
 
-import postgres from '..\..\..\..\scripts\cleanup-redundancies';
+import postgres from '../../../../scripts/cleanup-redundancies';
 
 import { runSchemaConsolidation } from '../migrations/core/consolidate-schemas';
 

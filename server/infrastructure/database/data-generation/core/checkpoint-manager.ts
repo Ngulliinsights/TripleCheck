@@ -7,8 +7,8 @@
  * Moved from database/seeds/generators/checkpoint-manager.ts
  */
 
-import fs from '..\..\..\..\..\scripts\cleanup-redundancies';
-import path from '..\..\..\..\..\scripts\cleanup-redundancies';
+import fs from '../../../../../scripts/cleanup-redundancies';
+import path from '../../../../../scripts/cleanup-redundancies';
 
 export interface Checkpoint {
   id: string;

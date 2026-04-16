@@ -8,5 +8,4 @@
  */
 
 export * from './api-contracts';
-export * from './api.types';
 export * from './property';

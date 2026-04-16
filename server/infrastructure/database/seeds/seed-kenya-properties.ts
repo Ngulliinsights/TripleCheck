@@ -21,7 +21,7 @@ import {
   communityFeedback,
   expertAssignments,
   propertyMonitoring
-} from '../../../../src/local/schema";
+} from "../../../../src/local/schema";
 import type { 
   InsertUser, 
   InsertProperty, 
@@ -32,7 +32,7 @@ import type {
   InsertCommunityFeedback,
   InsertExpertAssignment,
   InsertPropertyMonitoring
-} from '../../../../src/local/schema";
+} from "../../../../src/local/schema";
 
 
 // Load environment variables

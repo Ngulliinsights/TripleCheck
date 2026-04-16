@@ -6,7 +6,7 @@
  * and other API optimizations.
  */
 
-import fetch from '..\cleanup-redundancies';
+import fetch from '../cleanup-redundancies';
 
 const API_BASE = process.env.API_BASE || 'http://localhost:3003/api';
 

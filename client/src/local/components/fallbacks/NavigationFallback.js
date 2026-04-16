@@ -1,0 +1,84 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NavigationFallback = NavigationFallback;
+var lucide_react_1 = require("lucide-react");
+var react_1 = require("react");
+/**
+ * Simple fallback navigation component for when the main navigation crashes
+ * This provides basic navigation functionality without complex features that might cause crashes
+ */
+function NavigationFallback() {
+    var handleNavigation = function (href) {
+        try {
+            window.location.href = href;
+        }
+        catch (error) {
+            console.error('Fallback navigation failed:', error);
+            // Ultimate fallback - reload to home
+            window.location.href = '/';
+        }
+    };
+    return (<nav className="bg-white border-b border-gray-200 px-4 py-3">
+      <div className="flex items-center justify-between max-w-7xl mx-auto">
+        {/* Simple logo/brand */}
+        <button onClick={function () { return handleNavigation('/'); }} className="flex items-center gap-2 text-xl font-bold text-primary hover:text-primary-hover">
+          <lucide_react_1.Home className="w-6 h-6"/>
+          TripleCheck
+        </button>
+
+        {/* Basic navigation links */}
+        <div className="hidden md:flex items-center gap-6">
+          <button onClick={function () { return handleNavigation('/properties'); }} className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+            Properties
+          </button>
+          <button onClick={function () { return handleNavigation('/services'); }} className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+            Services
+          </button>
+          <button onClick={function () { return handleNavigation('/help'); }} className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+            Help
+          </button>
+        </div>
+
+        {/* Simple search */}
+        <div className="hidden lg:flex items-center">
+          <div className="relative">
+            <lucide_react_1.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"/>
+            <input type="search" placeholder="Search properties..." className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" onKeyPress={function (e) {
+            if (e.key === 'Enter') {
+                var query = e.target.value;
+                if (query.trim()) {
+                    handleNavigation("/search?q=".concat(encodeURIComponent(query.trim())));
+                }
+            }
+        }}/>
+          </div>
+        </div>
+
+        {/* Mobile menu button */}
+        <button className="md:hidden p-2 rounded-md text-gray-700 hover:text-primary hover:bg-gray-100" aria-label="Toggle mobile menu" title="Toggle mobile menu" onClick={function () {
+            // Simple mobile menu toggle
+            var mobileMenu = document.getElementById('mobile-menu-fallback');
+            if (mobileMenu) {
+                mobileMenu.classList.toggle('hidden');
+            }
+        }}>
+          <lucide_react_1.Menu className="w-6 h-6"/>
+        </button>
+      </div>
+
+      {/* Simple mobile menu */}
+      <div id="mobile-menu-fallback" className="hidden md:hidden mt-4 pb-4 border-t border-gray-200">
+        <div className="flex flex-col gap-2 mt-4">
+          <button onClick={function () { return handleNavigation('/properties'); }} className="text-left text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+            Properties
+          </button>
+          <button onClick={function () { return handleNavigation('/services'); }} className="text-left text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+            Services
+          </button>
+          <button onClick={function () { return handleNavigation('/help'); }} className="text-left text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+            Help
+          </button>
+        </div>
+      </div>
+    </nav>);
+}

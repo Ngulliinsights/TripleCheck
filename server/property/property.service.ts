@@ -2,7 +2,7 @@ import { DocumentAuthService } from "../document-auth/DocumentAuthService";
 import { PropertyCacheService } from "../infrastructure/cache"
 import { LandVerificationService } from "../land-verification/LandVerificationService";
 
-import { PropertyRepository } from "./property.repository";
+import { PropertyRepository, Property } from "./property.repository";
 
 // Type definitions for better type safety
 interface PropertyFilters {
@@ -35,6 +35,7 @@ interface PropertyData {
   description: string;
   price: number;
   location: string;
+  address: string;
   propertyType: string;
   bedrooms?: number;
   bathrooms?: number;
@@ -47,6 +48,7 @@ interface PropertyUpdateData {
   description?: string;
   price?: number;
   location?: string;
+  address?: string;
   propertyType?: string;
   bedrooms?: number;
   bathrooms?: number;

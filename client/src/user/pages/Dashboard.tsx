@@ -1,22 +1,22 @@
 // Dashboard.tsx - Merged: Rich Features + Performance Optimizations
 // Combines full feature set with React.memo, immutable data, and optimized callbacks
 
-import { GridVirtualizedList } from '../../local/components/index"
-import { Badge } from '../../local/components/ui/badge"
-import { Button } from '../../local/components/ui/button"
+import { GridVirtualizedList } from "../../local/components/index"
+import { Badge } from "../../local/components/ui/badge"
+import { Button } from "../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../local/components/ui/card"
+} from "../../local/components/ui/card"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '../../local/components/ui/tabs"
-import { usePropertyGridVirtualization } from '../../local/hooks/useMemoryOptimization"
+} from "../../local/components/ui/tabs"
+import { usePropertyGridVirtualization } from "../../local/hooks/useMemoryOptimization"
 import {
   Bell,
   Settings,
@@ -31,8 +31,8 @@ import {
 import React, { useMemo, useState, useCallback, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { formatDate } from '../../local/utils/date-utils"
-import { Property } from '../../local/types/property"
+import { formatDate } from "../../local/utils/date-utils"
+import { Property } from "../../local/types/property"
 
 /* ---------- TYPES ---------- */
 type MembershipTier = "basic" | "premium" | "enterprise";

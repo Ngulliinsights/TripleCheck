@@ -9,7 +9,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
-import { Command } from '..\..\..\..\src\shared\components\ui\command';
+import { Command } from '../../../../src/shared/components/ui/command';
 
 import { ComprehensiveDisasterRecovery, ComprehensiveDisasterRecoveryConfig } from './ComprehensiveDisasterRecovery';
 

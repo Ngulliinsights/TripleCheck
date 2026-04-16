@@ -11,7 +11,7 @@ import { config } from "dotenv";
 import { eq, and, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 
-import { properties, landVerificationSessions } from "..\..\schemas\consolidated";
+import { properties, landVerificationSessions } from "../../schemas/consolidated";
 
 // Load environment variables
 config();

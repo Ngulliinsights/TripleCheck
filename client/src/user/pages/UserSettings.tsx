@@ -1,17 +1,17 @@
 import { Settings, Bell, Shield, Eye, Lock, Trash2, Save } from "lucide-react"
 import { useState } from "react"
 
-import { Button } from '../../local/components/ui/button"
+import { Button } from "../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../local/components/ui/card"
-import { Input } from '../../local/components/ui/input"
-import { Label } from '../../local/components/ui/label"
-import { Separator } from '../../local/components/ui/separator"
-import { Switch } from '../../local/components/ui/switch"
+} from "../../local/components/ui/card"
+import { Input } from "../../local/components/ui/input"
+import { Label } from "../../local/components/ui/label"
+import { Separator } from "../../local/components/ui/separator"
+import { Switch } from "../../local/components/ui/switch"
 
 interface NotificationSettings {
   emailNotifications: boolean;

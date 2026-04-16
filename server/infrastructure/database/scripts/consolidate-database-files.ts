@@ -8,7 +8,7 @@
  */
 
 import { promises as fs } from 'fs';
-import path from '..\..\..\..\scripts\cleanup-redundancies';
+import path from '../../../../scripts/cleanup-redundancies';
 
 interface ConsolidationResult {
   success: boolean;
@@ -369,7 +369,7 @@ ${serverConnectionContent}
  */
 
 import { promises as fs } from 'fs';
-import path from '..\..\..\..\scripts\cleanup-redundancies';
+import path from '../../../../scripts/cleanup-redundancies';
 import { glob } from 'glob';
 
 const importMappings = ${JSON.stringify(mappings, null, 2)};

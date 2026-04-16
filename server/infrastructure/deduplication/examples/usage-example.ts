@@ -5,9 +5,8 @@
  * in your Express application.
  */
 
-import express from '..\..\..\..\scripts\cleanup-redundancies';
-
-import { CacheService } from '..\..\..\cache\CacheService'
+import express from 'express';
+import { RequestDeduplicator, CacheStatistics } from '../RequestDeduplicator';
 import { 
   createDeduplicationMiddleware, 
   addRequestIdMiddleware, 

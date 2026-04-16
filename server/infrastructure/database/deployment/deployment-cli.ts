@@ -7,11 +7,11 @@
  * and blue-green deployment strategies.
  */
 
-import { Command } from '..\..\..\..\src\shared\components\ui\command';
+import { Command } from '../../../../src/shared/components/ui/command';
 import { Pool } from 'pg';
-import chalk from '..\..\..\..\scripts\cleanup-redundancies';
-import ora from '..\..\..\..\src\auth\components\TwoFactorAuth';
-import inquirer from '..\..\..\..\scripts\cleanup-redundancies';
+import chalk from '../../../../scripts/cleanup-redundancies';
+import ora from '../../../../src/auth/components/TwoFactorAuth';
+import inquirer from '../../../../scripts/cleanup-redundancies';
 import { ZeroDowntimeMigrationManager, MigrationOperation } from './ZeroDowntimeMigrationManager';
 import { BlueGreenDeploymentManager, BlueGreenConfig } from './BlueGreenDeploymentManager';
 import { logger } from '../../monitoring/logger';

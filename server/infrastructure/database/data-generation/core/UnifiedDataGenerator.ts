@@ -8,8 +8,8 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
-import fs from '..\..\..\..\..\scripts\cleanup-redundancies';
-import path from '..\..\..\..\..\scripts\cleanup-redundancies';
+import fs from '../../../../../scripts/cleanup-redundancies';
+import path from '../../../../../scripts/cleanup-redundancies';
 import { performance } from 'perf_hooks';
 
 import { CheckpointManager } from './checkpoint-manager';

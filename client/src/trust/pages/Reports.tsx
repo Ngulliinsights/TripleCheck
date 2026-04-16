@@ -12,15 +12,15 @@ import {
 import { useState } from "react"
 
 import { apiRequest } from "../../infrastructure/api/queryClient"
-import { Button } from '../../local/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../local/components/ui/card"
-import { Input } from '../../local/components/ui/input"
-import { Label } from '../../local/components/ui/label"
-import { Progress } from '../../local/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../local/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs"
-import { useToast } from '../../local/hooks/use-toast"
-import { formatDate } from '../../local/utils/date-utils"
+import { Button } from "../../local/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../../local/components/ui/card"
+import { Input } from "../../local/components/ui/input"
+import { Label } from "../../local/components/ui/label"
+import { Progress } from "../../local/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../local/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../local/components/ui/tabs"
+import { useToast } from "../../local/hooks/use-toast"
+import { formatDate } from "../../local/utils/date-utils"
 
 interface ReportType {
   id: string;

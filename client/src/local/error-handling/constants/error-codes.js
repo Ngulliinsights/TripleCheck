@@ -1,7 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ErrorCode = void 0;
 /**
  * Application-specific error codes
  */
-export var ErrorCode;
+var ErrorCode;
 (function (ErrorCode) {
     // Authentication & Authorization
     ErrorCode["INVALID_CREDENTIALS"] = "INVALID_CREDENTIALS";
@@ -115,5 +118,4 @@ export var ErrorCode;
     ErrorCode["UNKNOWN_ERROR"] = "UNKNOWN_ERROR";
     // Client-side
     ErrorCode["CLIENT_RUNTIME_ERROR"] = "CLIENT_RUNTIME_ERROR";
-})(ErrorCode || (ErrorCode = {}));
-//# sourceMappingURL=error-codes.js.map
+})(ErrorCode || (exports.ErrorCode = ErrorCode = {}));

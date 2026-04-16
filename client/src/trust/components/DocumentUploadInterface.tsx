@@ -18,18 +18,18 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '../../local/components/ui/alert"
-import { Badge } from '../../local/components/ui/badge"
-import { Button } from '../../local/components/ui/button"
+} from "../../local/components/ui/alert"
+import { Badge } from "../../local/components/ui/badge"
+import { Button } from "../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../local/components/ui/card"
-import { Progress } from '../../local/components/ui/progress"
-import { useToast } from '../../local/hooks/use-toast"
+} from "../../local/components/ui/card"
+import { Progress } from "../../local/components/ui/progress"
+import { useToast } from "../../local/hooks/use-toast"
 import {
   useDocumentAuthentication,
   type DocumentVerificationResult,

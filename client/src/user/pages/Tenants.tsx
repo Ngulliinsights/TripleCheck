@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { useToast } from '../../local/hooks/use-toast"
+import { useToast } from "../../local/hooks/use-toast"
 
 export default function TenantsPage() {
   const { toast } = useToast();

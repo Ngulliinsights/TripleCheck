@@ -3,9 +3,9 @@
  * Provides detailed logging and audit trails for all verification activities
  */
 
-import { generateCorrelationId } from '../../../src/local/error-handling";
-import { db } from "..\..\infrastructure\database\connection\index";
-import { logger } from "..\..\infrastructure\monitoring\logger";
+import { generateCorrelationId } from "../../../src/local/error-handling";
+import { db } from "../../infrastructure/database/connection/index";
+import { logger } from "../../infrastructure/monitoring/logger";
 
 export interface AuditEvent {
   id?: string;

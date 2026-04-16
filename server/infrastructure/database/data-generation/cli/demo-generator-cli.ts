@@ -7,12 +7,12 @@
  * with comprehensive scenarios, realistic patterns, and validation.
  */
 
-import { Command } from '..\..\..\..\..\src\shared\components\ui\command';
-import chalk from '..\..\..\..\..\scripts\cleanup-redundancies';
-import ora from '..\..\..\..\..\src\auth\components\TwoFactorAuth';
-import inquirer from '..\..\..\..\..\scripts\cleanup-redundancies';
-import fs from '..\..\..\..\..\scripts\cleanup-redundancies';
-import path from '..\..\..\..\..\scripts\cleanup-redundancies';
+import { Command } from '../../../../../src/shared/components/ui/command';
+import chalk from '../../../../../scripts/cleanup-redundancies';
+import ora from '../../../../../src/auth/components/TwoFactorAuth';
+import inquirer from '../../../../../scripts/cleanup-redundancies';
+import fs from '../../../../../scripts/cleanup-redundancies';
+import path from '../../../../../scripts/cleanup-redundancies';
 
 import { 
   ProductionDemoGenerator, 

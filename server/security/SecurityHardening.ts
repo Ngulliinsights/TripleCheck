@@ -1,8 +1,8 @@
-import crypto from '..\app';
+import crypto from '../app';
 
 import { Request, Response, NextFunction } from 'express';
-import { rateLimit } from '..\tests\api-bug-fixes';
-import helmet from '..\app';
+import { rateLimit } from '../tests/api-bug-fixes';
+import helmet from '../app';
 import { ParsedQs } from 'qs';
 
 import { structuredLogger } from '../monitoring/StructuredLogger';

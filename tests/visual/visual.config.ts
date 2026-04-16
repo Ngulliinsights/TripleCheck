@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '..\..\scripts\generate-test-chunks';
+import { defineConfig, devices } from '../../scripts/generate-test-chunks';
 
 /**
  * Visual Regression Testing Configuration

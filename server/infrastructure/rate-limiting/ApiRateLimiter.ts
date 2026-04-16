@@ -1,5 +1,5 @@
 import { EnhancedCacheService, CacheFactory } from '../cache/CacheIntegrationAdapter';
-import { CacheService } from '..\..\cache\CacheService'
+import { CacheService } from '../../cache/CacheService'
 
 /**
  * Rate limiting configuration

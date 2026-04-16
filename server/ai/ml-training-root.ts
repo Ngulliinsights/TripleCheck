@@ -44,8 +44,8 @@ const detectFraud = async (property: PropertyType): Promise<FraudAnalysisType> =
     };
   }
 };
-import fs from '..\app';
-import path from '..\app';
+import fs from '../app';
+import path from '../app';
 
 // Enhanced type definitions with better constraints and documentation
 export interface ActualAIVerificationResults {

@@ -1,6 +1,6 @@
 import { eq, and, gte, lte, desc, sql, count } from 'drizzle-orm';
 
-import { CacheService } from '..\cache\CacheService'
+import { CacheService } from '../cache/CacheService'
 import { db } from '../infrastructure/database/connection';
 import { analyticsEvents, performanceMetrics } from '../infrastructure/database/schemas/consolidated';
 import { RequestDeduplicator } from '../infrastructure/deduplication/RequestDeduplicator';

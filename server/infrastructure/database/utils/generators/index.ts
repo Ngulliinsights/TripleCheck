@@ -6,7 +6,7 @@
  */
 
 import { faker } from '@faker-js/faker';
-import postgres from '..\..\..\..\..\scripts\cleanup-redundancies';
+import postgres from '../../../../../scripts/cleanup-redundancies';
 import { z } from 'zod';
 
 // Data generation configuration

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { execSync } from 'child_process';
-import fs from '..\app';
-import path from '..\app';
+import fs from '../app';
+import path from '../app';
 
 interface TestResult {
   testSuite: string;

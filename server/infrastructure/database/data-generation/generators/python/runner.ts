@@ -5,8 +5,8 @@
  */
 
 import { spawn } from 'child_process';
-import fs from '..\..\..\..\..\..\scripts\cleanup-redundancies';
-import path from '..\..\..\..\..\..\scripts\cleanup-redundancies';
+import fs from '../../../../../../scripts/cleanup-redundancies';
+import path from '../../../../../../scripts/cleanup-redundancies';
 
 export interface PythonRunnerConfig {
   script: string;

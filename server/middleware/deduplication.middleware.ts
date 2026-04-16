@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 
-import { CacheService } from '..\cache\CacheService'
+import { CacheService } from '../cache/CacheService'
 import { RequestDeduplicator } from "../infrastructure/deduplication/RequestDeduplicator";
 
 /**

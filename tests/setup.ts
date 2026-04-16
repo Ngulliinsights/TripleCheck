@@ -3,7 +3,7 @@
  * Global test setup and configuration
  */
 
-import { beforeAll, afterAll, beforeEach, afterEach } from '..\src\shared\test-utils\index';
+import { beforeAll, afterAll, beforeEach, afterEach } from '../src/shared/test-utils/index';
 import { setupTest, teardownTest } from '../src/local/testing/TestUtils';
 
 // Global test setup

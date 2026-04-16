@@ -7,7 +7,7 @@
  * Task 5.1 & 5.2: Execute comprehensive system integration and finalize operational excellence
  */
 
-import { Command } from '..\..\..\..\src\shared\components\ui\command';
+import { Command } from '../../../../src/shared/components/ui/command';
 import { Pool } from 'pg';
 import { logger } from '../../monitoring/logger';
 import { IntegrationTestRunner } from './integration-test-runner';

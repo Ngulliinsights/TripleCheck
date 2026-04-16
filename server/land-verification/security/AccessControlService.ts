@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 
 import { landVerificationSessions, users, properties } from '../../../src/local/schema';
 import { logger } from '../../infrastructure/observability/telemetry';
-import { db } from '..\..\infrastructure\database\connection\index';
+import { db } from '../../infrastructure/database/connection/index';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 
 export interface AccessControlConfig {

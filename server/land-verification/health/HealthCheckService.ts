@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { Request, Response } from 'express';
-import Redis from '..\..\..\scripts\cleanup-redundancies';
+import Redis from '../../../scripts/cleanup-redundancies';
 
 import { getDatabase } from '../../infrastructure/database/connection';
 

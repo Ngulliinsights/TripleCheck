@@ -8,12 +8,12 @@
  */
 
 import { neon } from "@neondatabase/serverless";
-import bcrypt from "..\..\..\..\scripts\cleanup-redundancies";
+import bcrypt from "../../../../scripts/cleanup-redundancies";
 import { drizzle } from "drizzle-orm/neon-http";
 import { migrate } from "drizzle-orm/neon-http/migrator";
 
-import { users, properties, reviews } from "..\schemas\core\index";
-import type { InsertUser, InsertProperty, User } from '../src/local/schema";
+import { users, properties, reviews } from "../schemas/core/index";
+import type { InsertUser, InsertProperty, User } from "../src/local/schema";
 
 
 async function setupDatabase() {

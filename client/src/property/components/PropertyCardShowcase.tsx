@@ -9,23 +9,23 @@ import React, {
 } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { PropertyCard } from '../../local/components/property"
-import { Badge } from '../../local/components/ui/badge"
+import { PropertyCard } from "../../local/components/property"
+import { Badge } from "../../local/components/ui/badge"
 import { normalizeLandProperty } from "../utils/normalizeLandProperty"
-import { cn } from '../../local/lib/utils"
-import { Button } from '../../local/components/ui/button"
+import { cn } from "../../local/lib/utils"
+import { Button } from "../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../local/components/ui/card"
+} from "../../local/components/ui/card"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '../../local/components/ui/tabs"
+} from "../../local/components/ui/tabs"
 import type { NormalizedProperty } from "@shared/types/property"
 import type { CSSProperties } from "react"
 

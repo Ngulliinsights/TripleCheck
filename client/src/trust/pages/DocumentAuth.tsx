@@ -15,10 +15,10 @@ import {
 } from "lucide-react"
 import React, { useState, useRef, useCallback, useMemo } from "react"
 
-import { Button } from '../../local/components/ui/button"
-import { Input } from '../../local/components/ui/input"
-import { Progress } from '../../local/components/ui/progress"
-import { useToast } from '../../local/hooks/use-toast"
+import { Button } from "../../local/components/ui/button"
+import { Input } from "../../local/components/ui/input"
+import { Progress } from "../../local/components/ui/progress"
+import { useToast } from "../../local/hooks/use-toast"
 
 // Constants moved to top level to prevent re-creation on each render
 const FILE_CONSTRAINTS = {

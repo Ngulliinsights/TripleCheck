@@ -10,7 +10,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { logger as loggingService } from '..\..\infrastructure\monitoring\logger';
+import { logger as loggingService } from '../../infrastructure/monitoring/logger';
 import { getMetricsCollector } from '../../../core/src/rate-limiting/metrics';
 import { v4 as uuidv4 } from 'uuid';
 

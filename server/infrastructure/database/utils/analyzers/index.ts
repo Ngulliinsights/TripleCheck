@@ -5,7 +5,7 @@
  * and data quality metrics.
  */
 
-import postgres from '..\..\..\..\..\scripts\cleanup-redundancies';
+import postgres from '../../../../../scripts/cleanup-redundancies';
 
 export interface DatabaseAnalysisResult {
   tableStats: TableStats[];

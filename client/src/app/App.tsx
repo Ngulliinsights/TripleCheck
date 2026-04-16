@@ -1,8 +1,8 @@
 import React, { useEffect, memo } from "react"
 
-import { Footer } from '../local/components/layout/Footer"
-import { Navigation } from '../local/components/layout/Navigation"
-import { NavigationErrorBoundary } from '../local/components/navigation/NavigationErrorBoundary"
+import { Footer } from "../local/components/layout/Footer"
+import { Navigation } from "../local/components/layout/Navigation"
+import { NavigationErrorBoundary } from "../local/components/navigation/NavigationErrorBoundary"
 
 import { ErrorBoundary } from "./error-boundary"
 import { AppRouter } from "./router"

@@ -5,7 +5,7 @@
  * and constraint compliance.
  */
 
-import postgres from '..\..\..\..\..\scripts\cleanup-redundancies';
+import postgres from '../../../../../scripts/cleanup-redundancies';
 
 export interface DataIntegrityResult {
   isValid: boolean;

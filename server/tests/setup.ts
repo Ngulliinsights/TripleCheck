@@ -1,6 +1,6 @@
-import { beforeAll, afterAll, beforeEach, afterEach } from '..\..\src\shared\test-utils\index';
+import { beforeAll, afterAll, beforeEach, afterEach } from '../../src/shared/test-utils/index';
 
-import { cacheService } from '..\cache\CacheService'
+import { cacheService } from '../cache/CacheService'
 import { storage } from '../infrastructure/storage/storage';
 import { structuredLogger } from '../monitoring/StructuredLogger';
 

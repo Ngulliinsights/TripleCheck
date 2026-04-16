@@ -5,7 +5,7 @@
  * consistency checking, foreign key integrity, and business rule validation.
  */
 
-import postgres from '..\..\..\..\scripts\cleanup-redundancies';
+import postgres from '../../../../scripts/cleanup-redundancies';
 
 import { ValidationResult } from '../index';
 

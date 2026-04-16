@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
-import * as tf from '..\index';
+import * as tf from '../index';
 import { logger } from '../../infrastructure/observability/telemetry';
 
 export interface ModelMetadata {

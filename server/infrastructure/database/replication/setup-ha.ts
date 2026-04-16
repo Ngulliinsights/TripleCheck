@@ -2,7 +2,7 @@
 
 import { execSync } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
-import path from '..\..\..\..\scripts\cleanup-redundancies';
+import path from '../../../../scripts/cleanup-redundancies';
 
 import { connectionRouter } from './ConnectionRouter';
 import { failoverManager } from './FailoverManager';

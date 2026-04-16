@@ -9,7 +9,7 @@
 import { config } from "dotenv";
 
 import { migrateExistingProperties, type MigrationStats } from "./migrate-existing-properties";
-import { seedKenyaProperties, type SeedingStats } from "..\..\seeds\seed-kenya-properties";
+import { seedKenyaProperties, type SeedingStats } from "../../seeds/seed-kenya-properties";
 import { runMigrationTests, type TestSummary } from "./test-migration";
 import { validateMigration, type ValidationSummary } from "./validate-migration";
 

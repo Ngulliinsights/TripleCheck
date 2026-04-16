@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { promises as fs } from 'fs';
-import path from '..\app';
+import path from '../app';
 
 import { db as database } from '../infrastructure/database/connection';
 

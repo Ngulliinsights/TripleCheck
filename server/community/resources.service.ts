@@ -6,10 +6,10 @@ import {
   experienceInteractions,
   contentReports,
   users
-} from '../../src/local/schema";
+} from "../../src/local/schema";
 import { db } from "../infrastructure/database/connection";
 
-import { NotificationService } from "..\communication\notification.service";
+import { NotificationService } from "../communication/notification.service";
 
 // Constants to avoid duplication
 const ANONYMOUS_USER = 'Anonymous User';

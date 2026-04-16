@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react"
 
-import { PropertyListingPage } from '../../local/components/property/PropertyListingPage"
-import { landConfig } from '../../local/config/propertyTypes"
+import { PropertyListingPage } from "../../local/components/property/PropertyListingPage"
+import { landConfig } from "../../local/config/propertyTypes"
 import { CompareBar } from "../components/CompareBar"
 import { CompareModal } from "../components/CompareModal"
 /**

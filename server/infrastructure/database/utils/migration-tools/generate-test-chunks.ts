@@ -7,7 +7,7 @@
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-import { testChunker } from '..\..\..\..\..\src\shared\test-utils\test-chunking';
+import { testChunker } from '../../../../../src/shared/test-utils/test-chunking';
 
 async function generateTestChunks() {
   console.log('🔍 Discovering test files...');

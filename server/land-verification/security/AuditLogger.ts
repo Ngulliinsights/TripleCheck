@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 
 import { logger } from '../../infrastructure/observability/telemetry';
-import { db } from '..\..\infrastructure\database\connection\index';
+import { db } from '../../infrastructure/database/connection/index';
 
 export interface AuditEvent {
   id?: string;

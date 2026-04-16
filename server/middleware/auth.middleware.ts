@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { User } from '@shared/schema';
 import type { UserRole, AuthorizationContext, PermissionCheckResult, SessionConfig } from '../types/auth.types';
 import { HTTP_STATUS, ROLE_HIERARCHY } from '../utils/constants';
-import { BaseError, ErrorDomain, ErrorSeverity } from '..\..\src\shared\error-handling\errors\base-error';
+import { BaseError, ErrorDomain, ErrorSeverity } from '../../src/shared/error-handling/errors/base-error';
 import { APP_AUTH_ERRORS } from '../types/auth-errors';
 import { AUTH_CONSTANTS } from '../types/auth-constants';
 import { ResponseHelper } from '../utils/response-helpers';

@@ -10,7 +10,7 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { migrate } from "drizzle-orm/neon-http/migrator";
 
-import * as schema from "..\..\..\..\..\src\shared\schema";
+import * as schema from "../../../../../src/shared/schema";
 
 const logger = {
   info: (message: string) => console.log(`ℹ️  ${message}`),

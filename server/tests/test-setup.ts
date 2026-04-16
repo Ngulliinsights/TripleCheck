@@ -1,4 +1,4 @@
-import { vi } from '..\..\src\shared\test-utils\index';
+import { vi } from '../../src/shared/test-utils/index';
 
 // Mock the storage module to avoid database connection issues during testing
 vi.mock('../storage', () => {

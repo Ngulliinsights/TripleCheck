@@ -6,16 +6,16 @@
 
 import 'dotenv/config';
 import { spawn } from 'child_process';
-import fs from '..\..\..\..\scripts\cleanup-redundancies';
-import path from '..\..\..\..\scripts\cleanup-redundancies';
+import fs from '../../../../scripts/cleanup-redundancies';
+import path from '../../../../scripts/cleanup-redundancies';
 import { fileURLToPath } from 'url';
 
 import { neon } from '@neondatabase/serverless';
-import bcrypt from '..\..\..\..\scripts\cleanup-redundancies';
+import bcrypt from '../../../../scripts/cleanup-redundancies';
 import { count } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-http';
 
-import { users, properties, reviews } from '..\schemas\core\index';
+import { users, properties, reviews } from '../schemas/core/index';
 import type { InsertUser, InsertProperty, InsertReview } from '../src/local/schema';
 
 /* ---------- CONFIG ---------- */

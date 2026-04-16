@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import path from '..\scripts\cleanup-redundancies';
+import path from '../scripts/cleanup-redundancies';
 
 async function validateIntegration() {
   console.log('🔍 Validating Kenya Land Verification System Integration');

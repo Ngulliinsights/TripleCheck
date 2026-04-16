@@ -1,4 +1,4 @@
-import sharp from '..\..\..\scripts\cleanup-redundancies';
+import sharp from '../../../scripts/cleanup-redundancies';
 
 import { logger } from '../../infrastructure/observability/telemetry';
 import { DocumentVerificationRequest, VerificationCheck, DocumentMetadata } from '../DocumentAuthService';

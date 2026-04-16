@@ -5,7 +5,6 @@
     "lib": ["ES2020"],
     "skipLibCheck": true,
     "composite": true,
-    "ignoreDeprecations": "6.0",
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,

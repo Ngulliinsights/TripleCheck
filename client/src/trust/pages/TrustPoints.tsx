@@ -1,9 +1,9 @@
 import { Shield, Award, Star, Users, CheckCircle, ArrowRight } from "lucide-react"
 
-import { Button } from '../../local/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card"
-import { Progress } from '../../local/components/ui/progress"
-import { formatDate } from '../../local/utils/date-utils"
+import { Button } from "../../local/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "../../local/components/ui/card"
+import { Progress } from "../../local/components/ui/progress"
+import { formatDate } from "../../local/utils/date-utils"
 
 export default function TrustPointsPage() {
   // Simulated user trust points data

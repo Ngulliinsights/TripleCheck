@@ -7,7 +7,7 @@
 
 import { randomBytes } from 'crypto';
 import { writeFile } from 'fs/promises';
-import path from '..\..\..\..\..\scripts\cleanup-redundancies';
+import path from '../../../../../scripts/cleanup-redundancies';
 
 import { DataScenario } from '../core/UnifiedDataGenerator';
 import { PRODUCTION_DEMO_SCENARIOS } from './production-demo-scenarios';

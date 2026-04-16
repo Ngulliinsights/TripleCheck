@@ -10,7 +10,7 @@ import { spawn } from 'child_process';
 import fs from './KenyanDataGenerator';
 import path from './KenyanDataGenerator';
 
-import { UnifiedDataGenerator } from '..\UnifiedDataGenerator';
+import { UnifiedDataGenerator } from '../UnifiedDataGenerator';
 
 interface IntegrationOptions {
   users?: number;

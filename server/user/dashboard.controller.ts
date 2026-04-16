@@ -1,8 +1,8 @@
-import path from '..\app';
+import path from '../app';
 
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { Router, Request, Response } from 'express';
-import multer from '..\app';
+import multer from '../app';
 import { z } from 'zod';
 
 import {
@@ -13,7 +13,7 @@ import {
   notifications,
   professionals,
 } from '..\infrastructure\database\schemas\consolidated';
-import { CacheService } from '..\cache\CacheService'
+import { CacheService } from '../cache/CacheService'
 import { db } from '../infrastructure/database/connection';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { asyncHandler } from "../middleware/error";

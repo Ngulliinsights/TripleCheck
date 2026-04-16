@@ -3,9 +3,9 @@
  * Eliminates duplicate test infrastructure while improving coverage and speed
  */
 
-import { beforeEach, afterEach, vi, expect } from '..\..\src\shared\test-utils\index';
-import { render, screen, fireEvent, waitFor } from '..\..\src\shared\test-utils\index';
-import userEvent from '..\..\scripts\cleanup-redundancies';
+import { beforeEach, afterEach, vi, expect } from '../../src/shared/test-utils/index';
+import { render, screen, fireEvent, waitFor } from '../../src/shared/test-utils/index';
+import userEvent from '../../scripts/cleanup-redundancies';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { ReactElement, ReactNode } from 'react';
@@ -416,7 +416,7 @@ export const createTestUser = (overrides?: Partial<TestUser>) =>
 export const renderWithProviders = (ui: ReactElement, options?: any) => 
   testFramework.renderWithProviders(ui, options);
 
-export const runPerformanceBenchmark = <T>(
+export const runPerformanceBenchmark = <T,>(
   operation: () => Promise<T>,
   expectedMaxDuration: number,
   description?: string
@@ -433,13 +433,13 @@ export const expectAccessible = async (container: HTMLElement) => {
 };
 
 // Performance test helpers
-export const expectFastRender = async (renderFn: () => Promise<any>) => {
+export const expectFastRender = async (renderFn: () => Promise<unknown>) => {
   const result = await runPerformanceBenchmark(renderFn, 100, 'Component render');
   expect(result.passed).toBe(true);
   return result.result;
 };
 
-export const expectFastApiCall = async (apiFn: () => Promise<any>) => {
+export const expectFastApiCall = async (apiFn: () => Promise<unknown>) => {
   const result = await runPerformanceBenchmark(apiFn, 500, 'API call');
   expect(result.passed).toBe(true);
   return result.result;

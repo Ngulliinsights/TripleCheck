@@ -10,7 +10,7 @@
  * - Document quality assessment
  */
 
-import { logger as loggingService } from '..\..\infrastructure\monitoring\logger';
+import { logger as loggingService } from '../../infrastructure/monitoring/logger';
 import { huggingFaceClient } from './huggingface-api-client';
 import { AIServiceError } from './huggingface-client';
 

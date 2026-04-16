@@ -8,8 +8,8 @@ import {
   ErrorCode, 
   HttpStatusCode,
   generateCorrelationId 
-} from '../../../src/local/error-handling";
-import { logger } from "..\..\infrastructure\monitoring\logger";
+} from "../../../src/local/error-handling";
+import { logger } from "../../infrastructure/monitoring/logger";
 
 export interface RetryConfig {
   maxAttempts: number;

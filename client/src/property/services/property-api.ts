@@ -1,7 +1,7 @@
 import { apiRequest } from "../../infrastructure/api/queryClient"
 import { requestManager } from "../../infrastructure/api/request-manager"
-import { ApiResponse, PaginatedResponse } from '../../local/types/api.types"
-import { Property } from '../../local/types/property"
+import { ApiResponse, PaginatedResponse } from "../../local/types/api.types"
+import { Property } from "../../local/types/property"
 import { PropertySearchParams, PropertySearchInput } from "../types/property.types"
 
 import { PropertyBusinessLogic } from "./property-validation"

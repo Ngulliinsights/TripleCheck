@@ -3,7 +3,7 @@
  * AI-powered performance optimization and recommendation engine
  */
 
-import { CacheService } from '..\..\cache\CacheService'
+import { CacheService } from '../../cache/CacheService'
 
 import { CachePerformanceMonitor } from './CachePerformanceMonitor';
 

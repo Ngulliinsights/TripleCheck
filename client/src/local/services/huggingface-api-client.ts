@@ -3,7 +3,7 @@
  * Free tier APIs for testing functionality
  */
 
-import { apiClient } from '../../local/services/unified-api-client"
+import { apiClient } from "../../local/services/unified-api-client"
 
 export interface HuggingFaceConfig {
   apiKey?: string; // Optional for free inference API

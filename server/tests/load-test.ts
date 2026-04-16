@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import request from '..\app';
+import request from '../app';
 
 import app from '../app';
 import { storage } from '../infrastructure/storage/storage';

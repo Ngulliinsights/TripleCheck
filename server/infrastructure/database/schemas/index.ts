@@ -5,7 +5,7 @@
  * and consistency checking.
  */
 
-import postgres from '..\..\..\..\scripts\cleanup-redundancies';
+import postgres from '../../../../scripts/cleanup-redundancies';
 
 import { ValidationResult } from '../index';
 

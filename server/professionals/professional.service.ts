@@ -5,14 +5,14 @@ import {
 } from "..\infrastructure\database\schemas\consolidated";
 import { eq, and, or, like, desc, asc, sql, gte, lte } from "drizzle-orm";
 
-import { CacheService } from '..\cache\CacheService'
+import { CacheService } from '../cache/CacheService'
 import { db } from "../infrastructure/database/connection";
 import { RequestDeduplicator } from "../infrastructure/deduplication/RequestDeduplicator";
 import {
   ValidationError,
   NotFoundError,
   ConflictError,
-} from '../../src/local/error-handling";
+} from "../../src/local/error-handling";
 
 // Extract the type from the enum
 type ProfessionalSpecializationValue = typeof professionalSpecializationEnum.enumValues[number];

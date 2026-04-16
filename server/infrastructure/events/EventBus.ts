@@ -7,7 +7,7 @@
 
 import { EventEmitter } from 'events';
 
-import { errorHandlingService } from '..\..\land-verification\error-handling\ErrorHandlingService';
+import { errorHandlingService } from '../../land-verification/error-handling/ErrorHandlingService';
 import { logger } from '../monitoring/logger';
 import { performanceMonitor } from '../monitoring/PerformanceMonitor';
 

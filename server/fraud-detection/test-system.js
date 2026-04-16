@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import fs from '..\app';
-import path from '..\app';
+import fs from '../app';
+import path from '../app';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);

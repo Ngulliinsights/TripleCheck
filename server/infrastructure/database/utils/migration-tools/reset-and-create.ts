@@ -3,7 +3,7 @@
  * Drops existing tables and creates fresh schema
  */
 
-import { logger } from "..\..\..\monitoring\logger";
+import { logger } from "../../../monitoring/logger";
 
 export async function resetAndCreateTables(sql: any) {
   try {

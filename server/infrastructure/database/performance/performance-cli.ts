@@ -7,11 +7,11 @@
  * and performance certification.
  */
 
-import { Command } from '..\..\..\..\src\shared\components\ui\command';
+import { Command } from '../../../../src/shared/components/ui/command';
 import { Pool } from 'pg';
-import chalk from '..\..\..\..\scripts\cleanup-redundancies';
-import ora from '..\..\..\..\src\auth\components\TwoFactorAuth';
-import inquirer from '..\..\..\..\scripts\cleanup-redundancies';
+import chalk from '../../../../scripts/cleanup-redundancies';
+import ora from '../../../../src/auth/components/TwoFactorAuth';
+import inquirer from '../../../../scripts/cleanup-redundancies';
 import { LoadTestingFramework } from './LoadTestingFramework';
 import { PerformanceCertificationSystem } from './PerformanceCertificationSystem';
 

@@ -6,8 +6,8 @@
  * Standalone script to run the enhanced UI audit system
  */
 
-import { EnhancedAuditRunner } from '..\src\infrastructure\audit\EnhancedAuditRunner';
-import { getAuditConfig } from '..\src\infrastructure\audit\config';
+import { EnhancedAuditRunner } from '../src/infrastructure/audit/EnhancedAuditRunner';
+import { getAuditConfig } from '../src/infrastructure/audit/config';
 
 async function main() {
   console.log('🚀 Starting UI Audit System...');

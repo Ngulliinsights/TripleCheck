@@ -15,7 +15,7 @@
  * - Configuration management
  */
 
-import { logger as loggingService } from '..\..\infrastructure\monitoring\logger';
+import { logger as loggingService } from '../../infrastructure/monitoring/logger';
 import { PropertyAnalysisAI, PropertyData as PropertyAnalysisData, ValuationResult, RiskAssessment, PropertyInsights } from './property-analysis-ai.service';
 import { DocumentProcessingAI, DocumentInput, DocumentProcessingResult, OCRResult, AuthenticityResult, DocumentClassification } from './document-processing-ai.service';
 import { FraudDetectionAI, TransactionData, UserBehaviorData, DocumentFraudData, FraudAnalysisResult, PatternAnalysisResult } from './fraud-detection-ai.service';

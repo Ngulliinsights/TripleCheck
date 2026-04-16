@@ -1,7 +1,7 @@
 import { performance } from 'perf_hooks';
 
 import { Request, Response } from 'express';
-import winston from '..\app';
+import winston from '../app';
 
 export interface LogContext {
   correlationId?: string;

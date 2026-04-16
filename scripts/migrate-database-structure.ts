@@ -287,10 +287,9 @@ class DatabaseMigrator {
       let content = readFileSync(filePath, 'utf8');
       const originalContent = content;
       
-      // Update import statements
       content = content.replace(
         /from ['"]database\//g,
-        'from "server/infrastructure/database/'
+        "from 'server/infrastructure/database/'"
       );
       content = content.replace(
         /import\(['"]database\//g,

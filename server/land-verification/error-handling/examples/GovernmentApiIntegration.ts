@@ -8,7 +8,7 @@ import {
   ErrorCode, 
   HttpStatusCode 
 } from '../../../../src/local/error-handling';
-import { logger } from '..\..\..\infrastructure\monitoring\logger';
+import { logger } from '../../../infrastructure/monitoring/logger';
 import { auditLogger, AuditSeverity } from '../AuditLogger';
 import { errorHandlingService } from '../ErrorHandlingService';
 import { fallbackManager } from '../FallbackManager';

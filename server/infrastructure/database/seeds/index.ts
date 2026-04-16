@@ -5,7 +5,7 @@
  * Supports development, testing, performance, and production seeding.
  */
 
-import postgres from '..\..\..\..\scripts\cleanup-redundancies';
+import postgres from '../../../../scripts/cleanup-redundancies';
 
 import { databaseService } from '../service';
 import { UnifiedDataGenerator } from './UnifiedDataGenerator';

@@ -8,11 +8,11 @@
  */
 
 import { program } from './demo-generator-cli';
-import chalk from '..\..\..\..\..\scripts\cleanup-redundancies';
-import inquirer from '..\..\..\..\..\scripts\cleanup-redundancies';
-import ora from '..\..\..\..\..\src\auth\components\TwoFactorAuth';
+import chalk from '../../../../../scripts/cleanup-redundancies';
+import inquirer from '../../../../../scripts/cleanup-redundancies';
+import ora from '../../../../../src/auth/components/TwoFactorAuth';
 import { mkdir } from 'fs/promises';
-import path from '..\..\..\..\..\scripts\cleanup-redundancies';
+import path from '../../../../../scripts/cleanup-redundancies';
 
 import { 
   PRODUCTION_DEMO_SCENARIOS, 

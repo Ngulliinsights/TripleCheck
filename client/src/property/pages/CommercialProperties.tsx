@@ -2,8 +2,8 @@ import React, { useState, useCallback } from "react"
 
 import { CompareBar } from "../components/CompareBar"
 import { CompareModal } from "../components/CompareModal"
-import { PropertyListingPage } from '../../local/components/property/PropertyListingPage"
-import { commercialConfig } from '../../local/config/propertyTypes"
+import { PropertyListingPage } from "../../local/components/property/PropertyListingPage"
+import { commercialConfig } from "../../local/config/propertyTypes"
 
 /**
  * Modern Commercial Properties page using the enhanced property listing architecture

@@ -8,7 +8,7 @@ import {
   riskFactors,
   properties,
   users,
-} from '../../src/local/schema";
+} from "../../src/local/schema";
 import { DocumentAuthService } from "../document-auth/DocumentAuthService";
 import { db } from "../infrastructure/database/connection";
 import { logger } from "../infrastructure/observability/telemetry";

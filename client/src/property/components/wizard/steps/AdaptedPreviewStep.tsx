@@ -1,12 +1,12 @@
 import React, { useEffect } from "react"
 import { CheckCircle } from "lucide-react"
-import { Badge } from '../../../../local/components/ui/badge"
+import { Badge } from "../../../../local/components/ui/badge"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../../../local/components/ui/card"
+} from "../../../../local/components/ui/card"
 import { WizardStepProps } from "../types"
 
 export function AdaptedPreviewStep({

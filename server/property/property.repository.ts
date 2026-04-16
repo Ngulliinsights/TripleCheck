@@ -58,7 +58,7 @@ interface LandVerification {
   lastUpdated: Date | null;
 }
 
-interface Property {
+export interface Property {
   id: number;
   title: string;
   description: string;

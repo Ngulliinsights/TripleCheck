@@ -11,7 +11,7 @@
 import "dotenv/config";
 import { execSync } from "child_process";
 import { existsSync } from "fs";
-import path from "..\..\..\..\scripts\cleanup-redundancies";
+import path from "../../../../scripts/cleanup-redundancies";
 
 const logger = {
   info: (message: string) => console.log(`ℹ️  ${message}`),

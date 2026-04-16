@@ -9,20 +9,20 @@ import {
 } from "lucide-react"
 import { useState, useCallback, useEffect, useMemo } from "react"
 
-import { Alert, AlertDescription } from '../../local/components/ui/alert"
-import { Badge } from '../../local/components/ui/badge"
-import { Button } from '../../local/components/ui/button"
-import { Input } from '../../local/components/ui/input"
+import { Alert, AlertDescription } from "../../local/components/ui/alert"
+import { Badge } from "../../local/components/ui/badge"
+import { Button } from "../../local/components/ui/button"
+import { Input } from "../../local/components/ui/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../local/components/ui/select"
-import { useDebounce } from '../../local/hooks/useDebounce"
+} from "../../local/components/ui/select"
+import { useDebounce } from "../../local/hooks/useDebounce"
 
-import { SearchBarFilters } from '../../local/types/search"
+import { SearchBarFilters } from "../../local/types/search"
 
 // SearchBarFilters is now imported from unified types
 

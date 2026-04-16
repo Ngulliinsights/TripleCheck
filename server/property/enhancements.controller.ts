@@ -7,7 +7,7 @@ import {
   users,
   landVerificationSessions,
 } from '..\infrastructure\database\schemas\consolidated';
-import { CacheService } from '..\cache\CacheService'
+import { CacheService } from '../cache/CacheService'
 import { db } from '../infrastructure/database/connection';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { asyncHandler } from "../middleware/error";

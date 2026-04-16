@@ -10,8 +10,8 @@ import {
   generateCorrelationId,
   ErrorCategory,
   ErrorSeverity
-} from '../../../src/local/error-handling";
-import { logger } from "..\..\infrastructure\monitoring\logger";
+} from "../../../src/local/error-handling";
+import { logger } from "../../infrastructure/monitoring/logger";
 
 import { auditLogger, AuditSeverity } from "./AuditLogger";
 import { fallbackManager, FallbackResult } from "./FallbackManager";

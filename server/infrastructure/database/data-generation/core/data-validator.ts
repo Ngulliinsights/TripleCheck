@@ -4,8 +4,8 @@
  * Validates generated data files for structure, integrity, and quality
  */
 
-import fs from '..\..\..\..\..\scripts\cleanup-redundancies';
-import path from '..\..\..\..\..\scripts\cleanup-redundancies';
+import fs from '../../../../../scripts/cleanup-redundancies';
+import path from '../../../../../scripts/cleanup-redundancies';
 
 export interface ValidationResult {
   isValid: boolean;

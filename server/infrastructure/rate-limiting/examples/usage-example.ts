@@ -5,9 +5,9 @@
  * in your Express application.
  */
 
-import express from '..\..\..\..\scripts\cleanup-redundancies';
+import express from '../../../../scripts/cleanup-redundancies';
 
-import { CacheService } from '..\..\..\cache\CacheService'
+import { CacheService } from '../../../cache/CacheService'
 import { 
   createRateLimitingMiddleware,
   rateLimitCounterMiddleware,

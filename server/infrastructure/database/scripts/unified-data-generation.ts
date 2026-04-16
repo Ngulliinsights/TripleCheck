@@ -6,9 +6,9 @@
  */
 
 import 'dotenv/config';
-import chalk from '..\..\..\..\scripts\cleanup-redundancies';
-import { program } from '..\data-generation\cli\demo-generator-cli';
-import ora from '..\..\..\..\src\auth\components\TwoFactorAuth';
+import chalk from '../../../../scripts/cleanup-redundancies';
+import { program } from '../data-generation/cli/demo-generator-cli';
+import ora from '../../../../src/auth/components/TwoFactorAuth';
 
 import { unifiedCacheManager } from '../../cache';
 import { UnifiedDataGenerator, type GenerationProgress } from '../seeds/UnifiedDataGenerator';

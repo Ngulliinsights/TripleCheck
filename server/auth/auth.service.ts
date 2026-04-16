@@ -1,6 +1,6 @@
-import crypto from '..\app';
+import crypto from '../app';
 
-import bcrypt from '..\app';
+import bcrypt from '../app';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 

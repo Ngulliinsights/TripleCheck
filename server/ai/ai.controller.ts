@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { aiServiceManager, propertyAnalysis, documentProcessing, fraudDetection, recommendations } from './services/ai-service-manager';
-import { logger as loggingService } from '..\infrastructure\monitoring\logger';
+import { logger as loggingService } from '../infrastructure/monitoring/logger';
 
 const router = Router();
 

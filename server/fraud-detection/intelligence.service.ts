@@ -10,7 +10,7 @@ import {
 } from "../infrastructure/database/schemas/consolidated";
 import { storage } from "../infrastructure/storage/storage";
 
-import { NotificationService } from "..\communication\notification.service";
+import { NotificationService } from "../communication/notification.service";
 
 // Constants for error messages - using const assertion for better type safety
 const ERROR_MESSAGES = {

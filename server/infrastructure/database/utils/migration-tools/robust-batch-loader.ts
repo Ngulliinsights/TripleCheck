@@ -8,7 +8,7 @@ import { neon } from "@neondatabase/serverless";
 import * as bcrypt from "./fix-database";
 import { drizzle } from "drizzle-orm/neon-http";
 
-import { users, properties, reviews } from "..\..\schemas\core\index";
+import { users, properties, reviews } from "../../schemas/core/index";
 
 // Define proper types for our data structures to prevent TypeScript inference issues
 type UserInsert = typeof users.$inferInsert;

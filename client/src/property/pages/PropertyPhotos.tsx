@@ -6,19 +6,19 @@ import {
   PropertyImageVault,
   ImageGallery,
   IMAGE_COMPONENT_PRESETS,
-} from '../../local/components/images"
-import type { BaseImage } from '../../local/components/images"
-import { Badge } from '../../local/components/ui/badge"
-import { Button } from '../../local/components/ui/button"
+} from "../../local/components/images"
+import type { BaseImage } from "../../local/components/images"
+import { Badge } from "../../local/components/ui/badge"
+import { Button } from "../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../local/components/ui/card"
-import { useToast } from '../../local/hooks/use-toast"
-import { useSafePropertiesQuery } from '../../local/hooks/useSafeQuery"
-import type { PropertyImage as VaultImage } from '../../local/types/images"
+} from "../../local/components/ui/card"
+import { useToast } from "../../local/hooks/use-toast"
+import { useSafePropertiesQuery } from "../../local/hooks/useSafeQuery"
+import type { PropertyImage as VaultImage } from "../../local/types/images"
 
 // Simplified upload mutation parameters
 interface UploadMutationParams {
@@ -26,7 +26,7 @@ interface UploadMutationParams {
   readonly images: ReadonlyArray<VaultImage>;
 }
 
-import type { Property } from '../../local/types/property"
+import type { Property } from "../../local/types/property"
 
 // Use the unified Property interface instead of local PropertyWithImages
 type PropertyWithImages = Property;

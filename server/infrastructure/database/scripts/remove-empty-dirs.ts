@@ -8,7 +8,7 @@
  */
 
 import { promises as fs } from 'fs';
-import path from '..\..\..\..\scripts\cleanup-redundancies';
+import path from '../../../../scripts/cleanup-redundancies';
 
 async function removeEmptyDirectories() {
   console.log('🗑️ Removing empty directories...');

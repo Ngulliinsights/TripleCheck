@@ -2,7 +2,7 @@
 
 import { execSync } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync, copyFileSync, readFileSync } from 'fs';
-import path from '..\cleanup-redundancies';
+import path from '../cleanup-redundancies';
 
 interface ComprehensiveMonitoringConfig {
   environment: 'development' | 'staging' | 'production';

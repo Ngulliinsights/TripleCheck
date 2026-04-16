@@ -2,7 +2,7 @@
 
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
-import path from '..\..\..\..\scripts\cleanup-redundancies';
+import path from '../../../../scripts/cleanup-redundancies';
 
 interface DeploymentConfig {
   environment: 'development' | 'staging' | 'production';

@@ -9,14 +9,14 @@ import { ArrowLeftRight, X, Eye } from "lucide-react"
 import React from 'react'
 import { useNavigate } from "react-router-dom"
 
-import { Badge } from '../../local/components/ui/badge"
-import { Button } from '../../local/components/ui/button"
-import { Card } from '../../local/components/ui/card"
+import { Badge } from "../../local/components/ui/badge"
+import { Button } from "../../local/components/ui/button"
+import { Card } from "../../local/components/ui/card"
 import {
   formatComparePrice,
   safeGetPropertyImage,
   getComparePropertyTitle,
-} from '../../local/utils/compare-utils"
+} from "../../local/utils/compare-utils"
 import { usePropertyCompare, usePropertyCompareActions } from "../contexts"
 
 interface CompareBarProps {

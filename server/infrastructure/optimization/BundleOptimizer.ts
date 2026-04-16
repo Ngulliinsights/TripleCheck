@@ -4,7 +4,7 @@
  */
 
 import { promises as fs } from 'fs';
-import path from '..\..\..\scripts\cleanup-redundancies';
+import path from '../../../scripts/cleanup-redundancies';
 import { gzipSync } from 'zlib';
 import { glob } from 'glob';
 
@@ -246,8 +246,8 @@ export class BundleOptimizer {
    */
   generateOptimizedViteConfig(): string {
     return `
-import { defineConfig } from '..\..\..\scripts\generate-test-chunks';
-import react from '..\..\..\scripts\cleanup-redundancies';
+import { defineConfig } from '../../../scripts/generate-test-chunks';
+import react from '../../../scripts/cleanup-redundancies';
 
 export default defineConfig({
   plugins: [react()],

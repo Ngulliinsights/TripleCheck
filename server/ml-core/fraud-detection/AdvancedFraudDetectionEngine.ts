@@ -6,7 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
-import * as tf from '..\index';
+import * as tf from '../index';
 import { ModelRegistry, ModelPrediction } from '../infrastructure/ModelRegistry';
 import { logger } from '../../infrastructure/observability/telemetry';
 

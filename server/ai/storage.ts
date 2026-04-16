@@ -1,5 +1,5 @@
 // Storage interface for AI service
-import { Property, User, Review } from "..\..\src\types\land-verification";
+import { Property, User, Review } from "../../src/types/land-verification";
 
 export interface AIStorage {
   getProperty(id: string | number): Promise<Property | null>;

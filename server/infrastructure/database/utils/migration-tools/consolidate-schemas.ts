@@ -5,7 +5,7 @@
  * and ensures proper indexes and constraints are in place.
  */
 
-import postgres from '..\..\..\..\..\scripts\cleanup-redundancies';
+import postgres from '../../../../../scripts/cleanup-redundancies';
 
 import { 
   allSchemas, 

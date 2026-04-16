@@ -1,5 +1,5 @@
-import fs from '..\app';
-import path from '..\app';
+import fs from '../app';
+import path from '../app';
 
 import { storage } from '../infrastructure/storage/storage';
 import { detectTransactionFraud, analyzePropertyDocument } from '../services/ai-ml-service';

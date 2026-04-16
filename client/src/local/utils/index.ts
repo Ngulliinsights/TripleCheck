@@ -11,7 +11,7 @@
  */
 
 // Standard exports
-export * from '../../local/services/unified-api-client"
+export * from "../../local/services/unified-api-client"
 export * from './cn'
 export * from './date-utils'
 export * from "../services/CacheService"

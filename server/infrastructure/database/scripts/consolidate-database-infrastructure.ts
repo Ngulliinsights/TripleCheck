@@ -9,7 +9,7 @@
 
 import { execSync } from 'child_process';
 import { promises as fs } from 'fs';
-import path from '..\..\..\..\scripts\cleanup-redundancies';
+import path from '../../../../scripts/cleanup-redundancies';
 
 interface MigrationStep {
   name: string;

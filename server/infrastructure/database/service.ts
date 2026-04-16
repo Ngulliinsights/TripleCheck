@@ -6,7 +6,7 @@
  */
 
 import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "..\..\..\scripts\cleanup-redundancies";
+import postgres from "../../../scripts/cleanup-redundancies";
 
 import { getDatabaseConfig } from './config';
 import { MigrationExecutor, createMigrationExecutor } from './migrations';

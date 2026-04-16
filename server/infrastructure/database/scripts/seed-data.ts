@@ -7,7 +7,7 @@
  * Supports development, testing, performance, and minimal data generation.
  */
 
-import { Command } from '..\..\..\..\src\shared\components\ui\command';
+import { Command } from '../../../../src/shared/components/ui/command';
 
 import { seedFromCLI, DATA_SCENARIOS } from '../seeds';
 import { DatabaseService } from '../service';

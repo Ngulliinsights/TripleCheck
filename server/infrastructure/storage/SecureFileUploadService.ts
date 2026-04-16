@@ -12,9 +12,9 @@
  * - Race condition prevention
  */
 
-import fs from '..\..\..\scripts\cleanup-redundancies';
-import path from '..\..\..\scripts\cleanup-redundancies';
-import crypto from '..\..\..\scripts\cleanup-redundancies';
+import fs from '../../../scripts/cleanup-redundancies';
+import path from '../../../scripts/cleanup-redundancies';
+import crypto from '../../../scripts/cleanup-redundancies';
 import { pipeline } from 'stream/promises';
 import { createReadStream, createWriteStream } from 'fs';
 

@@ -27,6 +27,8 @@ export {
   cacheService // Backward compatibility
 } from './CacheIntegrationAdapter';
 
+export { PropertyCacheService } from './PropertyCacheService';
+
 // Cache warming strategies
 export {
   CacheWarmingManager,

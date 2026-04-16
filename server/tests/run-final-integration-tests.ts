@@ -2,7 +2,7 @@
 
 import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
-import path from '..\app';
+import path from '../app';
 import { performance } from 'perf_hooks';
 
 interface TestSuite {

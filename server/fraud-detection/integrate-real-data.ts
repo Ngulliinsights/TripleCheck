@@ -11,8 +11,8 @@
  */
 
 import "dotenv/config";
-import fs from "..\app";
-import path from "..\app";
+import fs from "../app";
+import path from "../app";
 import { fileURLToPath } from "url";
 
 import { neon } from "@neondatabase/serverless";
@@ -20,8 +20,8 @@ import { count, eq, desc, and, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 
 // Import schema from correct location
-import { users, properties, reviews } from '../../src/local/schema";
-import type { User, Property, Review } from '../../src/local/schema";
+import { users, properties, reviews } from "../../src/local/schema";
+import type { User, Property, Review } from "../../src/local/schema";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

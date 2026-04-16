@@ -25,19 +25,19 @@ import { useParams, useNavigate } from "react-router-dom"
 
 // Import shared components and utilities
 import { normalizeProperty } from "../../shared"
-import { EnhancedPhotoManagementButton } from '../../local/components/property/PhotoManagementButton"
-import PropertyDetailsSkeleton from '../../local/components/skeletons/PropertyDetailsSkeleton"
-import { Badge } from '../../local/components/ui/badge"
-import { Button } from '../../local/components/ui/button"
+import { EnhancedPhotoManagementButton } from "../../local/components/property/PhotoManagementButton"
+import PropertyDetailsSkeleton from "../../local/components/skeletons/PropertyDetailsSkeleton"
+import { Badge } from "../../local/components/ui/badge"
+import { Button } from "../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../local/components/ui/card"
-import { useSafePropertyQuery } from '../../local/hooks/useSafeQuery"
-import { Property } from '../../local/types/property"
-import { formatPrice, formatDate } from '../../local/utils/formatters"
+} from "../../local/components/ui/card"
+import { useSafePropertyQuery } from "../../local/hooks/useSafeQuery"
+import { Property } from "../../local/types/property"
+import { formatPrice, formatDate } from "../../local/utils/formatters"
 
 // Constants
 const NOT_SPECIFIED = "Not specified";

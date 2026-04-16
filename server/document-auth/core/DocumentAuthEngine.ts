@@ -6,8 +6,8 @@ import { SignatureAnalyzer } from '../analyzers/SignatureAnalyzer';
 import { VisualAnalyzer } from '../analyzers/VisualAnalyzer';
 import { ForgeryDetector } from '../ml/ForgeryDetector';
 import { MLDocumentClassifier } from '../ml/MLDocumentClassifier';
-import { DatabaseService } from '..\..\fraud-detection\services\DatabaseService';
-import { Logger } from '..\..\fraud-detection\utils\Logger';
+import { DatabaseService } from '../../fraud-detection/services/DatabaseService';
+import { Logger } from '../../fraud-detection/utils/Logger';
 
 export interface DocumentAnalysisRequest {
   id: string;

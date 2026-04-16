@@ -1,7 +1,7 @@
 import { sql, SQL, and, or, eq, desc, asc, count } from 'drizzle-orm';
 
 import { logger } from '../../infrastructure/observability/telemetry';
-import { db } from '..\..\infrastructure\database\connection\index';
+import { db } from '../../infrastructure/database/connection/index';
 import { landVerificationCache } from '../cache/LandVerificationCache';
 
 export interface QueryOptimizationOptions {

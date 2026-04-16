@@ -8,7 +8,7 @@ import {
   ValidationError 
 } from '../../../src/local/error-handling';
 import { logger } from '../../infrastructure/observability/telemetry';
-import { db } from '..\..\infrastructure\database\connection\index';
+import { db } from '../../infrastructure/database/connection/index';
 
 // Extend Request interface for land verification context
 declare global {

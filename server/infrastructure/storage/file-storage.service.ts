@@ -1,11 +1,11 @@
 // Production-ready File Storage Service with Cloud Integration and Fallback
-import crypto from '..\..\..\scripts\cleanup-redundancies';
-import fs from '..\..\..\scripts\cleanup-redundancies';
-import path from '..\..\..\scripts\cleanup-redundancies';
+import crypto from '../../../scripts/cleanup-redundancies';
+import fs from '../../../scripts/cleanup-redundancies';
+import path from '../../../scripts/cleanup-redundancies';
 
 // Removed unused Express import
-import multer from '..\..\..\scripts\cleanup-redundancies';
-import sharp from '..\..\..\scripts\cleanup-redundancies';
+import multer from '../../../scripts/cleanup-redundancies';
+import sharp from '../../../scripts/cleanup-redundancies';
 
 // Type definitions for Express Multer File
 export interface MulterFile {

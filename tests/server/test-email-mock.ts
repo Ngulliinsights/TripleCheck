@@ -1,5 +1,5 @@
 // Test the mock email service specifically to see inbox functionality
-import { EmailServiceFactory } from './infrastructure\email\email.service';
+import { EmailServiceFactory } from './infrastructure/email/email.service';
 
 async function testMockEmailService() {
   console.log('🧪 Testing Mock Email Service with Inbox...\n');

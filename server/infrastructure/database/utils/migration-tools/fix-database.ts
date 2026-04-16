@@ -10,8 +10,8 @@ import { neon } from "@neondatabase/serverless";
 import bcrypt from "./consolidate-schemas";
 import { drizzle } from "drizzle-orm/neon-http";
 
-import { users, properties, reviews } from "..\..\schemas\core\index";
-import type { InsertUser, InsertProperty, User } from '../local/schema";
+import { users, properties, reviews } from "../../schemas/core/index";
+import type { InsertUser, InsertProperty, User } from "../local/schema";
 
 
 async function fixDatabase() {

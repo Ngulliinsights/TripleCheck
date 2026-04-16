@@ -18,30 +18,30 @@ import {
   X,
 } from "lucide-react"
 
-import { Button } from '../../local/components/ui/button"
-import { Input } from '../../local/components/ui/input"
+import { Button } from "../../local/components/ui/button"
+import { Input } from "../../local/components/ui/input"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../local/components/ui/card"
-import { Badge } from '../../local/components/ui/badge"
-import { Checkbox } from '../../local/components/ui/checkbox"
-import { Label } from '../../local/components/ui/label"
+} from "../../local/components/ui/card"
+import { Badge } from "../../local/components/ui/badge"
+import { Checkbox } from "../../local/components/ui/checkbox"
+import { Label } from "../../local/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../local/components/ui/select"
-import { Slider } from '../../local/components/ui/slider"
-import { PropertyCard } from '../../local/components/property"
-import { useToast } from '../../local/hooks/use-toast"
-import { NormalizedProperty } from '../../local/types/property"
+} from "../../local/components/ui/select"
+import { Slider } from "../../local/components/ui/slider"
+import { PropertyCard } from "../../local/components/property"
+import { useToast } from "../../local/hooks/use-toast"
+import { NormalizedProperty } from "../../local/types/property"
 
-import { PropertySearchFilters } from '../../local/types/search"
+import { PropertySearchFilters } from "../../local/types/search"
 
 // Extended interface for advanced search with additional UI-specific fields
 interface AdvancedSearchFilters extends PropertySearchFilters {

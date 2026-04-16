@@ -2,7 +2,7 @@
 // Handles document analysis, fraud detection, and land verification intelligence
 // Consolidated from multiple AI service implementations
 
-import path from "..\app";
+import path from "../app";
 
 type AIProvider = "openai" | "gemini" | "claude";
 type RiskLevel = "low" | "medium" | "high";
