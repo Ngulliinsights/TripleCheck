@@ -26,7 +26,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '../../local/components/ui/tabs"
-import type { NormalizedProperty } from '../../../../shared/types/property"
+import type { NormalizedProperty } from "@shared/types/property"
 import type { CSSProperties } from "react"
 
 import EnhancedLandCard from "./LandCard"

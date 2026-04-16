@@ -1,9 +1,9 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react"
 
-import { useDebounce } from '../../local/hooks/useDebounce"
-import { useSafePropertiesQuery } from '../../local/hooks/useSafeQuery"
-import { Property } from '../../../../shared/types/property"
-import { SearchSuggestion } from '../../local/types/search"
+import { useDebounce } from "../../local/hooks/useDebounce"
+import { useSafePropertiesQuery } from "../../local/hooks/useSafeQuery"
+import { Property } from "@shared/types/property"
+import { SearchSuggestion } from "../../local/types/search"
 import { PropertySearchParams } from "../types/property.types"
 
 // Enhanced interfaces for consolidated search functionality

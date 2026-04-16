@@ -17,10 +17,10 @@ import {
 
 import { ImageGallery } from '../../local/components/images"
 import { Badge } from '../../local/components/ui/badge"
-import { Button } from '../../local/components/ui/button"
-import { Card, CardContent } from '../../local/components/ui/card"
-import { cn } from '../../local/lib/utils"
-import type { NormalizedProperty } from '../../../../shared/types/property"
+import { Button } from "../../local/components/ui/button"
+import { Card, CardContent } from "../../local/components/ui/card"
+import { cn } from "../../local/lib/utils"
+import type { NormalizedProperty } from "@shared/types/property"
 import {
   usePropertyCompare,
   usePropertyCompareActions,

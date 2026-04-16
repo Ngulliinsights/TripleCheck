@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode, useMemo, useCallback, useEffect } from 'react'
 
-import type { Property } from '../../../../shared/types/property'
+import type { Property } from "@shared/types/property"
 import type {
   CompareProperty,
   ComparisonResult,

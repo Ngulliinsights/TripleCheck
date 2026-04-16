@@ -3,10 +3,15 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmit": true
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@client/*": ["./client/src/*"],
+      "@server/*": ["./server/*"],
+      "@shared/*": ["./shared/*"]
+    }
   },
   "references": [
-    { "path": "./client/tsconfig.json" },
     { "path": "./tsconfig.server.json" }
   ]
 }
