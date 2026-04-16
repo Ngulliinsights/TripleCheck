@@ -500,11 +500,7 @@ export function Navigation({ className }: NavigationProps) {
                     onClick={() => dropdownHandlers.toggle(item.label)}
                     onMouseEnter={() => dropdownHandlers.enter(item.label)}
                     onMouseLeave={dropdownHandlers.leave}
-                    aria-expanded={
-                      navigationState.activeDropdown === item.label ?
-                        "true"
-                      : "false"
-                    }
+                    aria-expanded={navigationState.activeDropdown === item.label}
                     aria-haspopup="true"
                   >
                     <span>{item.label}</span>

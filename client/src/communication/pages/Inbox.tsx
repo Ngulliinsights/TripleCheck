@@ -226,7 +226,7 @@ const InquiryItem = ({
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
-      aria-pressed={isSelected ? "true" : "false"}
+      aria-pressed={isSelected}
       aria-label={`Message from ${inquiry.senderName} about ${inquiry.propertyTitle}`}
     >
       <div className="flex items-start justify-between mb-2">
