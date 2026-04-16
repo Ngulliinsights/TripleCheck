@@ -6,7 +6,8 @@
  */
 
 import { logger as loggingService } from '../../../../../server/infrastructure/monitoring/logger'
-import { BaseError, ErrorDomain, ErrorSeverity } from '../../../error-handling/errors/base-error'
+import { AppError, ErrorSeverity } from '../../../error-handling/errors/base-error'
+import { ErrorCategory } from '../../../error-handling/constants/error-categories'
 
 export interface AIOperationMetrics {
   operationId: string;
@@ -113,15 +114,19 @@ export interface UsageAnalytics {
   }>;
 }
 
-class AIMetricsCollectorError extends BaseError {
+class AIMetricsCollectorError extends AppError {
   constructor(message: string, operation: string, cause?: Error) {
-    super(message, {
-      code: 'AI_METRICS_COLLECTOR_ERROR',
-      domain: ErrorDomain.SYSTEM,
-      severity: ErrorSeverity.MEDIUM,
-      cause,
-      details: { operation }
-    });
+    super(
+      'AI_METRICS_COLLECTOR_ERROR',
+      message,
+      500,
+      ErrorCategory.SYSTEM,
+      {
+        severity: ErrorSeverity.MEDIUM,
+        cause,
+        details: { operation }
+      }
+    );
   }
 }
 
@@ -802,6 +807,4 @@ export class AIMetricsCollector {
 }
 
 // Export singleton instance
-export const aiMetricsCollector = AIMetricsCollector.getInstance();
-
 export const aiMetricsCollector = AIMetricsCollector.getInstance();

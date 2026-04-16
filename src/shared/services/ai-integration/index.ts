@@ -78,17 +78,17 @@ export {
   type PerformanceInsights,
   type DashboardRecommendation,
   
-  // Testing Suite
-  AITestSuite,
-  aiTestUtils,
-  type AITestConfig,
-  type AITestResult,
-  type AITestSuiteReport,
+  // Testing Suite - Commented out as files don't exist yet
+  // AITestSuite,
+  // aiTestUtils,
+  // type AITestConfig,
+  // type AITestResult,
+  // type AITestSuiteReport,
   
-  // Comprehensive Test Runner
-  ComprehensiveAITestRunner,
-  type ComprehensiveTestConfig,
-  type ComprehensiveTestReport,
+  // Comprehensive Test Runner - Commented out as files don't exist yet
+  // ComprehensiveAITestRunner,
+  // type ComprehensiveTestConfig,
+  // type ComprehensiveTestReport,
   
   // Utility Functions
   initializeAIMonitoring,

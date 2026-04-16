@@ -4,28 +4,27 @@ import { type Server } from "http";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 
-import express, { type Express } from "express";
+import express, { 
+  type Express, 
+  type Request, 
+  type Response, 
+  type NextFunction 
+} from "express";
 import { createServer as createViteServer } from "vite";
 
-// Calculate __dirname once at module level for better performance
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Vite logger removed due to import issues
-
 /**
  * Enhanced logging function with consistent formatting and source identification
- * Uses more efficient date formatting and provides better visual separation
  */
 export function log(message: string, source = "express"): void {
-  // Use toISOString for better performance and ISO standard formatting
   const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
   console.log(`[${timestamp}] ${source.toUpperCase()} | ${message}`);
 }
 
 /**
  * Validates that a file exists and is readable
- * Centralizes file existence checking with proper error context
  */
 async function validateFileExists(filePath: string, description: string): Promise<void> {
   try {
@@ -38,68 +37,43 @@ async function validateFileExists(filePath: string, description: string): Promis
 }
 
 /**
- * Sets up Vite development server with comprehensive error handling and optimization
- * Integrates Vite's HMR capabilities while providing graceful error recovery
+ * Sets up Vite development server with comprehensive error handling and HMR
  */
 export async function setupVite(app: Express, server: Server): Promise<void> {
   log("Initializing Vite development server", "vite");
   
   try {
-    // Validate template file exists before setting up Vite server
     const templatePath = path.resolve(__dirname, "..", "index.html");
     await validateFileExists(templatePath, "HTML template file");
 
-    // Configure Vite server with optimized settings for development
-    const viteServerOptions = {
-      middlewareMode: true as const,
-      hmr: { 
-        server,
-        // Add overlay configuration for better error visibility
-        overlay: true,
-      },
-      allowedHosts: true as const,
-      // Optimize dependency pre-bundling for faster startup
-      optimizeDeps: {
-        force: false, // Allow caching of dependencies
-      },
-    };
-
-    // Create Vite server with enhanced error handling and logging
     const viteServer = await createViteServer({
       configFile: false,
+      server: {
+        middlewareMode: true,
+        hmr: { server, overlay: true },
+        allowedHosts: true,
+      },
+      optimizeDeps: {
+        force: false, 
+      },
+      appType: "custom",
       customLogger: {
-        // Simplified logger with all required methods
-        error: (msg: string) => {
-          log(`Error occurred: ${msg}`, "vite");
-        },
-        warn: (msg: string) => {
-          log(`Warning: ${msg}`, "vite");
-        },
-        info: (msg: string) => {
-          log(`Info: ${msg}`, "vite");
-        },
-        warnOnce: (msg: string) => {
-          log(`Warning (once): ${msg}`, "vite");
-        },
-        clearScreen: () => {
-          // No-op for server environment
-        },
-        hasErrorLogged: (error: Error) => false,
+        error: (msg) => log(`Error: ${msg}`, "vite"),
+        warn: (msg) => log(`Warning: ${msg}`, "vite"),
+        info: (msg) => log(`Info: ${msg}`, "vite"),
+        warnOnce: (msg) => log(`Warning (once): ${msg}`, "vite"),
+        clearScreen: () => {},
+        hasErrorLogged: () => false,
         hasWarned: false,
       },
-      server: viteServerOptions,
-      appType: "custom",
     });
 
-    // Apply Vite middleware to Express application
     app.use(viteServer.middlewares);
     
-    // Enhanced catch-all route handler with robust error recovery
-    app.use("*", async (req, res, next) => {
+    app.use("*", async (req: Request, res: Response, next: NextFunction) => {
       const requestUrl = req.originalUrl;
       
       try {
-        // Read template with proper error handling
         let template: string;
         try {
           template = await fs.readFile(templatePath, "utf-8");
@@ -108,22 +82,19 @@ export async function setupVite(app: Express, server: Server): Promise<void> {
           throw new Error(`Template file read error: ${templatePath}`);
         }
         
-        // Add cache-busting with more efficient timestamp approach
-        const cacheBuster = Date.now().toString(36); // More compact than nanoid for this use case
+        const cacheBuster = Date.now().toString(36);
         template = template.replace(
           'src="/src/main.tsx"',
           `src="/src/main.tsx?v=${cacheBuster}"`
         );
         
-        // Process HTML through Vite transformation pipeline
         const transformedPage = await viteServer.transformIndexHtml(requestUrl, template);
         
-        // Send response with proper headers and caching directives
         res
           .status(200)
           .set({
             "Content-Type": "text/html",
-            "Cache-Control": "no-cache, no-store, must-revalidate", // Prevent caching in development
+            "Cache-Control": "no-cache, no-store, must-revalidate",
             "Pragma": "no-cache",
             "Expires": "0"
           })
@@ -132,8 +103,6 @@ export async function setupVite(app: Express, server: Server): Promise<void> {
       } catch (error) {
         const err = error as Error;
         log(`Request processing failed for ${requestUrl}: ${err.message}`, "vite");
-        
-        // Apply Vite's stack trace enhancement for better debugging
         viteServer.ssrFixStacktrace(err);
         next(err);
       }
@@ -143,73 +112,55 @@ export async function setupVite(app: Express, server: Server): Promise<void> {
   } catch (error) {
     const err = error as Error;
     log(`Vite server setup failed: ${err.message}`, "vite");
-    throw err; // Propagate error to caller for appropriate handling
+    throw err;
   }
 }
 
 /**
  * Configures static file serving for production environments
- * Includes comprehensive validation and platform-specific optimizations
  */
 export function serveStatic(app: Express): void {
   log("Configuring static file serving for production", "static");
   
-  // Check for Vercel deployment environment
   const isVercelEnvironment = !!(process.env.VERCEL || process.env.VERCEL_ENV);
   
   if (isVercelEnvironment) {
     log("Detected Vercel environment - delegating static file serving to platform", "static");
-    return; // Vercel handles static files automatically
+    return; 
   }
   
-  // Use dist/public directory to match build output and deployment configurations
   const staticDirectory = path.resolve(__dirname, "..", "dist", "public");
   const indexFilePath = path.resolve(staticDirectory, "index.html");
   
-  // Validate build directory and required files exist
   if (!fsSync.existsSync(staticDirectory)) {
-    const errorMessage = `Build directory missing: ${staticDirectory}. Execute build command before starting production server.`;
+    const errorMessage = `Build directory missing: ${staticDirectory}. Execute build command before starting.`;
     log(errorMessage, "static");
     throw new Error(errorMessage);
   }
 
   if (!fsSync.existsSync(indexFilePath)) {
-    const errorMessage = `Index file missing: ${indexFilePath}. Verify build process completed successfully.`;
+    const errorMessage = `Index file missing: ${indexFilePath}. Verify build process completed.`;
     log(errorMessage, "static");
     throw new Error(errorMessage);
   }
 
-  // Configure Express static middleware with production optimizations
-  const staticOptions = {
-    // Aggressive caching for production assets
+  // Fallthrough must be true (default) so unhandled paths hit the SPA fallback route below
+  app.use(express.static(staticDirectory, {
     maxAge: process.env.NODE_ENV === "production" ? "365d" : "0",
-    etag: true, // Enable ETag for conditional requests
+    etag: true,
     index: "index.html",
-    // Add compression support indicators
     immutable: process.env.NODE_ENV === "production",
-    // Set proper fallthrough behavior
-    fallthrough: false,
-  };
+  }));
 
-  app.use(express.static(staticDirectory, staticOptions));
-
-  // SPA fallback route with comprehensive error handling
-  app.use("*", (req, res) => {
-    const requestedRoute = req.originalUrl;
+  // SPA fallback route
+  app.use("*", (req: Request, res: Response) => {
+    log(`Serving SPA fallback for route: ${req.originalUrl}`, "static");
     
-    log(`Serving SPA fallback for route: ${requestedRoute}`, "static");
-    
-    // Send index.html with proper error handling
     res.sendFile(indexFilePath, {
-      // Add headers for SPA routing
-      headers: {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-      }
+      headers: { "Cache-Control": "no-cache, no-store, must-revalidate" }
     }, (sendError) => {
       if (sendError) {
         log(`Failed to serve index.html: ${sendError.message}`, "static");
-        
-        // Attempt graceful degradation
         if (!res.headersSent) {
           res.status(500).json({
             error: "Application temporarily unavailable",
@@ -223,14 +174,9 @@ export function serveStatic(app: Express): void {
   log(`Static file serving configured successfully: ${staticDirectory}`, "static");
 }
 
-/**
- * Environment detection utility with caching for performance
- * Determines runtime environment for conditional application behavior
- */
 let cachedEnvironmentCheck: boolean | null = null;
 
 export function isDevelopment(): boolean {
-  // Cache the environment check since NODE_ENV doesn't change during runtime
   if (cachedEnvironmentCheck === null) {
     cachedEnvironmentCheck = process.env.NODE_ENV !== "production";
   }
@@ -238,8 +184,7 @@ export function isDevelopment(): boolean {
 }
 
 /**
- * Main server setup orchestrator that selects appropriate configuration
- * Provides unified entry point with comprehensive error handling and logging
+ * Main server setup orchestrator
  */
 export async function setupServer(app: Express, server: Server): Promise<void> {
   const environment = isDevelopment() ? "development" : "production";
@@ -254,11 +199,7 @@ export async function setupServer(app: Express, server: Server): Promise<void> {
       log("Production server with static file serving ready", "setup");
     }
   } catch (error) {
-    const err = error as Error;
-    log(`Server setup failed: ${err.message}`, "setup");
-    
-    // In production, this should probably exit the process
-    // In development, we might want to continue with degraded functionality
-    throw err;
+    log(`Server setup failed: ${(error as Error).message}`, "setup");
+    throw error; 
   }
 }

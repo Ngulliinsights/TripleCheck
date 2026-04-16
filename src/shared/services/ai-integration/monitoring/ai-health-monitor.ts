@@ -6,7 +6,8 @@
  */
 
 import { logger as loggingService } from '../../../../../server/infrastructure/monitoring/logger'
-import { BaseError, ErrorDomain, ErrorSeverity } from '../../../error-handling/errors/base-error'
+import { AppError, ErrorSeverity } from '../../../error-handling/errors/base-error'
+import { ErrorCategory } from '../../../error-handling/constants/error-categories'
 import { aiMetricsCollector, AIServiceMetrics } from './ai-metrics-collector'
 
 export interface HealthCheckResult {
@@ -69,15 +70,19 @@ export interface HealthMonitorConfig {
   retentionPeriod: number; // Hours to keep health data
 }
 
-class AIHealthMonitorError extends BaseError {
+class AIHealthMonitorError extends AppError {
   constructor(message: string, operation: string, cause?: Error) {
-    super(message, {
-      code: 'AI_HEALTH_MONITOR_ERROR',
-      domain: ErrorDomain.SYSTEM,
-      severity: ErrorSeverity.MEDIUM,
-      cause,
-      details: { operation }
-    });
+    super(
+      'AI_HEALTH_MONITOR_ERROR',
+      message,
+      500,
+      ErrorCategory.SYSTEM,
+      {
+        severity: ErrorSeverity.MEDIUM,
+        cause,
+        details: { operation }
+      }
+    );
   }
 }
 
@@ -183,7 +188,7 @@ export class AIHealthMonitor {
       }
 
       // Check for alerts
-      await this.checkForAlerts(service, result, metrics);
+      await this.checkForAlerts(service, result, metrics || undefined);
 
       this.healthChecks.set(service, result);
 

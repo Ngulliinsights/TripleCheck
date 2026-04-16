@@ -6,7 +6,8 @@
  */
 
 import { logger as loggingService } from '../../../../../server/infrastructure/monitoring/logger'
-import { BaseError, ErrorDomain, ErrorSeverity } from '../../../error-handling/errors/base-error'
+import { AppError, ErrorSeverity } from '../../../error-handling/errors/base-error'
+import { ErrorCategory } from '../../../error-handling/constants/error-categories'
 import { aiMetricsCollector, AISystemMetrics, UsageAnalytics, CostBreakdown } from './ai-metrics-collector'
 import { aiHealthMonitor, SystemHealthStatus, HealthAlert } from './ai-health-monitor'
 
@@ -79,15 +80,19 @@ export interface DashboardConfig {
   };
 }
 
-class AIPerformanceDashboardError extends BaseError {
+class AIPerformanceDashboardError extends AppError {
   constructor(message: string, operation: string, cause?: Error) {
-    super(message, {
-      code: 'AI_PERFORMANCE_DASHBOARD_ERROR',
-      domain: ErrorDomain.SYSTEM,
-      severity: ErrorSeverity.MEDIUM,
-      cause,
-      details: { operation }
-    });
+    super(
+      'AI_PERFORMANCE_DASHBOARD_ERROR',
+      message,
+      500,
+      ErrorCategory.SYSTEM,
+      {
+        severity: ErrorSeverity.MEDIUM,
+        cause,
+        details: { operation }
+      }
+    );
   }
 }
 
@@ -429,8 +434,8 @@ export class AIPerformanceDashboard {
     return {
       responseTimetrend: this.determineTrend(recentAvgResponseTime, olderAvgResponseTime),
       errorRateTrend: this.determineTrend(recentAvgErrorRate, olderAvgErrorRate, true), // Lower is better
-      costTrend: this.determineTrend(recentAvgCost, olderAvgCost),
-      usageTrend: this.determineTrend(recentAvgUsage, olderAvgUsage)
+      costTrend: this.determineCostTrend(recentAvgCost, olderAvgCost),
+      usageTrend: this.determineCostTrend(recentAvgUsage, olderAvgUsage)
     };
   }
 
@@ -447,6 +452,17 @@ export class AIPerformanceDashboard {
     } else {
       return changePercent > 0 ? 'improving' : 'degrading';
     }
+  }
+
+  private determineCostTrend(recent: number, older: number): 'decreasing' | 'stable' | 'increasing' {
+    const changePercent = older > 0 ? (recent - older) / older : 0;
+    const threshold = 0.1; // 10% change threshold
+
+    if (Math.abs(changePercent) < threshold) {
+      return 'stable';
+    }
+
+    return changePercent > 0 ? 'increasing' : 'decreasing';
   }
 
   private identifyBottlenecks(
@@ -726,4 +742,4 @@ export class AIPerformanceDashboard {
 }
 
 // Export singleton instance
-export const aiPerformanceDashboard = AIPerformanceDashboard.getInstance();nce();
+export const aiPerformanceDashboard = AIPerformanceDashboard.getInstance();
