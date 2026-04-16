@@ -29,22 +29,11 @@ export async function basicUsage() {
 
 // Example 2: Advanced Configuration
 export async function advancedUsage() {
-  // Custom client with specific configuration
-  const customClient = new UnifiedApiClient({
-    baseUrl: 'https://api.example.com',
-    defaultOptions: {
-      timeout: 15000,
-      retries: 5,
-      retryDelay: 2000,
-      useCache: true,
-      cacheTtl: 600000, // 10 minutes
-      priority: 'high'
-    }
-  });
+  // Custom client with specific base URL
+  const customClient = new UnifiedApiClient('https://api.example.com');
 
   // Request with custom options
   const response = await customClient.get<PropertyData>('/properties', {
-    useCache: false, // Skip cache for this request
     timeout: 5000,   // Custom timeout
     retries: 1       // Fewer retries for this request
   });
@@ -57,14 +46,9 @@ export async function errorHandlingExample() {
   try {
     const response = await apiClient.get<UserProfile>('/user/profile');
     
-    if (response.success) {
-      console.log('User profile:', response.data);
-      console.log('Request ID:', response.requestId);
-      console.log('Was cached:', response.cached);
-    } else {
-      console.error('API Error:', response.error);
-      console.error('Status:', response.status);
-    }
+    console.log('User profile:', response.data);
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
   } catch (error) {
     // Network errors, timeouts, etc.
     console.error('Request failed:', error);
@@ -73,25 +57,18 @@ export async function errorHandlingExample() {
 
 // Example 4: Cache Management
 export async function cacheManagementExample() {
-  // Make a cached request
+  // Make a request
   const response1 = await apiClient.get<Property[]>('/properties', {
-    useCache: true,
-    cacheTtl: 300000 // 5 minutes
+    timeout: 5000
   });
 
-  // This will use the cached response
+  // Make another request
   const response2 = await apiClient.get<Property[]>('/properties', {
-    useCache: true
+    timeout: 5000
   });
 
-  console.log('First request cached:', response1.cached); // false
-  console.log('Second request cached:', response2.cached); // true
-
-  // Clear cache when needed
-  apiClient.clearCache();
-
-  // Check circuit breaker state
-  console.log('Circuit breaker state:', apiClient.getCircuitBreakerState());
+  console.log('First request completed');
+  console.log('Second request completed');
 }
 
 // Example 5: File Upload
@@ -135,7 +112,7 @@ export async function authenticationExample() {
     password: 'password123'
   });
 
-  if (loginResponse.success && loginResponse.data?.token) {
+  if (loginResponse.data?.token) {
     // Token is automatically stored and used for subsequent requests
     localStorage.setItem('auth_token', loginResponse.data.token);
 
@@ -156,18 +133,15 @@ export async function pollingExample() {
     while (isPolling) {
       try {
         const response = await apiClient.get<SystemStatus>('/system/status', {
-          useCache: false, // Always get fresh data
           timeout: 5000
         });
 
-        if (response.success) {
-          console.log('System status:', response.data);
-          
-          // Process the data
-          if (response.data?.status === 'critical') {
-            console.warn('System in critical state!');
-            // Handle critical state
-          }
+        console.log('System status:', response.data);
+        
+        // Process the data
+        if (response.data?.status === 'critical') {
+          console.warn('System in critical state!');
+          // Handle critical state
         }
 
         // Wait 30 seconds before next poll

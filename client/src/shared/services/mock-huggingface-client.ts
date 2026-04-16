@@ -5,11 +5,13 @@
  */
 
 import { 
-  DocumentAnalysisResult, 
-  ImageAnalysisResult, 
   TextClassificationResult, 
   TranslationResult 
 } from "../../shared/services/unified-api-client"
+import { 
+  DocumentAnalysisResult,
+  ImageAnalysisResult
+} from './huggingface-api-client'
 import { 
   mockAIResponses, 
   simulateProcessingDelay, 
@@ -250,7 +252,7 @@ export class MockHuggingFaceApiClient {
    * Classifies legal documents with proper text validation
    * FIXED: This method now properly handles the type safety issue
    * 
-   * The key improvement is ensuring that both label and confidence
+   * The key improvement is ensuring that both label and score
    * are extracted using our safe extractors, and we construct the
    * return object in a way that TypeScript can verify matches the interface
    */
@@ -261,8 +263,8 @@ export class MockHuggingFaceApiClient {
         // Return a properly typed result for empty input
         return {
           label: 'unknown',
-          confidence: 0.1
-        } as TextClassificationResult; // Explicit type assertion for clarity
+          score: 0.1
+        };
       }
       
       // Get the mock response
@@ -276,7 +278,7 @@ export class MockHuggingFaceApiClient {
       // Construct the result object with explicit type satisfaction
       const result: TextClassificationResult = {
         label: extractedLabel,     // Now guaranteed to be string
-        confidence: extractedConfidence  // Now guaranteed to be number in valid range
+        score: extractedConfidence  // Now guaranteed to be number in valid range
       };
 
       return result;
@@ -293,8 +295,8 @@ export class MockHuggingFaceApiClient {
       if (!candidateLabels || candidateLabels.length === 0) {
         return {
           label: 'unknown',
-          confidence: 0.1
-        } as TextClassificationResult;
+          score: 0.1
+        };
       }
       
       // Pick a random label from candidates with varying confidence
@@ -304,8 +306,8 @@ export class MockHuggingFaceApiClient {
       
       return {
         label: selectedLabel, // Guaranteed to be string from candidateLabels
-        confidence: Math.min(confidence, 0.95)
-      } as TextClassificationResult;
+        score: Math.min(confidence, 0.95)
+      };
     }, 'classification');
   }
 
@@ -356,8 +358,8 @@ export class MockHuggingFaceApiClient {
       
       return { 
         label, 
-        confidence 
-      } as TextClassificationResult;
+        score: confidence 
+      };
     }, 'sentiment');
   }
 
@@ -376,7 +378,7 @@ export class MockHuggingFaceApiClient {
       const confidence = safeExtractors.extractConfidence(mockResult, 0.85);
       
       return {
-        translatedText,
+        translation_text: translatedText,
         sourceLanguage: sourceLanguage || 'auto',
         targetLanguage,
         confidence

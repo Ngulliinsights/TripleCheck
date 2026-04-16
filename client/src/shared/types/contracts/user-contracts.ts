@@ -36,14 +36,16 @@ export const PublicUserSchema = UserSchema.omit({
 export type PublicUser = z.infer<typeof PublicUserSchema>;
 
 // User Registration Request Schema
-export const UserRegistrationRequestSchema = z.object({
+const UserRegistrationRequestSchemaBase = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
   phone: z.string().optional(),
   role: z.enum(['user', 'agent']).default('user'),
-}).transform((data) => ({
+});
+
+export const UserRegistrationRequestSchema = UserRegistrationRequestSchemaBase.transform((data) => ({
   ...data,
   role: data.role as 'user' | 'agent',
 }));
@@ -51,11 +53,13 @@ export const UserRegistrationRequestSchema = z.object({
 export type UserRegistrationRequest = z.infer<typeof UserRegistrationRequestSchema>;
 
 // User Login Request Schema
-export const UserLoginRequestSchema = z.object({
+const UserLoginRequestSchemaBase = z.object({
   email: z.string().email(),
   password: z.string().min(1),
   rememberMe: z.boolean().default(false),
-}).transform((data) => ({
+});
+
+export const UserLoginRequestSchema = UserLoginRequestSchemaBase.transform((data) => ({
   ...data,
   rememberMe: data.rememberMe as boolean,
 }));
@@ -98,7 +102,7 @@ export type AuthResponse = z.infer<typeof AuthResponseSchema>;
 export const UserRegistrationContract: ApiContract<UserRegistrationRequest, any> = {
   method: 'POST',
   path: '/api/auth/register',
-  requestSchema: UserRegistrationRequestSchema,
+  requestSchema: UserRegistrationRequestSchemaBase as any,
   responseSchema: SuccessResponseSchema(AuthResponseSchema),
   description: 'Register new user account',
   tags: ['auth', 'users'],
@@ -107,7 +111,7 @@ export const UserRegistrationContract: ApiContract<UserRegistrationRequest, any>
 export const UserLoginContract: ApiContract<UserLoginRequest, any> = {
   method: 'POST',
   path: '/api/auth/login',
-  requestSchema: UserLoginRequestSchema,
+  requestSchema: UserLoginRequestSchemaBase as any,
   responseSchema: SuccessResponseSchema(AuthResponseSchema),
   description: 'Login user',
   tags: ['auth', 'users'],

@@ -178,7 +178,7 @@ export async function quickAIHealthCheck(): Promise<{
       issues,
       summary: {
         services: Object.keys(systemMetrics.services).length,
-        healthyServices: Object.values(healthStatus.servicesStatus).filter(s => s === 'healthy').length,
+        healthyServices: Object.values(systemMetrics.servicesStatus).filter(s => s === 'healthy').length,
         alerts: healthStatus.alerts.length,
         uptime: healthStatus.uptime
       }

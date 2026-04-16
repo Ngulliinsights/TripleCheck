@@ -39,7 +39,7 @@ export { apiClient } from "./unified-api-client"
 export { auditTrailService, auditLogger } from './audit-trail-service'
 export { securityMonitoringService, securityMonitor } from './security-monitoring-service'
 export { performanceMonitoringService, performanceMonitor } from './performance-monitoring-service'
-export { errorHandler } from "@server/infrastructure/error-handling"
+// export { errorHandler } from "@server/infrastructure/error-handling" // Module doesn't exist
 
 // ============================================================================
 // SERVICE INTEGRATION CLASS
@@ -90,14 +90,11 @@ export class ServiceIntegration {
       
       // Use proper error handling for initialization failures
       // This ensures that startup errors are properly logged and can be monitored
-      await errorHandler.handleSystemError(
-        error instanceof Error ? error : new Error('Service initialization failed'),
-        { 
-          component: 'ServiceIntegration', 
-          action: 'initialize',
-          severity: 'critical' // Startup failures are always critical
-        }
-      );
+      console.error('Service initialization failed:', error, {
+        component: 'ServiceIntegration', 
+        action: 'initialize',
+        severity: 'critical' // Startup failures are always critical
+      });
       
       // Reset initialization state so it can be retried
       this.isInitialized = false;
@@ -136,19 +133,16 @@ export class ServiceIntegration {
     // High-risk security events trigger error handling
     // This escalates serious security issues to the error handling system
     securityMonitoringService.on('highRiskEvent', async (threat) => {
-      await errorHandler.handleSystemError(
-        new Error(`High-risk security event: ${threat.description}`),
-        {
-          component: 'SecurityMonitoring',
-          action: 'threat_detection',
-          severity: 'high',
-          additionalData: {
-            threatId: threat.id,
-            threatType: threat.type,
-            riskScore: threat.riskScore
-          }
+      console.error('High-risk security event:', threat.description, {
+        component: 'SecurityMonitoring',
+        action: 'threat_detection',
+        severity: 'high',
+        additionalData: {
+          threatId: threat.id,
+          threatType: threat.type,
+          riskScore: threat.riskScore
         }
-      );
+      });
     });
 
     // Performance alerts trigger audit logging for high-severity issues
@@ -171,11 +165,11 @@ export class ServiceIntegration {
 
     // Error handling service integration
     // Log when critical errors occur, but avoid infinite loops
-    errorHandler.on('criticalError', async (error: any) => {
-      console.warn('Critical error detected:', error.id);
-      // Note: We don't re-log to audit trail here to prevent circular logging
-      // The error handler should already be logging to appropriate destinations
-    });
+    // errorHandler.on('criticalError', async (error: any) => {
+    //   console.warn('Critical error detected:', error.id);
+    //   // Note: We don't re-log to audit trail here to prevent circular logging
+    //   // The error handler should already be logging to appropriate destinations
+    // });
 
     // Audit trail service monitors for compliance violations
     // This helps identify patterns that might indicate compliance issues
@@ -210,7 +204,7 @@ export class ServiceIntegration {
       // Gather metrics from each service
       const securityMetrics = securityMonitor.getMetrics();
       const performanceMetrics = performanceMonitor.getCurrentMetrics();
-      const errorAnalytics = errorHandler.getAnalytics();
+      // const errorAnalytics = errorHandler.getAnalytics();
 
       // Evaluate each service's health based on specific criteria
       const services = {

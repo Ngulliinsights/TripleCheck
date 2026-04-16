@@ -625,10 +625,7 @@ export const LazyRoutes = {
     routePath: '/api-demo',
     preloadPriority: 'normal',
   }),
-  HuggingFaceTest: createLazyRoute(
-    () => import('../components/ai/HuggingFaceTestPage'),
-    { routePath: '/ai-test', preloadPriority: 'normal' }
-  ),
+
   ContactSales: createLazyRoute(
     () => import('../shared/pages/ContactSales'),
     { routePath: '/contact-sales', preloadPriority: 'normal' }
@@ -945,9 +942,7 @@ export const preloadRoutes = {
   ai: async (): Promise<SettledResult[]> =>
     handleBatchResults(
       await Promise.allSettled([
-        import('../components/ai/HuggingFaceTestPage'),
-        // Note: Only import if HuggingFaceTestPanel exists
-        // import('../components/ai/HuggingFaceTestPanel'),
+        // Note: AI test components have been removed
       ]),
       'ai'
     ),

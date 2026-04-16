@@ -34,7 +34,7 @@ export const PropertySchema = z.object({
 export type Property = z.infer<typeof PropertySchema>;
 
 // Property List Request Schema
-export const PropertyListRequestSchema = z.object({
+const PropertyListRequestSchemaBase = z.object({
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(100).default(20),
   type: z.enum(['residential', 'commercial', 'land']).optional(),
@@ -45,7 +45,9 @@ export const PropertyListRequestSchema = z.object({
   search: z.string().optional(),
   sortBy: z.enum(['price', 'createdAt', 'trustScore']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
-}).transform((data) => ({
+});
+
+export const PropertyListRequestSchema = PropertyListRequestSchemaBase.transform((data) => ({
   ...data,
   sortBy: data.sortBy || 'createdAt' as 'price' | 'createdAt' | 'trustScore',
   sortOrder: data.sortOrder || 'desc' as 'asc' | 'desc',
@@ -70,12 +72,15 @@ export const PropertyCreateRequestSchema = z.object({
     parking: z.boolean().optional(),
     furnished: z.boolean().optional(),
   }).optional(),
-}).transform((data) => ({
+});
+
+// Transform for create request to ensure images is string[]
+const PropertyCreateRequestTransformed = PropertyCreateRequestSchema.transform((data) => ({
   ...data,
   images: data.images as string[],
 }));
 
-export type PropertyCreateRequest = z.infer<typeof PropertyCreateRequestSchema>;
+export type PropertyCreateRequest = z.infer<typeof PropertyCreateRequestTransformed>;
 
 // Property Update Request Schema
 export const PropertyUpdateRequestSchema = PropertyCreateRequestSchema.extend({
@@ -88,7 +93,7 @@ export type PropertyUpdateRequest = z.infer<typeof PropertyUpdateRequestSchema>;
 export const PropertyListContract: ApiContract<PropertyListRequest, any> = {
   method: 'GET',
   path: '/api/properties',
-  requestSchema: PropertyListRequestSchema,
+  requestSchema: PropertyListRequestSchemaBase as any,
   responseSchema: PaginatedResponseSchema(PropertySchema),
   description: 'Get paginated list of properties',
   tags: ['properties'],
@@ -106,7 +111,7 @@ export const PropertyGetContract: ApiContract<{ id: string }, any> = {
 export const PropertyCreateContract: ApiContract<PropertyCreateRequest, any> = {
   method: 'POST',
   path: '/api/properties',
-  requestSchema: PropertyCreateRequestSchema,
+  requestSchema: PropertyCreateRequestTransformed as any,
   responseSchema: SuccessResponseSchema(PropertySchema),
   description: 'Create new property',
   tags: ['properties'],

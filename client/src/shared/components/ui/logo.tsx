@@ -49,7 +49,7 @@ export function Logo({
   priority = false,
   onClick,
   href = "/",
-  logoSrc = "/Artmark.svg",
+  logoSrc = "/assets/Artmark.svg",
   alt = "Artmark Logo",
 }: LogoProps) {
   const imgClassName = cn(

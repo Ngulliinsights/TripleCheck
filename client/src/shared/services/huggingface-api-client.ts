@@ -69,14 +69,9 @@ export class HuggingFaceApiClient {
       data,
       {
         headers,
-        timeout: options.timeout || 30000,
-        useCache: false, // AI responses shouldn't be cached
+        timeout: options.timeout || 30000
       }
     );
-
-    if (!response.success) {
-      throw new Error(`Hugging Face API error: ${response.error}`);
-    }
 
     return response.data;
   }
