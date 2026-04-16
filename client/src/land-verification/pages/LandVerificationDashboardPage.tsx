@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle, RefreshCw, FileText, Plus } from 'lucide-react';
 
-import { Alert, AlertDescription, AlertTitle } from '../../shared/components/ui/alert';
-import { Button } from '../../shared/components/ui/button';
-import { Card, CardContent } from '../../shared/components/ui/card';
-import { Skeleton } from '../../shared/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs';
-import { useToast } from '../../shared/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '../../local/components/ui/alert';
+import { Button } from '../../local/components/ui/button';
+import { Card, CardContent } from '../../local/components/ui/card';
+import { Skeleton } from '../../local/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs';
+import { useToast } from '../../local/hooks/use-toast';
 
 import { 
   LandVerificationDashboard,

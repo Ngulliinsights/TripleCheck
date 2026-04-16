@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { Shield, Upload, FileText, CheckCircle } from 'lucide-react'
-import { Button } from '../../../../shared/components/ui/button'
-import { Label } from '../../../../shared/components/ui/label'
+import { Button } from '../../../../local/components/ui/button'
+import { Label } from '../../../../local/components/ui/label'
 import { WizardStepProps } from '../types'
 
 export function DocumentationStep({ data, onUpdate, onValidation }: WizardStepProps) {

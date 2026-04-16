@@ -3,7 +3,7 @@
  * Seamlessly connects with existing Kenya land verification workflows
  */
 
-import { safeNavigate } from '../../shared/utils/safe-navigation'
+import { safeNavigate } from '../../local/utils/safe-navigation'
 import { DocumentVerificationResult } from '../../trust/types'
 
 // Define types that were incorrectly imported from audit/types

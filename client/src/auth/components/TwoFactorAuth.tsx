@@ -18,10 +18,10 @@ import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { Alert, AlertDescription } from '../../shared/components/ui/alert'
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
+import { Alert, AlertDescription } from '../../local/components/ui/alert'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
 import {
   Form,
   FormControl,
@@ -30,11 +30,11 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from '../../shared/components/ui/form'
-import { Input } from '../../shared/components/ui/input'
-import { Logo } from '../../shared/components/ui/logo'
-import { Separator } from '../../shared/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs'
+} from '../../local/components/ui/form'
+import { Input } from '../../local/components/ui/input'
+import { Logo } from '../../local/components/ui/logo'
+import { Separator } from '../../local/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
 import { User } from '../types/auth.types'
 
 // Validation schemas

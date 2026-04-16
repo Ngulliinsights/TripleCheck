@@ -16,19 +16,19 @@ import {
 import React, { useState, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { Alert, AlertDescription } from "../../shared/components/ui/alert"
-import { Badge } from "../../shared/components/ui/badge"
-import { Button } from "../../shared/components/ui/button"
+import { Alert, AlertDescription } from '../../local/components/ui/alert"
+import { Badge } from '../../local/components/ui/badge"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
-import { Input } from "../../shared/components/ui/input"
-import { Label } from "../../shared/components/ui/label"
-import { Separator } from "../../shared/components/ui/separator"
-import { Textarea } from "../../shared/components/ui/textarea"
+} from '../../local/components/ui/card"
+import { Input } from '../../local/components/ui/input"
+import { Label } from '../../local/components/ui/label"
+import { Separator } from '../../local/components/ui/separator"
+import { Textarea } from '../../local/components/ui/textarea"
 
 interface VerificationPackage {
   id: string;

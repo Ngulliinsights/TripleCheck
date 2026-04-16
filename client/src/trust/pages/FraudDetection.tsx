@@ -22,12 +22,12 @@ import {
   Zap
 } from 'lucide-react'
 
-import { Button } from '../../shared/components/ui/button'
-import { Input } from '../../shared/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Badge } from '../../shared/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shared/components/ui/select'
-import { useToast } from '../../shared/hooks/use-toast'
+import { Button } from '../../local/components/ui/button'
+import { Input } from '../../local/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Badge } from '../../local/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../local/components/ui/select'
+import { useToast } from '../../local/hooks/use-toast'
 
 interface FraudAlert {
   id: string;

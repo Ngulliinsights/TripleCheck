@@ -11,27 +11,27 @@ import { useSearchParams } from "react-router-dom"
 
 import { CompareBar } from "../../property/components/CompareBar"
 import { CompareModal } from "../../property/components/CompareModal"
-import { PropertyCard } from "../../shared/components/property"
-import { Badge } from "../../shared/components/ui/badge"
-import { Button } from "../../shared/components/ui/button"
+import { PropertyCard } from '../../local/components/property"
+import { Badge } from '../../local/components/ui/badge"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
-import { Input } from "../../shared/components/ui/input"
-import { Label } from "../../shared/components/ui/label"
+} from '../../local/components/ui/card"
+import { Input } from '../../local/components/ui/input"
+import { Label } from '../../local/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../shared/components/ui/select"
-import { Slider } from "../../shared/components/ui/slider"
-import { Switch } from "../../shared/components/ui/switch"
-import { Property, NormalizedProperty } from "../../shared/types/property"
+} from '../../local/components/ui/select"
+import { Slider } from '../../local/components/ui/slider"
+import { Switch } from '../../local/components/ui/switch"
+import { Property, NormalizedProperty } from '../../local/types/property"
 import { useSearch } from "../hooks/useSearch"
 import ConsolidatedSearch from "../components/ConsolidatedSearch"
 

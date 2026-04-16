@@ -20,13 +20,13 @@ import {
   Info
 } from 'lucide-react'
 import { useNotifications, useUnreadNotificationCount, Notification, NotificationType } from '../hooks/useNotifications'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Badge } from '../../shared/components/ui/badge'
-import { ScrollArea } from '../../shared/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../shared/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../shared/components/ui/tooltip'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Badge } from '../../local/components/ui/badge'
+import { ScrollArea } from '../../local/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../local/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../local/components/ui/tooltip'
 
 interface NotificationCenterProps {
   isOpen: boolean;

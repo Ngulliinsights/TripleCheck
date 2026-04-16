@@ -52,7 +52,7 @@ export {
   performanceMonitor,
   type PerformanceMetric,
   type PerformanceRating,
-} from '../../shared/services/performance-monitoring-service'
+} from '../../local/services/performance-monitoring-service'
 
 // Service worker utilities
 export {

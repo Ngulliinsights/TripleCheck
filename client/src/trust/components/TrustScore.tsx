@@ -1,5 +1,5 @@
-import { Progress } from "../../shared/components/ui/progress"
-import { cn } from "../../shared/lib/utils"
+import { Progress } from '../../local/components/ui/progress"
+import { cn } from '../../local/lib/utils"
 import { Shield } from "lucide-react"
 
 interface TrustScoreProps {

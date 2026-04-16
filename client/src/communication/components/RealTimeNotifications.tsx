@@ -5,9 +5,9 @@ import { useAuth } from '../../auth/hooks/useAuth'
 import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager'
 import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect'
 import { useWebSocketMessage } from '../../infrastructure/realtime/websocket-client'
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
 // Removed Framer Motion for better performance and stability
 
 interface RealTimeNotification {

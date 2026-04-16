@@ -17,12 +17,12 @@ import {
   TrendingDown,
   BarChart3
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Button } from '../../shared/components/ui/button'
-import { Badge } from '../../shared/components/ui/badge'
-import { Progress } from '../../shared/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs'
-import { useSystemHealth, usePerformanceMetrics, useConnectionMonitoring } from '../../shared/hooks/useHealthMonitoring'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Button } from '../../local/components/ui/button'
+import { Badge } from '../../local/components/ui/badge'
+import { Progress } from '../../local/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
+import { useSystemHealth, usePerformanceMetrics, useConnectionMonitoring } from '../../local/hooks/useHealthMonitoring'
 
 interface HealthStatusProps {
   status: 'healthy' | 'degraded' | 'unhealthy';

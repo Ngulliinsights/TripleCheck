@@ -12,7 +12,7 @@ import {
 import React, { useCallback, useMemo, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { Button } from "../../shared/components/ui/button"
+import { Button } from '../../local/components/ui/button"
 import {
   formatComparePrice,
   formatCompareLocation,
@@ -20,8 +20,8 @@ import {
   getComparePropertyTitle,
   getVerificationBadge,
   getFeatureValue,
-} from "../../shared/utils/compare-utils"
-import type { CompareProperty } from "../../shared/types/compare"
+} from '../../local/utils/compare-utils"
+import type { CompareProperty } from '../../local/types/compare"
 import { usePropertyCompare } from "../contexts"
 
 // ─── ComparisonRow ────────────────────────────────────────────────────────────

@@ -162,7 +162,7 @@ export function truncateText(text: string | null | undefined, maxLength: number)
 }
 
 // Date formatting with fallback
-import { formatKenyaDate } from '../../shared/utils/date-utils'
+import { formatKenyaDate } from '../../local/utils/date-utils'
 
 // Re-export for backward compatibility
 export const formatDate = formatKenyaDate;

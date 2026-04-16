@@ -7,7 +7,7 @@
 import { 
   TextClassificationResult, 
   TranslationResult 
-} from "../../shared/services/unified-api-client"
+} from '../../local/services/unified-api-client"
 import { 
   DocumentAnalysisResult,
   ImageAnalysisResult

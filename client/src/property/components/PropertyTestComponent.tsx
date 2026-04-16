@@ -1,8 +1,8 @@
 import { Loader2 } from 'lucide-react'
 import React from 'react'
 
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
 import { useUnifiedProperty } from '../hooks/useUnifiedProperty'
 import { useConsolidatedPropertySearch } from '../hooks/useConsolidatedPropertySearch'
 

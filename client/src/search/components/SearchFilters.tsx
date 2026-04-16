@@ -16,31 +16,31 @@ import {
 } from "lucide-react"
 import React, { useState, useCallback, useMemo } from "react"
 
-import { Badge } from "../../shared/components/ui/badge"
-import { Button } from "../../shared/components/ui/button"
+import { Badge } from '../../local/components/ui/badge"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
-import { Checkbox } from "../../shared/components/ui/checkbox"
-import { Input } from "../../shared/components/ui/input"
-import { Label } from "../../shared/components/ui/label"
+} from '../../local/components/ui/card"
+import { Checkbox } from '../../local/components/ui/checkbox"
+import { Input } from '../../local/components/ui/input"
+import { Label } from '../../local/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../shared/components/ui/select"
-import { Separator } from "../../shared/components/ui/separator"
-import { Slider } from "../../shared/components/ui/slider"
+} from '../../local/components/ui/select"
+import { Separator } from '../../local/components/ui/separator"
+import { Slider } from '../../local/components/ui/slider"
 
 import {
   PropertySearchFilters,
   SearchOptions,
-} from "../../shared/types/search"
+} from '../../local/types/search"
 
 // Enhanced interface with proper type definitions
 interface AdvancedSearchFilters extends PropertySearchFilters {

@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 
-import { LoadingSpinner } from '../shared/components/ui/LoadingSpinner'
+import { LoadingSpinner } from '../local/components/ui/LoadingSpinner'
 
 import { LazyRoutes } from './lazy-routes'
 

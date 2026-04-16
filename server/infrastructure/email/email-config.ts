@@ -1,5 +1,5 @@
 // Email service configuration for TripleCheck
-import { EmailServiceConfig } from '../../shared/email-types';
+import { EmailServiceConfig } from '../../local/email-types';
 
 // Default configuration - uses mock service for demo
 export const DEFAULT_EMAIL_CONFIG: EmailServiceConfig = {

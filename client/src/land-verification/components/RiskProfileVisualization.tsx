@@ -1,11 +1,11 @@
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Progress } from '../../shared/components/ui/progress'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shared/components/ui/select'
-import { Slider } from '../../shared/components/ui/slider'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs'
-import { cn } from '../../shared/lib/utils'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Progress } from '../../local/components/ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../local/components/ui/select'
+import { Slider } from '../../local/components/ui/slider'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
+import { cn } from '../../local/lib/utils'
 import { 
   BarChart3, 
   PieChart, 

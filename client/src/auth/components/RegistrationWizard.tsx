@@ -17,11 +17,11 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import zxcvbn from 'zxcvbn'
 
-import { Alert, AlertDescription } from '../../shared/components/ui/alert'
-import { Avatar, AvatarFallback, AvatarImage } from '../../shared/components/ui/avatar'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Checkbox } from '../../shared/components/ui/checkbox'
+import { Alert, AlertDescription } from '../../local/components/ui/alert'
+import { Avatar, AvatarFallback, AvatarImage } from '../../local/components/ui/avatar'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Checkbox } from '../../local/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -29,14 +29,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '../../shared/components/ui/form'
-import { Input } from '../../shared/components/ui/input'
-import { Progress } from '../../shared/components/ui/progress'
-import { Textarea } from '../../shared/components/ui/textarea'
+} from '../../local/components/ui/form'
+import { Input } from '../../local/components/ui/input'
+import { Progress } from '../../local/components/ui/progress'
+import { Textarea } from '../../local/components/ui/textarea'
 import { useRegister } from '../hooks/useAuth'
 import { RegisterData } from '../types/auth.types'
 
-import { Logo } from '../../shared/components/ui/logo'
+import { Logo } from '../../local/components/ui/logo'
 
 // Step schemas
 const personalInfoSchema = z.object({

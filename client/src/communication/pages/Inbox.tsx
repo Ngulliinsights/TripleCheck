@@ -20,26 +20,26 @@ import {
 import { useState, useCallback, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { Badge } from "../../shared/components/ui/badge"
-import { Button } from "../../shared/components/ui/button"
+import { Badge } from '../../local/components/ui/badge"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
+} from '../../local/components/ui/card"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "../../shared/components/ui/dialog"
-import { Input } from "../../shared/components/ui/input"
-import { Label } from "../../shared/components/ui/label"
-import { Separator } from "../../shared/components/ui/separator"
-import { Tabs, TabsList, TabsTrigger } from "../../shared/components/ui/tabs"
-import { Textarea } from "../../shared/components/ui/textarea"
-import { useToast } from "../../shared/hooks/use-toast"
+} from '../../local/components/ui/dialog"
+import { Input } from '../../local/components/ui/input"
+import { Label } from '../../local/components/ui/label"
+import { Separator } from '../../local/components/ui/separator"
+import { Tabs, TabsList, TabsTrigger } from '../../local/components/ui/tabs"
+import { Textarea } from '../../local/components/ui/textarea"
+import { useToast } from '../../local/hooks/use-toast"
 
 // Enhanced type definitions for better type safety
 interface Inquiry {

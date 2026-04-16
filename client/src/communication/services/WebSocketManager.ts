@@ -3,7 +3,7 @@
  * Manages WebSocket connections for messaging and notifications
  */
 
-import { useMessagingWebSocket, useNotificationsWebSocket, usePropertyUpdatesWebSocket } from '../../shared/hooks/useWebSocket'
+import { useMessagingWebSocket, useNotificationsWebSocket, usePropertyUpdatesWebSocket } from '../../local/hooks/useWebSocket'
 
 export interface WebSocketManagerConfig {
   userId: string;

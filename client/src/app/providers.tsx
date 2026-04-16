@@ -1,6 +1,6 @@
 import { AuthProvider } from '../auth/contexts/AuthContext'
 import { PropertyProvider } from '../property/contexts/PropertyContext'
-import { ThemeProvider } from '../shared/contexts/ThemeContext'
+import { ThemeProvider } from '../local/contexts/ThemeContext'
 import { TrustProvider } from '../trust/contexts/TrustContext'
 import React, { ReactNode } from 'react'
 

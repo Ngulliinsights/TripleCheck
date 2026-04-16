@@ -20,16 +20,16 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-import { Button } from "../../shared/components/ui/button"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
-import { Badge } from "../../shared/components/ui/badge"
-import { Progress } from "../../shared/components/ui/progress"
-import { useToast } from "../../shared/hooks/use-toast"
+} from '../../local/components/ui/card"
+import { Badge } from '../../local/components/ui/badge"
+import { Progress } from '../../local/components/ui/progress"
+import { useToast } from '../../local/hooks/use-toast"
 
 // Enhanced type definitions with better TypeScript safety
 interface OptimizationScore {

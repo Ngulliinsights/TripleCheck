@@ -17,17 +17,17 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import { Alert, AlertDescription } from '../../shared/components/ui/alert'
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Checkbox } from '../../shared/components/ui/checkbox'
-import { Input } from '../../shared/components/ui/input'
-import { Label } from '../../shared/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shared/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs'
-import { Textarea } from '../../shared/components/ui/textarea'
-import { useToast } from '../../shared/hooks/use-toast'
+import { Alert, AlertDescription } from '../../local/components/ui/alert'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Checkbox } from '../../local/components/ui/checkbox'
+import { Input } from '../../local/components/ui/input'
+import { Label } from '../../local/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../local/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
+import { Textarea } from '../../local/components/ui/textarea'
+import { useToast } from '../../local/hooks/use-toast'
 
 // Define interfaces for the reporting portal
 interface ReportTemplate {

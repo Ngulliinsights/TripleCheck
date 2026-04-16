@@ -12,7 +12,7 @@ import {
   ValidationError,
   NotFoundError,
   ConflictError,
-} from "../../src/shared/error-handling";
+} from '../../src/local/error-handling";
 
 // Extract the type from the enum
 type ProfessionalSpecializationValue = typeof professionalSpecializationEnum.enumValues[number];

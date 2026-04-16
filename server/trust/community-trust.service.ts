@@ -15,8 +15,8 @@ import type {
   CommunityEndorsement,
   TrustScore,
   TrustLevel
-} from '../shared/community-trust-schema';
-import { calculateTrustScore, getTrustLevelFromScore, getTrustLevelRequirements } from '../shared/community-trust-schema';
+} from '../local/community-trust-schema';
+import { calculateTrustScore, getTrustLevelFromScore, getTrustLevelRequirements } from '../local/community-trust-schema';
 
 // Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');

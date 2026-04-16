@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { cn } from '@/shared/lib/utils'
+import { cn } from '@/local/lib/utils'
 
 // Enhanced type definitions for better TypeScript safety
 type Position = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';

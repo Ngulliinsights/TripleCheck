@@ -3,7 +3,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../../shared/components/ui/tooltip"
+} from '../../local/components/ui/tooltip"
 import {
   Gauge,
   CheckCircle2,
@@ -14,15 +14,15 @@ import {
   Users,
 } from "lucide-react"
 
-import { Button } from "../../shared/components/ui/button"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
-import { Progress } from "../../shared/components/ui/progress"
-import { formatDate } from "../../shared/utils/date-utils"
+} from '../../local/components/ui/card"
+import { Progress } from '../../local/components/ui/progress"
+import { formatDate } from '../../local/utils/date-utils"
 
 export default function KarmaScorePage() {
   // Simulated karma score data

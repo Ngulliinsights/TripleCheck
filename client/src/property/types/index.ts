@@ -1,5 +1,5 @@
 // Property domain specific types
-export * from '../../shared/types/property'
+export * from '../../local/types/property'
 
 export interface PropertyDocument {
   id: string;

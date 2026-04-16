@@ -18,13 +18,13 @@ import {
 } from 'lucide-react'
 import React, { useState } from 'react'
 
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Progress } from '../../shared/components/ui/progress'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shared/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs'
-import { useToast } from '../../shared/hooks/use-toast'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Progress } from '../../local/components/ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../local/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
+import { useToast } from '../../local/hooks/use-toast'
 import { useFraudDetection } from '../hooks/useFraudDetection'
 
 interface MLAnalyticsDisplayProps {

@@ -7,7 +7,7 @@
 
 import React from 'react'
 
-import { cn } from '@/shared/lib/utils'
+import { cn } from '@/local/lib/utils'
 
 interface NavbarSpacerProps {
   readonly className?: string;

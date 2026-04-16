@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react"
 
-import { useDebounce } from "../../shared/hooks/useDebounce"
-import { useSafePropertiesQuery } from "../../shared/hooks/useSafeQuery"
+import { useDebounce } from '../../local/hooks/useDebounce"
+import { useSafePropertiesQuery } from '../../local/hooks/useSafeQuery"
 import { PropertySearchParams } from "../types/property.types"
 
 // Enhanced interface for search history management

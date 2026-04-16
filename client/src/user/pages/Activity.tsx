@@ -15,10 +15,10 @@ import {
   User
 } from 'lucide-react'
 
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Badge } from '../../shared/components/ui/badge'
-import { Tabs, TabsList, TabsTrigger } from '../../shared/components/ui/tabs'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Badge } from '../../local/components/ui/badge'
+import { Tabs, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
 
 interface ActivityItem {
   id: string;

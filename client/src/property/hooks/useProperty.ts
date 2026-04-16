@@ -2,11 +2,11 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useMemo } from "react"
 
 import { queryKeys } from "../../infrastructure/api/queryClient"
-import { useDebounce } from "../../shared/hooks/useDebounce"
-import { useOptimisticMutation } from "../../shared/hooks/useOptimisticMutation"
-import { useSafeQuery } from "../../shared/hooks/useSafeQuery"
-import { Property as ApiProperty, PropertySearchParams as ApiPropertySearchParams } from "../../shared/types/api.types"
-import { Property } from "../../shared/types/property"
+import { useDebounce } from '../../local/hooks/useDebounce"
+import { useOptimisticMutation } from '../../local/hooks/useOptimisticMutation"
+import { useSafeQuery } from '../../local/hooks/useSafeQuery"
+import { Property as ApiProperty, PropertySearchParams as ApiPropertySearchParams } from '../../local/types/api.types"
+import { Property } from '../../../../shared/types/property"
 import { propertyApi } from "../services/property-api"
 
 // Enhanced type definitions that properly handle optional properties with exactOptionalPropertyTypes

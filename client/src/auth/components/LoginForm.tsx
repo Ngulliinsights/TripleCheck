@@ -6,9 +6,9 @@ import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import zxcvbn from 'zxcvbn'
 
-import { Alert, AlertDescription } from '../../shared/components/ui/alert'
-import { Button } from '../../shared/components/ui/button'
-import { Checkbox } from '../../shared/components/ui/checkbox'
+import { Alert, AlertDescription } from '../../local/components/ui/alert'
+import { Button } from '../../local/components/ui/button'
+import { Checkbox } from '../../local/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -16,11 +16,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '../../shared/components/ui/form'
-import { Input } from '../../shared/components/ui/input'
-import { Logo } from '../../shared/components/ui/logo'
-import { Progress } from '../../shared/components/ui/progress'
-import { Separator } from '../../shared/components/ui/separator'
+} from '../../local/components/ui/form'
+import { Input } from '../../local/components/ui/input'
+import { Logo } from '../../local/components/ui/logo'
+import { Progress } from '../../local/components/ui/progress'
+import { Separator } from '../../local/components/ui/separator'
 import { useLogin } from '../hooks/useAuth'
 import { LoginCredentials, User } from '../types/auth.types'
 

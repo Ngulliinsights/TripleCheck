@@ -7,23 +7,23 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { Search, Filter, X, MapPin, Sliders, Loader2 } from "lucide-react";
 
-import { Badge } from "../../shared/components/ui/badge";
-import { Button } from "../../shared/components/ui/button";
+import { Badge } from '../../local/components/ui/badge";
+import { Button } from '../../local/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card";
-import { Input } from "../../shared/components/ui/input";
+} from '../../local/components/ui/card";
+import { Input } from '../../local/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../shared/components/ui/select";
-import { PropertySearchFilters } from "../../shared/types/search";
+} from '../../local/components/ui/select";
+import { PropertySearchFilters } from '../../local/types/search";
 import { useSearch } from "../hooks/useSearch";
 
 // ============================================================================

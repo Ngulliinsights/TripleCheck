@@ -1,9 +1,9 @@
-import { Alert, AlertDescription } from '../../shared/components/ui/alert'
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/components/ui/tabs'
-import { cn } from '../../shared/lib/utils'
+import { Alert, AlertDescription } from '../../local/components/ui/alert'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
+import { cn } from '../../local/lib/utils'
 import { 
   BarChart3, 
   Settings, 

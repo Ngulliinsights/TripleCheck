@@ -4,7 +4,7 @@
  */
 
 import { beforeAll, afterAll, beforeEach, afterEach } from '..\src\shared\test-utils\index';
-import { setupTest, teardownTest } from '../src/shared/testing/TestUtils';
+import { setupTest, teardownTest } from '../src/local/testing/TestUtils';
 
 // Global test setup
 beforeAll(() => {

@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, useCallback, useMemo, useEffect } from 'react'
 
-import { searchService } from '../../shared/services/SearchService'
+import { searchService } from '../../local/services/SearchService'
 import { 
   PropertySearchFilters, 
   SearchOptions, 
@@ -9,7 +9,7 @@ import {
   SearchSuggestion,
   UseSearchOptions,
   searchKeys
-} from '../../shared/types/search'
+} from '../../local/types/search'
 
 // Query keys are now imported from unified types
 

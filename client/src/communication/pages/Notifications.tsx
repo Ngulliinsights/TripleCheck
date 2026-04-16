@@ -16,12 +16,12 @@ import {
   EyeOff
 } from 'lucide-react'
 
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Badge } from '../../shared/components/ui/badge'
-import { Switch } from '../../shared/components/ui/switch'
-import { Label } from '../../shared/components/ui/label'
-import { useToast } from '../../shared/hooks/use-toast'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Badge } from '../../local/components/ui/badge'
+import { Switch } from '../../local/components/ui/switch'
+import { Label } from '../../local/components/ui/label'
+import { useToast } from '../../local/hooks/use-toast'
 
 interface Notification {
   id: string;

@@ -3,12 +3,12 @@ import { CheckCircle, AlertTriangle, Clock, MapPin, FileText, Users, Shield, Gav
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Progress } from '../../shared/components/ui/progress'
-import { Separator } from '../../shared/components/ui/separator'
-import { useToast } from '../../shared/hooks/use-toast'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Progress } from '../../local/components/ui/progress'
+import { Separator } from '../../local/components/ui/separator'
+import { useToast } from '../../local/hooks/use-toast'
 import { useLandVerification } from '../hooks/useLandVerification'
 
 import { CommunityInterviewTemplate } from './CommunityInterviewTemplate'

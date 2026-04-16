@@ -8,7 +8,7 @@ import {
   ErrorCode, 
   HttpStatusCode,
   generateCorrelationId 
-} from "../../../src/shared/error-handling";
+} from '../../../src/local/error-handling";
 import { logger } from "..\..\infrastructure\monitoring\logger";
 
 export interface DegradationLevel {

@@ -1,7 +1,7 @@
 import { eq, and, or } from 'drizzle-orm';
 import { Request, Response, NextFunction } from 'express';
 
-import { landVerificationSessions, users, properties } from '../../../src/shared/schema';
+import { landVerificationSessions, users, properties } from '../../../src/local/schema';
 import { logger } from '../../infrastructure/observability/telemetry';
 import { db } from '..\..\infrastructure\database\connection\index';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';

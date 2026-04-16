@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { generateCorrelationId } from '../../src/shared/error-handling';
+import { generateCorrelationId } from '../../src/local/error-handling';
 import { structuredLogger } from '../monitoring/StructuredLogger';
 
 export interface LoggingOptions {

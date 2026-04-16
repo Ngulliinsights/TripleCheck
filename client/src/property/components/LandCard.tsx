@@ -15,12 +15,12 @@ import {
   type KeyboardEvent,
 } from "react"
 
-import { ImageGallery } from "../../shared/components/images"
-import { Badge } from "../../shared/components/ui/badge"
-import { Button } from "../../shared/components/ui/button"
-import { Card, CardContent } from "../../shared/components/ui/card"
-import { cn } from "../../shared/lib/utils"
-import type { NormalizedProperty } from "../../shared/types/property"
+import { ImageGallery } from '../../local/components/images"
+import { Badge } from '../../local/components/ui/badge"
+import { Button } from '../../local/components/ui/button"
+import { Card, CardContent } from '../../local/components/ui/card"
+import { cn } from '../../local/lib/utils"
+import type { NormalizedProperty } from '../../../../shared/types/property"
 import {
   usePropertyCompare,
   usePropertyCompareActions,
@@ -31,11 +31,11 @@ import {
   usePropertyFormatting,
   usePropertyCompareActions as useSharedCompareActions,
   usePropertyCardState,
-} from "../../shared/hooks"
+} from '../../local/hooks"
 import {
   PropertyImageSection,
   PropertyFeatures,
-} from "../../shared/components/property/shared"
+} from '../../local/components/property/shared"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

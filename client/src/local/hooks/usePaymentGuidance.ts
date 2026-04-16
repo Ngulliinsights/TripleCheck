@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 
 import { useAuth } from '../../auth/hooks/useAuth'
-import { apiClient } from "../../shared/services/unified-api-client"
+import { apiClient } from '../../local/services/unified-api-client"
 
 interface PaymentGuidanceData {
   mpesa: {

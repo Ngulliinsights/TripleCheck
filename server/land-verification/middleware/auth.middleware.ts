@@ -1,12 +1,12 @@
 import { eq, and } from 'drizzle-orm';
 import { Request, Response, NextFunction } from 'express';
 
-import { users, landVerificationSessions } from '../../../src/shared/schema';
+import { users, landVerificationSessions } from '../../../src/local/schema';
 import { 
   AuthenticationError, 
   AuthorizationError,
   ValidationError 
-} from '../../../src/shared/error-handling';
+} from '../../../src/local/error-handling';
 import { logger } from '../../infrastructure/observability/telemetry';
 import { db } from '..\..\infrastructure\database\connection\index';
 

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, useCallback } from 'react'
 
-import { apiClient } from "../../shared/services/unified-api-client"
+import { apiClient } from '../../local/services/unified-api-client"
 
 export interface VerificationRequest {
   propertyId: string;

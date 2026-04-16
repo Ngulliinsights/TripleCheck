@@ -23,10 +23,10 @@ export type {
   LocationSuggestion,
   SearchBarFilters,
   SortOption
-} from '../shared/types/search'
+} from '../local/types/search'
 
 // Services
-export { searchService } from '../shared/services/SearchService'
+export { searchService } from '../local/services/SearchService'
 
 /**
  * Recommended Usage:

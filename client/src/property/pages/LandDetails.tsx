@@ -17,16 +17,16 @@ import {
 import React, { useState, useCallback, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 
-import { Badge } from "../../shared/components/ui/badge"
-import { Button } from "../../shared/components/ui/button"
+import { Badge } from '../../local/components/ui/badge"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
-import { formatDate } from "../../shared/utils/date-utils"
-import { formatPrice } from "../../shared/utils/formatters"
+} from '../../local/components/ui/card"
+import { formatDate } from '../../local/utils/date-utils"
+import { formatPrice } from '../../local/utils/formatters"
 import { useUnifiedProperty } from "../hooks/useUnifiedProperty"
 
 // Constants

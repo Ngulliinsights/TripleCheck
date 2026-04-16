@@ -6,7 +6,7 @@ import {
   experienceInteractions,
   contentReports,
   users
-} from "../../src/shared/schema";
+} from '../../src/local/schema";
 import { db } from "../infrastructure/database/connection";
 
 import { NotificationService } from "..\communication\notification.service";

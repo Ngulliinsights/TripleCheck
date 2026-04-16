@@ -1,11 +1,11 @@
-import { Alert, AlertDescription } from '../../shared/components/ui/alert'
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Label } from '../../shared/components/ui/label'
-import { Progress } from '../../shared/components/ui/progress'
-import { Slider } from '../../shared/components/ui/slider'
-import { cn } from '../../shared/lib/utils'
+import { Alert, AlertDescription } from '../../local/components/ui/alert'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Label } from '../../local/components/ui/label'
+import { Progress } from '../../local/components/ui/progress'
+import { Slider } from '../../local/components/ui/slider'
+import { cn } from '../../local/lib/utils'
 import { 
   Settings, 
   RotateCcw, 

@@ -8,7 +8,7 @@ import {
   ErrorFactory, 
   redactSensitiveData, 
   generateCorrelationId 
-} from '../../src/shared/error-handling';
+} from '../../src/local/error-handling';
 
 /* ---------- Request identity ---------- */
 export const correlationIdMiddleware = (

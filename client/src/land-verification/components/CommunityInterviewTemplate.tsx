@@ -17,16 +17,16 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Checkbox } from '../../shared/components/ui/checkbox'
-import { Input } from '../../shared/components/ui/input'
-import { Progress } from '../../shared/components/ui/progress'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shared/components/ui/select'
-import { Separator } from '../../shared/components/ui/separator'
-import { Textarea } from '../../shared/components/ui/textarea'
-import { useToast } from '../../shared/hooks/use-toast'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Checkbox } from '../../local/components/ui/checkbox'
+import { Input } from '../../local/components/ui/input'
+import { Progress } from '../../local/components/ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../local/components/ui/select'
+import { Separator } from '../../local/components/ui/separator'
+import { Textarea } from '../../local/components/ui/textarea'
+import { useToast } from '../../local/hooks/use-toast'
 
 interface CommunityInterviewTemplateProps {
   sessionId: string;

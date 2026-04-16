@@ -3,7 +3,7 @@
  * Provides detailed logging and audit trails for all verification activities
  */
 
-import { generateCorrelationId } from "../../../src/shared/error-handling";
+import { generateCorrelationId } from '../../../src/local/error-handling";
 import { db } from "..\..\infrastructure\database\connection\index";
 import { logger } from "..\..\infrastructure\monitoring\logger";
 

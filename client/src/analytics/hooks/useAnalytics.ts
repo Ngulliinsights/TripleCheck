@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { ApiResponse } from '../../shared/types'
+import { ApiResponse } from '../../local/types'
 
 // Analytics types
 export interface AnalyticsMetrics {

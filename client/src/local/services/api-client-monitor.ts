@@ -5,7 +5,7 @@
  * baseline metrics for regression detection.
  */
 
-import { apiClient } from "../../shared/services/unified-api-client"
+import { apiClient } from '../../local/services/unified-api-client"
 
 export interface ApiMetrics {
   requestCount: number;

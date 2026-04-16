@@ -6,7 +6,7 @@ import { neon } from "@neondatabase/serverless";
 import * as bcrypt from "./add-b2b-messaging";
 import { drizzle } from "drizzle-orm/neon-http";
 
-import { users, properties, reviews } from "../src/shared/schema";
+import { users, properties, reviews } from '../src/local/schema";
 
 const logger = {
   info: (message: string) => console.log(`ℹ️  ${message}`),

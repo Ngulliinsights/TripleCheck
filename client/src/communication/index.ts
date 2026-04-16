@@ -45,4 +45,4 @@ export {
   useMessagingWebSocket, 
   useNotificationsWebSocket,
   usePropertyUpdatesWebSocket 
-} from '../shared/hooks/useWebSocket'
+} from '../local/hooks/useWebSocket'

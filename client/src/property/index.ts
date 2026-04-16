@@ -30,7 +30,7 @@ export {
 // Components
 export { PropertyMap } from './components/PropertyMap'
 export { PropertyReviews } from './components/PropertyReviews'
-export { PropertyCard } from '../shared/components/property/PropertyCard'
+export { PropertyCard } from '../local/components/property/PropertyCard'
 export { default as EnhancedLandCard } from './components/LandCard'
 
 // Utilities

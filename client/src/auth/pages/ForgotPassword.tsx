@@ -9,16 +9,16 @@ import {
 } from "lucide-react"
 import { Link } from "react-router-dom"
 
-import { Button } from "../../shared/components/ui/button"
-import { Input } from "../../shared/components/ui/input"
+import { Button } from '../../local/components/ui/button"
+import { Input } from '../../local/components/ui/input"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
-import { Label } from "../../shared/components/ui/label"
-import { useToast } from "../../shared/hooks/use-toast"
+} from '../../local/components/ui/card"
+import { Label } from '../../local/components/ui/label"
+import { useToast } from '../../local/hooks/use-toast"
 
 interface ResetStep {
   step: "email" | "verification" | "success";

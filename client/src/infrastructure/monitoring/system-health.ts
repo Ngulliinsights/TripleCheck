@@ -2,7 +2,7 @@
  * System health checker to validate that all critical components are working
  */
 
-// import { parseError, logError } from "../../shared/utils/error-handling" // File doesn't exist
+// import { parseError, logError } from '../../local/utils/error-handling" // File doesn't exist
 import { queryClient } from "../api/queryClient"
 
 // Fallback error handling functions

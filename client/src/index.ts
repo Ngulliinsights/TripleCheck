@@ -14,12 +14,12 @@ export * from './property/hooks'
 export * from './property/services'
 
 // Shared Module
-export * from './shared/components/ui'
-export * from './shared/components/layout'
+export * from './local/components/ui'
+export * from './local/components/layout'
 // Navigation is exported from both layout and navigation, so we skip both wildcard exports to avoid conflicts
-export * from './shared/hooks'
-export * from './shared/utils'
-export * from './shared/services'
+export * from './local/hooks'
+export * from './local/utils'
+export * from './local/services'
 
 // User Module
 export * from './user/components'

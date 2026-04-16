@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
-import { Input } from '../../../../shared/components/ui/input'
-import { Label } from '../../../../shared/components/ui/label'
-import { Textarea } from '../../../../shared/components/ui/textarea'
+import { Input } from '../../../../local/components/ui/input'
+import { Label } from '../../../../local/components/ui/label'
+import { Textarea } from '../../../../local/components/ui/textarea'
 import { WizardStepProps } from '../types'
 
 const PROPERTY_TYPES = [

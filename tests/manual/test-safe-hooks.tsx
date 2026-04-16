@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 
-import { useSafeQuery } from './shared/hooks/useSafeQuery'
+import { useSafeQuery } from './local/hooks/useSafeQuery'
 
 // Create a simple query client for testing
 const testQueryClient = new QueryClient({

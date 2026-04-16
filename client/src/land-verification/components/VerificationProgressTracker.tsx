@@ -15,12 +15,12 @@ import {
 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Progress } from '../../shared/components/ui/progress'
-import { Separator } from '../../shared/components/ui/separator'
-import { useToast } from '../../shared/hooks/use-toast'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Progress } from '../../local/components/ui/progress'
+import { Separator } from '../../local/components/ui/separator'
+import { useToast } from '../../local/hooks/use-toast'
 import { useLandVerification } from '../hooks/useLandVerification'
 
 interface VerificationProgressTrackerProps {

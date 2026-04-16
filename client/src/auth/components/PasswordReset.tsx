@@ -18,14 +18,14 @@ import { useSearchParams, useNavigate } from "react-router-dom"
 import { z } from "zod"
 import zxcvbn from "zxcvbn"
 
-import { Alert, AlertDescription } from "../../shared/components/ui/alert"
-import { Button } from "../../shared/components/ui/button"
+import { Alert, AlertDescription } from '../../local/components/ui/alert"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
+} from '../../local/components/ui/card"
 import {
   Form,
   FormControl,
@@ -33,9 +33,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../../shared/components/ui/form"
-import { Input } from "../../shared/components/ui/input"
-import { Progress } from "../../shared/components/ui/progress"
+} from '../../local/components/ui/form"
+import { Input } from '../../local/components/ui/input"
+import { Progress } from '../../local/components/ui/progress"
 import { useRequestPasswordReset, useResetPassword } from "../hooks/useAuth"
 
 // Simple logging utility to replace console statements

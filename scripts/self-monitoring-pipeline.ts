@@ -23,7 +23,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 
 
 import { users, properties, reviews } from '..\server\infrastructure\database\schemas\core\index';
-import type { InsertUser, InsertProperty, InsertReview } from '../shared/schema';
+import type { InsertUser, InsertProperty, InsertReview } from '../local/schema';
 // Note: RobustDataLoader has been replaced by robust-batch-loader.ts
 
 const __filename = fileURLToPath(import.meta.url);

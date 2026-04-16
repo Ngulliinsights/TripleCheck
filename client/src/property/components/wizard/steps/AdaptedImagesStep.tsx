@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { Camera, Upload, FileText } from 'lucide-react'
-import { Badge } from '../../../../shared/components/ui/badge'
-import { Button } from '../../../../shared/components/ui/button'
+import { Badge } from '../../../../local/components/ui/badge'
+import { Button } from '../../../../local/components/ui/button'
 import { WizardStepProps } from '../types'
 
 export function AdaptedImagesStep({ data, onUpdate, onValidation }: WizardStepProps) {

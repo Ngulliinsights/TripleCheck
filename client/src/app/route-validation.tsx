@@ -12,8 +12,8 @@ import { AlertTriangle } from "lucide-react"
 import React from "react"
 import { useParams } from "react-router-dom"
 
-import { Card, CardContent, CardHeader, CardTitle } from "../shared/components/ui/card"
-import { routeValidator } from "../shared/utils/route-validator"
+import { Card, CardContent, CardHeader, CardTitle } from '../local/components/ui/card"
+import { routeValidator } from '../local/utils/route-validator"
 
 import { ErrorBoundary } from "./error-boundary"
 

@@ -10,8 +10,8 @@
  */
 
 import { logger as loggingService } from '..\..\infrastructure\monitoring\logger';
-import { huggingFaceClient } from '../../../src/shared/services/huggingface-api-client';
-import { AIServiceError } from '../../../src/shared/services/huggingface-client';
+import { huggingFaceClient } from './huggingface-api-client';
+import { AIServiceError } from './huggingface-client';
 
 export interface PropertyData {
   id: string;

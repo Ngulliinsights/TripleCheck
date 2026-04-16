@@ -1,5 +1,5 @@
 import type { LandProperty } from '../components/PropertyCardShowcase'
-import type { NormalizedProperty } from '../../shared/types/property'
+import type { NormalizedProperty } from '../../local/types/property'
 
 export function normalizeLandProperty(land: LandProperty): NormalizedProperty {
   const normalizedLocation = typeof land.location === 'string' 

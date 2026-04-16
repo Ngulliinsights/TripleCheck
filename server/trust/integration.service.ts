@@ -9,7 +9,7 @@ import {
   transactions,
   User,
   users,
-} from '../../src/shared/schema';
+} from '../../src/local/schema';
 import { CacheService } from '..\cache\CacheService'
 import { db } from '../infrastructure/database/connection';
 import { RequestDeduplicator } from '../infrastructure/deduplication/RequestDeduplicator';

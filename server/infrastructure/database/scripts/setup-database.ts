@@ -13,7 +13,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { migrate } from "drizzle-orm/neon-http/migrator";
 
 import { users, properties, reviews } from "..\schemas\core\index";
-import type { InsertUser, InsertProperty, User } from "../src/shared/schema";
+import type { InsertUser, InsertProperty, User } from '../src/local/schema";
 
 
 async function setupDatabase() {

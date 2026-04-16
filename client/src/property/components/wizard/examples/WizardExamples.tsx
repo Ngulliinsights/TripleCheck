@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Button } from '../../../../shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../../shared/components/ui/card'
+import { Button } from '../../../../local/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../local/components/ui/card'
 import { UnifiedPropertyWizard } from '../UnifiedPropertyWizard'
 import { 
   enhancedWizardConfig, 

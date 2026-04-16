@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useReducer, ReactNode, useMemo, useCallback, useEffect } from 'react'
 
-import type { Property } from '../../shared/types/property'
+import type { Property } from '../../../../shared/types/property'
 import type {
   CompareProperty,
   ComparisonResult,
   ComparisonStats,
-} from '../../shared/types/compare'
-import { normalizePropertyForComparison } from '../../shared/utils/compare-utils'
-import { useCompareError } from '../../shared/hooks/useCompareError'
+} from '../../local/types/compare'
+import { normalizePropertyForComparison } from '../../local/utils/compare-utils'
+import { useCompareError } from '../../local/hooks/useCompareError'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

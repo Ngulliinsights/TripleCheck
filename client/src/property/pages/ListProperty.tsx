@@ -1,34 +1,34 @@
-import { useOptimisticMutation } from "../../shared/hooks/useOptimisticMutation"
+import { useOptimisticMutation } from '../../local/hooks/useOptimisticMutation"
 import { useQueryClient } from "@tanstack/react-query"
 import { Check, Home, Upload, Building, Map, Info } from "lucide-react"
 import { useState, useCallback } from "react"
 
 import { apiRequest } from "../../infrastructure/api/queryClient"
-import { PropertyImageGallery } from "../../shared/components/images"
-import { Button } from "../../shared/components/ui/button"
+import { PropertyImageGallery } from '../../local/components/images"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
-import { Input } from "../../shared/components/ui/input"
-import { Label } from "../../shared/components/ui/label"
+} from '../../local/components/ui/card"
+import { Input } from '../../local/components/ui/input"
+import { Label } from '../../local/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../shared/components/ui/select"
+} from '../../local/components/ui/select"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../../shared/components/ui/tabs"
-import { Textarea } from "../../shared/components/ui/textarea"
-import { useToast } from "../../shared/hooks/use-toast"
+} from '../../local/components/ui/tabs"
+import { Textarea } from '../../local/components/ui/textarea"
+import { useToast } from '../../local/hooks/use-toast"
 import { PropertyImage, imagesToUrls } from "../utils/propertyImages"
 
 /* =========================================================================

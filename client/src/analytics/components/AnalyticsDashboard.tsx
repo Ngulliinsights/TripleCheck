@@ -24,8 +24,8 @@ import {
   Cell
 } from 'recharts'
 
-import { Badge } from '../../shared/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
+import { Badge } from '../../local/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
 
 interface AnalyticsData {
   totalUsers: number;

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 
-import { ValidationError } from '../../../src/shared/error-handling';
+import { ValidationError } from '../../../src/local/error-handling';
 import { logger } from '../../infrastructure/observability/telemetry';
 
 /**

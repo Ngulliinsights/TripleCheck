@@ -6,14 +6,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Send, Paperclip, MoreVertical, Phone, Video, Info } from 'lucide-react'
 import { useMessages, useMessaging, useTypingIndicators, Message, MessageType } from '../hooks/useMessaging'
-import { Button } from '../../shared/components/ui/button'
-import { Input } from '../../shared/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '../../shared/components/ui/avatar'
-import { Badge } from '../../shared/components/ui/badge'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../shared/components/ui/tooltip'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../shared/components/ui/dropdown-menu'
-import { ScrollArea } from '../../shared/components/ui/scroll-area'
+import { Button } from '../../local/components/ui/button'
+import { Input } from '../../local/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '../../local/components/ui/avatar'
+import { Badge } from '../../local/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../local/components/ui/tooltip'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../local/components/ui/dropdown-menu'
+import { ScrollArea } from '../../local/components/ui/scroll-area'
 
 interface MessageThreadProps {
   threadId: string;

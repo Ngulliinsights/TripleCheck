@@ -9,24 +9,24 @@ import React, {
 } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { PropertyCard } from "../../shared/components/property"
-import { Badge } from "../../shared/components/ui/badge"
+import { PropertyCard } from '../../local/components/property"
+import { Badge } from '../../local/components/ui/badge"
 import { normalizeLandProperty } from "../utils/normalizeLandProperty"
-import { cn } from "../../shared/lib/utils"
-import { Button } from "../../shared/components/ui/button"
+import { cn } from '../../local/lib/utils"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
+} from '../../local/components/ui/card"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../../shared/components/ui/tabs"
-import type { NormalizedProperty } from "../../shared/types/property"
+} from '../../local/components/ui/tabs"
+import type { NormalizedProperty } from '../../../../shared/types/property"
 import type { CSSProperties } from "react"
 
 import EnhancedLandCard from "./LandCard"

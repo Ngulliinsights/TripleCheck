@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-import { cn } from '@/shared/lib/utils'
+import { cn } from '@/local/lib/utils'
 
 interface ContentGridProps {
   children: React.ReactNode;

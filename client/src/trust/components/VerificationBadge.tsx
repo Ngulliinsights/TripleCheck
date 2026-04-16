@@ -1,11 +1,11 @@
-import { Badge } from "../../shared/components/ui/badge"
+import { Badge } from '../../local/components/ui/badge"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../../shared/components/ui/tooltip"
-import { cn } from "../../shared/lib/utils"
+} from '../../local/components/ui/tooltip"
+import { cn } from '../../local/lib/utils"
 import { CheckCircle2, AlertCircle, Clock } from "lucide-react"
 
 interface VerificationBadgeProps {

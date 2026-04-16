@@ -18,14 +18,14 @@ import {
   RefreshCw
 } from 'lucide-react'
 
-import { Button } from '../../shared/components/ui/button'
-import { Input } from '../../shared/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Badge } from '../../shared/components/ui/badge'
-import { Textarea } from '../../shared/components/ui/textarea'
-import { Label } from '../../shared/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shared/components/ui/select'
-import { useToast } from '../../shared/hooks/use-toast'
+import { Button } from '../../local/components/ui/button'
+import { Input } from '../../local/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Badge } from '../../local/components/ui/badge'
+import { Textarea } from '../../local/components/ui/textarea'
+import { Label } from '../../local/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../local/components/ui/select'
+import { useToast } from '../../local/hooks/use-toast'
 
 interface VerificationCheck {
   id: string;

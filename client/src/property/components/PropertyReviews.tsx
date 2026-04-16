@@ -1,23 +1,23 @@
-import { Badge } from "../../shared/components/ui/badge"
-import { Button } from "../../shared/components/ui/button"
+import { Badge } from '../../local/components/ui/badge"
+import { Button } from '../../local/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../shared/components/ui/card"
-import { Label } from "../../shared/components/ui/label"
-import { Separator } from "../../shared/components/ui/separator"
-import { Textarea } from "../../shared/components/ui/textarea"
-import { useSafeUserQuery } from "../../shared/hooks/useSafeQuery"
+} from '../../local/components/ui/card"
+import { Label } from '../../local/components/ui/label"
+import { Separator } from '../../local/components/ui/separator"
+import { Textarea } from '../../local/components/ui/textarea"
+import { useSafeUserQuery } from '../../local/hooks/useSafeQuery"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Star, MessageCircle, ThumbsUp, Flag, User as UserIcon } from "lucide-react"
 import React, { useState, useMemo, useCallback } from "react"
 
-import { formatDate } from "../../shared/utils/date-utils"
+import { formatDate } from '../../local/utils/date-utils"
 import { apiRequest } from "../../infrastructure/api/queryClient"
-import { useToast } from "../../shared/hooks/use-toast"
+import { useToast } from '../../local/hooks/use-toast"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

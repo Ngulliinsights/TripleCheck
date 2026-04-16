@@ -11,13 +11,13 @@ import {
 import React, { useState, useMemo, useCallback, useEffect } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 
-import { useCompareError } from "../../shared/hooks/useCompareError"
-import type { Property } from "../../shared/types/property"
+import { useCompareError } from '../../local/hooks/useCompareError"
+import type { Property } from '../../local/types/property"
 import {
   normalizePropertyForComparison,
   formatComparePrice,
   getVerificationBadge,
-} from "../../shared/utils/compare-utils"
+} from '../../local/utils/compare-utils"
 import { usePropertyCompare, usePropertyCompareActions } from "../contexts"
 
 // Validation result interface

@@ -1,5 +1,5 @@
 // Comprehensive performance test for PropertiesResidential component
-import { PerformanceMonitoringService } from '../../shared/services/performance-monitoring-service'
+import { PerformanceMonitoringService } from '../../local/services/performance-monitoring-service'
 
 export class ComponentPerformanceTest {
   private monitor: PerformanceMonitor;

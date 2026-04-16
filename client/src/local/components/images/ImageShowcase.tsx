@@ -25,7 +25,7 @@ import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch'
 
 import { Button } from '../ui/button'
 import { Card, CardContent } from '../ui/card'
-import { cn } from '@/shared/lib/utils'
+import { cn } from '@/local/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

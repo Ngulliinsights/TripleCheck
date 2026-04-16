@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
 import { DollarSign, TrendingUp, BarChart3 } from 'lucide-react'
-import { Input } from '../../../../shared/components/ui/input'
-import { Label } from '../../../../shared/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../../shared/components/ui/card'
+import { Input } from '../../../../local/components/ui/input'
+import { Label } from '../../../../local/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../local/components/ui/card'
 import { WizardStepProps } from '../types'
 
 export function AdaptedPricingStep({ data, onUpdate, onValidation }: WizardStepProps) {

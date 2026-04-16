@@ -13,12 +13,12 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 
-import { Badge } from "../../shared/components/ui/badge"
-import { Button } from "../../shared/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../shared/components/ui/card"
-import { Progress } from "../../shared/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../shared/components/ui/tabs"
-import { useToast } from "../../shared/hooks/use-toast"
+import { Badge } from '../../local/components/ui/badge"
+import { Button } from '../../local/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../local/components/ui/card"
+import { Progress } from '../../local/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs"
+import { useToast } from '../../local/hooks/use-toast"
 
 export default function ReputationPage() {
   const { toast } = useToast();

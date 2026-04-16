@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { apiMonitor, monitoringUtils, type ApiMetrics, type EndpointMetrics } from "../../../shared/services/unified-api-client"
+import { apiMonitor, monitoringUtils, type ApiMetrics, type EndpointMetrics } from '../../../local/services/unified-api-client"
 
 interface DashboardProps {
   refreshInterval?: number; // in seconds

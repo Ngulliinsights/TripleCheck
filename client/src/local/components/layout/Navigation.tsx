@@ -16,7 +16,7 @@ import { Button } from "../ui/button"
 import { Logo } from "../ui/logo"
 import { Wordmark } from "../ui/wordmark"
 
-import { cn } from "@/shared/lib/utils"
+import { cn } from '@/local/lib/utils"
 
 interface NavigationProps {
   readonly className?: string;

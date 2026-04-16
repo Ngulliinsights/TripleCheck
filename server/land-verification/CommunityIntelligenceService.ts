@@ -7,7 +7,7 @@ import {
   landVerificationSessions,
   properties,
   verificationLayers
-} from '../../src/shared/schema';
+} from '../../src/local/schema';
 import { db } from '../infrastructure/database/connection';
 import { logger } from '../infrastructure/observability/telemetry';
 

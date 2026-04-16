@@ -16,7 +16,7 @@ import { count } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-http';
 
 import { users, properties, reviews } from '..\schemas\core\index';
-import type { InsertUser, InsertProperty, InsertReview } from '../src/shared/schema';
+import type { InsertUser, InsertProperty, InsertReview } from '../src/local/schema';
 
 /* ---------- CONFIG ---------- */
 const __filename = fileURLToPath(import.meta.url);

@@ -2,9 +2,9 @@ import { formatDistanceToNow } from 'date-fns'
 import { MessageCircle, User } from 'lucide-react'
 import React from 'react'
 
-import { Avatar, AvatarFallback, AvatarImage } from '../../shared/components/ui/avatar'
-import { Badge } from '../../shared/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '../../local/components/ui/avatar'
+import { Badge } from '../../local/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
 
 interface Message {
   id: string;

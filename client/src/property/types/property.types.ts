@@ -7,7 +7,7 @@ export type {
   LocationData,
   Coordinates,
   AIVerificationResults
-} from '../../../src/shared/types/property'
+} from '../../../src/local/types/property'
 
 export interface PropertySearchParams {
   query: string;

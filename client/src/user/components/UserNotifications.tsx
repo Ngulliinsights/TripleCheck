@@ -1,11 +1,11 @@
 import { Bell, Check, X, AlertCircle, Info, CheckCircle } from "lucide-react"
 import React, { useState, useCallback, useRef } from "react"
 
-import { EnterpriseVirtualizedList } from "../../shared/components"
-import { Badge } from "../../shared/components/ui/badge"
-import { Button } from "../../shared/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card"
-import { useNotificationListVirtualization } from "../../shared/hooks/useMemoryOptimization"
+import { EnterpriseVirtualizedList } from '../../local/components"
+import { Badge } from '../../local/components/ui/badge"
+import { Button } from '../../local/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card"
+import { useNotificationListVirtualization } from '../../local/hooks/useMemoryOptimization"
 
 // Use the BaseEntity interface that matches the virtualization hook
 interface BaseEntity {

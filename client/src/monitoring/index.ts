@@ -10,7 +10,7 @@ export { HealthDashboard } from './components/HealthDashboard'
 export { MonitoringPage } from './pages/MonitoringPage'
 
 // Services
-export { default as healthCheckService } from '../shared/services/HealthCheckService'
+export { default as healthCheckService } from '../local/services/HealthCheckService'
 
 // Hooks
 export {
@@ -19,11 +19,11 @@ export {
   usePerformanceMetrics,
   useConnectionMonitoring,
   useApiResponseTimeMonitoring
-} from '../shared/hooks/useHealthMonitoring'
+} from '../local/hooks/useHealthMonitoring'
 
 // Types
 export type {
   HealthCheckResult,
   SystemHealth,
   PerformanceMetrics
-} from '../shared/services/HealthCheckService'
+} from '../local/services/HealthCheckService'

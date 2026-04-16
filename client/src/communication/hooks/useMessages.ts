@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { ApiResponse, PaginatedResponse } from '../../shared/types'
+import { ApiResponse, PaginatedResponse } from '../../local/types'
 
 // Message types
 export interface Message {

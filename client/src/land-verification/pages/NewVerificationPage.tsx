@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Info } from "lucide-react";
 
-import { Alert, AlertDescription } from "../../shared/components/ui/alert";
-import { Button } from "../../shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/card";
-import { useToast } from "../../shared/hooks/use-toast";
+import { Alert, AlertDescription } from '../../local/components/ui/alert";
+import { Button } from '../../local/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card";
+import { useToast } from '../../local/hooks/use-toast";
 
 import { VerificationWizard, CommunityInterviewTemplate } from "../components";
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback } from 'react'
 import { DollarSign } from 'lucide-react'
-import { Input } from '../../../../shared/components/ui/input'
-import { Label } from '../../../../shared/components/ui/label'
+import { Input } from '../../../../local/components/ui/input'
+import { Label } from '../../../../local/components/ui/label'
 import { WizardStepProps } from '../types'
 
 const RESIDENTIAL_TYPES = ['apartment', 'house', 'villa', 'townhouse'];

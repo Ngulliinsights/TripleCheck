@@ -1,5 +1,5 @@
 import { EmailServiceFactory, EmailService } from './email.service';
-import { EmailServiceConfig } from '../../shared/email-types';
+import { EmailServiceConfig } from '../../local/email-types';
 
 // Initialize email service with environment-based configuration
 export async function initializeEmailService(): Promise<EmailService> {

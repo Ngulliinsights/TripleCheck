@@ -1,14 +1,14 @@
-import { PropertyImageVault } from '../../shared/components/images/index'
-import { Avatar, AvatarFallback, AvatarImage } from '../../shared/components/ui/avatar'
-import { Badge } from '../../shared/components/ui/badge'
-import { Button } from '../../shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../shared/components/ui/dialog'
+import { PropertyImageVault } from '../../local/components/images/index'
+import { Avatar, AvatarFallback, AvatarImage } from '../../local/components/ui/avatar'
+import { Badge } from '../../local/components/ui/badge'
+import { Button } from '../../local/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../local/components/ui/dialog'
 import { PropertyImage } from '../../property/utils/propertyImages'
 import { User, Edit, Mail, Phone, Calendar, Camera } from 'lucide-react'
 import { useState } from 'react'
 
-import { formatDate } from '../../shared/utils/date-utils'
+import { formatDate } from '../../local/utils/date-utils'
 
 import { User as UserType } from '../../auth/types/auth.types'
 

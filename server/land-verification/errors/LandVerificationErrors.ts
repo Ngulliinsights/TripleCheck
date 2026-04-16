@@ -11,7 +11,7 @@ import {
   ExternalServiceError,
   BusinessLogicError,
   ValidationError
-} from '../../../src/shared/error-handling';
+} from '../../../src/local/error-handling';
 
 // Land verification specific error codes
 export enum LandVerificationErrorCode {
