@@ -5,7 +5,33 @@
 
 import { safeNavigate } from '../../shared/utils/safe-navigation'
 import { DocumentVerificationResult } from '../../trust/types'
-import { LandVerificationRequest, ExpertCoordination, RiskAssessment } from '../../infrastructure/audit/types'
+
+// Define types that were incorrectly imported from audit/types
+export interface LandVerificationRequest {
+  propertyId: string;
+  documentIds: string[];
+  verificationType: 'standard' | 'comprehensive' | 'expedited';
+  requestedBy: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+}
+
+export interface ExpertCoordination {
+  expertId: string;
+  expertType: 'legal' | 'surveyor' | 'valuer';
+  assignedAt: Date;
+  estimatedCompletion: Date;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+}
+
+export interface RiskAssessment {
+  overallRisk: 'low' | 'medium' | 'high' | 'critical';
+  riskFactors: Array<{
+    factor: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    description: string;
+  }>;
+  recommendations: string[];
+}
 
 export interface KenyaLandDocument {
   readonly type: 'title_deed' | 'sale_agreement' | 'survey_report' | 'consent_letter' | 'clearance_certificate';

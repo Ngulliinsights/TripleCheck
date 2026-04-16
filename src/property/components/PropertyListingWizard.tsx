@@ -2,8 +2,8 @@ import React from 'react'
 import { UnifiedPropertyWizard, UnifiedPropertyFormData } from "./wizard"
 import { modernWizardConfig } from "./wizard/config"
 
-// Re-export for backward compatibility
-export interface PropertyFormData extends UnifiedPropertyFormData {}
+// Re-export as a type alias (not an empty interface extension) for backward compatibility
+export type PropertyFormData = UnifiedPropertyFormData;
 
 interface PropertyListingWizardProps {
   initialData?: Partial<UnifiedPropertyFormData>;

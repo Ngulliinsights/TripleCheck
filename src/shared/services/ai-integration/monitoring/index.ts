@@ -6,8 +6,8 @@
  * and comprehensive testing capabilities.
  */
 
-// Metrics Collection
-export {
+// Import types and instances for use in this file
+import {
   AIMetricsCollector,
   aiMetricsCollector,
   type AIOperationMetrics,
@@ -17,8 +17,7 @@ export {
   type UsageAnalytics
 } from './ai-metrics-collector'
 
-// Health Monitoring
-export {
+import {
   AIHealthMonitor,
   aiHealthMonitor,
   type HealthCheckResult,
@@ -28,8 +27,7 @@ export {
   type HealthMonitorConfig
 } from './ai-health-monitor'
 
-// Performance Dashboard
-export {
+import {
   AIPerformanceDashboard,
   aiPerformanceDashboard,
   type DashboardMetrics,
@@ -37,6 +35,36 @@ export {
   type DashboardRecommendation,
   type DashboardConfig
 } from './ai-performance-dashboard'
+
+// Re-export everything for external use
+export {
+  AIMetricsCollector,
+  aiMetricsCollector,
+  type AIOperationMetrics,
+  type AIServiceMetrics,
+  type AISystemMetrics,
+  type CostBreakdown,
+  type UsageAnalytics
+}
+
+export {
+  AIHealthMonitor,
+  aiHealthMonitor,
+  type HealthCheckResult,
+  type ServiceHealthThresholds,
+  type SystemHealthStatus,
+  type HealthAlert,
+  type HealthMonitorConfig
+}
+
+export {
+  AIPerformanceDashboard,
+  aiPerformanceDashboard,
+  type DashboardMetrics,
+  type PerformanceInsights,
+  type DashboardRecommendation,
+  type DashboardConfig
+}
 
 // Testing Suite
 // export {

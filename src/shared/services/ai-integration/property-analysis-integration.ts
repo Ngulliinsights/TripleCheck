@@ -5,7 +5,7 @@
  * Provides automated valuation, risk assessment, and market insights.
  */
 
-import { enhancedHuggingFaceClient } from '../huggingface-api-client';
+import { huggingFaceClient } from '../huggingface-api-client';
 import { logger } from '../../../../server/infrastructure/monitoring/logger';
 import { Property } from '../../types/property';
 import { BaseError } from '../../error-handling/errors/base-error';
@@ -382,7 +382,7 @@ export class PropertyAnalysisIntegrationService {
 
     try {
       const results = await Promise.all(
-        questions.map((q) => enhancedHuggingFaceClient.extractPropertyInfo(description, q)),
+        questions.map((q) => huggingFaceClient.extractPropertyInfo(description, q)),
       );
       return Object.fromEntries(questions.map((q, i) => [q, results[i]]));
     } catch (error) {
@@ -466,7 +466,7 @@ export class PropertyAnalysisIntegrationService {
 
   private async analyzeLegalRisks(description: string): Promise<RiskFactor[]> {
     try {
-      const riskIndicators = await enhancedHuggingFaceClient.detectFraudIndicators(description);
+      const riskIndicators = await huggingFaceClient.detectFraudIndicators(description);
       const severity = riskIndicators.riskLevel as RiskSeverity;
       return [
         {

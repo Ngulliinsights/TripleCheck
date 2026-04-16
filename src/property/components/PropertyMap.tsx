@@ -44,6 +44,133 @@ import { Skeleton } from "../../shared/components/ui/skeleton"
 import { useToast } from "../../shared/hooks/use-toast"
 import { formatPrice } from "../../shared/utils/formatters"
 
+// Declare Google Maps types
+declare global {
+  interface Window {
+    google: typeof google;
+  }
+}
+
+declare namespace google {
+  namespace maps {
+    class Map {
+      constructor(element: HTMLElement, options?: MapOptions);
+      setCenter(latLng: LatLng | LatLngLiteral): void;
+      setZoom(zoom: number): void;
+      getZoom(): number;
+      fitBounds(bounds: LatLngBounds | LatLngBoundsLiteral): void;
+      panTo(latLng: LatLng | LatLngLiteral): void;
+    }
+    
+    class Marker {
+      constructor(options?: MarkerOptions);
+      setMap(map: Map | null): void;
+      setPosition(latLng: LatLng | LatLngLiteral): void;
+      addListener(eventName: string, handler: Function): MapsEventListener;
+    }
+    
+    class InfoWindow {
+      constructor(options?: InfoWindowOptions);
+      open(map?: Map, anchor?: Marker): void;
+      close(): void;
+      setContent(content: string | Node): void;
+    }
+    
+    class LatLng {
+      constructor(lat: number, lng: number);
+      lat(): number;
+      lng(): number;
+    }
+    
+    class LatLngBounds {
+      constructor(sw?: LatLng, ne?: LatLng);
+      extend(point: LatLng | LatLngLiteral): LatLngBounds;
+    }
+    
+    class Geocoder {
+      geocode(request: GeocoderRequest, callback: (results: any[], status: any) => void): void;
+    }
+    
+    class Size {
+      constructor(width: number, height: number);
+    }
+    
+    class Point {
+      constructor(x: number, y: number);
+    }
+    
+    interface MapOptions {
+      center?: LatLng | LatLngLiteral;
+      zoom?: number;
+      mapTypeId?: string;
+      disableDefaultUI?: boolean;
+      zoomControl?: boolean;
+      mapTypeControl?: boolean;
+      streetViewControl?: boolean;
+      fullscreenControl?: boolean;
+      gestureHandling?: string;
+    }
+    
+    interface MarkerOptions {
+      position?: LatLng | LatLngLiteral;
+      map?: Map;
+      title?: string;
+      icon?: string | Icon;
+      label?: string | MarkerLabel;
+    }
+    
+    interface InfoWindowOptions {
+      content?: string | Node;
+      position?: LatLng | LatLngLiteral;
+    }
+    
+    interface LatLngLiteral {
+      lat: number;
+      lng: number;
+    }
+    
+    interface LatLngBoundsLiteral {
+      east: number;
+      north: number;
+      south: number;
+      west: number;
+    }
+    
+    interface GeocoderRequest {
+      address?: string;
+      location?: LatLng | LatLngLiteral;
+    }
+    
+    interface Icon {
+      url: string;
+      scaledSize?: Size;
+      anchor?: Point;
+    }
+    
+    interface MarkerLabel {
+      text: string;
+      color?: string;
+      fontSize?: string;
+    }
+    
+    interface MapsEventListener {
+      remove(): void;
+    }
+    
+    namespace places {
+      class PlacesService {
+        constructor(map: Map);
+        nearbySearch(request: any, callback: (results: any[], status: any) => void): void;
+      }
+      
+      enum PlacesServiceStatus {
+        OK = 'OK',
+        ZERO_RESULTS = 'ZERO_RESULTS'
+      }
+    }
+  }
+}
+
 /* ---------- TYPES ---------- */
 interface PropertyLocation {
   lat: number;
@@ -200,7 +327,7 @@ function PropertyMapComponent({
     let isMounted = true;
     const loader = new Loader({ apiKey: GOOGLE_KEY, libraries: ["places"] });
 
-    loader
+    (loader as any)
       .importLibrary("maps")
       .then(() => {
         if (isMounted) {
@@ -208,7 +335,7 @@ function PropertyMapComponent({
         }
         return undefined;
       })
-      .catch((err) => {
+      .catch((err: any) => {
         if (isMounted) {
           console.error("Google Maps loading error:", err);
           setError("Failed to load Google Maps");

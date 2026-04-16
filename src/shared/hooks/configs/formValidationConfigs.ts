@@ -1,98 +1,124 @@
-import { FieldConfig, ValidationRule } from '../useFormValidation'
+import { ValidationRule } from '../useFormValidation'
+
+// Define FieldConfig interface
+export interface FieldConfig<T = any> {
+  initialValue: T;
+  rules: ValidationRule;
+  validateOnChange?: boolean;
+  validateOnBlur?: boolean;
+  debounceMs?: number;
+  transform?: (value: any) => T;
+  asyncValidator?: (value: T) => Promise<string | true>;
+}
 
 // Base validation rules that can be reused across forms
 export const baseValidationRules = {
   // Text field rules
-  required: (fieldName: string): ValidationRule<string> => ({
-    required: `${fieldName} is required`,
+  required: (fieldName: string): ValidationRule => ({
+    required: true,
+    custom: (value: any) => !value ? `${fieldName} is required` : null,
   }),
 
-  minLength: (min: number, fieldName: string): ValidationRule<string> => ({
-    minLength: { 
-      value: min, 
-      message: `${fieldName} must be at least ${min} characters` 
+  minLength: (min: number, fieldName: string): ValidationRule => ({
+    minLength: min,
+    custom: (value: any) => {
+      const str = String(value || '');
+      return str.length < min ? `${fieldName} must be at least ${min} characters` : null;
     },
   }),
 
-  maxLength: (max: number, fieldName: string): ValidationRule<string> => ({
-    maxLength: { 
-      value: max, 
-      message: `${fieldName} must be no more than ${max} characters` 
+  maxLength: (max: number, fieldName: string): ValidationRule => ({
+    maxLength: max,
+    custom: (value: any) => {
+      const str = String(value || '');
+      return str.length > max ? `${fieldName} must be no more than ${max} characters` : null;
     },
   }),
 
   // Name validation
-  namePattern: (fieldName: string): ValidationRule<string> => ({
-    pattern: {
-      value: /^[a-zA-Z\s]+$/,
-      message: `${fieldName} can only contain letters and spaces`,
+  namePattern: (fieldName: string): ValidationRule => ({
+    pattern: /^[a-zA-Z\s]+$/,
+    custom: (value: any) => {
+      const str = String(value || '');
+      return !/^[a-zA-Z\s]+$/.test(str) ? `${fieldName} can only contain letters and spaces` : null;
     },
   }),
 
   // Email validation
-  email: (): ValidationRule<string> => ({
-    email: 'Please enter a valid email address',
+  email: (): ValidationRule => ({
+    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    custom: (value: any) => {
+      const str = String(value || '');
+      return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str) ? 'Please enter a valid email address' : null;
+    },
   }),
 
   // Phone validation (Kenyan format)
-  kenyanPhone: (): ValidationRule<string> => ({
-    pattern: {
-      value: /^(\+254|0)[17]\d{8}$/,
-      message: 'Please enter a valid Kenyan phone number',
+  kenyanPhone: (): ValidationRule => ({
+    pattern: /^(\+254|0)[17]\d{8}$/,
+    custom: (value: any) => {
+      const str = String(value || '');
+      return !/^(\+254|0)[17]\d{8}$/.test(str) ? 'Please enter a valid Kenyan phone number' : null;
     },
   }),
 
   // Number validation
-  numberRange: (min: number, max: number, fieldName: string): ValidationRule<number> => ({
-    min: { value: min, message: `${fieldName} must be at least ${min}` },
-    max: { value: max, message: `${fieldName} must be no more than ${max}` },
+  numberRange: (min: number, max: number, fieldName: string): ValidationRule => ({
+    custom: (value: any) => {
+      const num = Number(value);
+      if (isNaN(num)) return `${fieldName} must be a number`;
+      if (num < min) return `${fieldName} must be at least ${min}`;
+      if (num > max) return `${fieldName} must be no more than ${max}`;
+      return null;
+    },
   }),
 
   // Price validation
-  priceValidation: (): ValidationRule<string> => ({
-    custom: (value) => {
+  priceValidation: (): ValidationRule => ({
+    custom: (value: any) => {
       const numValue = Number(value);
       if (isNaN(numValue)) return 'Price must be a valid number';
       if (numValue < 1000) return 'Price must be at least KES 1,000';
       if (numValue > 1000000000) return 'Price must be reasonable';
-      return true;
+      return null;
     },
   }),
 
   // Password complexity
-  passwordComplexity: (): ValidationRule<string> => ({
-    custom: (password) => {
-      const hasUpperCase = /[A-Z]/.test(password);
-      const hasLowerCase = /[a-z]/.test(password);
-      const hasNumbers = /\d/.test(password);
-      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  passwordComplexity: (): ValidationRule => ({
+    custom: (password: any) => {
+      const str = String(password || '');
+      const hasUpperCase = /[A-Z]/.test(str);
+      const hasLowerCase = /[a-z]/.test(str);
+      const hasNumbers = /\d/.test(str);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(str);
       
       if (!hasUpperCase) return 'Password must contain at least one uppercase letter';
       if (!hasLowerCase) return 'Password must contain at least one lowercase letter';
       if (!hasNumbers) return 'Password must contain at least one number';
       if (!hasSpecialChar) return 'Password must contain at least one special character';
       
-      return true;
+      return null;
     },
   }),
 
   // Password confirmation
-  passwordConfirmation: (): ValidationRule<string> => ({
-    custom: (confirmPassword, formData) => {
-      return confirmPassword === formData?.password || 'Passwords do not match';
+  passwordConfirmation: (): ValidationRule => ({
+    custom: (confirmPassword: any, formData: any) => {
+      return confirmPassword === formData?.password ? null : 'Passwords do not match';
     },
   }),
 
   // Terms agreement
-  termsAgreement: (): ValidationRule<boolean> => ({
-    custom: (agreed) => agreed || 'You must agree to the terms and conditions',
+  termsAgreement: (): ValidationRule => ({
+    custom: (agreed: any) => agreed ? null : 'You must agree to the terms and conditions',
   }),
 
   // Property type validation
-  propertyType: (): ValidationRule<string> => ({
-    custom: (value) => {
+  propertyType: (): ValidationRule => ({
+    custom: (value: any) => {
       const validTypes = ['apartment', 'house', 'condo', 'townhouse', 'land', 'commercial'];
-      return validTypes.includes(value) || 'Please select a valid property type';
+      return validTypes.includes(value) ? null : 'Please select a valid property type';
     },
   }),
 };

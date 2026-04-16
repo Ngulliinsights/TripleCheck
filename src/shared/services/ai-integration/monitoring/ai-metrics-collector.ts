@@ -803,3 +803,5 @@ export class AIMetricsCollector {
 
 // Export singleton instance
 export const aiMetricsCollector = AIMetricsCollector.getInstance();
+
+export const aiMetricsCollector = AIMetricsCollector.getInstance();

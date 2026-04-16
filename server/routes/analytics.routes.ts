@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { analyticsController } from '../controllers/analytics.controller';
+import { analyticsController } from '../analytics/analytics.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 import { createDeduplicationMiddleware } from '../middleware/deduplication.middleware';
 import { createRateLimitingMiddleware } from '../middleware/rate-limiting.middleware';
@@ -125,6 +125,19 @@ router.post('/performance',
   performanceRateLimit,
   validateRequest({}),
   analyticsController.recordPerformanceMetric
+);
+
+/**
+ * @route POST /api/analytics/vitals
+ * @desc Record web vitals metrics (Core Web Vitals)
+ * @access Private
+ * @rateLimit 200 requests per minute per user
+ */
+router.post('/vitals',
+  requireAuth,
+  performanceRateLimit,
+  validateRequest({}),
+  analyticsController.recordVitals
 );
 
 // Metrics retrieval routes (authentication required)

@@ -5,7 +5,7 @@
  * Provides personalized recommendations, smart matching, and user preference learning.
  */
 
-import { enhancedHuggingFaceClient } from '../huggingface-api-client'
+import { huggingFaceClient } from '../huggingface-api-client'
 import { logger } from '../../../../server/infrastructure/monitoring/logger'
 import { BaseError } from '../../error-handling/errors/base-error'
 import { Property } from '../../types/property'
@@ -522,7 +522,7 @@ export class RecommendationIntegrationService {
     const enhanced = await Promise.all(
       items.map(async item => {
         try {
-          const sentiment = await enhancedHuggingFaceClient.analyzePropertyReviewSentiment(
+          const sentiment = await huggingFaceClient.analyzePropertyReviewSentiment(
             this.describeProperty(item.property),
           )
 
@@ -582,7 +582,7 @@ export class RecommendationIntegrationService {
     _profile: UserPreferenceProfile,
   ): Promise<{ confidence: number; data: PropertyRecommendation['aiInsights'] }> {
     try {
-      const summary = await enhancedHuggingFaceClient.summarizePropertyDocument(
+      const summary = await huggingFaceClient.summarizePropertyDocument(
         this.describeProperty(property),
       )
       return {
@@ -646,7 +646,7 @@ export class RecommendationIntegrationService {
     try {
       const context  = `Property A: ${targetDesc}\n\nProperty B: ${candidateDesc}`
       const question = 'How similar are these two properties on a scale of 0 to 100?'
-      const result   = await enhancedHuggingFaceClient.extractPropertyInfo(context, question)
+      const result   = await huggingFaceClient.extractPropertyInfo(context, question)
       const match    = result.answer.match(/\d+/)
       const aiScore  = match ? Math.min(100, parseInt(match[0], 10)) / 100 : 0.5
 

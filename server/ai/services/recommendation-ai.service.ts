@@ -11,7 +11,7 @@
  */
 
 import { logger as loggingService } from '..\..\infrastructure\monitoring\logger';
-import { enhancedHuggingFaceClient } from '../../../src/shared/services/huggingface-client';
+import { huggingFaceClient } from '../../../src/shared/services/huggingface-api-client';
 import { AIServiceError } from '../../../src/shared/services/huggingface-client';
 
 export interface UserPreferences {

@@ -4,7 +4,15 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { performanceService } from '../services/PerformanceService'
+import { performanceMonitoring } from '../services/PerformanceService'
+
+// Simple performance metric recorder
+const recordMetric = (name: string, value: number, _type?: string, metadata?: Record<string, any>) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Performance] ${name}:`, value, metadata);
+  }
+  // In production, this could send to analytics
+};
 
 // Simple client-side cache (no server imports)
 const clientCache = new Map<string, { value: unknown; expiry: number }>();
@@ -76,16 +84,17 @@ export const useCache = <T>(
       setIsLoading(true);
       
       try {
-        const freshData = await performanceService.measureAsync(
+        performanceMonitoring.mark(`cache_fetch_${key}_start`);
+        const freshData = await fetcherRef.current();
+        performanceMonitoring.mark(`cache_fetch_${key}_end`);
+        performanceMonitoring.measureTiming(
           `cache_fetch_${key}`,
-          fetcherRef.current
+          `cache_fetch_${key}_start`,
+          `cache_fetch_${key}_end`
         );
         
         // Cache the fresh data
-        cacheService.set(key, freshData, {
-          ttl: options.ttl,
-          tags: options.tags
-        });
+        await cacheService.set(key, freshData, options.ttl);
         
         setData(freshData);
         setError(null);
@@ -161,7 +170,7 @@ export const useLazyLoading = (
           setIsVisible(true);
           setHasTriggered(true);
           
-          performanceService.recordMetric(
+          recordMetric(
             'lazy_load_triggered',
             Date.now(),
             'custom',
@@ -250,7 +259,7 @@ export const usePerformanceMonitoring = (componentName: string) => {
     mountTime.current = Date.now();
     const mountDuration = mountTime.current - renderStartTime.current;
     
-    performanceService.recordMetric(
+    recordMetric(
       `component_mount_${componentName}`,
       mountDuration,
       'custom',
@@ -261,7 +270,7 @@ export const usePerformanceMonitoring = (componentName: string) => {
       // Record unmount time
       if (mountTime.current) {
         const unmountDuration = Date.now() - mountTime.current;
-        performanceService.recordMetric(
+        recordMetric(
           `component_lifetime_${componentName}`,
           unmountDuration,
           'custom',
@@ -276,7 +285,7 @@ export const usePerformanceMonitoring = (componentName: string) => {
   }, []);
 
   const recordCustomMetric = useCallback((name: string, value: number, tags?: Record<string, string>) => {
-    performanceService.recordMetric(
+    recordMetric(
       `${componentName}_${name}`,
       value,
       'custom',
@@ -305,7 +314,7 @@ export const useExpensiveMemo = <T>(
     if (cacheKey) {
       const cached = cacheService.get<T>(cacheKey);
       if (cached) {
-        performanceService.recordMetric(
+        recordMetric(
           'expensive_memo_cache_hit',
           Date.now() - startTime,
           'custom',
@@ -327,7 +336,7 @@ export const useExpensiveMemo = <T>(
       });
     }
 
-    performanceService.recordMetric(
+    recordMetric(
       'expensive_memo_calculation',
       duration,
       'custom',
@@ -408,7 +417,7 @@ export const usePreloader = () => {
           return newSet;
         });
         
-        performanceService.recordMetric(
+        recordMetric(
           'image_preload_success',
           Date.now(),
           'custom',
@@ -425,7 +434,7 @@ export const usePreloader = () => {
           return newSet;
         });
         
-        performanceService.recordMetric(
+        recordMetric(
           'image_preload_error',
           Date.now(),
           'custom',
@@ -457,7 +466,7 @@ export const usePreloader = () => {
           return newSet;
         });
         
-        performanceService.recordMetric(
+        recordMetric(
           'script_preload_success',
           Date.now(),
           'custom',
@@ -474,7 +483,7 @@ export const usePreloader = () => {
           return newSet;
         });
         
-        performanceService.recordMetric(
+        recordMetric(
           'script_preload_error',
           Date.now(),
           'custom',

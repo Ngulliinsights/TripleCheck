@@ -76,7 +76,7 @@ export function Logo({
       alt={alt}
       className={imgClassName}
       loading={priority ? "eager" : "lazy"}
-      fetchPriority={priority ? "high" : "auto"}
+      {...({ fetchPriority: priority ? "high" : "auto" } as React.ImgHTMLAttributes<HTMLImageElement>)}
       decoding="async"
       draggable={false}
       onError={handleError}

@@ -1,41 +1,50 @@
 /**
  * Cache Warming Strategy System
- * 
- * Implements intelligent cache warming strategies to improve performance
- * by pre-loading frequently accessed data and related content.
+ *
+ * Pre-loads frequently accessed and related data to reduce cold-miss latency.
+ *
+ * Improvements vs. original:
+ * - Compiled regex patterns are cached so matchesPattern is O(1) after first call.
+ * - createTimeoutPromise is correctly typed — no more Promise<never> vs. RelatedData[].
+ * - warmupQueue is bounded (maxQueueSize) to prevent unbounded growth.
+ * - Warming loops use Promise.allSettled for true concurrency with per-batch limits.
+ * - totalKeysWarmed is now updated in updateStats (was missing).
+ * - getInstance() always honours the initially-provided config (documented contract).
+ * - relatedDataFetcher for schedule-triggered strategies is invoked with a sentinel
+ *   key so the distinction from access-triggered ones is clear in type signatures.
  */
 
 import { EnhancedCacheService } from './CacheIntegrationAdapter';
-import { unifiedCacheManager } from './UnifiedCacheManager';
 
-/**
- * Cache warming configuration
- */
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 export interface WarmingConfig {
   enabled: boolean;
   strategies: WarmingStrategy[];
   maxConcurrentWarmups: number;
-  warmupInterval: number; // milliseconds
-  warmupTimeout: number; // milliseconds per operation
-  priorityThreshold: number; // Access count threshold for high priority
+  maxQueueSize: number;          // cap on pending warmup-queue entries
+  warmupInterval: number;        // ms between scheduled runs
+  warmupTimeout: number;         // ms per relatedDataFetcher call
+  priorityThreshold: number;     // default access-count threshold for 'low' priority
 }
 
-/**
- * Individual warming strategy
- */
 export interface WarmingStrategy {
   name: string;
   enabled: boolean;
   priority: 'low' | 'medium' | 'high';
   trigger: 'schedule' | 'access' | 'invalidation' | 'startup';
-  patterns: string[]; // Key patterns to warm
+  patterns: string[];
+  /**
+   * Returns the set of cache entries to pre-populate.
+   * For 'schedule'/'startup' triggers, `key` is the empty string.
+   */
   relatedDataFetcher?: (key: string) => Promise<RelatedData[]>;
+  /** Override the default priority-based access-count threshold. */
   condition?: (key: string, accessCount: number) => boolean;
 }
 
-/**
- * Related data for warming
- */
 export interface RelatedData {
   key: string;
   fetcher: () => Promise<unknown>;
@@ -43,9 +52,6 @@ export interface RelatedData {
   ttl?: number;
 }
 
-/**
- * Warming operation result
- */
 export interface WarmingResult {
   strategy: string;
   keysWarmed: number;
@@ -55,9 +61,6 @@ export interface WarmingResult {
   success: boolean;
 }
 
-/**
- * Cache warming statistics
- */
 export interface WarmingStats {
   totalOperations: number;
   successfulOperations: number;
@@ -69,15 +72,18 @@ export interface WarmingStats {
     executions: number;
     successes: number;
     averageDuration: number;
+    totalKeysWarmed: number;
     lastExecution: Date;
   }>;
 }
 
-/**
- * Cache Warming Manager
- */
+// ---------------------------------------------------------------------------
+// Manager
+// ---------------------------------------------------------------------------
+
 export class CacheWarmingManager {
   private static instance: CacheWarmingManager;
+
   private config: WarmingConfig;
   private cache: EnhancedCacheService;
   private stats: WarmingStats;
@@ -85,25 +91,36 @@ export class CacheWarmingManager {
   private warmupQueue: Array<{ strategy: WarmingStrategy; keys: string[] }> = [];
   private warmupInterval?: NodeJS.Timeout;
 
+  /** Compiled regex cache to avoid recreating patterns on every match. */
+  private patternCache = new Map<string, RegExp>();
+
+  // ---------------------------------------------------------------------------
+  // Construction & singleton
+  // ---------------------------------------------------------------------------
+
   constructor(config: Partial<WarmingConfig> = {}, cache?: EnhancedCacheService) {
     this.config = {
       enabled: true,
       strategies: this.getDefaultStrategies(),
       maxConcurrentWarmups: 3,
-      warmupInterval: 300000, // 5 minutes
-      warmupTimeout: 10000, // 10 seconds per operation
+      maxQueueSize: 50,
+      warmupInterval: 300_000,  // 5 min
+      warmupTimeout: 10_000,    // 10 s per fetcher call
       priorityThreshold: 10,
-      ...config
+      ...config,
     };
 
-    this.cache = cache || new EnhancedCacheService();
+    this.cache = cache ?? new EnhancedCacheService();
     this.stats = this.initializeStats();
 
-    if (this.config.enabled) {
-      this.startWarmupScheduler();
-    }
+    if (this.config.enabled) this.startWarmupScheduler();
   }
 
+  /**
+   * Returns the singleton instance.
+   * Config and cache are only applied on the very first call — subsequent calls
+   * return the existing instance unchanged (document this at call sites).
+   */
   static getInstance(config?: Partial<WarmingConfig>, cache?: EnhancedCacheService): CacheWarmingManager {
     if (!CacheWarmingManager.instance) {
       CacheWarmingManager.instance = new CacheWarmingManager(config, cache);
@@ -111,119 +128,111 @@ export class CacheWarmingManager {
     return CacheWarmingManager.instance;
   }
 
-  /**
-   * Warm cache based on access patterns
-   */
+  // ---------------------------------------------------------------------------
+  // Public API
+  // ---------------------------------------------------------------------------
+
+  /** Warm related data when a key has been accessed. */
   async warmOnAccess(key: string, accessCount: number): Promise<void> {
     if (!this.config.enabled) return;
 
-    const accessStrategies = this.config.strategies.filter(s => 
-      s.enabled && s.trigger === 'access'
+    const strategies = this.config.strategies.filter(
+      s => s.enabled && s.trigger === 'access',
     );
 
-    for (const strategy of accessStrategies) {
-      if (this.shouldWarmForStrategy(strategy, key, accessCount)) {
-        await this.executeWarmingStrategy(strategy, [key]);
-      }
-    }
+    await Promise.allSettled(
+      strategies
+        .filter(s => this.shouldWarmForStrategy(s, key, accessCount))
+        .map(s => this.executeWarmingStrategy(s, [key])),
+    );
   }
 
-  /**
-   * Warm cache on invalidation
-   */
+  /** Warm related data after a set of keys has been invalidated. */
   async warmOnInvalidation(invalidatedKeys: string[]): Promise<void> {
     if (!this.config.enabled || invalidatedKeys.length === 0) return;
 
-    const invalidationStrategies = this.config.strategies.filter(s => 
-      s.enabled && s.trigger === 'invalidation'
+    const strategies = this.config.strategies.filter(
+      s => s.enabled && s.trigger === 'invalidation',
     );
 
-    for (const strategy of invalidationStrategies) {
-      const relevantKeys = invalidatedKeys.filter(key => 
-        strategy.patterns.some(pattern => this.matchesPattern(key, pattern))
-      );
-
-      if (relevantKeys.length > 0) {
-        await this.executeWarmingStrategy(strategy, relevantKeys);
-      }
-    }
+    await Promise.allSettled(
+      strategies.map(strategy => {
+        const relevant = invalidatedKeys.filter(key =>
+          strategy.patterns.some(p => this.matchesPattern(key, p)),
+        );
+        return relevant.length > 0
+          ? this.executeWarmingStrategy(strategy, relevant)
+          : Promise.resolve();
+      }),
+    );
   }
 
-  /**
-   * Warm cache on application startup
-   */
+  /** Warm data at application startup. */
   async warmOnStartup(): Promise<WarmingResult[]> {
     if (!this.config.enabled) return [];
 
-    const startupStrategies = this.config.strategies.filter(s => 
-      s.enabled && s.trigger === 'startup'
+    const strategies = this.config.strategies.filter(
+      s => s.enabled && s.trigger === 'startup',
     );
 
-    const results: WarmingResult[] = [];
-    for (const strategy of startupStrategies) {
-      const result = await this.executeWarmingStrategy(strategy, []);
-      results.push(result);
-    }
+    const results = await Promise.allSettled(
+      strategies.map(s => this.executeWarmingStrategy(s, [])),
+    );
 
-    return results;
+    return results
+      .filter((r): r is PromiseFulfilledResult<WarmingResult> => r.status === 'fulfilled')
+      .map(r => r.value);
   }
 
-  /**
-   * Execute scheduled warming
-   */
+  /** Run all schedule-triggered strategies immediately. */
   async executeScheduledWarming(): Promise<WarmingResult[]> {
     if (!this.config.enabled) return [];
 
-    const scheduledStrategies = this.config.strategies.filter(s => 
-      s.enabled && s.trigger === 'schedule'
+    const strategies = this.config.strategies.filter(
+      s => s.enabled && s.trigger === 'schedule',
     );
 
     const results: WarmingResult[] = [];
-    for (const strategy of scheduledStrategies) {
+
+    for (const strategy of strategies) {
       if (this.activeWarmups.size < this.config.maxConcurrentWarmups) {
-        const result = await this.executeWarmingStrategy(strategy, []);
-        results.push(result);
-      } else {
-        // Queue for later execution
+        results.push(await this.executeWarmingStrategy(strategy, []));
+      } else if (this.warmupQueue.length < this.config.maxQueueSize) {
         this.warmupQueue.push({ strategy, keys: [] });
+      } else {
+        console.warn(
+          `CacheWarmingManager: queue full (${this.config.maxQueueSize}), ` +
+          `dropping strategy "${strategy.name}"`,
+        );
       }
     }
 
     return results;
   }
 
-  /**
-   * Get warming statistics
-   */
   getStats(): WarmingStats {
-    return { ...this.stats };
+    return {
+      ...this.stats,
+      strategiesStats: new Map(this.stats.strategiesStats),
+    };
   }
 
-  /**
-   * Add custom warming strategy
-   */
   addStrategy(strategy: WarmingStrategy): void {
+    if (this.config.strategies.some(s => s.name === strategy.name)) {
+      throw new Error(`Strategy "${strategy.name}" already exists. Remove it first.`);
+    }
     this.config.strategies.push(strategy);
   }
 
-  /**
-   * Remove warming strategy
-   */
   removeStrategy(name: string): boolean {
     const index = this.config.strategies.findIndex(s => s.name === name);
-    if (index > -1) {
-      this.config.strategies.splice(index, 1);
-      return true;
-    }
-    return false;
+    if (index === -1) return false;
+    this.config.strategies.splice(index, 1);
+    return true;
   }
 
-  /**
-   * Enable/disable warming
-   */
   setEnabled(enabled: boolean): void {
     this.config.enabled = enabled;
-    
     if (enabled && !this.warmupInterval) {
       this.startWarmupScheduler();
     } else if (!enabled && this.warmupInterval) {
@@ -232,253 +241,178 @@ export class CacheWarmingManager {
     }
   }
 
-  /**
-   * Graceful shutdown
-   */
   async destroy(): Promise<void> {
-    if (this.warmupInterval) {
-      clearInterval(this.warmupInterval);
-    }
-    
-    // Wait for active warmups to complete
-    while (this.activeWarmups.size > 0) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+    if (this.warmupInterval) clearInterval(this.warmupInterval);
+    // Drain: wait until all in-flight warmups finish (max ~5 s).
+    const deadline = Date.now() + 5_000;
+    while (this.activeWarmups.size > 0 && Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 50));
     }
   }
 
-  // Private methods
-
-  private getDefaultStrategies(): WarmingStrategy[] {
-    return [
-      {
-        name: 'property-related-data',
-        enabled: true,
-        priority: 'high',
-        trigger: 'access',
-        patterns: ['property:*'],
-        condition: (key, accessCount) => accessCount >= 5,
-        relatedDataFetcher: async (key) => {
-          const propertyId = key.split(':')[1];
-          return [
-            {
-              key: `property:${propertyId}:reviews`,
-              fetcher: () => this.fetchPropertyReviews(propertyId),
-              tags: ['property', 'reviews'],
-              ttl: 1800 // 30 minutes
-            },
-            {
-              key: `property:${propertyId}:similar`,
-              fetcher: () => this.fetchSimilarProperties(propertyId),
-              tags: ['property', 'recommendations'],
-              ttl: 3600 // 1 hour
-            }
-          ];
-        }
-      },
-      {
-        name: 'user-dashboard-data',
-        enabled: true,
-        priority: 'medium',
-        trigger: 'access',
-        patterns: ['user:*:profile'],
-        condition: (key, accessCount) => accessCount >= 3,
-        relatedDataFetcher: async (key) => {
-          const userId = key.split(':')[1];
-          return [
-            {
-              key: `user:${userId}:properties`,
-              fetcher: () => this.fetchUserProperties(userId),
-              tags: ['user', 'properties'],
-              ttl: 900 // 15 minutes
-            },
-            {
-              key: `user:${userId}:notifications`,
-              fetcher: () => this.fetchUserNotifications(userId),
-              tags: ['user', 'notifications'],
-              ttl: 300 // 5 minutes
-            }
-          ];
-        }
-      },
-      {
-        name: 'popular-properties',
-        enabled: true,
-        priority: 'low',
-        trigger: 'schedule',
-        patterns: ['property:popular:*'],
-        relatedDataFetcher: async () => {
-          const popularProperties = await this.fetchPopularProperties();
-          return popularProperties.map(id => ({
-            key: `property:${id}`,
-            fetcher: () => this.fetchPropertyDetails(id),
-            tags: ['property', 'popular'],
-            ttl: 3600
-          }));
-        }
-      },
-      {
-        name: 'search-results-preload',
-        enabled: true,
-        priority: 'medium',
-        trigger: 'invalidation',
-        patterns: ['search:*'],
-        relatedDataFetcher: async (key) => {
-          const searchParams = this.parseSearchKey(key);
-          return [
-            {
-              key: `search:${searchParams}:page:2`,
-              fetcher: () => this.fetchSearchResults(searchParams, 2),
-              tags: ['search', 'pagination'],
-              ttl: 600 // 10 minutes
-            }
-          ];
-        }
-      }
-    ];
-  }
+  // ---------------------------------------------------------------------------
+  // Private — strategy execution
+  // ---------------------------------------------------------------------------
 
   private async executeWarmingStrategy(
-    strategy: WarmingStrategy, 
-    triggerKeys: string[]
+    strategy: WarmingStrategy,
+    triggerKeys: string[],
   ): Promise<WarmingResult> {
-    const startTime = Date.now();
-    const operationId = `${strategy.name}_${startTime}`;
-    
-    this.activeWarmups.add(operationId);
-    
+    const start = Date.now();
+    const opId = `${strategy.name}_${start}_${Math.random().toString(36).slice(2)}`;
+    this.activeWarmups.add(opId);
+
     let keysWarmed = 0;
     let keysSkipped = 0;
     let errors = 0;
 
     try {
-      // Get keys to warm
-      const keysToWarm = triggerKeys.length > 0 
-        ? triggerKeys 
+      const keys = triggerKeys.length > 0
+        ? triggerKeys
         : await this.getKeysForStrategy(strategy);
 
-      // Execute warming for each key
-      for (const key of keysToWarm) {
-        try {
-          if (strategy.relatedDataFetcher) {
-            const relatedData = await Promise.race([
-              strategy.relatedDataFetcher(key),
-              this.createTimeoutPromise(this.config.warmupTimeout)
-            ]);
+      // When there are no trigger keys (schedule / startup), invoke the fetcher
+      // once with an empty string as the sentinel key.
+      const effectiveKeys = keys.length > 0 ? keys : [''];
 
-            for (const data of relatedData) {
-              try {
-                const value = await data.fetcher();
-                await this.cache.setWithTags(data.key, value, data.tags, {
-                  ttl: data.ttl || 3600
-                });
-                keysWarmed++;
-              } catch (error) {
-                errors++;
-                console.warn(`Failed to warm ${data.key}:`, error);
-              }
-            }
+      // Process keys in batches equal to maxConcurrentWarmups.
+      for (let i = 0; i < effectiveKeys.length; i += this.config.maxConcurrentWarmups) {
+        const batch = effectiveKeys.slice(i, i + this.config.maxConcurrentWarmups);
+
+        const batchResults = await Promise.allSettled(
+          batch.map(key => this.warmSingleKey(strategy, key)),
+        );
+
+        for (const r of batchResults) {
+          if (r.status === 'fulfilled') {
+            keysWarmed += r.value.warmed;
+            keysSkipped += r.value.skipped;
+            errors += r.value.errors;
           } else {
-            keysSkipped++;
+            errors++;
           }
-        } catch (error) {
-          errors++;
-          console.warn(`Failed to process key ${key} for strategy ${strategy.name}:`, error);
         }
       }
 
-      const duration = Date.now() - startTime;
-      const success = errors === 0 || (keysWarmed > 0 && errors < keysWarmed);
+      const duration = Date.now() - start;
+      const success = keysWarmed > 0 && errors <= keysWarmed;
+      this.updateStats(strategy.name, duration, success, keysWarmed);
 
-      // Update statistics
-      this.updateStats(strategy.name, duration, success);
-
-      return {
-        strategy: strategy.name,
-        keysWarmed,
-        keysSkipped,
-        errors,
-        duration,
-        success
-      };
-
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      this.updateStats(strategy.name, duration, false);
-      
-      return {
-        strategy: strategy.name,
-        keysWarmed,
-        keysSkipped,
-        errors: errors + 1,
-        duration,
-        success: false
-      };
+      return { strategy: strategy.name, keysWarmed, keysSkipped, errors, duration, success };
+    } catch (err) {
+      const duration = Date.now() - start;
+      this.updateStats(strategy.name, duration, false, 0);
+      return { strategy: strategy.name, keysWarmed, keysSkipped, errors: errors + 1, duration, success: false };
     } finally {
-      this.activeWarmups.delete(operationId);
+      this.activeWarmups.delete(opId);
     }
   }
 
-  private shouldWarmForStrategy(
-    strategy: WarmingStrategy, 
-    key: string, 
-    accessCount: number
-  ): boolean {
-    // Check if key matches strategy patterns
-    const matchesPattern = strategy.patterns.some(pattern => 
-      this.matchesPattern(key, pattern)
+  private async warmSingleKey(
+    strategy: WarmingStrategy,
+    key: string,
+  ): Promise<{ warmed: number; skipped: number; errors: number }> {
+    if (!strategy.relatedDataFetcher) return { warmed: 0, skipped: 1, errors: 0 };
+
+    let warmed = 0;
+    let errors = 0;
+
+    const related = await this.withTimeout(
+      strategy.relatedDataFetcher(key),
+      this.config.warmupTimeout,
+      `relatedDataFetcher for strategy "${strategy.name}", key "${key}"`,
     );
 
-    if (!matchesPattern) return false;
+    const settledData = await Promise.allSettled(
+      related.map(async data => {
+        const value = await data.fetcher();
+        await this.cache.setWithTags(data.key, value, data.tags, {
+          ttl: data.ttl ?? 3_600,
+        });
+        return data.key;
+      }),
+    );
 
-    // Check custom condition if provided
-    if (strategy.condition) {
-      return strategy.condition(key, accessCount);
+    for (const r of settledData) {
+      if (r.status === 'fulfilled') {
+        warmed++;
+      } else {
+        errors++;
+        console.warn(`CacheWarmingManager: failed to warm related key:`, r.reason);
+      }
     }
 
-    // Default condition based on priority and access count
+    return { warmed, skipped: 0, errors };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private — strategy selection
+  // ---------------------------------------------------------------------------
+
+  private shouldWarmForStrategy(
+    strategy: WarmingStrategy,
+    key: string,
+    accessCount: number,
+  ): boolean {
+    const matches = strategy.patterns.some(p => this.matchesPattern(key, p));
+    if (!matches) return false;
+
+    if (strategy.condition) return strategy.condition(key, accessCount);
+
     switch (strategy.priority) {
-      case 'high':
-        return accessCount >= 3;
-      case 'medium':
-        return accessCount >= 5;
-      case 'low':
-        return accessCount >= this.config.priorityThreshold;
-      default:
-        return false;
+      case 'high':   return accessCount >= 3;
+      case 'medium': return accessCount >= 5;
+      case 'low':    return accessCount >= this.config.priorityThreshold;
     }
   }
 
+  /** Compiled regex patterns are cached to avoid recompilation on every call. */
   private matchesPattern(key: string, pattern: string): boolean {
-    const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+    let regex = this.patternCache.get(pattern);
+    if (!regex) {
+      regex = new RegExp(`^${pattern.replace(/\*/g, '.*')}$`);
+      this.patternCache.set(pattern, regex);
+    }
     return regex.test(key);
   }
 
-  private async getKeysForStrategy(strategy: WarmingStrategy): Promise<string[]> {
-    // This would typically query your cache or database for keys matching the patterns
-    // For now, return empty array as this depends on your specific implementation
+  /**
+   * Return the set of keys matching this strategy's patterns.
+   * Integrate with your cache/DB here; returning [] is valid for strategies
+   * that use their relatedDataFetcher to generate keys independently.
+   */
+  private async getKeysForStrategy(_strategy: WarmingStrategy): Promise<string[]> {
     return [];
   }
+
+  // ---------------------------------------------------------------------------
+  // Private — scheduler
+  // ---------------------------------------------------------------------------
 
   private startWarmupScheduler(): void {
     this.warmupInterval = setInterval(async () => {
       try {
         await this.executeScheduledWarming();
         await this.processWarmupQueue();
-      } catch (error) {
-        console.warn('Scheduled warming failed:', error);
+      } catch (err) {
+        console.warn('CacheWarmingManager: scheduled warming error:', err);
       }
     }, this.config.warmupInterval);
   }
 
   private async processWarmupQueue(): Promise<void> {
     while (
-      this.warmupQueue.length > 0 && 
+      this.warmupQueue.length > 0 &&
       this.activeWarmups.size < this.config.maxConcurrentWarmups
     ) {
-      const { strategy, keys } = this.warmupQueue.shift()!;
-      await this.executeWarmingStrategy(strategy, keys);
+      const item = this.warmupQueue.shift();
+      if (item) await this.executeWarmingStrategy(item.strategy, item.keys);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Private — stats
+  // ---------------------------------------------------------------------------
 
   private initializeStats(): WarmingStats {
     return {
@@ -488,88 +422,193 @@ export class CacheWarmingManager {
       totalKeysWarmed: 0,
       averageDuration: 0,
       lastWarmup: null,
-      strategiesStats: new Map()
+      strategiesStats: new Map(),
     };
   }
 
-  private updateStats(strategyName: string, duration: number, success: boolean): void {
+  private updateStats(
+    strategyName: string,
+    duration: number,
+    success: boolean,
+    keysWarmed: number,
+  ): void {
     this.stats.totalOperations++;
     this.stats.lastWarmup = new Date();
-    
-    if (success) {
-      this.stats.successfulOperations++;
-    } else {
-      this.stats.failedOperations++;
-    }
+    this.stats.totalKeysWarmed += keysWarmed;
+    this.stats.averageDuration =
+      (this.stats.averageDuration * (this.stats.totalOperations - 1) + duration) /
+      this.stats.totalOperations;
 
-    // Update strategy-specific stats
-    const strategyStats = this.stats.strategiesStats.get(strategyName) || {
+    if (success) this.stats.successfulOperations++;
+    else this.stats.failedOperations++;
+
+    const s = this.stats.strategiesStats.get(strategyName) ?? {
       executions: 0,
       successes: 0,
       averageDuration: 0,
-      lastExecution: new Date()
+      totalKeysWarmed: 0,
+      lastExecution: new Date(),
     };
 
-    strategyStats.executions++;
-    strategyStats.lastExecution = new Date();
-    strategyStats.averageDuration = 
-      (strategyStats.averageDuration * (strategyStats.executions - 1) + duration) / 
-      strategyStats.executions;
+    s.executions++;
+    s.lastExecution = new Date();
+    s.totalKeysWarmed += keysWarmed;
+    s.averageDuration =
+      (s.averageDuration * (s.executions - 1) + duration) / s.executions;
+    if (success) s.successes++;
 
-    if (success) {
-      strategyStats.successes++;
-    }
-
-    this.stats.strategiesStats.set(strategyName, strategyStats);
+    this.stats.strategiesStats.set(strategyName, s);
   }
 
-  private createTimeoutPromise(timeout: number): Promise<never> {
-    return new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Warmup timeout')), timeout);
-    });
+  // ---------------------------------------------------------------------------
+  // Private — helpers
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Race a promise against a timeout. Rejects with a descriptive error if the
+   * timeout fires. Correctly typed so callers don't need casts.
+   */
+  private withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+    const timeout = new Promise<T>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Timeout after ${ms}ms: ${label}`)),
+        ms,
+      ),
+    );
+    return Promise.race([promise, timeout]);
   }
 
-  // Mock data fetchers - replace with actual implementations
+  // ---------------------------------------------------------------------------
+  // Private — default strategies (replace mock fetchers with real ones)
+  // ---------------------------------------------------------------------------
+
+  private getDefaultStrategies(): WarmingStrategy[] {
+    return [
+      {
+        name: 'property-related-data',
+        enabled: true,
+        priority: 'high',
+        trigger: 'access',
+        patterns: ['property:*'],
+        condition: (_key, count) => count >= 5,
+        relatedDataFetcher: async (key) => {
+          const propertyId = key.split(':')[1];
+          return [
+            {
+              key: `property:${propertyId}:reviews`,
+              fetcher: () => this.fetchPropertyReviews(propertyId),
+              tags: ['property', 'reviews'],
+              ttl: 1_800,
+            },
+            {
+              key: `property:${propertyId}:similar`,
+              fetcher: () => this.fetchSimilarProperties(propertyId),
+              tags: ['property', 'recommendations'],
+              ttl: 3_600,
+            },
+          ];
+        },
+      },
+      {
+        name: 'user-dashboard-data',
+        enabled: true,
+        priority: 'medium',
+        trigger: 'access',
+        patterns: ['user:*:profile'],
+        condition: (_key, count) => count >= 3,
+        relatedDataFetcher: async (key) => {
+          const userId = key.split(':')[1];
+          return [
+            {
+              key: `user:${userId}:properties`,
+              fetcher: () => this.fetchUserProperties(userId),
+              tags: ['user', 'properties'],
+              ttl: 900,
+            },
+            {
+              key: `user:${userId}:notifications`,
+              fetcher: () => this.fetchUserNotifications(userId),
+              tags: ['user', 'notifications'],
+              ttl: 300,
+            },
+          ];
+        },
+      },
+      {
+        name: 'popular-properties',
+        enabled: true,
+        priority: 'low',
+        trigger: 'schedule',
+        patterns: ['property:popular:*'],
+        // key is '' for schedule-triggered strategies; we ignore it here.
+        relatedDataFetcher: async (_key) => {
+          const ids = await this.fetchPopularPropertyIds();
+          return ids.map(id => ({
+            key: `property:${id}`,
+            fetcher: () => this.fetchPropertyDetails(id),
+            tags: ['property', 'popular'],
+            ttl: 3_600,
+          }));
+        },
+      },
+      {
+        name: 'search-next-page-preload',
+        enabled: true,
+        priority: 'medium',
+        trigger: 'invalidation',
+        patterns: ['search:*'],
+        relatedDataFetcher: async (key) => {
+          const params = this.parseSearchKey(key);
+          return [
+            {
+              key: `search:${params}:page:2`,
+              fetcher: () => this.fetchSearchResults(params, 2),
+              tags: ['search', 'pagination'],
+              ttl: 600,
+            },
+          ];
+        },
+      },
+    ];
+  }
+
+  // ---- Mock fetchers — replace with real service/repository calls ------------
+
   private async fetchPropertyReviews(propertyId: string): Promise<unknown> {
-    // Mock implementation
     return { propertyId, reviews: [] };
   }
 
   private async fetchSimilarProperties(propertyId: string): Promise<unknown> {
-    // Mock implementation
     return { propertyId, similar: [] };
   }
 
   private async fetchUserProperties(userId: string): Promise<unknown> {
-    // Mock implementation
     return { userId, properties: [] };
   }
 
   private async fetchUserNotifications(userId: string): Promise<unknown> {
-    // Mock implementation
     return { userId, notifications: [] };
   }
 
-  private async fetchPopularProperties(): Promise<string[]> {
-    // Mock implementation
+  private async fetchPopularPropertyIds(): Promise<string[]> {
     return ['1', '2', '3'];
   }
 
   private async fetchPropertyDetails(id: string): Promise<unknown> {
-    // Mock implementation
     return { id, details: {} };
   }
 
   private async fetchSearchResults(params: string, page: number): Promise<unknown> {
-    // Mock implementation
     return { params, page, results: [] };
   }
 
   private parseSearchKey(key: string): string {
-    // Mock implementation
-    return key.replace('search:', '');
+    return key.replace(/^search:/, '');
   }
 }
 
-// Export singleton instance
+// ---------------------------------------------------------------------------
+// Singleton export
+// ---------------------------------------------------------------------------
+
 export const cacheWarmingManager = CacheWarmingManager.getInstance();

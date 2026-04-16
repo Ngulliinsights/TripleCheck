@@ -11,7 +11,7 @@
  */
 
 import { logger as loggingService } from '..\..\infrastructure\monitoring\logger';
-import { enhancedHuggingFaceClient } from '../../../src/shared/services/huggingface-client';
+import { huggingFaceClient } from '../../../src/shared/services/huggingface-api-client';
 import { AIServiceError } from '../../../src/shared/services/huggingface-client';
 
 export interface TransactionData {
@@ -750,7 +750,7 @@ export class FraudDetectionAI {
 
     try {
       // Use AI to detect fraud indicators in document text
-      const fraudAnalysis = await enhancedHuggingFaceClient.detectFraudIndicators(text);
+      const fraudAnalysis = await huggingFaceClient.detectFraudIndicators(text);
 
       if (fraudAnalysis.riskLevel !== 'low') {
         riskFactors.push({
@@ -855,7 +855,7 @@ export class FraudDetectionAI {
     if (documentData.extractedText) {
       try {
         // Use AI classification to detect document authenticity
-        const classification = await enhancedHuggingFaceClient.classifyLegalDocument(documentData.extractedText);
+        const classification = await huggingFaceClient.classifyLegalDocument(documentData.extractedText);
         
         if (classification.confidence < 0.5) {
           riskFactors.push({

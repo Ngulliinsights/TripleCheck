@@ -5,7 +5,7 @@
  * Provides automated document analysis, OCR, validation, and authenticity checking.
  */
 
-import { enhancedHuggingFaceClient } from '../huggingface-api-client'
+import { huggingFaceClient } from '../huggingface-api-client'
 import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
 import { LandVerificationSession, VerificationLayer } from '../../../types/land-verification'
@@ -329,13 +329,13 @@ export class DocumentProcessingIntegrationService {
   private async extractDocumentData(base64Document: string, documentType: string): Promise<any> {
     try {
       // Use AI OCR to extract text
-      const ocrResult = await enhancedHuggingFaceClient.analyzePropertyDocument(base64Document, documentType as any);
+      const ocrResult = await huggingFaceClient.analyzePropertyDocument(base64Document, documentType as any);
 
       // Extract entities from the text
       const entities = await this.extractEntities(ocrResult.text);
 
       // Classify document type
-      const classification = await enhancedHuggingFaceClient.classifyLegalDocument(ocrResult.text);
+      const classification = await huggingFaceClient.classifyLegalDocument(ocrResult.text);
 
       return {
         text: ocrResult.text,
@@ -379,7 +379,7 @@ export class DocumentProcessingIntegrationService {
       const entities = [];
       for (const question of questions) {
         try {
-          const result = await enhancedHuggingFaceClient.extractPropertyInfo(text, question);
+          const result = await huggingFaceClient.extractPropertyInfo(text, question);
           if (result.answer && result.confidence > 0.5) {
             entities.push({
               type: this.getEntityType(question),
@@ -410,7 +410,7 @@ export class DocumentProcessingIntegrationService {
 
   private async validateAuthenticity(text: string, documentType: string): Promise<AuthenticityResult> {
     try {
-      const fraudResult = await enhancedHuggingFaceClient.detectFraudIndicators(text);
+      const fraudResult = await huggingFaceClient.detectFraudIndicators(text);
 
       const isAuthentic = fraudResult.riskLevel === 'low';
       const indicators = fraudResult.indicators.map(indicator => ({

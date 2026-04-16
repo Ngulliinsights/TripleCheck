@@ -5,20 +5,23 @@
  * to seamlessly work with the new UnifiedCacheManager while maintaining existing APIs.
  */
 
-import { CacheService } from './CacheService'
 import { UnifiedCacheManager, UnifiedCacheConfig } from './UnifiedCacheManager';
+import { CacheService as BaseCacheService, CacheOptions } from './CacheService';
+
+// Re-export for backward compatibility
+export { CacheService, CacheOptions } from './CacheService';
 
 /**
  * Adapter that makes UnifiedCacheManager compatible with existing CacheService interface
  */
-export class CacheServiceAdapter implements CacheService {
+export class CacheServiceAdapter {
   private unifiedCache: UnifiedCacheManager;
 
   constructor(config?: Partial<UnifiedCacheConfig>) {
     this.unifiedCache = UnifiedCacheManager.getInstance(config);
   }
 
-  async set<T>(key: string, value: T, options: { ttl?: number } = {}): Promise<void> {
+  async set<T>(key: string, value: T, options: CacheOptions = {}): Promise<void> {
     const ttlMs = (options.ttl || 300) * 1000; // Convert seconds to milliseconds
     await this.unifiedCache.set(key, value, {
       l1Ttl: ttlMs,
@@ -35,7 +38,7 @@ export class CacheServiceAdapter implements CacheService {
     return await this.unifiedCache.delete(key);
   }
 
-  async invalidateByPattern(pattern: string): Promise<number> {
+  async deletePattern(pattern: string): Promise<number> {
     // Convert pattern to tags for more efficient invalidation
     const tag = pattern.replace(/\*/g, '');
     return await this.unifiedCache.invalidateByTags([tag]);
@@ -50,16 +53,13 @@ export class CacheServiceAdapter implements CacheService {
     await this.unifiedCache.clear();
   }
 
-  getStats(): {
-    totalKeys: number;
-    expiredKeys: number;
-    memoryUsage: number;
-  } {
+  async getStats() {
     const stats = this.unifiedCache.getStats();
     return {
       totalKeys: stats.l1.size,
       expiredKeys: 0, // Not tracked in unified cache
-      memoryUsage: stats.l1.memoryUsageMB * 1024 * 1024
+      memoryUsage: stats.l1.memoryUsageMB * 1024 * 1024,
+      backend: 'unified' as const
     };
   }
 
@@ -143,7 +143,7 @@ export class EnhancedCacheService extends CacheServiceAdapter {
  * Factory for creating cache instances based on environment
  */
 export class CacheFactory {
-  private static instances = new Map<string, CacheService>();
+  private static instances = new Map<string, CacheServiceAdapter | EnhancedCacheService | BaseCacheService>();
 
   /**
    * Get cache instance for specific use case
@@ -151,18 +151,18 @@ export class CacheFactory {
   static getInstance(
     type: 'default' | 'enhanced' | 'legacy' = 'enhanced',
     config?: Partial<UnifiedCacheConfig>
-  ): CacheService {
+  ): CacheServiceAdapter | EnhancedCacheService | BaseCacheService {
     const key = `${type}_${JSON.stringify(config || {})}`;
     
     if (!this.instances.has(key)) {
-      let instance: CacheService;
+      let instance: CacheServiceAdapter | EnhancedCacheService | BaseCacheService;
       
       switch (type) {
         case 'enhanced':
           instance = new EnhancedCacheService(config);
           break;
         case 'legacy':
-          instance = new CacheService(); // Original implementation
+          instance = new BaseCacheService(); // Base implementation from CacheService.ts
           break;
         default:
           instance = new CacheServiceAdapter(config);

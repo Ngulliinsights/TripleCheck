@@ -14,15 +14,13 @@ import type {
   ComponentLocation,
   ElementStatus,
   Priority,
-  AccessibilityInfo,
-  PerformanceMetrics,
   AuditConfiguration,
   AuditRule,
-  AuditRuleResult
-} from '../../types/audit.types'
+  AuditRuleResult,
+  RouteValidationResult,
+  APIConnectionResult
+} from './types'
 import type { EventHandler, APICall } from '../../types/event.types'
-import type { RouteValidationResult } from '../../types/route.types'
-import type { APIConnectionResult } from './UIAuditSystem'
 
 export { UIAuditSystem } from './UIAuditSystem.js'
 export { RouteAnalyzer } from './RouteAnalyzer.js'
@@ -191,7 +189,9 @@ export async function runQuickAudit(): Promise<{
     
     // Quick route validation
     const routes = await auditSystem.validateRoutes();
-    const brokenRoutes = routes.filter((r: RouteValidationResult) => r.status === 'broken' || r.status === '404');
+    const brokenRoutes = routes.filter((r: RouteValidationResult) => 
+      r.status === 'broken' || r.status === '404'
+    );
     
     // Quick API test
     const apiConnections = await auditSystem.testAPIConnections();

@@ -350,6 +350,25 @@ export class AnalyticsController {
   });
 
   /**
+   * Record web vitals metrics
+   * POST /api/analytics/vitals
+   */
+  recordVitals = asyncHandler(async (req: Request, res: Response) => {
+    const validatedData = performanceMetricSchema.parse(req.body);
+
+    // Add user agent and session info if available
+    const metricData = {
+      ...validatedData,
+      userAgent: validatedData.userAgent || req.get('User-Agent'),
+      userId: validatedData.userId || req.session?.userId,
+    };
+
+    await this.analyticsService.recordPerformanceMetric(metricData);
+
+    ResponseHelper.success(res, { message: 'Web vitals recorded successfully' });
+  });
+
+  /**
    * Get service health and statistics
    * GET /api/analytics/health
    */

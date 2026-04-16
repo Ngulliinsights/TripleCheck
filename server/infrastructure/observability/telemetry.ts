@@ -1,6 +1,16 @@
 /**
- * OpenTelemetry and Pino Observability Stack
- * Replaces custom logging, metrics, and performance monitoring
+ * Unified Logging System with OpenTelemetry and Pino
+ * 
+ * Single source of truth for all logging across the application.
+ * Replaces custom logging, Winston, and other logging implementations.
+ * 
+ * Features:
+ * - Pino for fast, structured JSON logging
+ * - OpenTelemetry integration for distributed tracing
+ * - Automatic trace/span ID injection
+ * - Prometheus metrics export
+ * - Context-aware logging
+ * - Backward compatibility adapters
  */
 
 import { NodeSDK } from '@opentelemetry/sdk-node';
@@ -198,4 +208,145 @@ export function logWithSpan(
   logger[level](logData, message);
 }
 
+// ============================================================================
+// Backward Compatibility Adapters
+// ============================================================================
+
+/**
+ * Legacy Logger Interface Adapter
+ * Provides compatibility with the old custom logger interface
+ * Supports both calling patterns:
+ * 1. logger.info(message, context, data, error) - Old format
+ * 2. logger.info(message, data) - Pino-like format
+ */
+export class LegacyLoggerAdapter {
+  error(message: string, contextOrData?: string | any, data?: any, error?: Error): void {
+    // Handle both calling patterns
+    if (typeof contextOrData === 'string') {
+      // Old format: error(message, context, data, error)
+      const logData: any = {};
+      if (contextOrData) logData.context = contextOrData;
+      if (data) logData.data = data;
+      if (error) logData.error = { message: error.message, stack: error.stack };
+      
+      logger.error(logData, message);
+    } else {
+      // Pino format: error(message, data)
+      logger.error(contextOrData || {}, message);
+    }
+  }
+
+  warn(message: string, contextOrData?: string | any, data?: any): void {
+    // Handle both calling patterns
+    if (typeof contextOrData === 'string') {
+      // Old format: warn(message, context, data)
+      const logData: any = {};
+      if (contextOrData) logData.context = contextOrData;
+      if (data) logData.data = data;
+      
+      logger.warn(logData, message);
+    } else {
+      // Pino format: warn(message, data)
+      logger.warn(contextOrData || {}, message);
+    }
+  }
+
+  info(message: string, contextOrData?: string | any, data?: any): void {
+    // Handle both calling patterns
+    if (typeof contextOrData === 'string') {
+      // Old format: info(message, context, data)
+      const logData: any = {};
+      if (contextOrData) logData.context = contextOrData;
+      if (data) logData.data = data;
+      
+      logger.info(logData, message);
+    } else {
+      // Pino format: info(message, data)
+      logger.info(contextOrData || {}, message);
+    }
+  }
+
+  debug(message: string, contextOrData?: string | any, data?: any): void {
+    // Handle both calling patterns
+    if (typeof contextOrData === 'string') {
+      // Old format: debug(message, context, data)
+      const logData: any = {};
+      if (contextOrData) logData.context = contextOrData;
+      if (data) logData.data = data;
+      
+      logger.debug(logData, message);
+    } else {
+      // Pino format: debug(message, data)
+      logger.debug(contextOrData || {}, message);
+    }
+  }
+
+  // Convenience methods
+  apiRequest(method: string, path: string, statusCode: number, duration: number, userId?: number): void {
+    logger.info({
+      context: 'API',
+      method,
+      path,
+      statusCode,
+      duration,
+      userId,
+    }, `${method} ${path} ${statusCode} in ${duration}ms`);
+  }
+
+  databaseOperation(operation: string, table: string, duration: number, recordCount?: number): void {
+    logger.debug({
+      context: 'DATABASE',
+      operation,
+      table,
+      duration,
+      recordCount,
+    }, `${operation} on ${table} completed in ${duration}ms`);
+  }
+
+  aiOperation(operation: string, duration: number, tokens?: number): void {
+    logger.info({
+      context: 'AI',
+      operation,
+      duration,
+      tokens,
+    }, `AI ${operation} completed in ${duration}ms`);
+  }
+
+  securityEvent(event: string, userId?: number, ip?: string): void {
+    logger.warn({
+      context: 'SECURITY',
+      event,
+      userId,
+      ip,
+    }, `Security event: ${event}`);
+  }
+}
+
+/**
+ * Simple Logger Interface Adapter
+ * Provides compatibility with simple logger interface (storage, etc.)
+ */
+export class SimpleLoggerAdapter {
+  info(message: string, meta?: any): void {
+    logger.info(meta || {}, message);
+  }
+
+  warn(message: string, meta?: any): void {
+    logger.warn(meta || {}, message);
+  }
+
+  error(message: string, meta?: any): void {
+    logger.error(meta || {}, message);
+  }
+
+  debug(message: string, meta?: any): void {
+    logger.debug(meta || {}, message);
+  }
+}
+
+// Export adapter instances for backward compatibility
+export const legacyLogger = new LegacyLoggerAdapter();
+export const simpleLogger = new SimpleLoggerAdapter();
+
+// Export default logger
 export default logger;

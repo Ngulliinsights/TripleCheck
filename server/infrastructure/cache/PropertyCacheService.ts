@@ -1,246 +1,288 @@
-import { CacheService } from './CacheService'
+/**
+ * PropertyCacheService
+ *
+ * Domain-specific cache layer for property data.
+ * Wraps CacheService with typed accessors, stable key generation,
+ * and correct invalidation for all property-related cache segments.
+ *
+ * Key design decisions
+ * --------------------
+ * - All keys are scoped under the "props" namespace so this service never
+ *   collides with other services sharing the same Redis instance.
+ * - get* methods follow the cache-aside pattern (getOrSet) — callers pass a
+ *   factory function and get back the value whether it came from cache or the
+ *   database. No separate getCached/setCache pairs to keep in sync.
+ * - Key generation always sorts object properties before hashing so the same
+ *   logical filter set always maps to the same cache key, regardless of
+ *   insertion order.
+ * - invalidateProperty now correctly deletes all affected segments using
+ *   the deletePattern API exposed by the base service.
+ */
+
+import { CacheService } from "./CacheService";
+
+// ---------------------------------------------------------------------------
+// Domain types
+// Replace these with your actual entity types once they are defined.
+// ---------------------------------------------------------------------------
+
+export interface Property {
+  id: string;
+  [key: string]: unknown;
+}
+
+export interface PropertyStats {
+  [key: string]: unknown;
+}
+
+export interface SimilarPropertiesParams {
+  propertyType?: string;
+  city?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  limit?: string;
+}
+
+export interface HealthCheckResult {
+  status: "healthy" | "unhealthy";
+  backend?: "redis" | "memory";
+  details?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/** Cache key prefixes — unprefixed within the "props:" namespace. */
+const SEGMENT = {
+  SIMILAR: "similar:",
+  DETAILS: "details:",
+  STATS:   "stats:",
+  OWNER:   "owner:",
+} as const;
+
+/** TTLs in seconds. */
+const TTL = {
+  SIMILAR: 5  * 60,  //  5 min — frequently changing search results
+  DETAILS: 10 * 60,  // 10 min — individual property records
+  STATS:   15 * 60,  // 15 min — aggregate statistics
+  OWNER:   5  * 60,  //  5 min — owner property lists
+} as const;
+
+const HEALTH_KEY = "_health";
+
+// ---------------------------------------------------------------------------
+// Service
+// ---------------------------------------------------------------------------
 
 export class PropertyCacheService {
-  private cache: CacheService;
-  private readonly CACHE_PREFIXES = {
-    SIMILAR_PROPERTIES: 'similar_props:',
-    PROPERTY_DETAILS: 'property:',
-    PROPERTY_STATS: 'prop_stats:',
-    OWNER_PROPERTIES: 'owner_props:',
-  } as const;
+  /**
+   * All keys are namespaced under "props:" so this service never collides
+   * with other services sharing the same Redis database.
+   */
+  private readonly cache = new CacheService({ prefix: "props" });
 
-  private readonly CACHE_TTL = {
-    SIMILAR_PROPERTIES: 5 * 60, // 5 minutes
-    PROPERTY_DETAILS: 10 * 60, // 10 minutes
-    PROPERTY_STATS: 15 * 60, // 15 minutes
-    OWNER_PROPERTIES: 5 * 60, // 5 minutes
-  } as const;
+  // -------------------------------------------------------------------------
+  // Similar properties
+  // -------------------------------------------------------------------------
 
-  constructor() {
-    try {
-      this.cache = new CacheService();
-    } catch (error) {
-      console.warn('Failed to initialize cache service:', error);
-      // Create a no-op cache service as fallback
-      this.cache = {
-        set: async () => {},
-        get: async () => null,
-        delete: async () => true,
-        deletePattern: async () => 0,
-        has: async () => false,
-        clear: async () => {},
-      } as any;
-    }
+  /**
+   * Returns similar properties from cache if available, otherwise calls
+   * `fetcher`, caches the result, and returns it.
+   */
+  getSimilarProperties(
+    params: SimilarPropertiesParams,
+    fetcher: () => Promise<Property[]>
+  ): Promise<Property[]> {
+    return this.cache.getOrSet(
+      this.similarKey(params),
+      fetcher,
+      { ttl: TTL.SIMILAR }
+    );
   }
 
-  // Cache similar properties with intelligent key generation
-  async cacheSimilarProperties(
-    params: {
-      propertyType?: string;
-      city?: string;
-      minPrice?: string;
-      maxPrice?: string;
-      limit?: string;
-    },
-    properties: any[]
-  ): Promise<void> {
-    try {
-      const cacheKey = this.generateSimilarPropertiesKey(params);
-      await this.cache.set(
-        cacheKey,
-        properties,
-        { ttl: this.CACHE_TTL.SIMILAR_PROPERTIES }
-      );
-    } catch (error) {
-      console.warn('Failed to cache similar properties:', error);
-    }
+  // -------------------------------------------------------------------------
+  // Property details
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns a single property from cache if available, otherwise calls
+   * `fetcher`, caches the result, and returns it.
+   */
+  getPropertyDetails(
+    propertyId: string,
+    fetcher: () => Promise<Property>
+  ): Promise<Property> {
+    return this.cache.getOrSet(
+      `${SEGMENT.DETAILS}${propertyId}`,
+      fetcher,
+      { ttl: TTL.DETAILS }
+    );
   }
 
-  async getCachedSimilarProperties(params: {
-    propertyType?: string;
-    city?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    limit?: string;
-  }): Promise<any[] | null> {
-    try {
-      const cacheKey = this.generateSimilarPropertiesKey(params);
-      return await this.cache.get<any[]>(cacheKey);
-    } catch (error) {
-      console.warn('Failed to get cached similar properties:', error);
-      return null;
-    }
+  // -------------------------------------------------------------------------
+  // Owner properties
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns an owner's property list from cache if available, otherwise
+   * calls `fetcher`, caches the result, and returns it.
+   */
+  getOwnerProperties(
+    ownerId: string,
+    fetcher: () => Promise<Property[]>
+  ): Promise<Property[]> {
+    return this.cache.getOrSet(
+      `${SEGMENT.OWNER}${ownerId}`,
+      fetcher,
+      { ttl: TTL.OWNER }
+    );
   }
 
-  // Cache property details
-  async cachePropertyDetails(propertyId: string, property: any): Promise<void> {
-    try {
-      const cacheKey = `${this.CACHE_PREFIXES.PROPERTY_DETAILS}${propertyId}`;
-      await this.cache.set(
-        cacheKey,
-        property,
-        { ttl: this.CACHE_TTL.PROPERTY_DETAILS }
-      );
-    } catch (error) {
-      console.warn('Failed to cache property details:', error);
-    }
+  // -------------------------------------------------------------------------
+  // Property statistics
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns property statistics from cache if available, otherwise calls
+   * `fetcher`, caches the result, and returns it.
+   */
+  getPropertyStats(
+    filters: Record<string, unknown>,
+    fetcher: () => Promise<PropertyStats>
+  ): Promise<PropertyStats> {
+    return this.cache.getOrSet(
+      this.statsKey(filters),
+      fetcher,
+      { ttl: TTL.STATS }
+    );
   }
 
-  async getCachedPropertyDetails(propertyId: string): Promise<any | null> {
-    try {
-      const cacheKey = `${this.CACHE_PREFIXES.PROPERTY_DETAILS}${propertyId}`;
-      return await this.cache.get<any>(cacheKey);
-    } catch (error) {
-      console.warn('Failed to get cached property details:', error);
-      return null;
-    }
+  // -------------------------------------------------------------------------
+  // Invalidation
+  // -------------------------------------------------------------------------
+
+  /**
+   * Invalidates all cache segments touched by a change to a single property:
+   *   - its own details entry
+   *   - all similar-property result sets (any could include this property)
+   *   - all statistics (aggregates are now stale)
+   */
+  async invalidateProperty(propertyId: string): Promise<void> {
+    await Promise.all([
+      this.cache.delete(`${SEGMENT.DETAILS}${propertyId}`),
+      this.cache.deletePattern(`${SEGMENT.SIMILAR}*`),
+      this.cache.deletePattern(`${SEGMENT.STATS}*`),
+    ]);
   }
 
-  // Cache owner properties
-  async cacheOwnerProperties(ownerId: string, properties: any[]): Promise<void> {
-    try {
-      const cacheKey = `${this.CACHE_PREFIXES.OWNER_PROPERTIES}${ownerId}`;
-      await this.cache.set(
-        cacheKey,
-        properties,
-        { ttl: this.CACHE_TTL.OWNER_PROPERTIES }
-      );
-    } catch (error) {
-      console.warn('Failed to cache owner properties:', error);
-    }
+  /**
+   * Invalidates the cached property list for a specific owner.
+   * Call this whenever a property is created, transferred, or removed.
+   */
+  invalidateOwner(ownerId: string): Promise<boolean> {
+    return this.cache.delete(`${SEGMENT.OWNER}${ownerId}`);
   }
 
-  async getCachedOwnerProperties(ownerId: string): Promise<any[] | null> {
-    try {
-      const cacheKey = `${this.CACHE_PREFIXES.OWNER_PROPERTIES}${ownerId}`;
-      return await this.cache.get<any[]>(cacheKey);
-    } catch (error) {
-      console.warn('Failed to get cached owner properties:', error);
-      return null;
-    }
+  /**
+   * Invalidates multiple properties in a single batch.
+   * Detail keys are deleted in parallel; similar/stats patterns are
+   * deduplicated — each is deleted at most once regardless of batch size.
+   */
+  async invalidateProperties(propertyIds: string[]): Promise<void> {
+    if (propertyIds.length === 0) return;
+
+    await Promise.all([
+      ...propertyIds.map((id) => this.cache.delete(`${SEGMENT.DETAILS}${id}`)),
+      // Pattern-wide — only needs to run once even for many IDs
+      this.cache.deletePattern(`${SEGMENT.SIMILAR}*`),
+      this.cache.deletePattern(`${SEGMENT.STATS}*`),
+    ]);
   }
 
-  // Cache property statistics
-  async cachePropertyStats(filters: any, stats: any): Promise<void> {
-    try {
-      const cacheKey = this.generateStatsKey(filters);
-      await this.cache.set(
-        cacheKey,
-        stats,
-        { ttl: this.CACHE_TTL.PROPERTY_STATS }
-      );
-    } catch (error) {
-      console.warn('Failed to cache property stats:', error);
-    }
+  /**
+   * Clears the entire property cache namespace. Use with care — this removes
+   * all segments for all properties.
+   */
+  clearAll(): Promise<void> {
+    return this.cache.clear();
   }
 
-  async getCachedPropertyStats(filters: any): Promise<any | null> {
-    try {
-      const cacheKey = this.generateStatsKey(filters);
-      return await this.cache.get<any>(cacheKey);
-    } catch (error) {
-      console.warn('Failed to get cached property stats:', error);
-      return null;
-    }
-  }
+  // -------------------------------------------------------------------------
+  // Health check
+  // -------------------------------------------------------------------------
 
-  // Invalidate cache when properties are updated
-  async invalidatePropertyCache(propertyId: string): Promise<void> {
-    try {
-      const patterns = [
-        `${this.CACHE_PREFIXES.PROPERTY_DETAILS}${propertyId}`,
-        `${this.CACHE_PREFIXES.SIMILAR_PROPERTIES}*`, // Invalidate all similar properties
-        `${this.CACHE_PREFIXES.PROPERTY_STATS}*`, // Invalidate all stats
-      ];
+  async healthCheck(): Promise<HealthCheckResult> {
+    const probe = { ts: Date.now() };
 
-      // Note: deletePattern not implemented in CacheService, using individual deletes
-      for (const pattern of patterns) {
-        // For now, we'll skip pattern deletion as it's not implemented
-        console.warn(`Pattern deletion not implemented: ${pattern}`);
+    try {
+      await this.cache.set(HEALTH_KEY, probe, { ttl: 10 });
+      const retrieved = await this.cache.get<typeof probe>(HEALTH_KEY);
+      await this.cache.delete(HEALTH_KEY);
+
+      if (retrieved?.ts !== probe.ts) {
+        return { status: "unhealthy", details: "Round-trip value mismatch" };
       }
-    } catch (error) {
-      console.warn('Failed to invalidate property cache:', error);
-    }
-  }
 
-  // Invalidate owner cache when properties are updated
-  async invalidateOwnerCache(ownerId: string): Promise<void> {
-    try {
-      const cacheKey = `${this.CACHE_PREFIXES.OWNER_PROPERTIES}${ownerId}`;
-      await this.cache.delete(cacheKey);
-    } catch (error) {
-      console.warn('Failed to invalidate owner cache:', error);
-    }
-  }
-
-  // Helper methods for cache key generation
-  private generateSimilarPropertiesKey(params: {
-    propertyType?: string;
-    city?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    limit?: string;
-  }): string {
-    const { propertyType = '', city = '', minPrice = '', maxPrice = '', limit = '10' } = params;
-    const keyParts = [
-      this.CACHE_PREFIXES.SIMILAR_PROPERTIES,
-      propertyType,
-      city.toLowerCase().replace(/\s+/g, '_'),
-      minPrice,
-      maxPrice,
-      limit
-    ];
-    return keyParts.join('');
-  }
-
-  private generateStatsKey(filters: any): string {
-    const filterString = JSON.stringify(filters || {});
-    const hash = this.simpleHash(filterString);
-    return `${this.CACHE_PREFIXES.PROPERTY_STATS}${hash}`;
-  }
-
-  private simpleHash(str: string): string {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash).toString(36);
-  }
-
-  // Batch operations for better performance
-  async batchInvalidate(propertyIds: string[]): Promise<void> {
-    try {
-      const invalidationPromises = propertyIds.map(id => 
-        this.invalidatePropertyCache(id)
-      );
-      await Promise.all(invalidationPromises);
-    } catch (error) {
-      console.warn('Failed to batch invalidate cache:', error);
-    }
-  }
-
-  // Health check for cache service
-  async healthCheck(): Promise<{ status: string; details?: any }> {
-    try {
-      const testKey = 'health_check_test';
-      const testValue = { timestamp: Date.now() };
-      
-      await this.cache.set(testKey, testValue, { ttl: 10 });
-      const retrieved = await this.cache.get(testKey);
-      await this.cache.delete(testKey);
-      
-      if (retrieved && (retrieved as any).timestamp === testValue.timestamp) {
-        return { status: 'healthy' };
-      } else {
-        return { status: 'unhealthy', details: 'Cache read/write test failed' };
-      }
-    } catch (error) {
-      return { 
-        status: 'unhealthy', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
+      const stats = await this.cache.getStats();
+      return { status: "healthy", backend: stats.backend };
+    } catch (err) {
+      return {
+        status: "unhealthy",
+        details: err instanceof Error ? err.message : String(err),
       };
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Key generation
+  // -------------------------------------------------------------------------
+
+  /**
+   * Produces a stable key for a similar-properties query.
+   * Parts are joined with ":" so no two distinct parameter sets can collide.
+   */
+  private similarKey(params: SimilarPropertiesParams): string {
+    const {
+      propertyType = "",
+      city         = "",
+      minPrice     = "",
+      maxPrice     = "",
+      limit        = "10",
+    } = params;
+
+    return [
+      SEGMENT.SIMILAR,
+      propertyType,
+      city.toLowerCase().replace(/\s+/g, "_"),
+      minPrice,
+      maxPrice,
+      limit,
+    ].join(":");
+  }
+
+  /**
+   * Produces a stable hash key for an arbitrary filter object.
+   *
+   * Keys are sorted before serialisation so {a:1, b:2} and {b:2, a:1}
+   * always produce the same hash — avoiding guaranteed cache misses
+   * for objects built up in different insertion orders.
+   */
+  private statsKey(filters: Record<string, unknown>): string {
+    const stable = JSON.stringify(filters, Object.keys(filters).sort());
+    return `${SEGMENT.STATS}${this.hash(stable)}`;
+  }
+
+  /**
+   * Fast, deterministic 32-bit hash encoded in base-36.
+   * Not cryptographic — only used for cache-key deduplication.
+   */
+  private hash(str: string): string {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+      h = Math.imul(31, h) + str.charCodeAt(i);
+      h |= 0; // keep 32-bit
+    }
+    return (h >>> 0).toString(36); // unsigned, base-36
   }
 }

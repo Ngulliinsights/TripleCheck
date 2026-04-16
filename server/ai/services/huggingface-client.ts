@@ -55,6 +55,19 @@ const ZeroShotClassificationSchema = z.object({
   scores: z.array(z.number()),
 });
 
+// Error class for AI service errors
+export class AIServiceError extends Error {
+  constructor(
+    message: string,
+    public readonly serviceName: string,
+    public readonly cause?: Error
+  ) {
+    super(message);
+    this.name = 'AIServiceError';
+    Object.setPrototypeOf(this, AIServiceError.prototype);
+  }
+}
+
 // Result types
 export interface DocumentAnalysisResult {
   text: string;

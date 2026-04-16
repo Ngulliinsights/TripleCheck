@@ -11,7 +11,7 @@
  */
 
 import { logger as loggingService } from '..\..\infrastructure\monitoring\logger';
-import { enhancedHuggingFaceClient } from '../../../src/shared/services/huggingface-client';
+import { huggingFaceClient } from '../../../src/shared/services/huggingface-api-client';
 import { AIServiceError } from '../../../src/shared/services/huggingface-client';
 
 export interface DocumentInput {
@@ -192,7 +192,7 @@ export class DocumentProcessingAI {
       }
 
       // Use HuggingFace OCR model for text extraction
-      const ocrResult = await enhancedHuggingFaceClient.analyzePropertyDocument(imageBase64, document.type as any);
+      const ocrResult = await huggingFaceClient.analyzePropertyDocument(imageBase64, document.type as any);
 
       // Process and enhance OCR results
       const enhancedResult = await this.enhanceOCRResults(ocrResult.text, imageBase64);
@@ -345,7 +345,7 @@ export class DocumentProcessingAI {
       }
 
       // Use AI classification
-      const classification = await enhancedHuggingFaceClient.classifyLegalDocument(documentText);
+      const classification = await huggingFaceClient.classifyLegalDocument(documentText);
 
       // Enhance classification with domain-specific logic
       const enhancedClassification = await this.enhanceDocumentClassification(
@@ -656,7 +656,7 @@ export class DocumentProcessingAI {
   private async checkFraudIndicators(text: string): Promise<any> {
     // Use AI to detect potential fraud indicators
     try {
-      const fraudAnalysis = await enhancedHuggingFaceClient.detectFraudIndicators(text);
+      const fraudAnalysis = await huggingFaceClient.detectFraudIndicators(text);
       
       return {
         check: 'Fraud Indicators',

@@ -726,4 +726,4 @@ export class AIPerformanceDashboard {
 }
 
 // Export singleton instance
-export const aiPerformanceDashboard = AIPerformanceDashboard.getInstance();
+export const aiPerformanceDashboard = AIPerformanceDashboard.getInstance();nce();

@@ -10,7 +10,7 @@
  */
 
 import { logger as loggingService } from '..\..\infrastructure\monitoring\logger';
-import { enhancedHuggingFaceClient } from '../../../src/shared/services/huggingface-client';
+import { huggingFaceClient } from '../../../src/shared/services/huggingface-api-client';
 import { AIServiceError } from '../../../src/shared/services/huggingface-client';
 
 export interface PropertyData {
@@ -376,7 +376,7 @@ export class PropertyAnalysisAI {
     
     for (const image of images.slice(0, 5)) { // Limit to 5 images for performance
       try {
-        const analysis = await enhancedHuggingFaceClient.analyzeLandImage(image);
+        const analysis = await huggingFaceClient.analyzeLandImage(image);
         results.push({
           labels: analysis.labels,
           description: analysis.description,
@@ -395,8 +395,8 @@ export class PropertyAnalysisAI {
 
   private async analyzePropertyDescription(description: string): Promise<any> {
     try {
-      const sentiment = await enhancedHuggingFaceClient.analyzePropertyReviewSentiment(description);
-      const summary = await enhancedHuggingFaceClient.summarizePropertyDocument(description);
+      const sentiment = await huggingFaceClient.analyzePropertyReviewSentiment(description);
+      const summary = await huggingFaceClient.summarizePropertyDocument(description);
       
       return {
         sentiment: sentiment.label,

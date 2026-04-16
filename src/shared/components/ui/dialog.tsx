@@ -21,6 +21,9 @@ export const Dialog = ({ children, open, onOpenChange }: {
   );
 }
 
+// Alias for compatibility
+export const Root = Dialog;
+
 export const DialogTrigger = ({ children, asChild }: { 
   children: React.ReactNode; 
   asChild?: boolean; 
@@ -32,6 +35,42 @@ export const DialogTrigger = ({ children, asChild }: {
   return <div>{children}</div>
 }
 
+export const Trigger = DialogTrigger;
+
+export const DialogPortal = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
+}
+
+export const Portal = DialogPortal;
+
+export const DialogOverlay = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className = "", ...props }, ref) => {
+  return (
+    <div 
+      ref={ref}
+      className={`fixed inset-0 bg-black bg-opacity-50 ${className}`}
+      {...props}
+    />
+  );
+});
+
+DialogOverlay.displayName = "DialogOverlay";
+export const Overlay = DialogOverlay;
+
+export const DialogClose = ({ children, asChild }: { 
+  children: React.ReactNode; 
+  asChild?: boolean; 
+}) => {
+  if (asChild) {
+    return <>{children}</>
+  }
+  return <button type="button">{children}</button>
+}
+
+export const Close = DialogClose;
+
 export const DialogContent = ({ children, className = "" }: { 
   children: React.ReactNode; 
   className?: string; 
@@ -42,6 +81,8 @@ export const DialogContent = ({ children, className = "" }: {
     </div>
   );
 }
+
+export const Content = DialogContent;
 
 export const DialogHeader = ({ children }: { children: React.ReactNode }) => {
   return <div className="mb-4">{children}</div>

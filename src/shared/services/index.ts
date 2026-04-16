@@ -25,7 +25,6 @@ import { errorHandler } from "../../../server/middleware/error"
 // Example: import { ApiResponse, ApiClient } from '@shared/services'
 
 export * from "./unified-api-client"
-export * from "./CacheService"
 export * from './audit-trail-service'
 export * from './security-monitoring-service'
 export * from './performance-monitoring-service'
@@ -37,7 +36,6 @@ export * from './performance-monitoring-service'
 // Example: import { apiClient, performanceMonitor } from '@shared/services'
 
 export { apiClient } from "./unified-api-client"
-export { cacheService as enhancedCache } from "./CacheService"
 export { auditTrailService, auditLogger } from './audit-trail-service'
 export { securityMonitoringService, securityMonitor } from './security-monitoring-service'
 export { performanceMonitoringService, performanceMonitor } from './performance-monitoring-service'

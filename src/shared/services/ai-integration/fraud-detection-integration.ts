@@ -5,7 +5,7 @@
  * Provides pattern recognition, anomaly detection, and risk assessment for properties and users.
  */
 
-import { enhancedHuggingFaceClient } from '../huggingface-api-client'
+import { huggingFaceClient } from '../huggingface-api-client'
 import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
 import { Property } from '../../types/property'
@@ -398,7 +398,7 @@ export class FraudDetectionIntegrationService {
 
   private async detectFraudPatterns(text: string, entityType: 'property' | 'user'): Promise<any[]> {
     try {
-      const fraudResult = await enhancedHuggingFaceClient.detectFraudIndicators(text);
+      const fraudResult = await huggingFaceClient.detectFraudIndicators(text);
 
       if (fraudResult.indicators.length === 0) {
         return [];

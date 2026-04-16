@@ -6,6 +6,7 @@ export {
   huggingFaceClient,
   landVerificationAI,
   HuggingFaceClient,
+  AIServiceError,
 } from './huggingface-client';
 
 export type {

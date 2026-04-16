@@ -1,10 +1,18 @@
 /**
- * Structured Logging System for TripleCheck
+ * Legacy Logger - Backward Compatibility Adapter
  * 
- * Provides consistent logging across the application with different log levels
- * and structured output for better debugging and monitoring.
+ * This file now re-exports the unified logger from telemetry.ts
+ * for backward compatibility. All new code should import from telemetry.ts directly.
+ * 
+ * @deprecated Use server/infrastructure/observability/telemetry.ts instead
  */
 
+import { legacyLogger, logger as unifiedLogger } from '../observability/telemetry';
+
+// Re-export the legacy adapter for backward compatibility
+export const logger = legacyLogger;
+
+// Re-export log levels for compatibility
 export enum LogLevel {
   ERROR = 0,
   WARN = 1,
@@ -12,218 +20,72 @@ export enum LogLevel {
   DEBUG = 3
 }
 
-interface LogEntry {
-  timestamp: string;
-  level: string;
-  message: string;
-  context?: string;
-  data?: any;
-  error?: Error;
-}
-
-// Helper type to ensure we only pass defined values to optional properties
-type LogEntryBuilder = {
-  timestamp: string;
-  level: string;
-  message: string;
-} & {
-  [K in 'context' | 'data' | 'error']?: LogEntry[K];
-};
-
+// Re-export the Logger class for type compatibility
 export class Logger {
-  private logLevel: LogLevel;
-
-  constructor() {
-    // Set log level based on environment with better type safety
-    const envLogLevel = process.env.LOG_LEVEL?.toLowerCase();
-    
-    // Use a map for cleaner log level resolution
-    const logLevelMap: Record<string, LogLevel> = {
-      error: LogLevel.ERROR,
-      warn: LogLevel.WARN,
-      info: LogLevel.INFO,
-      debug: LogLevel.DEBUG
-    };
-
-    this.logLevel = logLevelMap[envLogLevel ?? ''] ?? 
-      (process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG);
+  error(message: string, contextOrData?: string | any, data?: any, error?: Error): void {
+    legacyLogger.error(message, contextOrData, data, error);
   }
 
-  private formatLogEntry(entry: LogEntry): string {
-    const { timestamp, level, message, context, data, error } = entry;
-    
-    let logString = `[${timestamp}] ${level.toUpperCase()}`;
-    
-    if (context) {
-      logString += ` [${context}]`;
-    }
-    
-    logString += `: ${message}`;
-    
-    if (data !== undefined) {
-      // Handle circular references and improve JSON serialization
-      try {
-        logString += `\nData: ${JSON.stringify(data, null, 2)}`;
-      } catch (err) {
-        logString += `\nData: [Circular or non-serializable object]`;
-      }
-    }
-    
-    if (error) {
-      logString += `\nError: ${error.message}`;
-      if (error.stack) {
-        logString += `\nStack: ${error.stack}`;
-      }
-    }
-    
-    return logString;
+  warn(message: string, contextOrData?: string | any, data?: any): void {
+    legacyLogger.warn(message, contextOrData, data);
   }
 
-  private buildLogEntry(
-    level: LogLevel,
-    message: string,
-    context?: string,
-    data?: any,
-    error?: Error
-  ): LogEntry {
-    // Build the entry object conditionally to satisfy exactOptionalPropertyTypes
-    const baseEntry: LogEntryBuilder = {
-      timestamp: new Date().toISOString(),
-      level: LogLevel[level],
-      message
-    };
-
-    // Only add optional properties if they have defined values
-    if (context !== undefined) {
-      baseEntry.context = context;
-    }
-    
-    if (data !== undefined) {
-      baseEntry.data = data;
-    }
-    
-    if (error !== undefined) {
-      baseEntry.error = error;
-    }
-
-    return baseEntry as LogEntry;
+  info(message: string, contextOrData?: string | any, data?: any): void {
+    legacyLogger.info(message, contextOrData, data);
   }
 
-  private log(
-    level: LogLevel,
-    message: string,
-    context?: string,
-    data?: any,
-    error?: Error
-  ): void {
-    // Early return if log level is too low - improves performance
-    if (level > this.logLevel) {
-      return;
-    }
-
-    const entry = this.buildLogEntry(level, message, context, data, error);
-    const formattedLog = this.formatLogEntry(entry);
-
-    // Use a map for console method selection - more maintainable
-    const consoleMethods = {
-      [LogLevel.ERROR]: console.error,
-      [LogLevel.WARN]: console.warn,
-      [LogLevel.INFO]: console.info,
-      [LogLevel.DEBUG]: console.debug
-    } as const;
-
-    const consoleMethod = consoleMethods[level];
-    consoleMethod(formattedLog);
+  debug(message: string, contextOrData?: string | any, data?: any): void {
+    legacyLogger.debug(message, contextOrData, data);
   }
 
-  // Public logging methods with improved method signatures
-  error(message: string, context?: string, data?: any, error?: Error): void {
-    this.log(LogLevel.ERROR, message, context, data, error);
+  apiRequest(method: string, path: string, statusCode: number, duration: number, userId?: number): void {
+    legacyLogger.apiRequest(method, path, statusCode, duration, userId);
   }
 
-  warn(message: string, context?: string, data?: any): void {
-    this.log(LogLevel.WARN, message, context, data);
-  }
-
-  info(message: string, context?: string, data?: any): void {
-    this.log(LogLevel.INFO, message, context, data);
-  }
-
-  debug(message: string, context?: string, data?: any): void {
-    this.log(LogLevel.DEBUG, message, context, data);
-  }
-
-  // Enhanced convenience methods with better type safety
-  apiRequest(
-    method: string,
-    path: string,
-    statusCode: number,
-    duration: number,
-    userId?: number
-  ): void {
-    this.info(
-      `${method} ${path} ${statusCode} in ${duration}ms`,
-      'API',
-      { userId }
-    );
-  }
-
-  databaseOperation(
-    operation: string,
-    table: string,
-    duration: number,
-    recordCount?: number
-  ): void {
-    this.debug(
-      `${operation} on ${table} completed in ${duration}ms`,
-      'DATABASE',
-      { recordCount }
-    );
+  databaseOperation(operation: string, table: string, duration: number, recordCount?: number): void {
+    legacyLogger.databaseOperation(operation, table, duration, recordCount);
   }
 
   aiOperation(operation: string, duration: number, tokens?: number): void {
-    this.info(
-      `AI ${operation} completed in ${duration}ms`,
-      'AI',
-      { tokens }
-    );
+    legacyLogger.aiOperation(operation, duration, tokens);
   }
 
   securityEvent(event: string, userId?: number, ip?: string): void {
-    this.warn(
-      `Security event: ${event}`,
-      'SECURITY',
-      { userId, ip }
-    );
+    legacyLogger.securityEvent(event, userId, ip);
   }
 
-  // Additional utility methods for better developer experience
-  
-  /**
-   * Check if a log level is enabled
-   * Useful for avoiding expensive operations when logging is disabled
-   */
   isLevelEnabled(level: LogLevel): boolean {
-    return level <= this.logLevel;
+    // Map to Pino levels
+    const pinoLevels: Record<LogLevel, string> = {
+      [LogLevel.ERROR]: 'error',
+      [LogLevel.WARN]: 'warn',
+      [LogLevel.INFO]: 'info',
+      [LogLevel.DEBUG]: 'debug',
+    };
+    return unifiedLogger.isLevelEnabled(pinoLevels[level]);
   }
 
-  /**
-   * Get current log level
-   */
   getCurrentLevel(): LogLevel {
-    return this.logLevel;
+    const level = unifiedLogger.level;
+    const levelMap: Record<string, LogLevel> = {
+      error: LogLevel.ERROR,
+      warn: LogLevel.WARN,
+      info: LogLevel.INFO,
+      debug: LogLevel.DEBUG,
+    };
+    return levelMap[level] || LogLevel.INFO;
   }
 
-  /**
-   * Set log level at runtime
-   */
   setLevel(level: LogLevel): void {
-    this.logLevel = level;
+    const pinoLevels: Record<LogLevel, string> = {
+      [LogLevel.ERROR]: 'error',
+      [LogLevel.WARN]: 'warn',
+      [LogLevel.INFO]: 'info',
+      [LogLevel.DEBUG]: 'debug',
+    };
+    unifiedLogger.level = pinoLevels[level];
   }
 
-  /**
-   * Performance-aware logging - only execute expensive operations if logging is enabled
-   */
   debugWithCallback(message: string, context: string, dataCallback: () => any): void {
     if (this.isLevelEnabled(LogLevel.DEBUG)) {
       this.debug(message, context, dataCallback());
@@ -231,8 +93,5 @@ export class Logger {
   }
 }
 
-// Export singleton logger instance
-export const logger = new Logger();
-
 // Export convenience function for backward compatibility
-export const log = (message: string): void => logger.info(message, 'APP');
+export const log = (message: string): void => legacyLogger.info(message, 'APP');

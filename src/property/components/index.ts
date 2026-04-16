@@ -16,9 +16,9 @@ export { PropertyMap, PropertyMapEmbedded, PropertyMapPage } from './PropertyMap
 // Standard exports - using named exports
 export { CompareBar } from './CompareBar'
 export { CompareModal } from './CompareModal'
-export { EnhancedLandCard } from './LandCard'
+export { default as EnhancedLandCard, LandCard } from './LandCard'
 export { PerformanceTestPanel } from './PerformanceTestPanel'
-export { PropertyCardShowcase } from './PropertyCardShowcase'
+export { default as PropertyCardShowcase } from './PropertyCardShowcase'
 export { PropertyListingWizard } from './PropertyListingWizard'
 export { PropertyReviews } from './PropertyReviews'
 export { PropertyTestComponent } from './PropertyTestComponent'

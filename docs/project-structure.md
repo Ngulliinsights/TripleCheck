@@ -1,17 +1,52 @@
 # Project Structure
 
-**Generated:** 4/15/2026, 2:51:11 PM
+**Generated:** 4/16/2026, 2:02:52 PM
 **Max Depth:** 7 levels
 
 ```
 .
+├── DCS/
+│   ├── archive/
+│   │   ├── consolidation-progress.md
+│   │   ├── DATABASE_SETUP.md
+│   │   ├── import-analysis.md
+│   │   ├── import-resolution-report.md
+│   │   ├── MISSING_FEATURES_ANALYSIS.md
+│   │   ├── MOBILE_AND_DATA_IMPROVEMENTS.md
+│   │   ├── phase1-complete-summary.md
+│   │   ├── phase2-complete-summary.md
+│   │   ├── phase3-complete-summary.md
+│   │   └── phase3-task8-complete.md
+│   ├── ARCHITECTURE_ADR_EXTRACTION.md
+│   ├── CONSOLIDATION_COMPLETE.md
+│   ├── migration.log.md
+│   ├── README.md
+│   └── script-cleanup-analysis.md
 ├── docs/
-│   ├── image-gallery-refactoring.md
-│   ├── import-analysis.md
-│   ├── import-resolution-report.md
-│   ├── migration-complete-summary.md
+│   ├── adr/
+│   │   ├── 001-cache-consolidation.md
+│   │   ├── 002-image-gallery-refactoring.md
+│   │   ├── 003-service-consolidation.md
+│   │   ├── 004-test-infrastructure.md
+│   │   ├── 005-database-schema-strategy.md
+│   │   ├── 006-navigation-architecture.md
+│   │   ├── 007-property-components.md
+│   │   ├── 008-business-model.md
+│   │   ├── 009-ml-training-strategy.md
+│   │   ├── 010-observability-stack.md
+│   │   ├── 011-http-client-resilience.md
+│   │   ├── 012-authentication-authorization.md
+│   │   ├── 013-realtime-communication.md
+│   │   ├── 014-schema-validation.md
+│   │   ├── 015-rate-limiting.md
+│   │   ├── 016-layered-architecture.md
+│   │   └── README.md
+│   ├── LOGGING_ARCHITECTURE.md
+│   ├── LOGGING_CONSOLIDATION.md
+│   ├── LOGGING_QUICK_REFERENCE.md
 │   ├── project-structure.md
-│   └── service-consolidation-plan.md
+│   ├── QUICK_REFERENCE.md
+│   └── README.md
 ├── public/
 │   └── sw.js
 ├── scripts/
@@ -29,7 +64,6 @@
 │   │   ├── deployment-tests.ts
 │   │   ├── README.md
 │   │   ├── setup-comprehensive-monitoring.ts
-│   │   ├── setup-monitoring.ts
 │   │   └── validate-deployment.ts
 │   ├── migration-helpers/
 │   │   ├── cache-migration.ts
@@ -39,116 +73,48 @@
 │   │   └── api-performance-test.ts
 │   ├── security/
 │   │   └── bug-categorization.ts
-│   ├── add-b2b-messaging.js
-│   ├── add-reviews.ts
-│   ├── aggressive-optimization.js
-│   ├── analyze-hooks.js
-│   ├── api-race-condition-detector.ts
-│   ├── check-data.ts
-│   ├── check-reviews-table.ts
-│   ├── check-table-structure.ts
-│   ├── cleanup-redundancies.ts
-│   ├── comprehensive-cleanup.ts
-│   ├── convert-favicons.bat
-│   ├── create-barrel-exports.ts
-│   ├── create-favicon-pngs.js
-│   ├── create-minimal-pngs.js
-│   ├── create-png-favicons.js
-│   ├── DATABASE_SETUP.md
-│   ├── debug-blank-page.ts
-│   ├── debug-vercel-deployment.ts
-│   ├── deploy-minimal.js
-│   ├── deploy-render.js
 │   ├── deploy-setup.ts
-│   ├── deploy-staging-final.cjs
-│   ├── deploy-staging-simple.cjs
-│   ├── detect-bugs.ts
 │   ├── emergency-stop.js
 │   ├── execute-optimization.ts
-│   ├── extract-api-core.js
-│   ├── fix-authentication-issues.ts
-│   ├── fix-core-import-paths.ts
-│   ├── fix-image-test-issues.ts
-│   ├── fix-typescript-errors.ts
+│   ├── fix-logger-api.ts
+│   ├── fix-logger-imports.ts
 │   ├── generate-favicons.js
-│   ├── generate-test-chunks.ts
 │   ├── health-check.ts
-│   ├── implement-optimizations.js
-│   ├── load-data-corrected.ts
 │   ├── load-data-fixed.ts
-│   ├── load-data-simple.ts
-│   ├── load-test-simple.cjs
-│   ├── load-test-suite.js
-│   ├── load-test.js
 │   ├── logger.js
 │   ├── memory-benchmark.js
-│   ├── migrate-core-utilities.ts
 │   ├── migrate-database-structure.ts
-│   ├── migrate-embedded-tests.ts
-│   ├── migrate-hooks.js
-│   ├── migrate-optimized-components.sh
-│   ├── migrate-schema-imports.ts
-│   ├── migrate-to-core-utilities.ts
-│   ├── MISSING_FEATURES_ANALYSIS.md
-│   ├── MOBILE_AND_DATA_IMPROVEMENTS.md
-│   ├── optimize-for-deployment.js
 │   ├── OptimizedBuildPipeline.ts
 │   ├── prepare-deployment.ts
-│   ├── quick-migration-check.ts
 │   ├── quick-recovery.ts
-│   ├── README-test-data.md
 │   ├── README.md
-│   ├── real-optimization.js
-│   ├── remove-redundant-utilities.ts
-│   ├── responsive-design-analyzer.js
 │   ├── restart-dev-server.ts
 │   ├── run-accessibility-tests.js
-│   ├── run-chunked-tests.ts
 │   ├── run-complete-load-test.cjs
 │   ├── run-e2e-tests.js
-│   ├── run-land-verification-migration.ts
 │   ├── run-migration.ts
 │   ├── run-ui-audit.ts
 │   ├── run-visual-tests.js
 │   ├── self-monitoring-pipeline.ts
-│   ├── setup-dev.js
-│   ├── simple-server-test.cjs
 │   ├── stop-infinite-queries.ts
 │   ├── streaming-json-processor.ts
-│   ├── test-deployment-readiness.cjs
-│   ├── test-frontend-functionality.ts
-│   ├── test-image-components.ts
-│   ├── test-integration.js
-│   ├── test-navigation.ts
-│   ├── test-server-connection.cjs
-│   ├── test-server-ports.js
-│   ├── update-core-imports.ts
-│   ├── update-database-paths.cjs
-│   ├── update-imports.ts
 │   ├── validate-authentication.ts
 │   ├── validate-database-paths.ts
-│   ├── validate-database-structure.cjs
-│   ├── validate-database-structure.js
 │   ├── validate-database-structure.ts
-│   ├── validate-deployment-current.cjs
-│   ├── validate-deployment.cjs
-│   ├── validate-image-tests.ts
 │   ├── validate-migration.ts
 │   ├── validate-production.ts
-│   ├── validate-staging-final.cjs
-│   ├── verify-api-client.js
-│   └── verify-optimization.ts
+│   ├── verify-breaking-changes.ts
+│   └── verify-naming-conventions.sh
 ├── server/
 │   ├── ai/
 │   │   ├── middleware/
-│   │   │   ├── ai-cache.ts
-│   │   │   ├── ai-deduplication.ts
-│   │   │   ├── ai-middleware.ts
-│   │   │   └── ai-rate-limiting.ts
+│   │   │   └── ai-middleware.ts
 │   │   ├── services/
 │   │   │   ├── ai-service-manager.ts
 │   │   │   ├── document-processing-ai.service.ts
 │   │   │   ├── fraud-detection-ai.service.ts
+│   │   │   ├── huggingface-client.ts
+│   │   │   ├── index.ts
 │   │   │   ├── property-analysis-ai.service.ts
 │   │   │   └── recommendation-ai.service.ts
 │   │   ├── ai.controller.ts
@@ -157,6 +123,7 @@
 │   │   ├── ml-business.service.ts
 │   │   ├── ml-training-root.ts
 │   │   ├── ml-training.ts
+│   │   ├── README.md
 │   │   └── storage.ts
 │   ├── analytics/
 │   │   ├── analytics-business.service.ts
@@ -164,17 +131,18 @@
 │   ├── auth/
 │   │   ├── auth.controller.ts
 │   │   ├── auth.service.ts
-│   │   └── AuthenticationService.ts
+│   │   ├── authorization.ts
+│   │   ├── index.ts
+│   │   └── passport-config.ts
 │   ├── b2b/
 │   │   ├── b2b.controller.ts
 │   │   └── index.ts
 │   ├── blockchain/
 │   │   └── blockchain-service.ts
-│   ├── cache/
-│   │   └── CacheService.ts
 │   ├── communication/
 │   │   ├── communication-business.service.ts
 │   │   ├── communication.controller.ts
+│   │   ├── index.ts
 │   │   ├── messages.controller.ts
 │   │   ├── messaging.controller.ts
 │   │   ├── messaging.service.ts
@@ -373,6 +341,8 @@
 │   │   │   │   ├── ReplicationManager.ts
 │   │   │   │   └── setup-ha.ts
 │   │   │   ├── schemas/
+│   │   │   │   ├── analytics/
+│   │   │   │   │   └── index.ts
 │   │   │   │   ├── communication/
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── core/
@@ -508,6 +478,8 @@
 │   │   │   └── email.service.ts
 │   │   ├── events/
 │   │   │   └── EventBus.ts
+│   │   ├── http/
+│   │   │   └── resilient-client.ts
 │   │   ├── monitoring/
 │   │   │   ├── AlertingSystem.ts
 │   │   │   ├── BuildPerformanceMonitor.ts
@@ -520,6 +492,8 @@
 │   │   │   ├── PerformanceOptimizer.ts
 │   │   │   ├── PrometheusMetrics.ts
 │   │   │   └── QueryPerformanceMonitor.ts
+│   │   ├── observability/
+│   │   │   └── telemetry.ts
 │   │   ├── optimization/
 │   │   │   ├── BundleOptimizer.ts
 │   │   │   └── PerformanceOptimizer.ts
@@ -532,24 +506,23 @@
 │   │   │   └── index.ts
 │   │   ├── storage/
 │   │   │   ├── file-storage.service.ts
-│   │   │   ├── file.storage.ts
-│   │   │   ├── FileStorageService.ts
 │   │   │   ├── logger.ts
 │   │   │   ├── SecureFileUploadService.ts
 │   │   │   └── storage.ts
 │   │   ├── testing/
 │   │   │   └── TestFramework.ts
-│   │   └── versioning/
-│   │       ├── examples/
-│   │       │   └── client-examples.ts
-│   │       ├── ApiDocumentation.ts
-│   │       ├── ApiVersioning.ts
-│   │       ├── ApiVersioningMiddleware.ts
-│   │       ├── ApiVersionManager.ts
-│   │       ├── index.ts
-│   │       ├── README.md
-│   │       ├── sedGOSgOE
-│   │       └── versioning.middleware.ts
+│   │   ├── versioning/
+│   │   │   ├── examples/
+│   │   │   │   └── client-examples.ts
+│   │   │   ├── ApiDocumentation.ts
+│   │   │   ├── ApiVersioning.ts
+│   │   │   ├── ApiVersioningMiddleware.ts
+│   │   │   ├── ApiVersionManager.ts
+│   │   │   ├── index.ts
+│   │   │   ├── README.md
+│   │   │   └── versioning.middleware.ts
+│   │   ├── index.ts
+│   │   └── README.md
 │   ├── land-verification/
 │   │   ├── audit/
 │   │   │   └── AuditLogger.ts
@@ -606,16 +579,18 @@
 │   ├── middleware/
 │   │   ├── auth.middleware.ts
 │   │   ├── cache.middleware.ts
-│   │   ├── data-validation.ts
 │   │   ├── deduplication.middleware.ts
 │   │   ├── error.ts
+│   │   ├── index.ts
 │   │   ├── logging.middleware.ts
 │   │   ├── query-limiter.middleware.ts
+│   │   ├── rate-limit.ts
 │   │   ├── rate-limiting.middleware.ts
 │   │   ├── README-auth-middleware.md
 │   │   ├── README-centralized-error-handler.md
 │   │   ├── UnifiedSecurityMiddleware.ts
-│   │   └── validation.middleware.ts
+│   │   ├── validation.middleware.ts
+│   │   └── validation.ts
 │   ├── ml/
 │   │   ├── core/
 │   │   │   └── base-model.ts
@@ -660,6 +635,10 @@
 │   ├── reviews/
 │   │   ├── index.ts
 │   │   └── review.service.ts
+│   ├── schemas/
+│   │   ├── index.ts
+│   │   ├── property.schema.ts
+│   │   └── user.schema.ts
 │   ├── search/
 │   │   ├── search-business.controller.ts
 │   │   └── search.controller.ts
@@ -715,11 +694,11 @@
 │   │   ├── constants.ts
 │   │   ├── index.ts
 │   │   ├── README.md
-│   │   ├── response-helpers.ts
-│   │   └── validators.ts
+│   │   └── response-helpers.ts
 │   ├── app.ts
 │   ├── index.ts
 │   ├── main.ts
+│   ├── README.md
 │   ├── simple-dev-server.ts
 │   ├── test-critical-services.ts
 │   ├── test-db-connection.ts
@@ -831,7 +810,6 @@
 │   │   │   ├── core-web-vitals.ts
 │   │   │   ├── index.ts
 │   │   │   ├── operation-tracker.ts
-│   │   │   ├── performance-monitor.ts
 │   │   │   ├── PerformanceMonitoringProvider.tsx
 │   │   │   ├── query-monitor.ts
 │   │   │   ├── resource-hints.ts
@@ -921,12 +899,10 @@
 │   │   │   └── PropertyTestComponent.tsx
 │   │   ├── contexts/
 │   │   │   ├── ARCHITECTURE.md
-│   │   │   ├── COMPARE_CONTEXT_REMOVAL_SUMMARY.md
 │   │   │   ├── index.ts
 │   │   │   └── PropertyContext.tsx
 │   │   ├── hooks/
 │   │   │   ├── index.ts
-│   │   │   ├── MIGRATION_GUIDE.md
 │   │   │   ├── useConsolidatedPropertySearch.ts
 │   │   │   ├── useLandProperty.ts
 │   │   │   ├── useProperty.ts
@@ -961,9 +937,7 @@
 │   │   ├── utils/
 │   │   │   ├── normalizeLandProperty.ts
 │   │   │   ├── normalizeProperty.ts
-│   │   │   ├── performanceMonitor.ts
-│   │   │   ├── propertyImages.ts
-│   │   │   └── raceConditionTest.ts
+│   │   │   └── propertyImages.ts
 │   │   └── index.ts
 │   ├── search/
 │   │   ├── components/
@@ -979,7 +953,6 @@
 │   │   ├── pages/
 │   │   │   ├── AdvancedSearch.tsx
 │   │   │   └── SearchResults.tsx
-│   │   ├── CONSOLIDATION_SUMMARY.md
 │   │   └── index.ts
 │   ├── shared/
 │   │   ├── components/
@@ -1034,7 +1007,6 @@
 │   │   │   │   ├── ImageGallery.tsx
 │   │   │   │   ├── ImageShowcase.tsx
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── MIGRATION_GUIDE.md
 │   │   │   │   ├── PropertyImageVault.tsx
 │   │   │   │   └── REDUNDANCY_ANALYSIS.md
 │   │   │   ├── monitoring/
@@ -1045,10 +1017,7 @@
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── MOBILE_NAV_VISIBILITY_IMPROVEMENTS.md
 │   │   │   │   ├── MobileNav.tsx
-│   │   │   │   ├── NAVIGATION_CRASH_FIXES_COMPLETE.md
-│   │   │   │   ├── NAVIGATION_FIXES_SUMMARY.md
 │   │   │   │   ├── Navigation.tsx
-│   │   │   │   ├── NavigationDebug.tsx
 │   │   │   │   ├── NavigationErrorBoundary.tsx
 │   │   │   │   ├── NavigationSearch.tsx
 │   │   │   │   └── SafeNavigation.tsx
@@ -1064,21 +1033,17 @@
 │   │   │   │   │   ├── examples/
 │   │   │   │   │   │   ├── index.ts
 │   │   │   │   │   │   └── MinimalPropertyCard.tsx
-│   │   │   │   │   ├── FINAL_STATUS.md
 │   │   │   │   │   ├── index.ts
 │   │   │   │   │   ├── PropertyFeatures.tsx
 │   │   │   │   │   ├── PropertyImageSection.tsx
-│   │   │   │   │   ├── QuickActionsOverlay.tsx
-│   │   │   │   │   ├── REFACTORING_COMPLETE.md
-│   │   │   │   │   └── REFACTORING_GUIDE.md
+│   │   │   │   │   └── QuickActionsOverlay.tsx
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── PhotoManagementButton.tsx
 │   │   │   │   ├── PropertyArchitectureComparison.tsx
 │   │   │   │   ├── PropertyCard.tsx
 │   │   │   │   ├── PropertyDataGrid.tsx
 │   │   │   │   ├── PropertyListingPage.tsx
-│   │   │   │   ├── PropertySkeletonGrid.tsx
-│   │   │   │   └── UnifiedPropertyCard.tsx
+│   │   │   │   └── PropertySkeletonGrid.tsx
 │   │   │   ├── skeletons/
 │   │   │   │   └── PropertyDetailsSkeleton.tsx
 │   │   │   ├── ui/
@@ -1205,10 +1170,7 @@
 │   │   │   │   └── usePropertyImageUpload.ts
 │   │   │   ├── migration/
 │   │   │   │   ├── COMPREHENSIVE_MIGRATION_GUIDE.md
-│   │   │   │   ├── MIGRATION_CHECKLIST.md
-│   │   │   │   ├── property-hooks-migration.md
-│   │   │   │   ├── README.md
-│   │   │   │   └── TROUBLESHOOTING_GUIDE.md
+│   │   │   │   └── README.md
 │   │   │   ├── presets/
 │   │   │   │   └── commonHookPresets.ts
 │   │   │   ├── utils/
@@ -1218,8 +1180,6 @@
 │   │   │   ├── CONSOLIDATION_LOG.md
 │   │   │   ├── index.ts
 │   │   │   ├── QUALITY_STANDARDS.md
-│   │   │   ├── SESSION_SUMMARY.md
-│   │   │   ├── STANDARDIZATION_SUMMARY.md
 │   │   │   ├── use-mobile.tsx
 │   │   │   ├── use-toast.ts
 │   │   │   ├── useAccessibility.tsx
@@ -1332,28 +1292,21 @@
 │   │   │   ├── images/
 │   │   │   │   ├── core/
 │   │   │   │   │   └── ImageServiceCore.ts
-│   │   │   │   ├── CONSOLIDATION_SUMMARY.md
 │   │   │   │   ├── ImageMetadataService.ts
 │   │   │   │   ├── ImageServiceOrchestrator.ts
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── LegacyServiceAdapter.ts
-│   │   │   │   ├── MIGRATION_GUIDE.md
-│   │   │   │   ├── PropertyImageUploadCoordinator.ts
 │   │   │   │   ├── PropertyImageUploadService.ts
 │   │   │   │   ├── PropertyImageValidationService.ts
 │   │   │   │   ├── PropertyImageWorkflowManager.ts
-│   │   │   │   ├── UnifiedImageServiceFactory.ts
 │   │   │   │   └── USAGE_EXAMPLES.md
 │   │   │   ├── AlertingService.ts
 │   │   │   ├── api-client-monitor.ts
 │   │   │   ├── audit-trail-service.ts
 │   │   │   ├── AuditLogService.ts
 │   │   │   ├── AuthTokenService.ts
-│   │   │   ├── DataMigrationService.ts
 │   │   │   ├── FormService.ts
 │   │   │   ├── HealthCheckService.ts
 │   │   │   ├── huggingface-api-client.ts
-│   │   │   ├── huggingface-client.ts
 │   │   │   ├── huggingface-mock-client.ts
 │   │   │   ├── index.ts
 │   │   │   ├── mock-ai-data.ts
@@ -1403,14 +1356,13 @@
 │   │   │   ├── index.ts
 │   │   │   ├── mockPropertyApi.ts
 │   │   │   ├── navigation.ts
-│   │   │   ├── performance-optimizer.ts
 │   │   │   ├── property-mapper.ts
 │   │   │   ├── propertyAdapters.ts
-│   │   │   ├── request-monitor.ts
 │   │   │   ├── safe-navigation.ts
 │   │   │   ├── test-helpers.tsx
 │   │   │   └── toast-utils.ts
 │   │   ├── index.ts
+│   │   ├── README.md
 │   │   └── schema.ts
 │   ├── trust/
 │   │   ├── components/
@@ -1488,6 +1440,7 @@
 │   ├── index.ts
 │   ├── main.tsx
 │   ├── property-hooks-test.tsx
+│   ├── README.md
 │   ├── test-new-pages.tsx
 │   ├── test-safe-hooks.tsx
 │   └── vite-env.d.ts
@@ -1524,31 +1477,20 @@
 │   └── PropertyCardShowcase.css.d.ts
 ├── uploads/
 ├── Artmark.svg
-├── BUSINESS_MODEL_AND_COMPETITIVE_ANALYSIS.md
-├── CLEANUP_SUMMARY.md
-├── CODEBASE_VALIDATION_REPORT.md
 ├── fix-imports.sh
+├── fix-quotes.py
+├── fix-toast.py
 ├── generate-structure.mjs
-├── GRANT_APPLICATION_EXECUTIVE_SUMMARY.md
-├── IMPORT_FIXES_APPLIED.md
 ├── import-resolver.mjs
 ├── import-tools.sh
 ├── import-validator.mjs
 ├── index.html
-├── ml_training_quickstart.md
 ├── package-lock.json
 ├── package.json
 ├── PORTFOLIO_DESCRIPTION.md
 ├── triplecheck_development_framework.md
 ├── triplecheck_evaluation.md
 ├── TripleCheck.ico
-├── tsc_current_errors.txt
-├── tsc_errors_final_verified_2.txt
-├── tsc_errors_final_verified.txt
-├── tsc_errors_final.txt
-├── tsc_errors_new.txt
-├── tsc_errors.txt
-├── tsc-errors.txt
 ├── tsconfig.json
 ├── tsconfig.node.json
 └── vite.config.ts

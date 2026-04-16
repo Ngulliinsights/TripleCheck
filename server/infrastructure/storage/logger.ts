@@ -1,4 +1,13 @@
-// Simple logger utility for storage operations
+/**
+ * Storage Logger - Backward Compatibility Adapter
+ * 
+ * This file now re-exports the unified logger from telemetry.ts
+ * for backward compatibility. All new code should import from telemetry.ts directly.
+ * 
+ * @deprecated Use server/infrastructure/observability/telemetry.ts instead
+ */
+
+import { simpleLogger } from '../observability/telemetry';
 
 export interface Logger {
   info(message: string, meta?: any): void;
@@ -7,30 +16,5 @@ export interface Logger {
   debug(message: string, meta?: any): void;
 }
 
-class SimpleLogger implements Logger {
-  private formatMessage(level: string, message: string, meta?: any): string {
-    const timestamp = new Date().toISOString();
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
-    return `[${timestamp}] ${level.toUpperCase()}: ${message}${metaStr}`;
-  }
-
-  info(message: string, meta?: any): void {
-    console.log(this.formatMessage('info', message, meta));
-  }
-
-  warn(message: string, meta?: any): void {
-    console.warn(this.formatMessage('warn', message, meta));
-  }
-
-  error(message: string, meta?: any): void {
-    console.error(this.formatMessage('error', message, meta));
-  }
-
-  debug(message: string, meta?: any): void {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(this.formatMessage('debug', message, meta));
-    }
-  }
-}
-
-export const logger = new SimpleLogger();
+// Re-export the simple logger adapter for backward compatibility
+export const logger: Logger = simpleLogger;
