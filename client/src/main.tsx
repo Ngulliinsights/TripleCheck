@@ -5,7 +5,8 @@ import { BrowserRouter } from "react-router-dom"
 
 import App from "./app/App"
 import { AppProviders } from "./app/providers"
-import "./shared/styles/globals.css";
+// TODO: Locate and import globals CSS after directory restructuring
+// import "./shared/styles/globals.css";
 
 
 // Initialize MSW for development (non-blocking)

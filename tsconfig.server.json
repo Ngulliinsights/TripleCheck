@@ -27,9 +27,13 @@
       "@/*": ["./server/*"],
       "@server/*": ["./server/*"],
       "@client/*": ["./client/src/*"],
+      "@local/*": ["./client/*"],
       "@shared/*": ["./shared/*"]
     }
   },
   "include": ["server"],
-  "exclude": ["node_modules", "dist", "client"]
+  "exclude": ["node_modules", "dist", "client"],
+  "references": [
+    { "path": "./shared/tsconfig.json" }
+  ]
 }

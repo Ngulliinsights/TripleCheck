@@ -12,6 +12,7 @@
     }
   },
   "references": [
+    { "path": "./shared/tsconfig.json" },
     { "path": "./tsconfig.server.json" }
   ]
 }

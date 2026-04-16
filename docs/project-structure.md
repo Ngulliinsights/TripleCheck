@@ -1,10 +1,752 @@
 # Project Structure
 
-**Generated:** 4/16/2026, 2:02:52 PM
+**Generated:** 4/16/2026, 5:27:13 PM
 **Max Depth:** 7 levels
 
 ```
 .
+├── client/
+│   ├── public/
+│   │   ├── assets/
+│   │   │   ├── Artmark.svg
+│   │   │   └── TripleCheck.ico
+│   │   └── sw.js
+│   ├── src/
+│   │   ├── analytics/
+│   │   │   ├── components/
+│   │   │   │   └── AnalyticsDashboard.tsx
+│   │   │   ├── hooks/
+│   │   │   │   └── useAnalytics.ts
+│   │   │   └── index.ts
+│   │   ├── app/
+│   │   │   ├── App.tsx
+│   │   │   ├── error-boundary.tsx
+│   │   │   ├── providers.tsx
+│   │   │   ├── README.md
+│   │   ├── auth/
+│   │   │   ├── components/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── LoginForm.tsx
+│   │   │   │   ├── PasswordReset.tsx
+│   │   │   │   ├── RegistrationWizard.tsx
+│   │   │   │   └── TwoFactorAuth.tsx
+│   │   │   ├── contexts/
+│   │   │   │   └── AuthContext.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── index.ts
+│   │   │   │   └── useAuth.ts
+│   │   │   ├── pages/
+│   │   │   │   ├── ForgotPassword.tsx
+│   │   │   │   ├── Login.tsx
+│   │   │   │   └── Register.tsx
+│   │   │   ├── services/
+│   │   │   │   └── auth-api.ts
+│   │   │   ├── types/
+│   │   │   │   └── auth.types.ts
+│   │   │   └── index.ts
+│   │   ├── communication/
+│   │   │   ├── components/
+│   │   │   │   ├── MessageComposer.tsx
+│   │   │   │   ├── MessageList.tsx
+│   │   │   │   ├── MessageThread.tsx
+│   │   │   │   ├── NotificationCenter.tsx
+│   │   │   │   ├── NotificationSystem.tsx
+│   │   │   │   └── RealTimeNotifications.tsx
+│   │   │   ├── context/
+│   │   │   │   └── CommunicationContext.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── useMessages.ts
+│   │   │   │   ├── useMessaging.ts
+│   │   │   │   └── useNotifications.ts
+│   │   │   ├── pages/
+│   │   │   │   ├── Inbox.tsx
+│   │   │   │   ├── MessageCenter.tsx
+│   │   │   │   └── Notifications.tsx
+│   │   │   ├── services/
+│   │   │   │   ├── communication-business-logic.ts
+│   │   │   │   ├── DocumentCommunicationIntegration.ts
+│   │   │   │   └── WebSocketManager.ts
+│   │   │   └── index.ts
+│   │   ├── components/
+│   │   │   └── ai/
+│   │   ├── config/
+│   │   │   └── external-dependencies.ts
+│   │   ├── infrastructure/
+│   │   │   ├── ai/
+│   │   │   │   └── AIModelManager.tsx
+│   │   │   ├── api/
+│   │   │   │   ├── data-validation.ts
+│   │   │   │   ├── queryClient.ts
+│   │   │   │   └── request-manager.ts
+│   │   │   ├── audit/
+│   │   │   │   ├── plugins/
+│   │   │   │   │   ├── AccessibilityPlugin.ts
+│   │   │   │   │   ├── PerformancePlugin.ts
+│   │   │   │   │   └── SecurityPlugin.ts
+│   │   │   │   ├── audit.types.ts
+│   │   │   │   ├── AuditReporter.ts
+│   │   │   │   ├── AuditRunner.ts
+│   │   │   │   ├── cli.ts
+│   │   │   │   ├── config.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── LinkValidator.ts
+│   │   │   │   ├── README.md
+│   │   │   │   ├── run-audit.ts
+│   │   │   │   ├── tsconfig.json
+│   │   │   │   ├── types.ts
+│   │   │   │   └── UIAuditSystem.ts
+│   │   │   ├── cache/
+│   │   │   │   └── query-cache.ts
+│   │   │   ├── hooks/
+│   │   │   │   ├── examples/
+│   │   │   │   │   └── race-condition-prevention.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── README.md
+│   │   │   │   ├── useCleanupManager.ts
+│   │   │   │   ├── useCoordinatedState.ts
+│   │   │   │   ├── useIntersectionObserver.ts
+│   │   │   │   ├── useSafeEffect.ts
+│   │   │   │   ├── useSafeState.ts
+│   │   │   │   └── useStableCallback.ts
+│   │   │   ├── monitoring/
+│   │   │   │   ├── bundle-analyzer.ts
+│   │   │   │   ├── core-web-vitals.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── operation-tracker.ts
+│   │   │   │   ├── PerformanceMonitoringProvider.tsx
+│   │   │   │   ├── query-monitor.ts
+│   │   │   │   ├── resource-hints.ts
+│   │   │   │   ├── system-health.ts
+│   │   │   │   └── usePerformanceMonitoring.ts
+│   │   │   ├── payments/
+│   │   │   │   └── PaymentSystemInterface.tsx
+│   │   │   ├── realtime/
+│   │   │   │   └── websocket-client.ts
+│   │   │   ├── service-worker/
+│   │   │   │   └── sw-registration.ts
+│   │   │   ├── services/
+│   │   │   │   └── image-preload-service.ts
+│   │   │   └── utils/
+│   │   │       └── image-optimization.ts
+│   │   ├── land-verification/
+│   │   │   ├── components/
+│   │   │   │   ├── CommunityInterviewTemplate.tsx
+│   │   │   │   ├── ContextualGuidanceProvider.tsx
+│   │   │   │   ├── DecisionSupportTool.tsx
+│   │   │   │   ├── ExpertCoordinationInterface.tsx
+│   │   │   │   ├── HelpSystem.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── KenyaLandEducation.tsx
+│   │   │   │   ├── LandVerificationDashboard.tsx
+│   │   │   │   ├── ProfessionalResourcesDirectory.tsx
+│   │   │   │   ├── RecommendationEngine.tsx
+│   │   │   │   ├── ReportingPortal.tsx
+│   │   │   │   ├── RiskAssessmentDisplay.tsx
+│   │   │   │   ├── RiskFactorAnalysis.tsx
+│   │   │   │   ├── RiskManagementInterface.tsx
+│   │   │   │   ├── RiskProfileVisualization.tsx
+│   │   │   │   ├── RiskWeightingControls.tsx
+│   │   │   │   ├── ScenarioModelingTool.tsx
+│   │   │   │   ├── VerificationProgressTracker.tsx
+│   │   │   │   └── VerificationWizard.tsx
+│   │   │   ├── hooks/
+│   │   │   │   └── useLandVerification.ts
+│   │   │   ├── pages/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── LandVerificationDashboardPage.tsx
+│   │   │   │   ├── LandVerificationPage.tsx
+│   │   │   │   └── NewVerificationPage.tsx
+│   │   │   ├── services/
+│   │   │   │   ├── DocumentIntelligenceIntegration.ts
+│   │   │   │   └── HelpDocumentationService.ts
+│   │   │   └── index.ts
+│   │   ├── local/
+│   │   │   ├── components/
+│   │   │   │   ├── ai-integration/
+│   │   │   │   │   └── PropertyAIEnhancement.tsx
+│   │   │   │   ├── b2b/
+│   │   │   │   │   ├── B2BCommunityInsightsBanner.tsx
+│   │   │   │   │   ├── B2BCommunityInsightsPrompt.tsx
+│   │   │   │   │   ├── B2BContextualPrompt.tsx
+│   │   │   │   │   ├── B2BEntryPointManager.tsx
+│   │   │   │   │   ├── B2BFraudReportBanner.tsx
+│   │   │   │   │   ├── B2BFraudReportPrompt.tsx
+│   │   │   │   │   ├── B2BLeadCapture.tsx
+│   │   │   │   │   ├── B2BNotificationBanner.tsx
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── blog/
+│   │   │   │   │   ├── BlogPostCard.tsx
+│   │   │   │   │   └── BlogPostSkeleton.tsx
+│   │   │   │   ├── error-handling/
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── examples/
+│   │   │   │   │   └── HooksExample.tsx
+│   │   │   │   ├── fallbacks/
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── MobileNavFallback.tsx
+│   │   │   │   │   ├── NavigationFallback.tsx
+│   │   │   │   ├── forms/
+│   │   │   │   │   ├── FileUpload.tsx
+│   │   │   │   │   ├── FileUploadField.tsx
+│   │   │   │   │   └── FormField.tsx
+│   │   │   │   ├── hero/
+│   │   │   │   │   ├── ConversionHero.tsx
+│   │   │   │   │   └── Hero.tsx
+│   │   │   │   ├── images/
+│   │   │   │   │   ├── gallery/
+│   │   │   │   │   │   ├── AdvancedGallery.tsx
+│   │   │   │   │   │   ├── BatchOperationsToolbar.tsx
+│   │   │   │   │   │   ├── constants.ts
+│   │   │   │   │   │   ├── ImageCard.tsx
+│   │   │   │   │   │   ├── ImageEngine.tsx
+│   │   │   │   │   │   ├── ImageGallery.tsx
+│   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   ├── LazyImage.tsx
+│   │   │   │   │   │   ├── Lightbox.tsx
+│   │   │   │   │   │   ├── SearchInterface.tsx
+│   │   │   │   │   │   ├── SimpleGallery.tsx
+│   │   │   │   │   │   ├── types.ts
+│   │   │   │   │   │   ├── useImageSearch.ts
+│   │   │   │   │   │   ├── utils.ts
+│   │   │   │   │   │   └── ValidationService.ts
+│   │   │   │   │   ├── ImageGallery.module.css
+│   │   │   │   │   ├── ImageGallery.tsx
+│   │   │   │   │   ├── ImageShowcase.tsx
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── PropertyImageVault.tsx
+│   │   │   │   │   └── REDUNDANCY_ANALYSIS.md
+│   │   │   │   ├── monitoring/
+│   │   │   │   │   └── ApiClientDashboard.tsx
+│   │   │   │   ├── navigation/
+│   │   │   │   │   ├── BreadcrumbNavigation.tsx
+│   │   │   │   │   ├── ContextualSidebar.tsx
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── MOBILE_NAV_VISIBILITY_IMPROVEMENTS.md
+│   │   │   │   │   ├── MobileNav.tsx
+│   │   │   │   │   ├── Navigation.tsx
+│   │   │   │   │   ├── NavigationErrorBoundary.tsx
+│   │   │   │   │   ├── NavigationSearch.tsx
+│   │   │   │   │   └── SafeNavigation.tsx
+│   │   │   │   ├── property/
+│   │   │   │   │   ├── filters/
+│   │   │   │   │   │   ├── AllPropertiesFilters.tsx
+│   │   │   │   │   │   ├── BasePropertyFilters.tsx
+│   │   │   │   │   │   ├── CommercialFilters.tsx
+│   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   ├── LandFilters.tsx
+│   │   │   │   │   │   └── ResidentialFilters.tsx
+│   │   │   │   │   ├── shared/
+│   │   │   │   │   │   ├── examples/
+│   │   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   │   └── MinimalPropertyCard.tsx
+│   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   ├── PropertyFeatures.tsx
+│   │   │   │   │   │   ├── PropertyImageSection.tsx
+│   │   │   │   │   │   └── QuickActionsOverlay.tsx
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── PhotoManagementButton.tsx
+│   │   │   │   │   ├── PropertyArchitectureComparison.tsx
+│   │   │   │   │   ├── PropertyCard.tsx
+│   │   │   │   │   ├── PropertyDataGrid.tsx
+│   │   │   │   │   ├── PropertyListingPage.tsx
+│   │   │   │   │   └── PropertySkeletonGrid.tsx
+│   │   │   │   ├── skeletons/
+│   │   │   │   │   └── PropertyDetailsSkeleton.tsx
+│   │   │   │   ├── ui/
+│   │   │   │   │   ├── accordion.tsx
+│   │   │   │   │   ├── alert-dialog.tsx
+│   │   │   │   │   ├── alert.tsx
+│   │   │   │   │   ├── aspect-ratio.tsx
+│   │   │   │   │   ├── avatar.tsx
+│   │   │   │   │   ├── badge.tsx
+│   │   │   │   │   ├── breadcrumb.tsx
+│   │   │   │   │   ├── button.tsx
+│   │   │   │   │   ├── calendar.tsx
+│   │   │   │   │   ├── card.tsx
+│   │   │   │   │   ├── carousel.tsx
+│   │   │   │   │   ├── chart.tsx
+│   │   │   │   │   ├── checkbox.tsx
+│   │   │   │   │   ├── collapsible.tsx
+│   │   │   │   │   ├── command.tsx
+│   │   │   │   │   ├── common-buttons.tsx
+│   │   │   │   │   ├── context-menu.tsx
+│   │   │   │   │   ├── dialog.tsx
+│   │   │   │   │   ├── drawer.tsx
+│   │   │   │   │   ├── dropdown-menu.tsx
+│   │   │   │   │   ├── error-states.tsx
+│   │   │   │   │   ├── form.tsx
+│   │   │   │   │   ├── hover-card.tsx
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── input-otp.tsx
+│   │   │   │   │   ├── input.tsx
+│   │   │   │   │   ├── label.tsx
+│   │   │   │   │   ├── loading-skeleton.tsx
+│   │   │   │   │   ├── loading-states.tsx
+│   │   │   │   │   ├── LoadingSpinner.tsx
+│   │   │   │   │   ├── logo.tsx
+│   │   │   │   │   ├── menubar.tsx
+│   │   │   │   │   ├── navigation-menu.tsx
+│   │   │   │   │   ├── popover.tsx
+│   │   │   │   │   ├── progress.tsx
+│   │   │   │   │   ├── radio-group.tsx
+│   │   │   │   │   ├── resizable.tsx
+│   │   │   │   │   ├── scroll-area.tsx
+│   │   │   │   │   ├── select.tsx
+│   │   │   │   │   ├── separator.tsx
+│   │   │   │   │   ├── sheet.tsx
+│   │   │   │   │   ├── sidebar.tsx
+│   │   │   │   │   ├── skeleton.tsx
+│   │   │   │   │   ├── slider.tsx
+│   │   │   │   │   ├── switch.tsx
+│   │   │   │   │   ├── table.tsx
+│   │   │   │   │   ├── tabs.tsx
+│   │   │   │   │   ├── textarea.tsx
+│   │   │   │   │   ├── theme-toggle.tsx
+│   │   │   │   │   ├── toast.tsx
+│   │   │   │   │   ├── toaster.tsx
+│   │   │   │   │   ├── toggle-group.tsx
+│   │   │   │   │   ├── toggle.tsx
+│   │   │   │   │   ├── tooltip.tsx
+│   │   │   │   │   └── wordmark.tsx
+│   │   │   │   ├── AfricaCoverageMap.tsx
+│   │   │   │   ├── CommunityInsights.tsx
+│   │   │   │   ├── DemoLoginHelper.tsx
+│   │   │   │   ├── ErrorBoundary.tsx
+│   │   │   │   ├── ErrorFeedback.tsx
+│   │   │   │   ├── GlobalPerformanceTestPanel.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── IntegrationTest.tsx
+│   │   │   │   ├── LazyComponents.tsx
+│   │   │   │   ├── listing-card.tsx
+│   │   │   │   ├── LoadingStates.tsx
+│   │   │   │   ├── NewsBlog.tsx
+│   │   │   │   ├── Pagination.tsx
+│   │   │   │   ├── PaymentGuidance.tsx
+│   │   │   │   ├── PricingCTA.tsx
+│   │   │   │   ├── QueryErrorBoundary.tsx
+│   │   │   │   ├── ROICalculator.tsx
+│   │   │   │   ├── ServiceCategories.tsx
+│   │   │   │   ├── Testimonials.tsx
+│   │   │   │   ├── TrustIndicators.tsx
+│   │   │   │   ├── VideoModal.tsx
+│   │   │   │   ├── VirtualizedList.tsx
+│   │   │   │   └── VirtualizedPropertyList.tsx
+│   │   │   ├── config/
+│   │   │   │   ├── assets.ts
+│   │   │   │   ├── image-components.config.ts
+│   │   │   │   ├── image-system.config.ts
+│   │   │   │   ├── images.ts
+│   │   │   │   ├── propertyTypes.ts
+│   │   │   │   └── user-journeys.ts
+│   │   │   ├── contexts/
+│   │   │   │   └── ThemeContext.tsx
+│   │   │   ├── docs/
+│   │   │   │   └── memory-optimization-guide.md
+│   │   │   ├── error-handling/
+│   │   │   │   ├── client/
+│   │   │   │   │   └── error-handler.ts
+│   │   │   │   ├── constants/
+│   │   │   │   │   ├── error-categories.ts
+│   │   │   │   │   ├── error-codes.d.ts
+│   │   │   │   │   ├── error-codes.js
+│   │   │   │   │   ├── error-codes.ts
+│   │   │   │   │   ├── http-status.ts
+│   │   │   │   │   └── postgres-codes.ts
+│   │   │   │   ├── errors/
+│   │   │   │   │   ├── base-error.ts
+│   │   │   │   │   ├── database-error.ts
+│   │   │   │   │   └── validation-error.ts
+│   │   │   │   ├── server/
+│   │   │   │   │   └── express-handler.ts
+│   │   │   │   ├── utilities/
+│   │   │   │   │   ├── error-factory.ts
+│   │   │   │   │   ├── error-metrics.ts
+│   │   │   │   │   └── error-utils.ts
+│   │   │   │   └── index.ts
+│   │   │   ├── hooks/
+│   │   │   │   ├── configs/
+│   │   │   │   │   ├── formValidationConfigs.ts
+│   │   │   │   │   ├── hookConfigs.ts
+│   │   │   │   │   └── propertyQueryConfigs.ts
+│   │   │   │   ├── examples/
+│   │   │   │   │   └── configurationExamples.ts
+│   │   │   │   ├── images/
+│   │   │   │   │   └── usePropertyImageUpload.ts
+│   │   │   │   ├── migration/
+│   │   │   │   │   ├── COMPREHENSIVE_MIGRATION_GUIDE.md
+│   │   │   │   │   └── README.md
+│   │   │   │   ├── presets/
+│   │   │   │   │   └── commonHookPresets.ts
+│   │   │   │   ├── utils/
+│   │   │   │   │   ├── deprecation.ts
+│   │   │   │   │   ├── init.ts
+│   │   │   │   │   └── migration.ts
+│   │   │   │   ├── CONSOLIDATION_LOG.md
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── QUALITY_STANDARDS.md
+│   │   │   │   ├── use-mobile.tsx
+│   │   │   │   ├── use-toast.ts
+│   │   │   │   ├── useAccessibility.tsx
+│   │   │   │   ├── useAIIntegration.ts
+│   │   │   │   ├── useB2BEntryPoints.ts
+│   │   │   │   ├── useB2BMessaging.ts
+│   │   │   │   ├── useCMS.ts
+│   │   │   │   ├── useCompareError.ts
+│   │   │   │   ├── useComponentPerformance.tsx
+│   │   │   │   ├── useConfigurableHook.ts
+│   │   │   │   ├── useDebounce.ts
+│   │   │   │   ├── useDebouncedCallback.ts
+│   │   │   │   ├── useErrorRecovery.ts
+│   │   │   │   ├── useFileUpload.ts
+│   │   │   │   ├── useFilterState.ts
+│   │   │   │   ├── useFormValidation.ts
+│   │   │   │   ├── useGeolocation.ts
+│   │   │   │   ├── useHealthMonitoring.ts
+│   │   │   │   ├── useImageGallery.ts
+│   │   │   │   ├── useMemoryOptimization.ts
+│   │   │   │   ├── useNavigationSpacing.ts
+│   │   │   │   ├── useOperationTracking.ts
+│   │   │   │   ├── useOptimisticMutation.ts
+│   │   │   │   ├── usePagination.ts
+│   │   │   │   ├── usePaymentGuidance.ts
+│   │   │   │   ├── usePerformanceOptimization.ts
+│   │   │   │   ├── usePolling.ts
+│   │   │   │   ├── usePropertyActions.ts
+│   │   │   │   ├── usePropertyCardActions.ts
+│   │   │   │   ├── usePropertyCardState.ts
+│   │   │   │   ├── usePropertyCompareActions.ts
+│   │   │   │   ├── usePropertyFormatting.ts
+│   │   │   │   ├── useSafeQuery.ts
+│   │   │   │   ├── useSecurity.ts
+│   │   │   │   └── useWebSocket.ts
+│   │   │   ├── lib/
+│   │   │   │   └── utils.ts
+│   │   │   ├── pages/
+│   │   │   │   ├── solutions/
+│   │   │   │   │   ├── LegalExperts.tsx
+│   │   │   │   │   ├── PropertyBuyers.tsx
+│   │   │   │   │   ├── PropertyDevelopers.tsx
+│   │   │   │   │   ├── PropertySellers.tsx
+│   │   │   │   │   └── RealEstateAgents.tsx
+│   │   │   │   ├── AdminDashboard.tsx
+│   │   │   │   ├── ApiDemo.tsx
+│   │   │   │   ├── Blog.tsx
+│   │   │   │   ├── BlogPost.tsx
+│   │   │   │   ├── BlogTest.tsx
+│   │   │   │   ├── ComingSoon.tsx
+│   │   │   │   ├── Community.tsx
+│   │   │   │   ├── CommunityAndResources.tsx
+│   │   │   │   ├── CommunityIntelligence.tsx
+│   │   │   │   ├── Contact.tsx
+│   │   │   │   ├── ContactSales.tsx
+│   │   │   │   ├── Cookies.tsx
+│   │   │   │   ├── Demo.tsx
+│   │   │   │   ├── DeveloperDashboard.tsx
+│   │   │   │   ├── DocumentsPage.tsx
+│   │   │   │   ├── DocumentUpload.tsx
+│   │   │   │   ├── DocumentViewer.tsx
+│   │   │   │   ├── ExpertCoordination.tsx
+│   │   │   │   ├── Features.tsx
+│   │   │   │   ├── FindProfessionals.tsx
+│   │   │   │   ├── Fraud-resources.tsx
+│   │   │   │   ├── GettingStarted.tsx
+│   │   │   │   ├── Help.tsx
+│   │   │   │   ├── Home.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── InstitutionalPricing.tsx
+│   │   │   │   ├── LocationServices.tsx
+│   │   │   │   ├── MVP-Demo.tsx
+│   │   │   │   ├── NavigationTest.tsx
+│   │   │   │   ├── NotFound.tsx
+│   │   │   │   ├── OurStory.tsx
+│   │   │   │   ├── Partners.tsx
+│   │   │   │   ├── PhysicalVerification.tsx
+│   │   │   │   ├── PressMedia.tsx
+│   │   │   │   ├── Pricing.tsx
+│   │   │   │   ├── Privacy.tsx
+│   │   │   │   ├── Properties.tsx
+│   │   │   │   ├── Resources.tsx
+│   │   │   │   ├── Security.tsx
+│   │   │   │   ├── Services.tsx
+│   │   │   │   ├── Solutions.tsx
+│   │   │   │   ├── SystemMonitoring.tsx
+│   │   │   │   └── Terms.tsx
+│   │   │   ├── performance/
+│   │   │   │   └── index.ts
+│   │   │   ├── security/
+│   │   │   │   └── index.ts
+│   │   │   ├── services/
+│   │   │   │   ├── ai-integration/
+│   │   │   │   │   ├── monitoring/
+│   │   │   │   │   │   ├── ai-health-monitor.ts
+│   │   │   │   │   │   ├── ai-metrics-collector.ts
+│   │   │   │   │   │   ├── ai-performance-dashboard.ts
+│   │   │   │   │   │   └── index.ts
+│   │   │   │   │   ├── ai-integration-orchestrator.ts
+│   │   │   │   │   ├── ai-performance-monitor.ts
+│   │   │   │   │   ├── document-processing-integration.ts
+│   │   │   │   │   ├── fraud-detection-integration.ts
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── property-analysis-integration.ts
+│   │   │   │   │   └── recommendation-integration.ts
+│   │   │   │   ├── archive/
+│   │   │   │   │   └── README.md
+│   │   │   │   ├── examples/
+│   │   │   │   │   └── unified-api-client-examples.ts
+│   │   │   │   ├── images/
+│   │   │   │   │   ├── core/
+│   │   │   │   │   │   └── ImageServiceCore.ts
+│   │   │   │   │   ├── ImageMetadataService.ts
+│   │   │   │   │   ├── ImageServiceOrchestrator.ts
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── PropertyImageUploadService.ts
+│   │   │   │   │   ├── PropertyImageValidationService.ts
+│   │   │   │   │   ├── PropertyImageWorkflowManager.ts
+│   │   │   │   │   └── USAGE_EXAMPLES.md
+│   │   │   │   ├── AlertingService.ts
+│   │   │   │   ├── api-client-monitor.ts
+│   │   │   │   ├── audit-trail-service.ts
+│   │   │   │   ├── AuditLogService.ts
+│   │   │   │   ├── AuthTokenService.ts
+│   │   │   │   ├── FormService.ts
+│   │   │   │   ├── HealthCheckService.ts
+│   │   │   │   ├── huggingface-api-client.ts
+│   │   │   │   ├── huggingface-mock-client.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── mock-ai-data.ts
+│   │   │   │   ├── mock-huggingface-client.ts
+│   │   │   │   ├── performance-monitoring-service.ts
+│   │   │   │   ├── PerformanceService.ts
+│   │   │   │   ├── RateLimitService.ts
+│   │   │   │   ├── SearchService.ts
+│   │   │   │   ├── security-monitoring-service.ts
+│   │   │   │   └── unified-api-client.ts
+│   │   │   ├── styles/
+│   │   │   │   ├── design-system.css
+│   │   │   │   └── globals.css
+│   │   │   ├── test-utils/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── render.tsx
+│   │   │   │   └── setup.ts
+│   │   │   ├── testing/
+│   │   │   │   ├── ApiTestUtils.ts
+│   │   │   │   ├── E2ETestUtils.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   └── TestUtils.tsx
+│   │   │   ├── types/
+│   │   │   │   ├── contracts/
+│   │   │   │   │   ├── property-contracts.ts
+│   │   │   │   │   └── user-contracts.ts
+│   │   │   │   ├── images/
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   └── unified.ts
+│   │   │   │   ├── api-contracts.ts
+│   │   │   │   ├── api.ts
+│   │   │   │   ├── api.types.ts
+│   │   │   │   ├── compare.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── property.ts
+│   │   │   │   ├── search.ts
+│   │   │   │   └── service-interfaces.ts
+│   │   │   ├── utils/
+│   │   │   │   ├── images/
+│   │   │   │   │   └── unified-utils.ts
+│   │   │   │   ├── api-client.ts
+│   │   │   │   ├── cn.ts
+│   │   │   │   ├── compare-utils.tsx
+│   │   │   │   ├── date-utils.ts
+│   │   │   │   ├── formatters.ts
+│   │   │   │   ├── globalPerformanceMonitor.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── mockPropertyApi.ts
+│   │   │   │   ├── navigation.ts
+│   │   │   │   ├── property-mapper.ts
+│   │   │   │   ├── propertyAdapters.ts
+│   │   │   │   ├── safe-navigation.ts
+│   │   │   │   ├── test-helpers.tsx
+│   │   │   │   └── toast-utils.ts
+│   │   │   ├── index.ts
+│   │   │   ├── README.md
+│   │   │   └── schema.ts
+│   │   ├── ml/
+│   │   │   └── core/
+│   │   │       └── feature-engineering.ts
+│   │   ├── monitoring/
+│   │   │   ├── components/
+│   │   │   │   └── HealthDashboard.tsx
+│   │   │   ├── pages/
+│   │   │   │   └── MonitoringPage.tsx
+│   │   │   └── index.ts
+│   │   ├── property/
+│   │   │   ├── components/
+│   │   │   │   ├── wizard/
+│   │   │   │   │   ├── examples/
+│   │   │   │   │   │   └── WizardExamples.tsx
+│   │   │   │   │   ├── steps/
+│   │   │   │   │   │   ├── AdaptedBasicDetailsStep.tsx
+│   │   │   │   │   │   ├── AdaptedFeaturesStep.tsx
+│   │   │   │   │   │   ├── AdaptedImagesStep.tsx
+│   │   │   │   │   │   ├── AdaptedLocationStep.tsx
+│   │   │   │   │   │   ├── AdaptedPreviewStep.tsx
+│   │   │   │   │   │   ├── AdaptedPricingStep.tsx
+│   │   │   │   │   │   ├── DocumentationStep.tsx
+│   │   │   │   │   │   └── index.ts
+│   │   │   │   │   ├── config.ts
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── README.md
+│   │   │   │   │   ├── types.ts
+│   │   │   │   │   └── UnifiedPropertyWizard.tsx
+│   │   │   │   ├── CompareBar.tsx
+│   │   │   │   ├── CompareModal.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── LandCard.tsx
+│   │   │   │   ├── PerformanceTestPanel.tsx
+│   │   │   │   ├── PropertyCardShowcase.module.css
+│   │   │   │   ├── PropertyCardShowcase.module.css.d.ts
+│   │   │   │   ├── PropertyCardShowcase.tsx
+│   │   │   │   ├── PropertyListingWizard.tsx
+│   │   │   │   ├── PropertyMap.tsx
+│   │   │   │   ├── PropertyReviews.tsx
+│   │   │   │   └── PropertyTestComponent.tsx
+│   │   │   ├── contexts/
+│   │   │   │   ├── ARCHITECTURE.md
+│   │   │   │   ├── index.ts
+│   │   │   │   └── PropertyContext.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── useConsolidatedPropertySearch.ts
+│   │   │   │   ├── useLandProperty.ts
+│   │   │   │   ├── useProperty.ts
+│   │   │   │   ├── usePropertySearch.ts
+│   │   │   │   └── useUnifiedProperty.ts
+│   │   │   ├── pages/
+│   │   │   │   ├── CommercialProperties.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── LandDetails.tsx
+│   │   │   │   ├── LandRedirect.tsx
+│   │   │   │   ├── Lands.tsx
+│   │   │   │   ├── ListProperty.tsx
+│   │   │   │   ├── PropertiesResidential.tsx
+│   │   │   │   ├── PropertyCompare.tsx
+│   │   │   │   ├── PropertyDetails.tsx
+│   │   │   │   ├── PropertyEdit.tsx
+│   │   │   │   ├── PropertyOptimize.tsx
+│   │   │   │   ├── PropertyPhotos.tsx
+│   │   │   │   ├── PropertyVerification.tsx
+│   │   │   │   ├── PropertyWizard.tsx
+│   │   │   │   └── sedPkWkqG
+│   │   │   ├── services/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── mock-land-data.ts
+│   │   │   │   ├── property-api.ts
+│   │   │   │   ├── property-validation.ts
+│   │   │   │   └── PropertyDocumentIntegration.ts
+│   │   │   ├── tests/
+│   │   │   │   └── performanceTest.ts
+│   │   │   ├── types/
+│   │   │   │   ├── index.ts
+│   │   │   │   └── property.types.ts
+│   │   │   ├── utils/
+│   │   │   │   ├── normalizeLandProperty.ts
+│   │   │   │   ├── normalizeProperty.ts
+│   │   │   │   └── propertyImages.ts
+│   │   │   └── index.ts
+│   │   ├── search/
+│   │   │   ├── components/
+│   │   │   │   ├── ConsolidatedSearch.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── SearchBar.tsx
+│   │   │   │   └── SearchFilters.tsx
+│   │   │   ├── examples/
+│   │   │   │   └── SearchExample.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── index.ts
+│   │   │   │   └── useSearch.ts
+│   │   │   ├── pages/
+│   │   │   │   ├── AdvancedSearch.tsx
+│   │   │   │   └── SearchResults.tsx
+│   │   │   └── index.ts
+│   │   ├── trust/
+│   │   │   ├── components/
+│   │   │   │   ├── CaseManagementInterface.tsx
+│   │   │   │   ├── DocumentAuthentication.tsx
+│   │   │   │   ├── DocumentUploadInterface.tsx
+│   │   │   │   ├── DocumentVerificationResults.tsx
+│   │   │   │   ├── FraudAlertsList.tsx
+│   │   │   │   ├── FraudDetectionDashboard.tsx
+│   │   │   │   ├── MLAnalyticsDisplay.tsx
+│   │   │   │   ├── NetworkAnalysisVisualization.tsx
+│   │   │   │   ├── PropertyRiskAssessment.tsx
+│   │   │   │   ├── TrustScore.tsx
+│   │   │   │   └── VerificationBadge.tsx
+│   │   │   ├── contexts/
+│   │   │   │   └── TrustContext.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── useDocumentAuthentication.ts
+│   │   │   │   ├── useFraudDetection.ts
+│   │   │   │   └── useTrustScore.ts
+│   │   │   ├── pages/
+│   │   │   │   ├── Alerts.tsx
+│   │   │   │   ├── BasicChecks.tsx
+│   │   │   │   ├── DocumentAuth.tsx
+│   │   │   │   ├── FraudDetection.tsx
+│   │   │   │   ├── FraudProtectionInfo.tsx
+│   │   │   │   ├── Karma.tsx
+│   │   │   │   ├── ProofVerification.tsx
+│   │   │   │   ├── Reports.tsx
+│   │   │   │   ├── Reputation.tsx
+│   │   │   │   ├── Reviews.tsx
+│   │   │   │   └── TrustPoints.tsx
+│   │   │   ├── services/
+│   │   │   │   ├── DocumentTrustIntegration.ts
+│   │   │   │   ├── fraudDetectionApi.ts
+│   │   │   │   ├── ImmutableProofService.ts
+│   │   │   │   ├── NPLVerificationService.ts
+│   │   │   │   ├── RegistryMismatchDetector.ts
+│   │   │   │   ├── trust-api.ts
+│   │   │   │   └── trust-business-logic.ts
+│   │   │   ├── types/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── npl-verification.types.ts
+│   │   │   │   └── trust.types.ts
+│   │   │   └── index.ts
+│   │   ├── types/
+│   │   │   ├── audit.types.ts
+│   │   │   ├── css.d.ts
+│   │   │   ├── event.types.ts
+│   │   │   ├── land-verification.ts
+│   │   ├── user/
+│   │   │   ├── components/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── UserNotifications.tsx
+│   │   │   │   └── UserProfile.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── index.ts
+│   │   │   │   └── useUser.ts
+│   │   │   ├── pages/
+│   │   │   │   ├── Activity.tsx
+│   │   │   │   ├── Dashboard.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── Team.tsx
+│   │   │   │   ├── Tenants.tsx
+│   │   │   │   ├── UserProfile.tsx
+│   │   │   │   └── UserSettings.tsx
+│   │   │   ├── services/
+│   │   │   │   ├── README.md
+│   │   │   │   └── user-business-logic.ts
+│   │   │   └── index.ts
+│   │   ├── utils/
+│   │   │   ├── bundle-optimizer.ts
+│   │   │   └── performance-optimizer.ts
+│   │   ├── global.d.ts
+│   │   ├── index.ts
+│   │   ├── main.tsx
+│   │   ├── README.md
+│   │   └── vite-env.d.ts
+│   ├── index.html
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
 ├── DCS/
 │   ├── archive/
 │   │   ├── consolidation-progress.md
@@ -40,18 +782,27 @@
 │   │   ├── 014-schema-validation.md
 │   │   ├── 015-rate-limiting.md
 │   │   ├── 016-layered-architecture.md
+│   │   ├── project-structure.md
 │   │   └── README.md
+│   ├── internal/
+│   │   ├── PORTFOLIO_DESCRIPTION.md
+│   │   ├── triplecheck_development_framework.md
+│   │   └── triplecheck_evaluation.md
+│   ├── COMPLETE_DEMO_READINESS_SUMMARY.md
+│   ├── DEMO_READINESS_FIXES.md
+│   ├── DEMO_READY_CHECKLIST.md
 │   ├── LOGGING_ARCHITECTURE.md
 │   ├── LOGGING_CONSOLIDATION.md
 │   ├── LOGGING_QUICK_REFERENCE.md
-│   ├── project-structure.md
+│   ├── NAMING_CONVENTIONS.md
+│   ├── POST_DEMO_IMPROVEMENTS_COMPLETE.md
+│   ├── project-demo-readiness-analysis.md
+│   ├── project-demo-readiness-audit-results.md
 │   ├── QUICK_REFERENCE.md
-│   └── README.md
-├── public/
-│   └── sw.js
+│   ├── README.md
+│   └── SERVER_ARCHITECTURE_DECISION.md
 ├── scripts/
 │   ├── debug/
-│   │   ├── stop-infinite-queries.ts
 │   │   └── test-server-start.ts
 │   ├── deployment/
 │   │   ├── grafana/
@@ -76,10 +827,14 @@
 │   ├── deploy-setup.ts
 │   ├── emergency-stop.js
 │   ├── execute-optimization.ts
+│   ├── fix-imports.sh
 │   ├── fix-logger-api.ts
 │   ├── fix-logger-imports.ts
 │   ├── generate-favicons.js
 │   ├── health-check.ts
+│   ├── import-resolver.mjs
+│   ├── import-tools.sh
+│   ├── import-validator.mjs
 │   ├── load-data-fixed.ts
 │   ├── logger.js
 │   ├── memory-benchmark.js
@@ -142,6 +897,7 @@
 │   ├── communication/
 │   │   ├── communication-business.service.ts
 │   │   ├── communication.controller.ts
+│   │   ├── CONSOLIDATION_PLAN.md
 │   │   ├── index.ts
 │   │   ├── messages.controller.ts
 │   │   ├── messaging.controller.ts
@@ -186,6 +942,7 @@
 │   │   │   ├── DataIntegrationService.ts
 │   │   │   └── ExternalAPIService.ts
 │   │   ├── tests/
+│   │   │   ├── CONSOLIDATION_PLAN.md
 │   │   │   ├── global-setup.ts
 │   │   │   ├── global-teardown.ts
 │   │   │   ├── results-processor.js
@@ -375,6 +1132,7 @@
 │   │   │   │   ├── run-performance-certification.ts
 │   │   │   │   ├── run-production-readiness-assessment.ts
 │   │   │   │   ├── run-security-validation.ts
+│   │   │   │   ├── sedozOfN9
 │   │   │   │   ├── seed-data.ts
 │   │   │   │   ├── setup-database.ts
 │   │   │   │   ├── status.ts
@@ -455,8 +1213,7 @@
 │   │   │   │   ├── validators/
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── database-utils.ts
-│   │   │   │   ├── index.ts
-│   │   │   │   └── QueryOptimizer.ts
+│   │   │   │   └── index.ts
 │   │   │   ├── index.ts
 │   │   │   ├── init.ts
 │   │   │   ├── MIGRATION_SUMMARY.md
@@ -584,16 +1341,13 @@
 │   │   ├── index.ts
 │   │   ├── logging.middleware.ts
 │   │   ├── query-limiter.middleware.ts
-│   │   ├── rate-limit.ts
 │   │   ├── rate-limiting.middleware.ts
 │   │   ├── README-auth-middleware.md
 │   │   ├── README-centralized-error-handler.md
 │   │   ├── UnifiedSecurityMiddleware.ts
-│   │   ├── validation.middleware.ts
-│   │   └── validation.ts
+│   │   └── validation.middleware.ts
 │   ├── ml/
 │   │   ├── core/
-│   │   │   └── base-model.ts
 │   │   └── README.md
 │   ├── ml-core/
 │   │   ├── deployment/
@@ -648,11 +1402,7 @@
 │   │   ├── community-trust-schema.ts
 │   │   └── email-types.ts
 │   ├── tests/
-│   │   ├── auth/
-│   │   ├── e2e/
 │   │   ├── integration/
-│   │   ├── performance/
-│   │   ├── security/
 │   │   ├── API_BUG_FIXES_SUMMARY.md
 │   │   ├── api-bug-fixes.ts
 │   │   ├── load-test-validation.ts
@@ -696,754 +1446,15 @@
 │   │   ├── README.md
 │   │   └── response-helpers.ts
 │   ├── app.ts
-│   ├── index.ts
 │   ├── main.ts
 │   ├── README.md
-│   ├── simple-dev-server.ts
-│   ├── test-critical-services.ts
-│   ├── test-db-connection.ts
-│   ├── test-email-mock.ts
-│   ├── test-email-service.ts
-│   ├── test-integration.ts
 │   └── vite.ts
-├── src/
-│   ├── analytics/
-│   │   ├── components/
-│   │   │   └── AnalyticsDashboard.tsx
-│   │   ├── hooks/
-│   │   │   └── useAnalytics.ts
-│   │   └── index.ts
-│   ├── app/
-│   │   ├── App.tsx
-│   │   ├── error-boundary.tsx
-│   │   ├── providers.tsx
-│   │   ├── README.md
-│   ├── auth/
-│   │   ├── components/
-│   │   │   ├── index.ts
-│   │   │   ├── LoginForm.tsx
-│   │   │   ├── PasswordReset.tsx
-│   │   │   ├── RegistrationWizard.tsx
-│   │   │   └── TwoFactorAuth.tsx
-│   │   ├── contexts/
-│   │   │   └── AuthContext.tsx
-│   │   ├── hooks/
-│   │   │   ├── index.ts
-│   │   │   └── useAuth.ts
-│   │   ├── pages/
-│   │   │   ├── ForgotPassword.tsx
-│   │   │   ├── Login.tsx
-│   │   │   └── Register.tsx
-│   │   ├── services/
-│   │   │   └── auth-api.ts
-│   │   ├── types/
-│   │   │   └── auth.types.ts
-│   │   └── index.ts
-│   ├── communication/
-│   │   ├── components/
-│   │   │   ├── MessageComposer.tsx
-│   │   │   ├── MessageList.tsx
-│   │   │   ├── MessageThread.tsx
-│   │   │   ├── NotificationCenter.tsx
-│   │   │   ├── NotificationSystem.tsx
-│   │   │   └── RealTimeNotifications.tsx
-│   │   ├── context/
-│   │   │   └── CommunicationContext.tsx
-│   │   ├── hooks/
-│   │   │   ├── useMessages.ts
-│   │   │   ├── useMessaging.ts
-│   │   │   └── useNotifications.ts
-│   │   ├── pages/
-│   │   │   ├── Inbox.tsx
-│   │   │   ├── MessageCenter.tsx
-│   │   │   └── Notifications.tsx
-│   │   ├── services/
-│   │   │   ├── communication-business-logic.ts
-│   │   │   ├── DocumentCommunicationIntegration.ts
-│   │   │   └── WebSocketManager.ts
-│   │   └── index.ts
-│   ├── components/
-│   │   └── ai/
-│   │       ├── HuggingFaceTestPage.tsx
-│   │       └── HuggingFaceTestPanel.tsx
-│   ├── config/
-│   │   └── external-dependencies.ts
-│   ├── infrastructure/
-│   │   ├── ai/
-│   │   │   └── AIModelManager.tsx
-│   │   ├── api/
-│   │   │   ├── data-validation.ts
-│   │   │   ├── queryClient.ts
-│   │   │   └── request-manager.ts
-│   │   ├── audit/
-│   │   │   ├── plugins/
-│   │   │   │   ├── AccessibilityPlugin.ts
-│   │   │   │   ├── PerformancePlugin.ts
-│   │   │   │   └── SecurityPlugin.ts
-│   │   │   ├── audit.types.ts
-│   │   │   ├── AuditReporter.ts
-│   │   │   ├── AuditRunner.ts
-│   │   │   ├── cli.ts
-│   │   │   ├── config.ts
-│   │   │   ├── index.ts
-│   │   │   ├── LinkValidator.ts
-│   │   │   ├── README.md
-│   │   │   ├── run-audit.ts
-│   │   │   ├── tsconfig.json
-│   │   │   ├── types.ts
-│   │   │   └── UIAuditSystem.ts
-│   │   ├── cache/
-│   │   │   └── query-cache.ts
-│   │   ├── hooks/
-│   │   │   ├── examples/
-│   │   │   │   └── race-condition-prevention.tsx
-│   │   │   ├── index.ts
-│   │   │   ├── README.md
-│   │   │   ├── useCleanupManager.ts
-│   │   │   ├── useCoordinatedState.ts
-│   │   │   ├── useIntersectionObserver.ts
-│   │   │   ├── useSafeEffect.ts
-│   │   │   ├── useSafeState.ts
-│   │   │   └── useStableCallback.ts
-│   │   ├── monitoring/
-│   │   │   ├── bundle-analyzer.ts
-│   │   │   ├── core-web-vitals.ts
-│   │   │   ├── index.ts
-│   │   │   ├── operation-tracker.ts
-│   │   │   ├── PerformanceMonitoringProvider.tsx
-│   │   │   ├── query-monitor.ts
-│   │   │   ├── resource-hints.ts
-│   │   │   ├── system-health.ts
-│   │   │   └── usePerformanceMonitoring.ts
-│   │   ├── payments/
-│   │   │   └── PaymentSystemInterface.tsx
-│   │   ├── realtime/
-│   │   │   └── websocket-client.ts
-│   │   ├── service-worker/
-│   │   │   └── sw-registration.ts
-│   │   ├── services/
-│   │   │   └── image-preload-service.ts
-│   │   └── utils/
-│   │       └── image-optimization.ts
-│   ├── land-verification/
-│   │   ├── components/
-│   │   │   ├── CommunityInterviewTemplate.tsx
-│   │   │   ├── ContextualGuidanceProvider.tsx
-│   │   │   ├── DecisionSupportTool.tsx
-│   │   │   ├── ExpertCoordinationInterface.tsx
-│   │   │   ├── HelpSystem.tsx
-│   │   │   ├── index.ts
-│   │   │   ├── KenyaLandEducation.tsx
-│   │   │   ├── LandVerificationDashboard.tsx
-│   │   │   ├── ProfessionalResourcesDirectory.tsx
-│   │   │   ├── RecommendationEngine.tsx
-│   │   │   ├── ReportingPortal.tsx
-│   │   │   ├── RiskAssessmentDisplay.tsx
-│   │   │   ├── RiskFactorAnalysis.tsx
-│   │   │   ├── RiskManagementInterface.tsx
-│   │   │   ├── RiskProfileVisualization.tsx
-│   │   │   ├── RiskWeightingControls.tsx
-│   │   │   ├── ScenarioModelingTool.tsx
-│   │   │   ├── VerificationProgressTracker.tsx
-│   │   │   └── VerificationWizard.tsx
-│   │   ├── hooks/
-│   │   │   └── useLandVerification.ts
-│   │   ├── pages/
-│   │   │   ├── index.ts
-│   │   │   ├── LandVerificationDashboardPage.tsx
-│   │   │   ├── LandVerificationPage.tsx
-│   │   │   └── NewVerificationPage.tsx
-│   │   ├── services/
-│   │   │   ├── DocumentIntelligenceIntegration.ts
-│   │   │   └── HelpDocumentationService.ts
-│   │   └── index.ts
-│   ├── ml/
-│   │   └── core/
-│   │       └── feature-engineering.ts
-│   ├── monitoring/
-│   │   ├── components/
-│   │   │   └── HealthDashboard.tsx
-│   │   ├── pages/
-│   │   │   └── MonitoringPage.tsx
-│   │   └── index.ts
-│   ├── property/
-│   │   ├── components/
-│   │   │   ├── wizard/
-│   │   │   │   ├── examples/
-│   │   │   │   │   └── WizardExamples.tsx
-│   │   │   │   ├── steps/
-│   │   │   │   │   ├── AdaptedBasicDetailsStep.tsx
-│   │   │   │   │   ├── AdaptedFeaturesStep.tsx
-│   │   │   │   │   ├── AdaptedImagesStep.tsx
-│   │   │   │   │   ├── AdaptedLocationStep.tsx
-│   │   │   │   │   ├── AdaptedPreviewStep.tsx
-│   │   │   │   │   ├── AdaptedPricingStep.tsx
-│   │   │   │   │   ├── DocumentationStep.tsx
-│   │   │   │   │   └── index.ts
-│   │   │   │   ├── config.ts
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── README.md
-│   │   │   │   ├── types.ts
-│   │   │   │   └── UnifiedPropertyWizard.tsx
-│   │   │   ├── CompareBar.tsx
-│   │   │   ├── CompareModal.tsx
-│   │   │   ├── index.ts
-│   │   │   ├── LandCard.tsx
-│   │   │   ├── PerformanceTestPanel.tsx
-│   │   │   ├── PropertyCardShowcase.module.css
-│   │   │   ├── PropertyCardShowcase.module.css.d.ts
-│   │   │   ├── PropertyCardShowcase.tsx
-│   │   │   ├── PropertyListingWizard.tsx
-│   │   │   ├── PropertyMap.tsx
-│   │   │   ├── PropertyReviews.tsx
-│   │   │   └── PropertyTestComponent.tsx
-│   │   ├── contexts/
-│   │   │   ├── ARCHITECTURE.md
-│   │   │   ├── index.ts
-│   │   │   └── PropertyContext.tsx
-│   │   ├── hooks/
-│   │   │   ├── index.ts
-│   │   │   ├── useConsolidatedPropertySearch.ts
-│   │   │   ├── useLandProperty.ts
-│   │   │   ├── useProperty.ts
-│   │   │   ├── usePropertySearch.ts
-│   │   │   └── useUnifiedProperty.ts
-│   │   ├── pages/
-│   │   │   ├── CommercialProperties.tsx
-│   │   │   ├── index.ts
-│   │   │   ├── LandDetails.tsx
-│   │   │   ├── LandRedirect.tsx
-│   │   │   ├── Lands.tsx
-│   │   │   ├── ListProperty.tsx
-│   │   │   ├── PropertiesResidential.tsx
-│   │   │   ├── PropertyCompare.tsx
-│   │   │   ├── PropertyDetails.tsx
-│   │   │   ├── PropertyEdit.tsx
-│   │   │   ├── PropertyOptimize.tsx
-│   │   │   ├── PropertyPhotos.tsx
-│   │   │   ├── PropertyVerification.tsx
-│   │   │   └── PropertyWizard.tsx
-│   │   ├── services/
-│   │   │   ├── index.ts
-│   │   │   ├── mock-land-data.ts
-│   │   │   ├── property-api.ts
-│   │   │   ├── property-validation.ts
-│   │   │   └── PropertyDocumentIntegration.ts
-│   │   ├── tests/
-│   │   │   └── performanceTest.ts
-│   │   ├── types/
-│   │   │   ├── index.ts
-│   │   │   └── property.types.ts
-│   │   ├── utils/
-│   │   │   ├── normalizeLandProperty.ts
-│   │   │   ├── normalizeProperty.ts
-│   │   │   └── propertyImages.ts
-│   │   └── index.ts
-│   ├── search/
-│   │   ├── components/
-│   │   │   ├── ConsolidatedSearch.tsx
-│   │   │   ├── index.ts
-│   │   │   ├── SearchBar.tsx
-│   │   │   └── SearchFilters.tsx
-│   │   ├── examples/
-│   │   │   └── SearchExample.tsx
-│   │   ├── hooks/
-│   │   │   ├── index.ts
-│   │   │   └── useSearch.ts
-│   │   ├── pages/
-│   │   │   ├── AdvancedSearch.tsx
-│   │   │   └── SearchResults.tsx
-│   │   └── index.ts
-│   ├── shared/
-│   │   ├── components/
-│   │   │   ├── ai-integration/
-│   │   │   │   └── PropertyAIEnhancement.tsx
-│   │   │   ├── b2b/
-│   │   │   │   ├── B2BCommunityInsightsBanner.tsx
-│   │   │   │   ├── B2BCommunityInsightsPrompt.tsx
-│   │   │   │   ├── B2BContextualPrompt.tsx
-│   │   │   │   ├── B2BEntryPointManager.tsx
-│   │   │   │   ├── B2BFraudReportBanner.tsx
-│   │   │   │   ├── B2BFraudReportPrompt.tsx
-│   │   │   │   ├── B2BLeadCapture.tsx
-│   │   │   │   ├── B2BNotificationBanner.tsx
-│   │   │   │   └── index.ts
-│   │   │   ├── blog/
-│   │   │   │   ├── BlogPostCard.tsx
-│   │   │   │   └── BlogPostSkeleton.tsx
-│   │   │   ├── error-handling/
-│   │   │   │   └── index.ts
-│   │   │   ├── examples/
-│   │   │   │   └── HooksExample.tsx
-│   │   │   ├── fallbacks/
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── MobileNavFallback.tsx
-│   │   │   │   ├── NavigationFallback.tsx
-│   │   │   ├── forms/
-│   │   │   │   ├── FileUpload.tsx
-│   │   │   │   ├── FileUploadField.tsx
-│   │   │   │   └── FormField.tsx
-│   │   │   ├── hero/
-│   │   │   │   ├── ConversionHero.tsx
-│   │   │   │   └── Hero.tsx
-│   │   │   ├── images/
-│   │   │   │   ├── gallery/
-│   │   │   │   │   ├── AdvancedGallery.tsx
-│   │   │   │   │   ├── BatchOperationsToolbar.tsx
-│   │   │   │   │   ├── constants.ts
-│   │   │   │   │   ├── ImageCard.tsx
-│   │   │   │   │   ├── ImageEngine.tsx
-│   │   │   │   │   ├── ImageGallery.tsx
-│   │   │   │   │   ├── index.ts
-│   │   │   │   │   ├── LazyImage.tsx
-│   │   │   │   │   ├── Lightbox.tsx
-│   │   │   │   │   ├── SearchInterface.tsx
-│   │   │   │   │   ├── SimpleGallery.tsx
-│   │   │   │   │   ├── types.ts
-│   │   │   │   │   ├── useImageSearch.ts
-│   │   │   │   │   ├── utils.ts
-│   │   │   │   │   └── ValidationService.ts
-│   │   │   │   ├── ImageGallery.module.css
-│   │   │   │   ├── ImageGallery.tsx
-│   │   │   │   ├── ImageShowcase.tsx
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── PropertyImageVault.tsx
-│   │   │   │   └── REDUNDANCY_ANALYSIS.md
-│   │   │   ├── monitoring/
-│   │   │   │   └── ApiClientDashboard.tsx
-│   │   │   ├── navigation/
-│   │   │   │   ├── BreadcrumbNavigation.tsx
-│   │   │   │   ├── ContextualSidebar.tsx
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── MOBILE_NAV_VISIBILITY_IMPROVEMENTS.md
-│   │   │   │   ├── MobileNav.tsx
-│   │   │   │   ├── Navigation.tsx
-│   │   │   │   ├── NavigationErrorBoundary.tsx
-│   │   │   │   ├── NavigationSearch.tsx
-│   │   │   │   └── SafeNavigation.tsx
-│   │   │   ├── property/
-│   │   │   │   ├── filters/
-│   │   │   │   │   ├── AllPropertiesFilters.tsx
-│   │   │   │   │   ├── BasePropertyFilters.tsx
-│   │   │   │   │   ├── CommercialFilters.tsx
-│   │   │   │   │   ├── index.ts
-│   │   │   │   │   ├── LandFilters.tsx
-│   │   │   │   │   └── ResidentialFilters.tsx
-│   │   │   │   ├── shared/
-│   │   │   │   │   ├── examples/
-│   │   │   │   │   │   ├── index.ts
-│   │   │   │   │   │   └── MinimalPropertyCard.tsx
-│   │   │   │   │   ├── index.ts
-│   │   │   │   │   ├── PropertyFeatures.tsx
-│   │   │   │   │   ├── PropertyImageSection.tsx
-│   │   │   │   │   └── QuickActionsOverlay.tsx
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── PhotoManagementButton.tsx
-│   │   │   │   ├── PropertyArchitectureComparison.tsx
-│   │   │   │   ├── PropertyCard.tsx
-│   │   │   │   ├── PropertyDataGrid.tsx
-│   │   │   │   ├── PropertyListingPage.tsx
-│   │   │   │   └── PropertySkeletonGrid.tsx
-│   │   │   ├── skeletons/
-│   │   │   │   └── PropertyDetailsSkeleton.tsx
-│   │   │   ├── ui/
-│   │   │   │   ├── accordion.tsx
-│   │   │   │   ├── alert-dialog.tsx
-│   │   │   │   ├── alert.tsx
-│   │   │   │   ├── aspect-ratio.tsx
-│   │   │   │   ├── avatar.tsx
-│   │   │   │   ├── badge.tsx
-│   │   │   │   ├── breadcrumb.tsx
-│   │   │   │   ├── button.tsx
-│   │   │   │   ├── calendar.tsx
-│   │   │   │   ├── card.tsx
-│   │   │   │   ├── carousel.tsx
-│   │   │   │   ├── chart.tsx
-│   │   │   │   ├── checkbox.tsx
-│   │   │   │   ├── collapsible.tsx
-│   │   │   │   ├── command.tsx
-│   │   │   │   ├── common-buttons.tsx
-│   │   │   │   ├── context-menu.tsx
-│   │   │   │   ├── dialog.tsx
-│   │   │   │   ├── drawer.tsx
-│   │   │   │   ├── dropdown-menu.tsx
-│   │   │   │   ├── error-states.tsx
-│   │   │   │   ├── form.tsx
-│   │   │   │   ├── hover-card.tsx
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── input-otp.tsx
-│   │   │   │   ├── input.tsx
-│   │   │   │   ├── label.tsx
-│   │   │   │   ├── loading-skeleton.tsx
-│   │   │   │   ├── loading-states.tsx
-│   │   │   │   ├── LoadingSpinner.tsx
-│   │   │   │   ├── logo.tsx
-│   │   │   │   ├── menubar.tsx
-│   │   │   │   ├── navigation-menu.tsx
-│   │   │   │   ├── popover.tsx
-│   │   │   │   ├── progress.tsx
-│   │   │   │   ├── radio-group.tsx
-│   │   │   │   ├── resizable.tsx
-│   │   │   │   ├── scroll-area.tsx
-│   │   │   │   ├── select.tsx
-│   │   │   │   ├── separator.tsx
-│   │   │   │   ├── sheet.tsx
-│   │   │   │   ├── sidebar.tsx
-│   │   │   │   ├── skeleton.tsx
-│   │   │   │   ├── slider.tsx
-│   │   │   │   ├── switch.tsx
-│   │   │   │   ├── table.tsx
-│   │   │   │   ├── tabs.tsx
-│   │   │   │   ├── textarea.tsx
-│   │   │   │   ├── theme-toggle.tsx
-│   │   │   │   ├── toast.tsx
-│   │   │   │   ├── toaster.tsx
-│   │   │   │   ├── toggle-group.tsx
-│   │   │   │   ├── toggle.tsx
-│   │   │   │   ├── tooltip.tsx
-│   │   │   │   └── wordmark.tsx
-│   │   │   ├── AfricaCoverageMap.tsx
-│   │   │   ├── CommunityInsights.tsx
-│   │   │   ├── DemoLoginHelper.tsx
-│   │   │   ├── ErrorBoundary.tsx
-│   │   │   ├── ErrorFeedback.tsx
-│   │   │   ├── GlobalPerformanceTestPanel.tsx
-│   │   │   ├── index.ts
-│   │   │   ├── IntegrationTest.tsx
-│   │   │   ├── LazyComponents.tsx
-│   │   │   ├── listing-card.tsx
-│   │   │   ├── LoadingStates.tsx
-│   │   │   ├── NewsBlog.tsx
-│   │   │   ├── Pagination.tsx
-│   │   │   ├── PaymentGuidance.tsx
-│   │   │   ├── PricingCTA.tsx
-│   │   │   ├── QueryErrorBoundary.tsx
-│   │   │   ├── ROICalculator.tsx
-│   │   │   ├── ServiceCategories.tsx
-│   │   │   ├── Testimonials.tsx
-│   │   │   ├── TrustIndicators.tsx
-│   │   │   ├── VideoModal.tsx
-│   │   │   ├── VirtualizedList.tsx
-│   │   │   └── VirtualizedPropertyList.tsx
-│   │   ├── config/
-│   │   │   ├── assets.ts
-│   │   │   ├── image-components.config.ts
-│   │   │   ├── image-system.config.ts
-│   │   │   ├── images.ts
-│   │   │   ├── propertyTypes.ts
-│   │   │   └── user-journeys.ts
-│   │   ├── contexts/
-│   │   │   └── ThemeContext.tsx
-│   │   ├── docs/
-│   │   │   └── memory-optimization-guide.md
-│   │   ├── error-handling/
-│   │   │   ├── client/
-│   │   │   │   └── error-handler.ts
-│   │   │   ├── constants/
-│   │   │   │   ├── error-categories.ts
-│   │   │   │   ├── error-codes.d.ts
-│   │   │   │   ├── error-codes.d.ts.map
-│   │   │   │   ├── error-codes.js
-│   │   │   │   ├── error-codes.js.map
-│   │   │   │   ├── error-codes.ts
-│   │   │   │   ├── http-status.ts
-│   │   │   │   └── postgres-codes.ts
-│   │   │   ├── errors/
-│   │   │   │   ├── base-error.ts
-│   │   │   │   ├── database-error.ts
-│   │   │   │   └── validation-error.ts
-│   │   │   ├── server/
-│   │   │   │   └── express-handler.ts
-│   │   │   ├── utilities/
-│   │   │   │   ├── error-factory.ts
-│   │   │   │   ├── error-metrics.ts
-│   │   │   │   └── error-utils.ts
-│   │   │   └── index.ts
-│   │   ├── hooks/
-│   │   │   ├── configs/
-│   │   │   │   ├── formValidationConfigs.ts
-│   │   │   │   ├── hookConfigs.ts
-│   │   │   │   └── propertyQueryConfigs.ts
-│   │   │   ├── examples/
-│   │   │   │   └── configurationExamples.ts
-│   │   │   ├── images/
-│   │   │   │   └── usePropertyImageUpload.ts
-│   │   │   ├── migration/
-│   │   │   │   ├── COMPREHENSIVE_MIGRATION_GUIDE.md
-│   │   │   │   └── README.md
-│   │   │   ├── presets/
-│   │   │   │   └── commonHookPresets.ts
-│   │   │   ├── utils/
-│   │   │   │   ├── deprecation.ts
-│   │   │   │   ├── init.ts
-│   │   │   │   └── migration.ts
-│   │   │   ├── CONSOLIDATION_LOG.md
-│   │   │   ├── index.ts
-│   │   │   ├── QUALITY_STANDARDS.md
-│   │   │   ├── use-mobile.tsx
-│   │   │   ├── use-toast.ts
-│   │   │   ├── useAccessibility.tsx
-│   │   │   ├── useAIIntegration.ts
-│   │   │   ├── useB2BEntryPoints.ts
-│   │   │   ├── useB2BMessaging.ts
-│   │   │   ├── useCMS.ts
-│   │   │   ├── useCompareError.ts
-│   │   │   ├── useComponentPerformance.tsx
-│   │   │   ├── useConfigurableHook.ts
-│   │   │   ├── useDebounce.ts
-│   │   │   ├── useDebouncedCallback.ts
-│   │   │   ├── useErrorRecovery.ts
-│   │   │   ├── useFileUpload.ts
-│   │   │   ├── useFilterState.ts
-│   │   │   ├── useFormValidation.ts
-│   │   │   ├── useGeolocation.ts
-│   │   │   ├── useHealthMonitoring.ts
-│   │   │   ├── useImageGallery.ts
-│   │   │   ├── useMemoryOptimization.ts
-│   │   │   ├── useNavigationSpacing.ts
-│   │   │   ├── useOperationTracking.ts
-│   │   │   ├── useOptimisticMutation.ts
-│   │   │   ├── usePagination.ts
-│   │   │   ├── usePaymentGuidance.ts
-│   │   │   ├── usePerformanceOptimization.ts
-│   │   │   ├── usePolling.ts
-│   │   │   ├── usePropertyActions.ts
-│   │   │   ├── usePropertyCardActions.ts
-│   │   │   ├── usePropertyCardState.ts
-│   │   │   ├── usePropertyCompareActions.ts
-│   │   │   ├── usePropertyFormatting.ts
-│   │   │   ├── useSafeQuery.ts
-│   │   │   ├── useSecurity.ts
-│   │   │   └── useWebSocket.ts
-│   │   ├── lib/
-│   │   │   └── utils.ts
-│   │   ├── pages/
-│   │   │   ├── solutions/
-│   │   │   │   ├── LegalExperts.tsx
-│   │   │   │   ├── PropertyBuyers.tsx
-│   │   │   │   ├── PropertyDevelopers.tsx
-│   │   │   │   ├── PropertySellers.tsx
-│   │   │   │   └── RealEstateAgents.tsx
-│   │   │   ├── AdminDashboard.tsx
-│   │   │   ├── ApiDemo.tsx
-│   │   │   ├── Blog.tsx
-│   │   │   ├── BlogPost.tsx
-│   │   │   ├── BlogTest.tsx
-│   │   │   ├── ComingSoon.tsx
-│   │   │   ├── Community.tsx
-│   │   │   ├── CommunityAndResources.tsx
-│   │   │   ├── CommunityIntelligence.tsx
-│   │   │   ├── Contact.tsx
-│   │   │   ├── ContactSales.tsx
-│   │   │   ├── Cookies.tsx
-│   │   │   ├── Demo.tsx
-│   │   │   ├── DeveloperDashboard.tsx
-│   │   │   ├── DocumentsPage.tsx
-│   │   │   ├── DocumentUpload.tsx
-│   │   │   ├── DocumentViewer.tsx
-│   │   │   ├── ExpertCoordination.tsx
-│   │   │   ├── Features.tsx
-│   │   │   ├── FindProfessionals.tsx
-│   │   │   ├── Fraud-resources.tsx
-│   │   │   ├── GettingStarted.tsx
-│   │   │   ├── Help.tsx
-│   │   │   ├── Home.tsx
-│   │   │   ├── index.ts
-│   │   │   ├── InstitutionalPricing.tsx
-│   │   │   ├── LocationServices.tsx
-│   │   │   ├── MVP-Demo.tsx
-│   │   │   ├── NavigationTest.tsx
-│   │   │   ├── NotFound.tsx
-│   │   │   ├── OurStory.tsx
-│   │   │   ├── Partners.tsx
-│   │   │   ├── PhysicalVerification.tsx
-│   │   │   ├── PressMedia.tsx
-│   │   │   ├── Pricing.tsx
-│   │   │   ├── Privacy.tsx
-│   │   │   ├── Properties.tsx
-│   │   │   ├── Resources.tsx
-│   │   │   ├── Security.tsx
-│   │   │   ├── Services.tsx
-│   │   │   ├── Solutions.tsx
-│   │   │   ├── SystemMonitoring.tsx
-│   │   │   └── Terms.tsx
-│   │   ├── performance/
-│   │   │   └── index.ts
-│   │   ├── security/
-│   │   │   └── index.ts
-│   │   ├── services/
-│   │   │   ├── ai-integration/
-│   │   │   │   ├── monitoring/
-│   │   │   │   │   ├── ai-health-monitor.ts
-│   │   │   │   │   ├── ai-metrics-collector.ts
-│   │   │   │   │   ├── ai-performance-dashboard.ts
-│   │   │   │   │   └── index.ts
-│   │   │   │   ├── ai-integration-orchestrator.ts
-│   │   │   │   ├── ai-performance-monitor.ts
-│   │   │   │   ├── document-processing-integration.ts
-│   │   │   │   ├── fraud-detection-integration.ts
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── property-analysis-integration.ts
-│   │   │   │   └── recommendation-integration.ts
-│   │   │   ├── archive/
-│   │   │   │   └── README.md
-│   │   │   ├── examples/
-│   │   │   │   └── unified-api-client-examples.ts
-│   │   │   ├── images/
-│   │   │   │   ├── core/
-│   │   │   │   │   └── ImageServiceCore.ts
-│   │   │   │   ├── ImageMetadataService.ts
-│   │   │   │   ├── ImageServiceOrchestrator.ts
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── PropertyImageUploadService.ts
-│   │   │   │   ├── PropertyImageValidationService.ts
-│   │   │   │   ├── PropertyImageWorkflowManager.ts
-│   │   │   │   └── USAGE_EXAMPLES.md
-│   │   │   ├── AlertingService.ts
-│   │   │   ├── api-client-monitor.ts
-│   │   │   ├── audit-trail-service.ts
-│   │   │   ├── AuditLogService.ts
-│   │   │   ├── AuthTokenService.ts
-│   │   │   ├── FormService.ts
-│   │   │   ├── HealthCheckService.ts
-│   │   │   ├── huggingface-api-client.ts
-│   │   │   ├── huggingface-mock-client.ts
-│   │   │   ├── index.ts
-│   │   │   ├── mock-ai-data.ts
-│   │   │   ├── mock-huggingface-client.ts
-│   │   │   ├── performance-monitoring-service.ts
-│   │   │   ├── PerformanceService.ts
-│   │   │   ├── RateLimitService.ts
-│   │   │   ├── SearchService.ts
-│   │   │   ├── security-monitoring-service.ts
-│   │   │   └── unified-api-client.ts
-│   │   ├── styles/
-│   │   │   ├── design-system.css
-│   │   │   └── globals.css
-│   │   ├── test-utils/
-│   │   │   ├── index.ts
-│   │   │   ├── render.tsx
-│   │   │   └── setup.ts
-│   │   ├── testing/
-│   │   │   ├── ApiTestUtils.ts
-│   │   │   ├── E2ETestUtils.ts
-│   │   │   ├── index.ts
-│   │   │   └── TestUtils.tsx
-│   │   ├── types/
-│   │   │   ├── contracts/
-│   │   │   │   ├── property-contracts.ts
-│   │   │   │   └── user-contracts.ts
-│   │   │   ├── images/
-│   │   │   │   ├── index.ts
-│   │   │   │   └── unified.ts
-│   │   │   ├── api-contracts.ts
-│   │   │   ├── api.ts
-│   │   │   ├── api.types.ts
-│   │   │   ├── compare.ts
-│   │   │   ├── index.ts
-│   │   │   ├── property.ts
-│   │   │   ├── search.ts
-│   │   │   └── service-interfaces.ts
-│   │   ├── utils/
-│   │   │   ├── images/
-│   │   │   │   └── unified-utils.ts
-│   │   │   ├── api-client.ts
-│   │   │   ├── cn.ts
-│   │   │   ├── compare-utils.tsx
-│   │   │   ├── date-utils.ts
-│   │   │   ├── formatters.ts
-│   │   │   ├── globalPerformanceMonitor.ts
-│   │   │   ├── index.ts
-│   │   │   ├── mockPropertyApi.ts
-│   │   │   ├── navigation.ts
-│   │   │   ├── property-mapper.ts
-│   │   │   ├── propertyAdapters.ts
-│   │   │   ├── safe-navigation.ts
-│   │   │   ├── test-helpers.tsx
-│   │   │   └── toast-utils.ts
-│   │   ├── index.ts
-│   │   ├── README.md
-│   │   └── schema.ts
-│   ├── trust/
-│   │   ├── components/
-│   │   │   ├── CaseManagementInterface.tsx
-│   │   │   ├── DocumentAuthentication.tsx
-│   │   │   ├── DocumentUploadInterface.tsx
-│   │   │   ├── DocumentVerificationResults.tsx
-│   │   │   ├── FraudAlertsList.tsx
-│   │   │   ├── FraudDetectionDashboard.tsx
-│   │   │   ├── MLAnalyticsDisplay.tsx
-│   │   │   ├── NetworkAnalysisVisualization.tsx
-│   │   │   ├── PropertyRiskAssessment.tsx
-│   │   │   ├── TrustScore.tsx
-│   │   │   └── VerificationBadge.tsx
-│   │   ├── contexts/
-│   │   │   └── TrustContext.tsx
-│   │   ├── hooks/
-│   │   │   ├── useDocumentAuthentication.ts
-│   │   │   ├── useFraudDetection.ts
-│   │   │   └── useTrustScore.ts
-│   │   ├── pages/
-│   │   │   ├── Alerts.tsx
-│   │   │   ├── BasicChecks.tsx
-│   │   │   ├── DocumentAuth.tsx
-│   │   │   ├── FraudDetection.tsx
-│   │   │   ├── FraudProtectionInfo.tsx
-│   │   │   ├── Karma.tsx
-│   │   │   ├── ProofVerification.tsx
-│   │   │   ├── Reports.tsx
-│   │   │   ├── Reputation.tsx
-│   │   │   ├── Reviews.tsx
-│   │   │   └── TrustPoints.tsx
-│   │   ├── services/
-│   │   │   ├── DocumentTrustIntegration.ts
-│   │   │   ├── fraudDetectionApi.ts
-│   │   │   ├── ImmutableProofService.ts
-│   │   │   ├── NPLVerificationService.ts
-│   │   │   ├── RegistryMismatchDetector.ts
-│   │   │   ├── trust-api.ts
-│   │   │   └── trust-business-logic.ts
-│   │   ├── types/
-│   │   │   ├── index.ts
-│   │   │   ├── npl-verification.types.ts
-│   │   │   └── trust.types.ts
-│   │   └── index.ts
-│   ├── types/
-│   │   ├── audit.types.ts
-│   │   ├── css.d.ts
-│   │   ├── event.types.ts
-│   │   ├── land-verification.ts
-│   ├── user/
-│   │   ├── components/
-│   │   │   ├── index.ts
-│   │   │   ├── UserNotifications.tsx
-│   │   │   └── UserProfile.tsx
-│   │   ├── hooks/
-│   │   │   ├── index.ts
-│   │   │   └── useUser.ts
-│   │   ├── pages/
-│   │   │   ├── Activity.tsx
-│   │   │   ├── Dashboard.tsx
-│   │   │   ├── index.ts
-│   │   │   ├── Team.tsx
-│   │   │   ├── Tenants.tsx
-│   │   │   ├── UserProfile.tsx
-│   │   │   └── UserSettings.tsx
-│   │   ├── services/
-│   │   │   ├── README.md
-│   │   │   └── user-business-logic.ts
-│   │   └── index.ts
-│   ├── utils/
-│   │   ├── bundle-optimizer.ts
-│   │   └── performance-optimizer.ts
-│   ├── global.d.ts
-│   ├── index.ts
-│   ├── main.tsx
-│   ├── property-hooks-test.tsx
-│   ├── README.md
-│   ├── test-new-pages.tsx
-│   ├── test-safe-hooks.tsx
-│   └── vite-env.d.ts
+├── shared/
+│   └── types/
+│       ├── api-contracts.ts
+│       ├── api.types.ts
+│       ├── index.ts
+│       └── property.ts
 ├── tests/
 │   ├── e2e/
 │   │   ├── config/
@@ -1452,7 +1463,16 @@
 │   │   │   └── test-helpers.ts
 │   │   └── README.md
 │   ├── integration/
-│   │   └── api/
+│   ├── manual/
+│   │   ├── property-hooks-test.tsx
+│   │   ├── test-new-pages.tsx
+│   │   └── test-safe-hooks.tsx
+│   ├── server/
+│   │   ├── test-critical-services.ts
+│   │   ├── test-db-connection.ts
+│   │   ├── test-email-mock.ts
+│   │   ├── test-email-service.ts
+│   │   └── test-integration.ts
 │   ├── shared/
 │   │   └── ConsolidatedTestFramework.ts
 │   ├── unit/
@@ -1476,24 +1496,11 @@
 │   ├── css.d.ts
 │   └── PropertyCardShowcase.css.d.ts
 ├── uploads/
-├── Artmark.svg
-├── fix-imports.sh
-├── fix-quotes.py
-├── fix-toast.py
 ├── generate-structure.mjs
-├── import-resolver.mjs
-├── import-tools.sh
-├── import-validator.mjs
-├── index.html
 ├── package-lock.json
 ├── package.json
-├── PORTFOLIO_DESCRIPTION.md
-├── triplecheck_development_framework.md
-├── triplecheck_evaluation.md
-├── TripleCheck.ico
 ├── tsconfig.json
-├── tsconfig.node.json
-└── vite.config.ts
+└── tsconfig.server.json
 ```
 
 ## Excluded

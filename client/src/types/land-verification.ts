@@ -1,14 +1,22 @@
 // Land Verification System Type Definitions
 // This file contains all TypeScript interfaces and types for the Kenya Land Verification System
 
-import type {
-  users,
-  properties,
-} from '@server/infrastructure/database/schemas/consolidated'
+import type { Property } from '@shared/types'
 
-// Create types from the schema tables
-export type User = typeof users.$inferSelect;
-export type Property = typeof properties.$inferSelect;
+// Use the shared property type (API contract, not server schema)
+export type { Property };
+
+// Define User type locally or import from @shared if available
+export type User = {
+  id: string | number;
+  username: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
 
 // Mock the missing table types for now - these should be implemented in the verification schema
 export type LandVerificationSession = {

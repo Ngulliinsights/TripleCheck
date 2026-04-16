@@ -28,8 +28,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@client/*": ["./src/*"],
-      "@server/*": ["../../server/*"],
-      "@shared/*": ["../../shared/*"]
+      "@local/*": ["./"],
+      "@server/*": ["../server/*"],
+      "@shared/*": ["../shared/*"]
     },
     "types": ["vite/client"]
   },

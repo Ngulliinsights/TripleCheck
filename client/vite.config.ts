@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@client': path.resolve(__dirname, './src'),
+      '@local': path.resolve(__dirname, './'),
       '@server': path.resolve(__dirname, '../server'),
       '@shared': path.resolve(__dirname, '../shared'),
     },
