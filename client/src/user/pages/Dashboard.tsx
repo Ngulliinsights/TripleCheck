@@ -193,9 +193,9 @@ const StatCard = React.memo<StatItem & { onClick?: (() => void) | undefined }>(
         }
         onClick={handleClick}
         onKeyDown={onClick ? handleKeyDown : undefined}
-        role={onClick ? "button" : undefined}
-        tabIndex={onClick ? 0 : undefined}
-        aria-label={onClick ? `View ${title}` : undefined}
+        {...(onClick && { role: "button" })}
+        {...(onClick && { tabIndex: 0 })}
+        {...(onClick && { "aria-label": `View ${title}` })}
       >
         <CardContent className="flex items-center p-4">
           <div className={`p-2 rounded-lg ${bg}`}>
@@ -332,9 +332,9 @@ const ActivityRow = React.memo<ActivityItem & { onClick?: (() => void) | undefin
         }`}
         onClick={handleClick}
         onKeyDown={onClick ? handleKeyDown : undefined}
-        role={onClick ? "button" : undefined}
-        tabIndex={onClick ? 0 : undefined}
-        aria-label={onClick ? `View ${title}` : undefined}
+        {...(onClick && { role: "button" })}
+        {...(onClick && { tabIndex: 0 })}
+        {...(onClick && { "aria-label": `View ${title}` })}
       >
         <div className={`p-2 rounded-full ${getBgClass(status)}`}>
           {getIcon(type)}
