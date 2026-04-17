@@ -111,7 +111,7 @@ export default function DocumentViewer() {
     setIsFullscreen(prev => !prev);
   }, []);
 
-  const handleDownload = () => {
+  const getStatusIcon = () => {
     switch (status) {
       case 'verified':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
