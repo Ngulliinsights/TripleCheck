@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../components/ui/textarea'
 import { Label } from '../components/ui/label'
 import { useToast } from '../hooks/use-toast'
+import { getVerificationStatusColor } from '../utils/generic-formatters'
 
 interface VerificationRequest {
   id: string;
@@ -252,22 +253,6 @@ export default function PhysicalVerification() {
     }
   }, [newRequestForm, toast]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'scheduled':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'pending':
-        return 'bg-gray-100 text-gray-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -350,7 +335,7 @@ export default function PhysicalVerification() {
                         </p>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <Badge className={getStatusColor(request.status)}>
+                        <Badge className={getVerificationStatusColor(request.status)}>
                           {request.status}
                         </Badge>
                         <Badge className={getPriorityColor(request.priority)}>

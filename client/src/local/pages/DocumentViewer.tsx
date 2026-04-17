@@ -27,6 +27,7 @@ import { Input } from '../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { useToast } from '../hooks/use-toast'
+import { formatFileSize, getDocumentStatusColor } from '../utils/generic-formatters'
 
 interface DocumentInfo {
   id: string;
@@ -110,20 +111,7 @@ export default function DocumentViewer() {
     setIsFullscreen(prev => !prev);
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
+  const handleDownload = () => {
     switch (status) {
       case 'verified':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
@@ -134,14 +122,6 @@ export default function DocumentViewer() {
       default:
         return <FileText className="w-4 h-4" />;
     }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const formatDate = (date: Date) => {
@@ -177,7 +157,7 @@ export default function DocumentViewer() {
               <div className="p-4 border-b flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold truncate">{document.name}</h3>
-                  <Badge className={getStatusColor(document.status)}>
+                  <Badge className={getDocumentStatusColor(document.status)}>
                     {document.status}
                   </Badge>
                 </div>
@@ -331,7 +311,7 @@ export default function DocumentViewer() {
                   
                   <div className="flex justify-between">
                     <span>Status:</span>
-                    <Badge className={getStatusColor(document.status)}>
+                    <Badge className={getDocumentStatusColor(document.status)}>
                       {document.status}
                     </Badge>
                   </div>

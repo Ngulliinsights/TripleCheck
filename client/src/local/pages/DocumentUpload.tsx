@@ -25,6 +25,7 @@ import { Textarea } from '../components/ui/textarea'
 import { Label } from '../components/ui/label'
 import { Progress } from '../components/ui/progress'
 import { useToast } from '../hooks/use-toast'
+import { formatFileSize } from '../utils/generic-formatters'
 
 interface UploadFile {
   id: string;
@@ -249,14 +250,6 @@ export default function DocumentUpload() {
   const handleClearAll = useCallback(() => {
     setUploadFiles([]);
   }, []);
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
 
   const getFileIcon = (type: string) => {
     if (type.startsWith('image/')) return Image;

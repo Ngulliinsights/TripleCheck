@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { useToast } from '../hooks/use-toast'
+import { formatFileSize, getDocumentStatusColor } from '../utils/generic-formatters'
 
 interface Document {
   id: string;
@@ -231,21 +232,6 @@ export default function DocumentsPage() {
     });
   }, [toast]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'expired':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'verified':
@@ -259,14 +245,6 @@ export default function DocumentsPage() {
       default:
         return <FileText className="w-4 h-4" />;
     }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const formatDate = (date: Date) => {
@@ -499,7 +477,7 @@ export default function DocumentsPage() {
                   </div>
 
                   <div className="mt-3">
-                    <Badge className={getStatusColor(doc.status)}>
+                    <Badge className={getDocumentStatusColor(doc.status)}>
                       {doc.status}
                     </Badge>
                   </div>

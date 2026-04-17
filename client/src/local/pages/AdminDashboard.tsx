@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Progress } from '../components/ui/progress'
 import { useToast } from '../hooks/use-toast'
+import { getUserStatusColor } from '../utils/generic-formatters'
 
 interface SystemStats {
   totalUsers: number;
@@ -169,20 +170,7 @@ export default function AdminDashboard() {
     });
   }, [toast]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'suspended':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getRoleColor = (role: string) => {
+  const filterUsers = () => {
     switch (role) {
       case 'admin':
         return 'bg-purple-100 text-purple-800';
@@ -477,7 +465,7 @@ export default function AdminDashboard() {
                             <Badge className={getRoleColor(user.role)}>
                               {user.role}
                             </Badge>
-                            <Badge className={getStatusColor(user.status)}>
+                            <Badge className={getUserStatusColor(user.status)}>
                               {user.status}
                             </Badge>
                             <span className="text-xs text-muted-foreground">

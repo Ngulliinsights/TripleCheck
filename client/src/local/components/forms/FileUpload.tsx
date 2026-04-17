@@ -5,6 +5,8 @@ import { useFileUpload } from '../../hooks/useFormValidation'
 import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
 import { Progress } from '../ui/progress'
+import { formatFileSize } from '../../utils/generic-formatters'
+import { formatFileSize } from '../../utils/generic-formatters'
 
 export interface FileUploadProps {
   name: string;
@@ -94,14 +96,6 @@ export function FileUpload({
       fileInputRef.current.click();
     }
   }, [disabled]);
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))  } ${  sizes[i]}`;
-  };
 
   const getFileIcon = (file: File) => {
     if (file.type.startsWith('image/')) {
