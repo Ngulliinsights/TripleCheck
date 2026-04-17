@@ -6,7 +6,6 @@ import { cn } from '../../lib/utils'
 import { Button } from '../ui/button'
 import { Progress } from '../ui/progress'
 import { formatFileSize } from '../../utils/generic-formatters'
-import { formatFileSize } from '../../utils/generic-formatters'
 
 export interface FileUploadProps {
   name: string;

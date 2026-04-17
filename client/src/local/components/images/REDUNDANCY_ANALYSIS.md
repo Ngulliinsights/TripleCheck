@@ -176,3 +176,78 @@ client/src/local/
 - Consider consolidating generic status color and file size formatting utilities used in document and admin pages
 - Evaluate moving gallery constants to centralized config if needed
 - Monitor for future redundancy patterns in the codebase
+
+## Additional Consolidation: Generic Utilities (April 17, 2026)
+
+### Generic Utility Consolidation ✅ COMPLETED
+
+**Commit:** fbe5801
+
+After the image system consolidation, analysis revealed additional redundancies in generic formatting utilities used across document and admin pages.
+
+#### New Generic Utilities Module
+
+**File:** `client/src/local/utils/generic-formatters.ts`
+
+Created a centralized module for utilities used in non-image-specific contexts:
+
+```typescript
+export function formatFileSize(bytes: number): string
+export const DOCUMENT_STATUS_COLORS: Record<string, string>
+export const USER_STATUS_COLORS: Record<string, string>
+export const VERIFICATION_STATUS_COLORS: Record<string, string>
+export function getDocumentStatusColor(status: string): string
+export function getUserStatusColor(status: string): string
+export function getVerificationStatusColor(status: string): string
+export function getStatusColor(status: string, context: 'document' | 'user' | 'verification'): string
+```
+
+#### Consolidation Changes
+
+**formatFileSize Elimination:**
+- ✅ Removed from `DocumentsPage.tsx` - now imports from generic-formatters
+- ✅ Removed from `DocumentUpload.tsx` - now imports from generic-formatters
+- ✅ Removed from `DocumentViewer.tsx` - now imports from generic-formatters
+- ✅ Removed from `FileUpload.tsx` - now imports from generic-formatters
+- ✅ Total elimination: 4 duplicate implementations
+
+**getStatusColor Consolidation:**
+- ✅ `DocumentsPage.tsx` - now uses `getDocumentStatusColor()`
+- ✅ `DocumentViewer.tsx` (2 occurrences) - now uses `getDocumentStatusColor()`
+- ✅ `AdminDashboard.tsx` - now uses `getUserStatusColor()`
+- ✅ `PhysicalVerification.tsx` - now uses `getVerificationStatusColor()`
+- ✅ Total elimination: 5 redundant implementations with context awareness
+
+#### Benefits
+
+| Metric | Before | After | Reduction |
+|--------|--------|-------|-----------|
+| formatFileSize implementations | 9 | 1 | 88% |
+| getStatusColor implementations | 12 | 4 | 67% |
+| Total util functions | 21 | 12 | 43% |
+
+#### Files Modified
+
+- `client/src/local/utils/generic-formatters.ts` (NEW)
+- `client/src/local/pages/DocumentsPage.tsx`
+- `client/src/local/pages/DocumentUpload.tsx`
+- `client/src/local/pages/DocumentViewer.tsx`
+- `client/src/local/pages/AdminDashboard.tsx`
+- `client/src/local/pages/PhysicalVerification.tsx`
+- `client/src/local/components/forms/FileUpload.tsx`
+
+#### Future Optimization Opportunities
+
+1. **Gallery Constants Migration** - Move gallery-specific constants to centralized config
+2. **Date Formatting Consolidation** - Some pages have local `formatDate()` functions that could use date-utils
+3. **API Response Utilities** - Consider creating a module for common API response formatting
+4. **Validation Utilities** - Consolidate validation functions across forms and services
+
+#### Redundancy Pattern Prevention
+
+To prevent future redundancies:
+
+1. **Code Review Checklist:** Check if utility already exists before creating new formatting functions
+2. **IDE Search:** Use workspace search for common patterns (e.g., "const formatFileSize" or "switch (status)")
+3. **Shared Utils Directory:** Developers should look in `client/src/local/utils/` first before creating inline utilities
+4. **Naming Conventions:** Use consistent prefixes (getXXX, formatXXX, validateXXX) to aid discoverability
