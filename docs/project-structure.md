@@ -1,6 +1,6 @@
 # Project Structure
 
-**Generated:** 4/16/2026, 5:27:13 PM
+**Generated:** 4/17/2026, 2:06:41 PM
 **Max Depth:** 7 levels
 
 ```
@@ -67,8 +67,6 @@
 │   │   │   │   ├── DocumentCommunicationIntegration.ts
 │   │   │   │   └── WebSocketManager.ts
 │   │   │   └── index.ts
-│   │   ├── components/
-│   │   │   └── ai/
 │   │   ├── config/
 │   │   │   └── external-dependencies.ts
 │   │   ├── infrastructure/
@@ -347,8 +345,6 @@
 │   │   │   │   │   └── error-handler.ts
 │   │   │   │   ├── constants/
 │   │   │   │   │   ├── error-categories.ts
-│   │   │   │   │   ├── error-codes.d.ts
-│   │   │   │   │   ├── error-codes.js
 │   │   │   │   │   ├── error-codes.ts
 │   │   │   │   │   ├── http-status.ts
 │   │   │   │   │   └── postgres-codes.ts
@@ -746,24 +742,8 @@
 │   ├── index.html
 │   ├── tsconfig.json
 │   ├── tsconfig.node.json
+│   ├── vite.config.js
 │   └── vite.config.ts
-├── DCS/
-│   ├── archive/
-│   │   ├── consolidation-progress.md
-│   │   ├── DATABASE_SETUP.md
-│   │   ├── import-analysis.md
-│   │   ├── import-resolution-report.md
-│   │   ├── MISSING_FEATURES_ANALYSIS.md
-│   │   ├── MOBILE_AND_DATA_IMPROVEMENTS.md
-│   │   ├── phase1-complete-summary.md
-│   │   ├── phase2-complete-summary.md
-│   │   ├── phase3-complete-summary.md
-│   │   └── phase3-task8-complete.md
-│   ├── ARCHITECTURE_ADR_EXTRACTION.md
-│   ├── CONSOLIDATION_COMPLETE.md
-│   ├── migration.log.md
-│   ├── README.md
-│   └── script-cleanup-analysis.md
 ├── docs/
 │   ├── adr/
 │   │   ├── 001-cache-consolidation.md
@@ -782,25 +762,31 @@
 │   │   ├── 014-schema-validation.md
 │   │   ├── 015-rate-limiting.md
 │   │   ├── 016-layered-architecture.md
+│   │   ├── 017-server-app-module-pattern.md
+│   │   ├── 018-logging-architecture.md
 │   │   ├── project-structure.md
+│   │   └── README.md
+│   ├── archive/
+│   │   ├── DEMO_READINESS_FIXES.md
+│   │   ├── DEMO_READY_CHECKLIST.md
+│   │   ├── POST_DEMO_IMPROVEMENTS_COMPLETE.md
+│   │   ├── project-demo-readiness-analysis.md
+│   │   └── project-demo-readiness-audit-results.md
+│   ├── dcs/
+│   │   ├── CONSOLIDATION_COMPLETE.md
+│   │   ├── migration.log.md
 │   │   └── README.md
 │   ├── internal/
 │   │   ├── PORTFOLIO_DESCRIPTION.md
 │   │   ├── triplecheck_development_framework.md
 │   │   └── triplecheck_evaluation.md
+│   ├── standards/
+│   │   └── NAMING_CONVENTIONS.md
 │   ├── COMPLETE_DEMO_READINESS_SUMMARY.md
-│   ├── DEMO_READINESS_FIXES.md
-│   ├── DEMO_READY_CHECKLIST.md
-│   ├── LOGGING_ARCHITECTURE.md
-│   ├── LOGGING_CONSOLIDATION.md
-│   ├── LOGGING_QUICK_REFERENCE.md
-│   ├── NAMING_CONVENTIONS.md
-│   ├── POST_DEMO_IMPROVEMENTS_COMPLETE.md
-│   ├── project-demo-readiness-analysis.md
-│   ├── project-demo-readiness-audit-results.md
+│   ├── LOGGING_GUIDE.md
+│   ├── project-structure.md
 │   ├── QUICK_REFERENCE.md
-│   ├── README.md
-│   └── SERVER_ARCHITECTURE_DECISION.md
+│   └── README.md
 ├── scripts/
 │   ├── debug/
 │   │   └── test-server-start.ts
@@ -1347,7 +1333,6 @@
 │   │   ├── UnifiedSecurityMiddleware.ts
 │   │   └── validation.middleware.ts
 │   ├── ml/
-│   │   ├── core/
 │   │   └── README.md
 │   ├── ml-core/
 │   │   ├── deployment/
@@ -1402,7 +1387,6 @@
 │   │   ├── community-trust-schema.ts
 │   │   └── email-types.ts
 │   ├── tests/
-│   │   ├── integration/
 │   │   ├── API_BUG_FIXES_SUMMARY.md
 │   │   ├── api-bug-fixes.ts
 │   │   ├── load-test-validation.ts
@@ -1450,11 +1434,12 @@
 │   ├── README.md
 │   └── vite.ts
 ├── shared/
-│   └── types/
-│       ├── api-contracts.ts
-│       ├── api.types.ts
-│       ├── index.ts
-│       └── property.ts
+│   ├── types/
+│   │   ├── api-contracts.ts
+│   │   ├── api.types.ts
+│   │   ├── index.ts
+│   │   └── property.ts
+│   ├── tsconfig.json
 ├── tests/
 │   ├── e2e/
 │   │   ├── config/
@@ -1462,7 +1447,6 @@
 │   │   ├── helpers/
 │   │   │   └── test-helpers.ts
 │   │   └── README.md
-│   ├── integration/
 │   ├── manual/
 │   │   ├── property-hooks-test.tsx
 │   │   ├── test-new-pages.tsx
@@ -1474,9 +1458,7 @@
 │   │   ├── test-email-service.ts
 │   │   └── test-integration.ts
 │   ├── shared/
-│   │   └── ConsolidatedTestFramework.ts
-│   ├── unit/
-│   │   └── services/
+│   │   └── ConsolidatedTestFramework.tsx
 │   ├── visual/
 │   │   ├── helpers/
 │   │   │   └── visual-test-utils.ts
@@ -1496,11 +1478,15 @@
 │   ├── css.d.ts
 │   └── PropertyCardShowcase.css.d.ts
 ├── uploads/
+├── cleanup-artifacts.mjs
+├── fix-backslashes-imports.mjs
+├── fix-baseline.mjs
 ├── generate-structure.mjs
 ├── package-lock.json
 ├── package.json
+├── tsconfig.check.json
 ├── tsconfig.json
-└── tsconfig.server.json
+├── tsconfig.server.json
 ```
 
 ## Excluded

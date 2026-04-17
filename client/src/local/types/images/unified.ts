@@ -4,6 +4,13 @@
  * with improved type safety and performance optimizations
  */
 
+// Re-export color utilities from unified-utils to avoid duplication
+export {
+  STATUS_COLORS,
+  APPROVAL_STATUS_COLORS,
+  RISK_LEVEL_COLORS,
+} from '../../utils/images/unified-utils';
+
 // Core image status and workflow types
 export type ImageStatus = "pending" | "uploading" | "completed" | "error";
 export type ApprovalStatus =
@@ -396,33 +403,12 @@ export function isImageFailed(image: UnifiedImage): boolean {
   return image.status === "error";
 }
 
-// Improved status color mapping with type safety
-const STATUS_COLORS = {
-  pending: "bg-yellow-500",
-  uploading: "bg-blue-500",
-  completed: "bg-green-500",
-  error: "bg-red-500",
-  processing: "bg-purple-500",
-  paused: "bg-orange-500",
-} as const;
-
-export function getImageStatusColor(status?: ImageStatus): string {
-  if (!status) return "bg-gray-500";
-  return STATUS_COLORS[status] ?? "bg-gray-500"; // Safe object access
-}
-
-const APPROVAL_STATUS_COLORS = {
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  approved: "bg-green-100 text-green-800 border-green-200",
-  rejected: "bg-red-100 text-red-800 border-red-200",
-  needs_revision: "bg-orange-100 text-orange-800 border-orange-200",
-} as const;
-
-export function getApprovalStatusColor(status?: ApprovalStatus): string {
-  const defaultColor = "bg-gray-100 text-gray-800 border-gray-200";
-  if (!status) return defaultColor;
-  return APPROVAL_STATUS_COLORS[status] ?? defaultColor; // Safe object access
-}
+// Color functions are now imported from unified-utils - use those instead
+// Re-export for backward compatibility
+export {
+  getStatusColor as getImageStatusColor,
+  getApprovalStatusColor,
+} from '../../utils/images/unified-utils';
 
 export function hasWorkflowFeatures(image: UnifiedImage): boolean {
   return Boolean(

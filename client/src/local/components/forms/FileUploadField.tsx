@@ -5,6 +5,7 @@ import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { Progress } from '../ui/progress'
 import { cn } from '../../utils/cn'
+import { ImageUtils } from '../../utils/images/unified-utils'
 
 export interface FileUploadFieldProps {
   label: string;
@@ -204,15 +205,6 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
     }
   }, [onUpload, value, showProgress]);
 
-  // Format file size
-  const formatFileSize = useCallback((bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }, []);
-
   return (
     <div className={cn('space-y-2', className)}>
       <Label
@@ -288,7 +280,7 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{file.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatFileSize(file.size)}
+                      {ImageUtils.formatFileSize(file.size)}
                     </p>
                     {showProgress && status === 'uploading' && (
                       <Progress value={progress} className="mt-1 h-1" />
