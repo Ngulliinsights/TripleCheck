@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from 'react'
 /**
  * Context type that includes previous data for rollback scenarios
  */
-interface OptimisticContext<T = unknown> {
+export interface OptimisticContext<T = unknown> {
   previousData?: T;
 }
 

@@ -1,15 +1,21 @@
-import { useQueryClient } from "@tanstack/react-query"
-import { useMemo, useState, useEffect } from "react"
+import { useQueryClient, type UseMutationResult } from "@tanstack/react-query";
+import { useMemo, useState, useEffect } from "react";
 
-import { useDebounce } from "../../local/hooks/useDebounce"
-import { useOptimisticMutation } from "../../local/hooks/useOptimisticMutation"
-import { useSafeQuery } from "../../local/hooks/useSafeQuery"
-import { Property } from "@shared/types/property"
-import { fetchMockLandProperty, hasMockLandProperty, type MockLandProperty } from "../services/mock-land-data"
-import { propertyApi } from "../services/property-api"
-import { PropertySearchParams } from "../types/property.types"
+import { useDebounce } from "../../local/hooks/useDebounce";
+import { useOptimisticMutation, type OptimisticContext } from "../../local/hooks/useOptimisticMutation";
+import { useSafeQuery } from "../../local/hooks/useSafeQuery";
+import { Property } from "@shared/types/property";
+import {
+  fetchMockLandProperty,
+  hasMockLandProperty,
+  type MockLandProperty,
+} from "../services/mock-land-data";
+import { type ApiResponse } from "../../local/types/api.types";
+import { propertyApi } from "../services/property-api";
+import { PropertySearchParams } from "../types/property.types";
 
-// Enhanced type definitions for unified property management
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface UnifiedPropertyOptions {
   enabled?: boolean;
   staleTime?: number;
@@ -51,232 +57,158 @@ interface SearchResult {
   properties: Property[];
   totalCount: number;
   hasNextPage: boolean;
-  searchMetrics?: {
-    responseTime: number;
-    totalResults: number;
-    appliedFilters: string[];
-  } | undefined;
+  searchMetrics?:
+    | {
+        responseTime: number;
+        totalResults: number;
+        appliedFilters: string[];
+      }
+    | undefined;
 }
 
-// Constants for cache management and string literals
+interface LandPropertyResult {
+  data: MockLandProperty | null;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+type SafeQueryResult<T> = ReturnType<typeof useSafeQuery<T>>;
+
+// Per-mutation variable shapes.
+type CreatePropertyVars = Omit<Property, "id" | "createdAt" | "updatedAt">;
+type UpdatePropertyVars = { id: string; updates: Partial<Property>; userId: string };
+type DeletePropertyVars = { id: string; userId: string };
+
+// Specific result types — a shared ReturnType<typeof useOptimisticMutation> alias
+// collapses all generics to unknown and fails due to function parameter contravariance.
+type CreateMutationResult = UseMutationResult<ApiResponse<Property>, unknown, CreatePropertyVars, OptimisticContext<unknown>>;
+type UpdateMutationResult = UseMutationResult<ApiResponse<Property>, unknown, UpdatePropertyVars, OptimisticContext<unknown>>;
+type DeleteMutationResult = UseMutationResult<ApiResponse<void>,    unknown, DeletePropertyVars, OptimisticContext<unknown>>;
+
+interface UnifiedPropertyHooks {
+  usePropertyDetail: (id: string, options?: UnifiedPropertyOptions) => SafeQueryResult<PropertyDetailResponse | null>;
+  useLandProperty: (id: string, options?: UnifiedPropertyOptions) => LandPropertyResult;
+  useProperties: (params?: Partial<PropertySearchParams>, options?: UnifiedPropertyOptions) => SafeQueryResult<PropertiesResponse>;
+  usePropertySearch: (query: string, filters?: Partial<PropertySearchParams>, options?: UnifiedPropertyOptions) => SafeQueryResult<SearchResult>;
+  useCreateProperty: () => CreateMutationResult;
+  useUpdateProperty: () => UpdateMutationResult;
+  useDeleteProperty: () => DeleteMutationResult;
+  invalidatePropertyQueries: () => void;
+  clearPropertyCache: (propertyId?: string) => void;
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const CACHE_CONFIG = {
-  PROPERTY_DETAIL: {
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
-    retry: 2,
-  },
-  PROPERTIES_LIST: {
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: 3,
-  },
-  LAND_PROPERTY: {
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: 1,
-  },
+  PROPERTY_DETAIL: { staleTime: 10 * 60 * 1000, gcTime: 30 * 60 * 1000, retry: 2 },
+  PROPERTIES_LIST: { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000, retry: 3 },
 } as const;
 
-/**
- * Centralized string constants to avoid duplication and ensure consistency
- * This is our single source of truth for all string literals used throughout the hook
- * Think of this as the "dictionary" for all the fixed strings we use repeatedly
- */
-const STRING_CONSTANTS = {
+const CTX = {
   PROPERTY_DETAIL: "property-detail",
   LAND_PROPERTY: "land-property",
   PROPERTIES_LIST: "properties-list",
   PROPERTY_SEARCH: "property-search",
-  UNTITLED_PROPERTY: "Untitled Property",
-  LOCATION_NOT_SPECIFIED: "Location not specified",
-  FAILED_TO_FETCH: "Failed to fetch land property",
 } as const;
 
-/**
- * Cache key generators for consistency
- * These functions create standardized cache keys by combining our string constants
- * with dynamic values like IDs or parameters. This ensures all cache keys follow
- * the same pattern and reduces the chance of cache key conflicts.
- */
-const generateCacheKey = {
-  propertyDetail: (id: string) => `${STRING_CONSTANTS.PROPERTY_DETAIL}-${id}`,
-  landProperty: (id: string) => `${STRING_CONSTANTS.LAND_PROPERTY}-${id}`,
-  propertiesList: (params: Record<string, unknown>) => `${STRING_CONSTANTS.PROPERTIES_LIST}-${JSON.stringify(params)}`,
-  propertySearch: (params: Record<string, unknown>) => `${STRING_CONSTANTS.PROPERTY_SEARCH}-${JSON.stringify(params)}`,
+const cacheKey = {
+  propertyDetail: (id: string) => `${CTX.PROPERTY_DETAIL}-${id}`,
+  landProperty: (id: string) => `${CTX.LAND_PROPERTY}-${id}`,
+  propertiesList: (params: Record<string, unknown>) =>
+    `${CTX.PROPERTIES_LIST}-${JSON.stringify(params)}`,
+  propertySearch: (params: Record<string, unknown>) =>
+    `${CTX.PROPERTY_SEARCH}-${JSON.stringify(params)}`,
 } as const;
 
-/**
- * Helper function to safely extract string values with fallbacks
- * This reduces repetitive type checking in the main validator
- * Think of this as a "safety net" that ensures we always get a string back,
- * even if the input data is malformed or missing
- */
-function safeStringExtract(value: unknown, fallback: string): string {
+// ─── Data helpers ─────────────────────────────────────────────────────────────
+
+function safeStr(value: unknown, fallback: string): string {
   return value ? String(value) : fallback;
 }
 
-/**
- * Helper function to safely extract number values with fallbacks
- * This reduces repetitive type checking in the main validator
- * Similar to safeStringExtract, but specifically for numeric values
- */
-function safeNumberExtract(value: unknown, fallback?: number): number | undefined {
-  return typeof value === "number" ? value : fallback;
+function safeNum(value: unknown): number | undefined {
+  return typeof value === "number" ? value : undefined;
 }
 
-/**
- * Helper function to safely extract array values with fallbacks
- * This reduces repetitive type checking in the main validator
- * Ensures we always get an array back, preventing "cannot read property of undefined" errors
- */
-function safeArrayExtract<T>(value: unknown, fallback: T[] = []): T[] {
-  return Array.isArray(value) ? value : fallback;
+function safeStrArr(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const filtered = value.filter((v): v is string => typeof v === "string");
+  return filtered.length > 0 ? filtered : undefined;
 }
 
-/**
- * Helper function to safely extract string array values with fallbacks
- * This ensures type safety for amenities and similar string arrays
- * Not only checks if it's an array, but also filters out non-string values
- */
-function safeStringArrayExtract(value: unknown, fallback: string[] = []): string[] {
-  if (!Array.isArray(value)) return fallback;
-  return value.filter((item): item is string => typeof item === 'string');
-}
-
-/**
- * Helper function to extract and validate location data
- * This simplifies location handling logic by centralizing the complex
- * logic for dealing with different location data formats
- */
-function extractLocationData(location: unknown): string {
-  // Handle simple string location format
-  if (typeof location === "string") {
-    return location;
-  }
-
-  // Handle complex object location format with nested properties
+function extractLocation(location: unknown): string {
+  if (typeof location === "string") return location;
   if (location && typeof location === "object") {
-    const locationObj = location as { address?: string };
-    return locationObj.address || STRING_CONSTANTS.LOCATION_NOT_SPECIFIED;
+    return (location as { address?: string }).address ?? "Location not specified";
   }
-
-  // Fallback for any other data type
-  return STRING_CONSTANTS.LOCATION_NOT_SPECIFIED;
+  return "Location not specified";
 }
 
-/**
- * Simplified property validation function with reduced cognitive complexity
- * Addresses ESLint cognitive-complexity warning by breaking down validation logic
- * This function takes raw API data and transforms it into a standardized format
- * that our application can rely on, regardless of how the backend sends the data
- */
-function validatePropertyData(propertyObj: Record<string, unknown>, id: string): PropertyDetailResponse {
-  // Basic required fields with safe extraction
-  // These are the fields that every property must have, so we provide sensible defaults
-  const basicFields = {
-    id: safeStringExtract(propertyObj.id, id),
-    title: safeStringExtract(propertyObj.title, STRING_CONSTANTS.UNTITLED_PROPERTY),
-    price: safeNumberExtract(propertyObj.price, 0) || 0,
-    images: safeArrayExtract(propertyObj.images, []),
-    location: extractLocationData(propertyObj.location),
-    features: (propertyObj.features && typeof propertyObj.features === "object")
-      ? propertyObj.features as Record<string, unknown>
-      : {},
+function validatePropertyData(
+  propertyObj: Record<string, unknown>,
+  id: string
+): PropertyDetailResponse {
+  const result: PropertyDetailResponse = {
+    id: safeStr(propertyObj.id, id),
+    title: safeStr(propertyObj.title, "Untitled Property"),
+    price: safeNum(propertyObj.price) ?? 0,
+    images: Array.isArray(propertyObj.images) ? propertyObj.images : [],
+    location: extractLocation(propertyObj.location),
+    features:
+      propertyObj.features && typeof propertyObj.features === "object"
+        ? (propertyObj.features as Record<string, unknown>)
+        : {},
   };
 
-  // Optional fields with safe extraction
-  // These fields might not be present in all property data, so we handle them gracefully
-  const optionalFields = {
-    description: propertyObj.description ? String(propertyObj.description) : undefined,
-    amenities: safeStringArrayExtract(propertyObj.amenities),
-    lastUpdated: propertyObj.lastUpdated ? String(propertyObj.lastUpdated) : undefined,
-    viewCount: safeNumberExtract(propertyObj.viewCount),
-    bedrooms: safeNumberExtract(propertyObj.bedrooms),
-    bathrooms: safeNumberExtract(propertyObj.bathrooms),
-    size: safeNumberExtract(propertyObj.size),
-    type: propertyObj.type ? String(propertyObj.type) : undefined,
-    status: propertyObj.status ? String(propertyObj.status) : undefined,
-    ownerId: propertyObj.ownerId ? String(propertyObj.ownerId) : undefined,
-    createdAt: propertyObj.createdAt ? String(propertyObj.createdAt) : undefined,
-    updatedAt: propertyObj.updatedAt ? String(propertyObj.updatedAt) : undefined,
-  };
+  if (propertyObj.description) result.description = String(propertyObj.description);
+  const amenities = safeStrArr(propertyObj.amenities);
+  if (amenities) result.amenities = amenities;
+  if (propertyObj.lastUpdated) result.lastUpdated = String(propertyObj.lastUpdated);
 
-  // Combine all fields into the final response
-  // This spread operator technique creates a clean, flat object structure
-  return {
-    ...basicFields,
-    ...optionalFields,
-  };
+  const numFields = ["viewCount", "bedrooms", "bathrooms", "size"] as const;
+  for (const field of numFields) {
+    const v = safeNum(propertyObj[field]);
+    if (v !== undefined) (result as unknown as Record<string, unknown>)[field] = v;
+  }
+
+  const strFields = ["type", "status", "ownerId", "createdAt", "updatedAt"] as const;
+  for (const field of strFields) {
+    if (propertyObj[field]) (result as unknown as Record<string, unknown>)[field] = String(propertyObj[field]);
+  }
+
+  return result;
 }
 
-/**
- * Helper function to extract properties from search results
- * This simplifies the nested ternary operations by handling the various
- * ways that different APIs might structure their response data
- */
-function extractPropertiesFromResponse(actualData: Record<string, unknown>): Property[] {
-  if (Array.isArray(actualData.properties)) {
-    return actualData.properties;
-  }
-  if (Array.isArray(actualData.data)) {
-    return actualData.data;
-  }
+function extractProperties(data: Record<string, unknown>): Property[] {
+  if (Array.isArray(data.properties)) return data.properties;
+  if (Array.isArray(data.data)) return data.data;
   return [];
 }
 
-/**
- * Helper function to extract total count from search results
- * This simplifies the nested ternary operations and provides a consistent
- * way to get the total count regardless of API response format
- */
-function extractTotalCountFromResponse(actualData: Record<string, unknown>): number {
-  if (typeof actualData.totalCount === "number") {
-    return actualData.totalCount;
-  }
-  if (typeof actualData.total === "number") {
-    return actualData.total;
-  }
+function extractTotal(data: Record<string, unknown>): number {
+  if (typeof data.totalCount === "number") return data.totalCount;
+  if (typeof data.total === "number") return data.total;
   return 0;
 }
 
-/**
- * Enhanced error handling helper for async operations
- * This centralizes error handling logic and ensures proper logging
- * Think of this as a "translator" that converts any kind of error into
- * a standardized format that our application can understand and handle
- */
 function handleAsyncError(error: unknown, context: string): Error {
-  const errorMessage = `${context}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-  // Use proper error logging instead of console.warn to avoid ESLint warnings
-  // We only log in development to avoid cluttering production logs
-  if (process.env.NODE_ENV === 'development') {
+  const message = `${context}: ${error instanceof Error ? error.message : "Unknown error"}`;
+  if (process.env.NODE_ENV === "development") {
     // eslint-disable-next-line no-console
-    console.warn(errorMessage, error);
+    console.warn(message, error);
   }
-  return error instanceof Error ? error : new Error(errorMessage);
+  return error instanceof Error ? error : new Error(message);
 }
 
-/**
- * Unified property hook that consolidates functionality from:
- * - useProperty.ts (property details and CRUD operations)
- * - useLandProperty.ts (land-specific property handling)
- * - usePropertySearch.ts (search and filtering)
- * 
- * This hook provides a single interface for all property-related operations
- * with enhanced error handling, caching, and performance optimizations.
- * 
- * Think of this hook as a "property management control center" that handles
- * all the different ways your application needs to interact with property data.
- */
-export function useUnifiedProperty() {
+// ─── Unified hook ─────────────────────────────────────────────────────────────
+
+export function useUnifiedProperty(): UnifiedPropertyHooks {
   const queryClient = useQueryClient();
 
-  /**
-   * Fetch a single property by ID with enhanced validation and caching
-   * Uses simplified validator function to reduce cognitive complexity
-   * This is like asking for a specific file from a well-organized filing cabinet
-   */
-  const usePropertyDetail = (id: string, options: UnifiedPropertyOptions = {}) => {
+  const usePropertyDetail = (
+    id: string,
+    options: UnifiedPropertyOptions = {}
+  ): SafeQueryResult<PropertyDetailResponse | null> => {
     const {
       enabled = true,
       staleTime = CACHE_CONFIG.PROPERTY_DETAIL.staleTime,
@@ -289,20 +221,14 @@ export function useUnifiedProperty() {
       fallbackData: null,
       validator: (data: unknown): PropertyDetailResponse | null => {
         if (!data || typeof data !== "object") return null;
-
         const response = data as Record<string, unknown>;
-        const property = response.data || response;
-
+        const property = response.data ?? response;
         if (!property || typeof property !== "object") return null;
-
-        const propertyObj = property as Record<string, unknown>;
-        return validatePropertyData(propertyObj, id);
+        return validatePropertyData(property as Record<string, unknown>, id);
       },
       enabled: Boolean(id) && id.length > 0 && enabled,
-      // Notice: We now use STRING_CONSTANTS directly instead of CONTEXT_NAMES
-      // This eliminates the duplicate string literals and maintains consistency
-      context: STRING_CONSTANTS.PROPERTY_DETAIL,
-      cacheKey: generateCacheKey.propertyDetail(id),
+      context: CTX.PROPERTY_DETAIL,
+      cacheKey: cacheKey.propertyDetail(id),
       staleTime,
       gcTime,
       refetchOnWindowFocus: false,
@@ -310,15 +236,11 @@ export function useUnifiedProperty() {
     });
   };
 
-  /**
-   * Fetch land property with mock data fallback and proper error handling
-   * Addresses ESLint warnings about unused variables and unhandled exceptions
-   * This handles the special case where we might not have real data yet,
-   * so we gracefully fall back to mock data for development and testing
-   */
-  const useLandProperty = (id: string, options: UnifiedPropertyOptions = {}) => {
+  const useLandProperty = (
+    id: string,
+    options: UnifiedPropertyOptions = {}
+  ): LandPropertyResult => {
     const { enabled = true } = options;
-    // Note: staleTime and gcTime removed as they weren't being used in the custom implementation
 
     const [landData, setLandData] = useState<MockLandProperty | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -327,70 +249,48 @@ export function useUnifiedProperty() {
     useEffect(() => {
       if (!id || id.length === 0 || !enabled) return;
 
-      const fetchLandData = async () => {
+      const fetchLandData = async (): Promise<void> => {
         setIsLoading(true);
         setError(null);
 
         try {
-          // First try the real API endpoint
           const response = await fetch(`/api/land-properties/${id}`);
           if (response.ok) {
             const data = await response.json();
-            setLandData(data.data || data);
+            setLandData(data.data ?? data);
             return;
           }
         } catch (apiError) {
-          // Handle API error properly instead of silent catch
-          const handledError = handleAsyncError(apiError, 'API fetch failed');
-          // Use proper error logging instead of console.warn to avoid ESLint warnings
-          if (process.env.NODE_ENV === 'development') {
+          const err = handleAsyncError(apiError, "API fetch failed");
+          if (process.env.NODE_ENV === "development") {
             // eslint-disable-next-line no-console
-            console.warn('API endpoint unavailable, falling back to mock data:', handledError.message);
+            console.warn("Falling back to mock data:", err.message);
           }
         }
 
-        // Fallback to mock data if API fails or doesn't have the property
-        // This provides a smooth development experience even when backend isn't ready
         try {
           if (hasMockLandProperty(id)) {
-            const mockData = await fetchMockLandProperty(id);
-            setLandData(mockData);
+            setLandData(await fetchMockLandProperty(id));
           } else {
             setLandData(null);
           }
         } catch (mockError) {
-          const handledError = handleAsyncError(mockError, 'Mock data fetch failed');
-          setError(handledError);
+          setError(handleAsyncError(mockError, "Mock data fetch failed"));
         }
       };
 
-      // Properly handle the promise chain to address ESLint promise/catch-or-return warning
       void fetchLandData()
-        .catch((err) => {
-          const handledError = handleAsyncError(err, STRING_CONSTANTS.FAILED_TO_FETCH);
-          setError(handledError);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
+        .catch((err) => setError(handleAsyncError(err, "Failed to fetch land property")))
+        .finally(() => setIsLoading(false));
     }, [id, enabled]);
 
-    return {
-      data: landData,
-      isLoading,
-      error,
-    };
+    return { data: landData, isLoading, error };
   };
 
-  /**
-   * Fetch multiple properties with advanced filtering and pagination
-   * This is like asking for a filtered and sorted list from a database
-   * The debouncing prevents too many API calls when users are typing quickly
-   */
   const useProperties = (
     searchParams: Partial<PropertySearchParams> = {},
     options: UnifiedPropertyOptions = {}
-  ) => {
+  ): SafeQueryResult<PropertiesResponse> => {
     const {
       enabled = true,
       staleTime = CACHE_CONFIG.PROPERTIES_LIST.staleTime,
@@ -398,44 +298,33 @@ export function useUnifiedProperty() {
       debounceMs = 300,
     } = options;
 
-    // Debounce search parameters to reduce API calls
-    // This waits for the user to stop typing before making the API call
     const debouncedParams = useDebounce(searchParams, debounceMs);
+    const key = useMemo(
+      () => cacheKey.propertiesList(debouncedParams as Record<string, unknown>),
+      [debouncedParams]
+    );
 
     return useSafeQuery<PropertiesResponse>({
       endpoint: "/api/properties",
       method: "GET",
       body: debouncedParams as Record<string, unknown>,
-      fallbackData: {
-        data: [],
-        total: 0,
-        page: 1,
-        limit: 10,
-        hasNext: false,
-        hasPrev: false,
-      },
+      fallbackData: { data: [], total: 0, page: 1, limit: 10, hasNext: false, hasPrev: false },
       validator: (data: unknown): PropertiesResponse | null => {
         if (!data || typeof data !== "object") return null;
-
         const response = data as Record<string, unknown>;
-        const actualData = (response.success ? response.data || response : response) as Record<string, unknown>;
-
+        const actual = (response.success ? response.data ?? response : response) as Record<string, unknown>;
         return {
-          data: Array.isArray(actualData.data) ? actualData.data : [],
-          total: typeof actualData.total === "number" ? actualData.total : 0,
-          page: typeof actualData.page === "number" ? actualData.page : 1,
-          limit: typeof actualData.limit === "number" ? actualData.limit : 10,
-          hasNext: Boolean(actualData.hasNext),
-          hasPrev: Boolean(actualData.hasPrev),
+          data: Array.isArray(actual.data) ? actual.data : [],
+          total: typeof actual.total === "number" ? actual.total : 0,
+          page: typeof actual.page === "number" ? actual.page : 1,
+          limit: typeof actual.limit === "number" ? actual.limit : 10,
+          hasNext: Boolean(actual.hasNext),
+          hasPrev: Boolean(actual.hasPrev),
         };
       },
       enabled,
-      // Using STRING_CONSTANTS directly eliminates duplicate string literals
-      context: STRING_CONSTANTS.PROPERTIES_LIST,
-      cacheKey: useMemo(
-        () => generateCacheKey.propertiesList(debouncedParams),
-        [debouncedParams]
-      ),
+      context: CTX.PROPERTIES_LIST,
+      cacheKey: key,
       staleTime,
       gcTime,
       refetchOnWindowFocus: false,
@@ -443,16 +332,11 @@ export function useUnifiedProperty() {
     });
   };
 
-  /**
-   * Advanced property search with intelligent filtering and suggestions
-   * Uses helper functions to simplify complex ternary operations
-   * This is like having a smart search engine that understands property-specific queries
-   */
   const usePropertySearch = (
     searchQuery: string,
     filters: Partial<PropertySearchParams> = {},
     options: UnifiedPropertyOptions = {}
-  ) => {
+  ): SafeQueryResult<SearchResult> => {
     const {
       enabled = true,
       staleTime = CACHE_CONFIG.PROPERTIES_LIST.staleTime,
@@ -460,45 +344,35 @@ export function useUnifiedProperty() {
       debounceMs = 500,
     } = options;
 
-    // Combine search query with filters into a single search request
-    // This creates a comprehensive search that considers both text and structured filters
-    const searchParams = useMemo(() => ({
-      ...filters,
-      query: searchQuery,
-    }), [searchQuery, filters]);
-
+    const searchParams = useMemo(
+      () => ({ ...filters, query: searchQuery }),
+      [searchQuery, filters]
+    );
     const debouncedSearchParams = useDebounce(searchParams, debounceMs);
+    const key = useMemo(
+      () => cacheKey.propertySearch(debouncedSearchParams as Record<string, unknown>),
+      [debouncedSearchParams]
+    );
 
     return useSafeQuery<SearchResult>({
       endpoint: "/api/properties/search",
       method: "POST",
       body: debouncedSearchParams as Record<string, unknown>,
-      fallbackData: {
-        properties: [],
-        totalCount: 0,
-        hasNextPage: false,
-        searchMetrics: undefined,
-      },
+      fallbackData: { properties: [], totalCount: 0, hasNextPage: false, searchMetrics: undefined },
       validator: (data: unknown): SearchResult | null => {
         if (!data || typeof data !== "object") return null;
-
         const response = data as Record<string, unknown>;
-        const actualData = (response.success ? response.data || response : response) as Record<string, unknown>;
-
+        const actual = (response.success ? response.data ?? response : response) as Record<string, unknown>;
         return {
-          properties: extractPropertiesFromResponse(actualData),
-          totalCount: extractTotalCountFromResponse(actualData),
-          hasNextPage: Boolean(actualData.hasNextPage || actualData.hasNext),
-          searchMetrics: actualData.searchMetrics as SearchResult["searchMetrics"],
+          properties: extractProperties(actual),
+          totalCount: extractTotal(actual),
+          hasNextPage: Boolean(actual.hasNextPage ?? actual.hasNext),
+          searchMetrics: actual.searchMetrics as SearchResult["searchMetrics"],
         };
       },
       enabled: enabled && searchQuery.trim().length > 0,
-      // Using STRING_CONSTANTS directly for consistency
-      context: STRING_CONSTANTS.PROPERTY_SEARCH,
-      cacheKey: useMemo(
-        () => generateCacheKey.propertySearch(debouncedSearchParams),
-        [debouncedSearchParams]
-      ),
+      context: CTX.PROPERTY_SEARCH,
+      cacheKey: key,
       staleTime,
       gcTime,
       refetchOnWindowFocus: false,
@@ -506,177 +380,124 @@ export function useUnifiedProperty() {
     });
   };
 
-  /**
-   * Create a new property with optimistic updates
-   * Optimistic updates mean we update the UI immediately, assuming the operation
-   * will succeed, then fix it later if there's an error. This makes the app feel faster.
-   */
-  const useCreateProperty = () => {
-    return useOptimisticMutation({
-      mutationFn: (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) =>
-        propertyApi.createProperty(propertyData),
+  const useCreateProperty = (): CreateMutationResult =>
+    useOptimisticMutation<ApiResponse<Property>, unknown, CreatePropertyVars>({
+      mutationFn: (data: CreatePropertyVars) => propertyApi.createProperty(data),
       queryKey: ["properties", "list"],
-      optimisticUpdate: (oldData: unknown, newProperty: Property) => {
-        const currentData = oldData as PropertiesResponse | undefined;
-        if (!currentData?.data) return currentData;
-
-        // Add the new property to the beginning of the list
+      optimisticUpdate: (oldData: unknown, variables: CreatePropertyVars) => {
+        const current = oldData as PropertiesResponse | undefined;
+        if (!current?.data) return current;
+        const optimistic = {
+          ...variables,
+          id: `temp-${Date.now()}-${Math.random()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as Property;
         return {
-          ...currentData,
-          data: [newProperty, ...currentData.data],
-          total: currentData.total + 1,
-          hasNext: currentData.hasNext || currentData.data.length >= currentData.limit - 1,
+          ...current,
+          data: [optimistic, ...current.data],
+          total: current.total + 1,
+          hasNext: current.hasNext || current.data.length >= current.limit - 1,
         };
       },
       onSettled: () => {
-        // Invalidate all property-related queries to ensure data consistency
         queryClient.invalidateQueries({ queryKey: ["properties"] });
-        queryClient.invalidateQueries({ queryKey: [STRING_CONSTANTS.PROPERTY_SEARCH] });
+        queryClient.invalidateQueries({ queryKey: [CTX.PROPERTY_SEARCH] });
       },
     });
-  };
 
-  /**
-   * Update an existing property with optimistic updates
-   * This allows users to see their changes immediately while the update
-   * is being processed in the background
-   */
-  const useUpdateProperty = () => {
-    return useOptimisticMutation({
-      mutationFn: ({ id, updates, userId }: {
-        id: string;
-        updates: Partial<Property>;
-        userId: string;
-      }) => propertyApi.updateProperty(id, updates, userId),
+  const useUpdateProperty = (): UpdateMutationResult =>
+    useOptimisticMutation<ApiResponse<Property>, unknown, UpdatePropertyVars>({
+      mutationFn: ({ id, updates, userId }: UpdatePropertyVars) =>
+        propertyApi.updateProperty(id, updates, userId),
       queryKey: ["properties", "list"],
-      optimisticUpdate: (oldData: unknown, variables: { id: string; updates: Partial<Property> }) => {
-        const currentData = oldData as PropertiesResponse | undefined;
-        if (!currentData?.data) return currentData;
-
-        // Find and update the specific property in the list
+      optimisticUpdate: (oldData: unknown, variables: UpdatePropertyVars) => {
+        const current = oldData as PropertiesResponse | undefined;
+        if (!current?.data) return current;
         return {
-          ...currentData,
-          data: currentData.data.map((property: Property) => {
-            if (property.id === variables.id) {
-              return { ...property, ...variables.updates };
-            }
-            return property;
-          }),
+          ...current,
+          data: current.data.map((p: Property) =>
+            p.id === variables.id ? { ...p, ...variables.updates } : p
+          ),
         };
       },
-      onSettled: (data, _error, variables) => {
-        // Update specific property cache with the latest data
+      onSettled: (data: ApiResponse<Property> | undefined, _error: unknown, variables: UpdatePropertyVars) => {
         if (data) {
-          queryClient.setQueryData([generateCacheKey.propertyDetail(variables.id)], data);
+          queryClient.setQueryData([cacheKey.propertyDetail(variables.id)], data);
         }
-
-        // Invalidate related queries to ensure consistency across the app
         queryClient.invalidateQueries({ queryKey: ["properties"] });
-        queryClient.invalidateQueries({ queryKey: [STRING_CONSTANTS.PROPERTY_SEARCH] });
+        queryClient.invalidateQueries({ queryKey: [CTX.PROPERTY_SEARCH] });
       },
     });
-  };
 
-  /**
-   * Delete a property with optimistic updates
-   * Immediately removes the property from the UI while processing the deletion
-   * in the background, providing instant feedback to the user
-   */
-  const useDeleteProperty = () => {
-    return useOptimisticMutation({
-      mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+  const useDeleteProperty = (): DeleteMutationResult =>
+    useOptimisticMutation<ApiResponse<void>, unknown, DeletePropertyVars>({
+      mutationFn: ({ id, userId }: DeletePropertyVars) =>
         propertyApi.deleteProperty(id, userId),
       queryKey: ["properties", "list"],
-      optimisticUpdate: (oldData: unknown, variables: { id: string }) => {
-        const currentData = oldData as PropertiesResponse | undefined;
-        if (!currentData?.data) return currentData;
-
-        // Remove the property from the list and adjust the total count
+      optimisticUpdate: (oldData: unknown, variables: DeletePropertyVars) => {
+        const current = oldData as PropertiesResponse | undefined;
+        if (!current?.data) return current;
         return {
-          ...currentData,
-          data: currentData.data.filter((property: Property) => property.id !== variables.id),
-          total: Math.max(0, currentData.total - 1),
+          ...current,
+          data: current.data.filter((p: Property) => p.id !== variables.id),
+          total: Math.max(0, current.total - 1),
         };
       },
-      onSettled: (_data, _error, variables) => {
-        // Remove the specific property from cache since it no longer exists
-        queryClient.removeQueries({ queryKey: [generateCacheKey.propertyDetail(variables.id)] });
-
-        // Invalidate related queries to ensure consistency
+      onSettled: (_data: ApiResponse<void> | undefined, _error: unknown, variables: DeletePropertyVars) => {
+        queryClient.removeQueries({ queryKey: [cacheKey.propertyDetail(variables.id)] });
         queryClient.invalidateQueries({ queryKey: ["properties"] });
-        queryClient.invalidateQueries({ queryKey: [STRING_CONSTANTS.PROPERTY_SEARCH] });
+        queryClient.invalidateQueries({ queryKey: [CTX.PROPERTY_SEARCH] });
       },
     });
-  };
 
-  // Return all the hooks and utility functions as a cohesive API
-  // This creates a clean, organized interface for components to use
   return {
-    // Query hooks for fetching data
     usePropertyDetail,
     useLandProperty,
     useProperties,
     usePropertySearch,
-
-    // Mutation hooks for modifying data
     useCreateProperty,
     useUpdateProperty,
     useDeleteProperty,
-
-    // Utility functions for cache management
     invalidatePropertyQueries: () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
-      queryClient.invalidateQueries({ queryKey: [STRING_CONSTANTS.PROPERTY_SEARCH] });
-      queryClient.invalidateQueries({ queryKey: [STRING_CONSTANTS.LAND_PROPERTY] });
+      queryClient.invalidateQueries({ queryKey: [CTX.PROPERTY_SEARCH] });
+      queryClient.invalidateQueries({ queryKey: [CTX.LAND_PROPERTY] });
     },
-
     clearPropertyCache: (propertyId?: string) => {
       if (propertyId) {
-        // Clear cache for a specific property
-        queryClient.removeQueries({ queryKey: [generateCacheKey.propertyDetail(propertyId)] });
-        queryClient.removeQueries({ queryKey: [generateCacheKey.landProperty(propertyId)] });
+        queryClient.removeQueries({ queryKey: [cacheKey.propertyDetail(propertyId)] });
+        queryClient.removeQueries({ queryKey: [cacheKey.landProperty(propertyId)] });
       } else {
-        // Clear all property-related cache
         queryClient.removeQueries({ queryKey: ["properties"] });
-        queryClient.removeQueries({ queryKey: [STRING_CONSTANTS.PROPERTY_SEARCH] });
-        queryClient.removeQueries({ queryKey: [STRING_CONSTANTS.LAND_PROPERTY] });
+        queryClient.removeQueries({ queryKey: [CTX.PROPERTY_SEARCH] });
+        queryClient.removeQueries({ queryKey: [CTX.LAND_PROPERTY] });
       }
     },
   };
 }
 
-/**
- * Specialized hook for property search with enhanced features
- * This provides backward compatibility while leveraging the unified hook
- * Think of this as a "preset configuration" for search-focused use cases
- */
+// ─── Convenience wrappers ─────────────────────────────────────────────────────
+
 export function usePropertySearch(
   initialQuery = "",
   initialFilters: Partial<PropertySearchParams> = {}
 ) {
-  const { usePropertySearch } = useUnifiedProperty();
-
-  return usePropertySearch(initialQuery, initialFilters, {
-    debounceMs: 400, // Slightly longer debounce for search to reduce API calls
-    staleTime: 3 * 60 * 1000, // 3 minutes for search results - shorter than detail views
+  // Alias the inner sub-hook to avoid shadowing this function's own name.
+  const { usePropertySearch: searchHook } = useUnifiedProperty();
+  return searchHook(initialQuery, initialFilters, {
+    debounceMs: 400,
+    staleTime: 3 * 60 * 1000,
   });
 }
 
-/**
- * Specialized hook for land properties with enhanced mock data support
- * This provides a focused interface for land-specific property operations
- */
 export function useLandProperty(id: string) {
-  const { useLandProperty } = useUnifiedProperty();
-
-  return useLandProperty(id, {
-    // Custom options can be added here if needed for land properties
-    // For example, you might want different caching strategies for land vs. regular properties
-  });
+  const { useLandProperty: landHook } = useUnifiedProperty();
+  return landHook(id);
 }
 
 export default useUnifiedProperty;
 
-// Backward compatibility
-export const useEnhancedPropertySearch = usePropertySearch
-export const useEnhancedLandProperty = useLandProperty
+// Backward-compatible aliases
+export { usePropertySearch as useEnhancedPropertySearch };
+export { useLandProperty as useEnhancedLandProperty };
