@@ -4,6 +4,10 @@
   Unified design system entry point
 */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Unified Design System - Includes all styles and animations */
 @import "./design-system.css";
 
