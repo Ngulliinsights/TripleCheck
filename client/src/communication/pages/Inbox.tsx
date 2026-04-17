@@ -388,21 +388,23 @@ export default function InboxPage() {
                   </div>
                 </Tabs>
 
-                <div className="flex-1 overflow-y-auto max-h-[600px]" role="list" aria-label="Inquiry messages">
+                <div className="flex-1 overflow-y-auto max-h-[600px]">
                   {filteredInquiries.length === 0 ? (
                     <div className="p-8 text-center mt-10">
                       <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
                       <p className="text-muted-foreground">No inquiries found</p>
                     </div>
                   ) : (
-                    filteredInquiries.map((inquiry) => (
-                      <InquiryItem
-                        key={inquiry.id}
-                        inquiry={inquiry}
-                        isSelected={selectedInquiry?.id === inquiry.id}
-                        onSelect={handleInquiryClick}
-                      />
-                    ))
+                    <div role="list" aria-label="Inquiry messages">
+                      {filteredInquiries.map((inquiry) => (
+                        <InquiryItem
+                          key={inquiry.id}
+                          inquiry={inquiry}
+                          isSelected={selectedInquiry?.id === inquiry.id}
+                          onSelect={handleInquiryClick}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               </CardContent>
