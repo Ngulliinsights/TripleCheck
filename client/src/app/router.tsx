@@ -141,6 +141,10 @@ export const AppRouter: React.FC = () => {
           path="/trust/fraud-protection"
           element={<LazyRoutes.FraudProtectionInfo />}
         />
+        <Route
+          path="/verification-dashboard"
+          element={<LazyRoutes.VerificationDashboard />}
+        />
         <Route path="/trust-score" element={<LazyRoutes.TrustPoints />} />
 
         {/* ==========================================

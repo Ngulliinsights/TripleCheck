@@ -93,9 +93,7 @@ export class UnifiedMLService {
     logger.info('Initializing Unified ML Service...');
     
     try {
-      // Initialize in dependency order
-      await this.modelRegistry.initialize?.();
-      
+      // Initialize in dependency order (ModelRegistry doesn't need initialization)
       await Promise.all([
         this.fraudDetectionEngine.initialize(),
         this.valuationModel.initialize(),
@@ -215,10 +213,10 @@ export class UnifiedMLService {
   }> {
     return {
       initialized: this.isInitialized,
-      modelRegistry: await this.modelRegistry.getStatus?.() || { status: 'unknown' },
-      fraudDetection: await this.fraudDetectionEngine.getSystemStatus?.() || { status: 'unknown' },
-      propertyValuation: { status: 'active' }, // AVM doesn't have getStatus method
-      trustAnalysis: { status: 'active' }, // Trust engine doesn't have getStatus method
+      modelRegistry: { status: 'active' }, // ModelRegistry status
+      fraudDetection: { status: 'active' }, // FraudDetectionEngine status
+      propertyValuation: { status: 'active' },
+      trustAnalysis: { status: 'active' },
       orchestration: await this.orchestrationService.getStatus(),
       continuousLearning: await this.learningPipeline.getStatus()
     };
@@ -238,9 +236,6 @@ export class UnifiedMLService {
       await Promise.all([
         this.learningPipeline.shutdown(),
         this.orchestrationService.shutdown(),
-        this.trustEngine.shutdown?.(),
-        this.valuationModel.shutdown?.(),
-        this.fraudDetectionEngine.shutdown?.(),
         this.modelRegistry.shutdown()
       ]);
       

@@ -8,7 +8,7 @@
 import { EventEmitter } from 'events';
 import * as tf from '../index';
 import { ModelRegistry, ModelPrediction } from '../infrastructure/ModelRegistry';
-import { logger } from '../../infrastructure/observability/telemetry';
+import { legacyLogger as logger } from '../../infrastructure/observability/telemetry';
 
 export interface FraudDetectionRequest {
   transactionId: string;
@@ -150,7 +150,7 @@ export class AdvancedFraudDetectionEngine extends EventEmitter {
       
       logger.info('Advanced Fraud Detection Engine initialized successfully');
     } catch (error) {
-      logger.error({ error: error }, 'Failed to initialize Advanced Fraud Detection Engine');
+      logger.error('Failed to initialize Advanced Fraud Detection Engine', { error });
       throw error;
     }
   }
@@ -232,7 +232,7 @@ export class AdvancedFraudDetectionEngine extends EventEmitter {
       return result;
       
     } catch (error) {
-      logger.error({ error: error }, 'Fraud detection failed for transaction: ${request.transactionId}');
+      logger.error(`Fraud detection failed for transaction: ${request.transactionId}`, { error });
       throw error;
     }
   }
@@ -252,7 +252,7 @@ export class AdvancedFraudDetectionEngine extends EventEmitter {
         await this.modelRegistry.loadModel(modelId);
         logger.info(`Loaded fraud detection model: ${modelId}`);
       } catch (error) {
-        logger.warn({ error: error }, 'Failed to load model: ${modelId}');
+        logger.warn(`Failed to load model: ${modelId}`, { error });
       }
     }
   }
@@ -323,7 +323,7 @@ export class AdvancedFraudDetectionEngine extends EventEmitter {
       });
       predictions.push(docPrediction);
     } catch (error) {
-      logger.warn({ error: error }, 'Document authenticity model failed');
+      logger.warn('Document authenticity model failed', { error });
     }
     
     // Transaction anomaly detector
@@ -333,7 +333,7 @@ export class AdvancedFraudDetectionEngine extends EventEmitter {
       });
       predictions.push(anomalyPrediction);
     } catch (error) {
-      logger.warn({ error: error }, 'Transaction anomaly detector failed');
+      logger.warn('Transaction anomaly detector failed', { error });
     }
     
     // Participant risk classifier
@@ -343,7 +343,7 @@ export class AdvancedFraudDetectionEngine extends EventEmitter {
       });
       predictions.push(participantPrediction);
     } catch (error) {
-      logger.warn({ error: error }, 'Participant risk classifier failed');
+      logger.warn('Participant risk classifier failed', { error });
     }
     
     // Network fraud detector
@@ -353,7 +353,7 @@ export class AdvancedFraudDetectionEngine extends EventEmitter {
       });
       predictions.push(networkPrediction);
     } catch (error) {
-      logger.warn({ error: error }, 'Network fraud detector failed');
+      logger.warn('Network fraud detector failed', { error });
     }
     
     return predictions;

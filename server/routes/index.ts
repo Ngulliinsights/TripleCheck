@@ -1,4 +1,4 @@
-import { Express } from 'express';
+import { Express, Router } from 'express';
 
 import { communicationRouter } from '../communication/communication.controller';
 import { trustIntegrationRouter } from '../controllers/trust-integration.controller';
@@ -12,6 +12,12 @@ import { ReviewService } from '../services/ReviewService';
 import { TrustIntegrationService } from '../services/TrustIntegrationService';
 import { UserService } from '../services/UserService';
 import { VerificationService } from '../services/VerificationService';
+
+import {
+  createDeduplicationMiddleware,
+  cacheResponse,
+  deduplicationResponseMiddleware,
+} from '../middleware';
 
 import analyticsRoutes from './analytics.routes';
 import { AuthRoutes } from './AuthRoutes';
@@ -101,6 +107,7 @@ export class RoutesCoordinator {
   /**
    * Register all route modules with the Express app
    * Routes are registered in a logical order with proper prefixes
+   * Phase 1: Deduplication & Cache Middleware Applied to Verification Routes
    */
   private registerRoutes(): void {
     try {
@@ -111,15 +118,92 @@ export class RoutesCoordinator {
       // Register business domain routes
       this.app.use('/api/properties', this.propertyRoutes.getRouter());
       this.app.use('/api/reviews', this.reviewRoutes.getRouter());
-      this.app.use('/api/verification', this.verificationRoutes.getRouter());
 
-      // Register new service routes
+      // === PHASE 1: Apply Deduplication & Cache Middleware to Verification Routes ===
+      // Configure deduplication middleware for verification routes
+      const verificationDeduplicationConfig = {
+        enabled: true,
+        ttl: 300000, // 5 minutes
+        skipPatterns: [
+          /^\/api\/verification\/request$/, // Don't deduplicate new verification requests
+        ],
+        forcePatterns: [
+          /^\/api\/verification\/.*\/status$/, // Force deduplication for status checks
+          /^\/api\/verification\/search$/,
+        ],
+        includeUserInKey: true,
+        includeHeaders: ['content-type', 'accept'],
+      };
+
+      // Create middleware instances for verification routes
+      const verificationDeduplicationMiddleware = createDeduplicationMiddleware(
+        verificationDeduplicationConfig
+      );
+      const verificationCacheMiddleware = cacheResponse({
+        ttl: 300, // 5 minutes in seconds
+        condition: (req) => req.method === 'GET',
+        tags: (req) => ['verification', req.path.split('/')[3] || 'general'],
+        onHit: (key, data) => {
+          console.log(`[Cache HIT] Verification: ${key}`);
+        },
+        onMiss: (key) => {
+          console.log(`[Cache MISS] Verification: ${key}`);
+        },
+      });
+
+      // Apply middleware to verification routes
+      const verificationRouter = Router();
+      verificationRouter.use(verificationDeduplicationMiddleware);
+      verificationRouter.use(deduplicationResponseMiddleware());
+      verificationRouter.use(verificationCacheMiddleware);
+      verificationRouter.use(this.verificationRoutes.getRouter());
+
+      this.app.use('/api/verification', verificationRouter);
+
+      // === Apply similar middleware to trust-integration routes ===
+      const trustIntegrationDeduplicationConfig = {
+        enabled: true,
+        ttl: 300000, // 5 minutes
+        skipPatterns: [
+          /^\/api\/trust-integration\/verify$/, // Don't deduplicate new verifications
+        ],
+        forcePatterns: [
+          /^\/api\/trust-integration\/.*\/status$/,
+          /^\/api\/trust-integration\/score$/,
+        ],
+        includeUserInKey: true,
+        includeHeaders: ['content-type', 'accept'],
+      };
+
+      const trustDeduplicationMiddleware = createDeduplicationMiddleware(
+        trustIntegrationDeduplicationConfig
+      );
+      const trustCacheMiddleware = cacheResponse({
+        ttl: 300, // 5 minutes in seconds
+        condition: (req) => req.method === 'GET',
+        tags: (req) => ['trust', 'integration', req.path.split('/')[3] || 'general'],
+        onHit: (key, data) => {
+          console.log(`[Cache HIT] Trust Integration: ${key}`);
+        },
+        onMiss: (key) => {
+          console.log(`[Cache MISS] Trust Integration: ${key}`);
+        },
+      });
+
+      const trustRouter = Router();
+      trustRouter.use(trustDeduplicationMiddleware);
+      trustRouter.use(deduplicationResponseMiddleware());
+      trustRouter.use(trustCacheMiddleware);
+      trustRouter.use(trustIntegrationRouter);
+
+      this.app.use('/api/trust-integration', trustRouter);
+
+      // Register remaining routes without middleware
       this.app.use('/api/professionals', professionalsRoutes);
       this.app.use('/api/analytics', analyticsRoutes);
       this.app.use('/api/communication', communicationRouter);
-      this.app.use('/api/trust-integration', trustIntegrationRouter);
 
-      console.log('All routes registered successfully');
+      console.log('All routes registered successfully with Phase 1 middleware');
     } catch (error) {
       console.error('Failed to register routes:', error);
       throw new Error(`Route registration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

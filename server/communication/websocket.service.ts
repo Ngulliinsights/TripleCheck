@@ -7,8 +7,8 @@ import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
 import { instrument } from '@socket.io/admin-ui';
-import jwt from 'jsonwebtoken';
-import { logger } from '../infrastructure/observability/telemetry';
+import * as jwt from 'jsonwebtoken';
+import { legacyLogger as logger } from '../infrastructure/observability/telemetry';
 import { messagingService } from './messaging.service';
 
 interface AuthenticatedSocket extends Socket {

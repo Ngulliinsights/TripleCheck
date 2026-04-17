@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "target": "ES2020",
     "module": "ESNext",
     "lib": ["ES2020"],
@@ -22,6 +23,7 @@
     "noFallthroughCasesInSwitch": true,
     "noEmit": false,
     "baseUrl": ".",
+    "downlevelIteration": true,
     "paths": {
       "@/*": ["./server/*"],
       "@server/*": ["./server/*"],

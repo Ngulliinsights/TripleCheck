@@ -18,7 +18,7 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
 import { Resource } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
-import pino from 'pino';
+import * as pino from 'pino';
 import { trace, context, SpanStatusCode } from '@opentelemetry/api';
 
 // Initialize OpenTelemetry SDK
@@ -218,9 +218,17 @@ export function logWithSpan(
  * Supports both calling patterns:
  * 1. logger.info(message, context, data, error) - Old format
  * 2. logger.info(message, data) - Pino-like format
+ * 3. logger.error({ error: data }, message) - Old pino format (will be handled)
  */
 export class LegacyLoggerAdapter {
-  error(message: string, contextOrData?: string | any, data?: any, error?: Error): void {
+  error(message: string | any, contextOrData?: string | any, data?: any, error?: Error): void {
+    // Handle logger.error(data, message) - old Pino format where first arg is object
+    if (typeof message === 'object' && typeof contextOrData === 'string') {
+      // Pino logger.error(logData, message)
+      logger.error(message, contextOrData);
+      return;
+    }
+    
     // Handle both calling patterns
     if (typeof contextOrData === 'string') {
       // Old format: error(message, context, data, error)
@@ -229,14 +237,24 @@ export class LegacyLoggerAdapter {
       if (data) logData.data = data;
       if (error) logData.error = { message: error.message, stack: error.stack };
       
-      logger.error(logData, message);
-    } else {
+      logger.error(logData, message as string);
+    } else if (contextOrData) {
       // Pino format: error(message, data)
-      logger.error(contextOrData || {}, message);
+      logger.error(contextOrData, message as string);
+    } else {
+      // Simple message only
+      logger.error(message as string);
     }
   }
 
-  warn(message: string, contextOrData?: string | any, data?: any): void {
+  warn(message: string | any, contextOrData?: string | any, data?: any): void {
+    // Handle logger.warn(data, message) - old Pino format where first arg is object
+    if (typeof message === 'object' && typeof contextOrData === 'string') {
+      // Pino logger.warn(logData, message)
+      logger.warn(message, contextOrData);
+      return;
+    }
+    
     // Handle both calling patterns
     if (typeof contextOrData === 'string') {
       // Old format: warn(message, context, data)
@@ -244,14 +262,24 @@ export class LegacyLoggerAdapter {
       if (contextOrData) logData.context = contextOrData;
       if (data) logData.data = data;
       
-      logger.warn(logData, message);
-    } else {
+      logger.warn(logData, message as string);
+    } else if (contextOrData) {
       // Pino format: warn(message, data)
-      logger.warn(contextOrData || {}, message);
+      logger.warn(contextOrData, message as string);
+    } else {
+      // Simple message only
+      logger.warn(message as string);
     }
   }
 
-  info(message: string, contextOrData?: string | any, data?: any): void {
+  info(message: string | any, contextOrData?: string | any, data?: any): void {
+    // Handle logger.info(data, message) - old Pino format where first arg is object
+    if (typeof message === 'object' && typeof contextOrData === 'string') {
+      // Pino logger.info(logData, message)
+      logger.info(message, contextOrData);
+      return;
+    }
+    
     // Handle both calling patterns
     if (typeof contextOrData === 'string') {
       // Old format: info(message, context, data)
@@ -259,14 +287,24 @@ export class LegacyLoggerAdapter {
       if (contextOrData) logData.context = contextOrData;
       if (data) logData.data = data;
       
-      logger.info(logData, message);
-    } else {
+      logger.info(logData, message as string);
+    } else if (contextOrData) {
       // Pino format: info(message, data)
-      logger.info(contextOrData || {}, message);
+      logger.info(contextOrData, message as string);
+    } else {
+      // Simple message only
+      logger.info(message as string);
     }
   }
 
-  debug(message: string, contextOrData?: string | any, data?: any): void {
+  debug(message: string | any, contextOrData?: string | any, data?: any): void {
+    // Handle logger.debug(data, message) - old Pino format where first arg is object
+    if (typeof message === 'object' && typeof contextOrData === 'string') {
+      // Pino logger.debug(logData, message)
+      logger.debug(message, contextOrData);
+      return;
+    }
+    
     // Handle both calling patterns
     if (typeof contextOrData === 'string') {
       // Old format: debug(message, context, data)
@@ -274,10 +312,13 @@ export class LegacyLoggerAdapter {
       if (contextOrData) logData.context = contextOrData;
       if (data) logData.data = data;
       
-      logger.debug(logData, message);
-    } else {
+      logger.debug(logData, message as string);
+    } else if (contextOrData) {
       // Pino format: debug(message, data)
-      logger.debug(contextOrData || {}, message);
+      logger.debug(contextOrData, message as string);
+    } else {
+      // Simple message only
+      logger.debug(message as string);
     }
   }
 

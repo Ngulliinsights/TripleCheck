@@ -536,6 +536,10 @@ export const LazyRoutes = {
     () => import('../trust/pages/FraudProtectionInfo'),
     { routePath: '/trust/fraud-protection', preloadPriority: 'normal' }
   ),
+  VerificationDashboard: createLazyRoute(
+    () => import('../trust/pages/VerificationDashboard'),
+    { routePath: '/verification-dashboard', preloadPriority: 'normal' }
+  ),
 
   /* --- Communication Routes --- */
   Inbox: createLazyRoute(() => import('../communication/pages/Inbox'), {

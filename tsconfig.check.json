@@ -20,6 +20,8 @@
     "paths": {
       "@/*": ["./server/*"],
       "@server/*": ["./server/*"],
+      "@client/*": ["./client/src/*"],
+      "@local/*": ["./client/*"],
       "@shared/*": ["./shared/*"]
     }
   },

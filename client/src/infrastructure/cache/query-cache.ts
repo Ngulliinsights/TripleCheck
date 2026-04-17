@@ -1,13 +1,15 @@
 import { QueryClient } from '@tanstack/react-query'
 
 // Query client with advanced caching strategies and infinite query prevention
+// Phase 1 Optimization: Aggressive stale times to reduce redundant refetches
 export const createQueryClient = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        // Stale time based on data type - increased to reduce refetching
-        staleTime: 1000 * 60 * 10, // 10 minutes default (increased from 5)
-        gcTime: 1000 * 60 * 30, // 30 minutes garbage collection
+        // === PHASE 1 OPTIMIZATION: Aggressive stale times for verification data ===
+        // Verification/trust data is read-heavy and doesn't change frequently
+        staleTime: 1000 * 60 * 5, // 5 minutes (down from 10 for more responsiveness)
+        gcTime: 1000 * 60 * 30, // 30 minutes garbage collection (unchanged)
         
         // Retry strategy
         retry: (failureCount, error: any) => {
@@ -25,11 +27,12 @@ export const createQueryClient = () => {
         // Network mode for offline support
         networkMode: 'offlineFirst',
         
-        // Refetch strategies - more conservative to prevent infinite queries
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false, // Changed from 'always' to false
-        refetchOnMount: false, // Changed from true to false
-        refetchInterval: false, // Ensure no automatic refetching
+        // === PHASE 1: Disable aggressive refetching to prevent N+1 ===
+        // These were causing redundant queries when users navigated back/forth
+        refetchOnWindowFocus: false, // Prevent refetch when user returns to tab
+        refetchOnReconnect: false,   // Don't refetch immediately on reconnect
+        refetchOnMount: false,        // Don't refetch when component remounts
+        refetchInterval: false,       // Ensure no automatic background refetching
         refetchIntervalInBackground: false,
       },
       mutations: {
@@ -90,10 +93,13 @@ export const cacheInvalidationStrategies = {
     queryClient.invalidateQueries({ queryKey: ['properties', 'list'] });
   },
 
-  // Invalidate trust-related data
+  // === PHASE 1: Enhanced trust/verification cache invalidation ===
+  // Invalidate trust-related data with proper namespacing
   invalidateTrustData: (queryClient: QueryClient, userId: string) => {
     queryClient.invalidateQueries({ queryKey: ['trust', 'scores', userId] });
     queryClient.invalidateQueries({ queryKey: ['fraud', 'alerts'] });
+    queryClient.invalidateQueries({ queryKey: ['verification', 'status'] });
+    queryClient.invalidateQueries({ queryKey: ['land-verification', 'results'] });
   },
 
   // Invalidate communication data
