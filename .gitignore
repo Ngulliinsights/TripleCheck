@@ -5,6 +5,36 @@ node_modules/
 # Build outputs
 dist/
 build/
+
+# Compiled TypeScript artifacts in source directories
+# These should ONLY exist inside dist/ — never alongside .ts files
+client/src/**/*.js
+client/src/**/*.js.map
+client/src/**/*.d.ts
+client/src/**/*.d.ts.map
+server/**/*.js
+server/**/*.js.map
+server/**/*.d.ts
+server/**/*.d.ts.map
+shared/**/*.js
+shared/**/*.js.map
+shared/**/*.d.ts
+shared/**/*.d.ts.map
+scripts/**/*.js
+!scripts/logger.js
+!scripts/generate-favicons.js
+!scripts/emergency-stop.js
+!scripts/run-accessibility-tests.js
+!scripts/run-e2e-tests.js
+!scripts/run-visual-tests.js
+!scripts/run-complete-load-test.cjs
+!scripts/memory-benchmark.js
+tests/**/*.js
+tests/**/*.js.map
+tests/**/*.d.ts
+tests/**/*.d.ts.map
+
+# Source maps (global fallback)
 *.js.map
 *.d.ts.map
 

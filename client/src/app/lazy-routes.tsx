@@ -184,7 +184,7 @@ async function loadFallbackModule(
   originalError: unknown
 ): Promise<ModuleWithDefault> {
   try {
-    const comingSoonModule = await import('../shared/pages/ComingSoon');
+    const comingSoonModule = await import('../local/pages/ComingSoon');
     const ComingSoonComponent = extractComponent(comingSoonModule);
     
     return {
@@ -277,7 +277,7 @@ const createComingSoonRoute = (
 ): LazyComponent => {
   return lazy(async (): Promise<ModuleWithDefault> => {
     try {
-      const comingSoonModule = await import('../shared/pages/ComingSoon');
+      const comingSoonModule = await import('../local/pages/ComingSoon');
       const ComingSoonComponent = extractComponent(comingSoonModule);
       
       return {
@@ -305,67 +305,67 @@ const createComingSoonRoute = (
 /* ---------------------------------- */
 export const LazyRoutes = {
   /* --- Core / Shared Routes --- */
-  Home: createLazyRoute(() => import('../shared/pages/Home'), {
+  Home: createLazyRoute(() => import('../local/pages/Home'), {
     routePath: '/',
     preloadPriority: 'high',
   }),
-  Features: createLazyRoute(() => import('../shared/pages/Features'), {
+  Features: createLazyRoute(() => import('../local/pages/Features'), {
     routePath: '/features',
     preloadPriority: 'high',
   }),
-  Pricing: createLazyRoute(() => import('../shared/pages/Pricing'), {
+  Pricing: createLazyRoute(() => import('../local/pages/Pricing'), {
     routePath: '/pricing',
     preloadPriority: 'high',
   }),
-  About: createLazyRoute(() => import('../shared/pages/About'), {
+  About: createLazyRoute(() => import('../local/pages/About'), {
     routePath: '/about',
     preloadPriority: 'normal',
   }),
-  Services: createLazyRoute(() => import('../shared/pages/Services'), {
+  Services: createLazyRoute(() => import('../local/pages/Services'), {
     routePath: '/services',
     preloadPriority: 'normal',
   }),
-  Solutions: createLazyRoute(() => import('../shared/pages/Solutions'), {
+  Solutions: createLazyRoute(() => import('../local/pages/Solutions'), {
     routePath: '/solutions',
     preloadPriority: 'normal',
   }),
-  Blog: createLazyRoute(() => import('../shared/pages/Blog'), {
+  Blog: createLazyRoute(() => import('../local/pages/Blog'), {
     routePath: '/blog',
     preloadPriority: 'low',
   }),
-  BlogPost: createLazyRoute(() => import('../shared/pages/BlogPost'), {
+  BlogPost: createLazyRoute(() => import('../local/pages/BlogPost'), {
     routePath: '/blog/:slug',
     preloadPriority: 'low',
   }),
-  BlogTest: createLazyRoute(() => import('../shared/pages/BlogTest'), {
+  BlogTest: createLazyRoute(() => import('../local/pages/BlogTest'), {
     routePath: '/blog-test',
     preloadPriority: 'low',
   }),
-  Resources: createLazyRoute(() => import('../shared/pages/Resources'), {
+  Resources: createLazyRoute(() => import('../local/pages/Resources'), {
     routePath: '/resources',
     preloadPriority: 'low',
   }),
-  Community: createLazyRoute(() => import('../shared/pages/Community'), {
+  Community: createLazyRoute(() => import('../local/pages/Community'), {
     routePath: '/community',
     preloadPriority: 'normal',
   }),
   CommunityAndResources: createLazyRoute(
-    () => import('../shared/pages/CommunityAndResources'),
+    () => import('../local/pages/CommunityAndResources'),
     { routePath: '/community-resources', preloadPriority: 'normal' }
   ),
   FraudResources: createLazyRoute(
-    () => import('../shared/pages/Fraud-resources'),
+    () => import('../local/pages/Fraud-resources'),
     { routePath: '/fraud-resources', preloadPriority: 'high' }
   ),
-  OurStory: createLazyRoute(() => import('../shared/pages/OurStory'), {
+  OurStory: createLazyRoute(() => import('../local/pages/OurStory'), {
     routePath: '/our-story',
     preloadPriority: 'low',
   }),
-  Partners: createLazyRoute(() => import('../shared/pages/Partners'), {
+  Partners: createLazyRoute(() => import('../local/pages/Partners'), {
     routePath: '/partners',
     preloadPriority: 'low',
   }),
-  PressMedia: createLazyRoute(() => import('../shared/pages/PressMedia'), {
+  PressMedia: createLazyRoute(() => import('../local/pages/PressMedia'), {
     routePath: '/press',
     preloadPriority: 'low',
   }),
@@ -411,7 +411,7 @@ export const LazyRoutes = {
   }),
 
   /* --- Property Management Routes --- */
-  Properties: createLazyRoute(() => import('../shared/pages/Properties'), {
+  Properties: createLazyRoute(() => import('../local/pages/Properties'), {
     routePath: '/properties',
     preloadPriority: 'high',
   }),
@@ -562,97 +562,97 @@ export const LazyRoutes = {
   ),
 
   /* --- Legal & Support Routes --- */
-  Help: createLazyRoute(() => import('../shared/pages/Help'), {
+  Help: createLazyRoute(() => import('../local/pages/Help'), {
     routePath: '/help',
     preloadPriority: 'normal',
   }),
   GettingStarted: createLazyRoute(
-    () => import('../shared/pages/GettingStarted'),
+    () => import('../local/pages/GettingStarted'),
     { routePath: '/help/getting-started', preloadPriority: 'normal' }
   ),
-  Contact: createLazyRoute(() => import('../shared/pages/Contact'), {
+  Contact: createLazyRoute(() => import('../local/pages/Contact'), {
     routePath: '/contact',
     preloadPriority: 'normal',
   }),
-  Privacy: createLazyRoute(() => import('../shared/pages/Privacy'), {
+  Privacy: createLazyRoute(() => import('../local/pages/Privacy'), {
     routePath: '/privacy',
     preloadPriority: 'low',
   }),
-  Terms: createLazyRoute(() => import('../shared/pages/Terms'), {
+  Terms: createLazyRoute(() => import('../local/pages/Terms'), {
     routePath: '/terms',
     preloadPriority: 'low',
   }),
-  Cookies: createLazyRoute(() => import('../shared/pages/Cookies'), {
+  Cookies: createLazyRoute(() => import('../local/pages/Cookies'), {
     routePath: '/cookies',
     preloadPriority: 'low',
   }),
-  Security: createLazyRoute(() => import('../shared/pages/Security'), {
+  Security: createLazyRoute(() => import('../local/pages/Security'), {
     routePath: '/security',
     preloadPriority: 'low',
   }),
 
   /* --- Developer & Admin Routes --- */
   DeveloperDashboard: createLazyRoute(
-    () => import('../shared/pages/DeveloperDashboard'),
+    () => import('../local/pages/DeveloperDashboard'),
     { routePath: '/dev', preloadPriority: 'low' }
   ),
   AdminDashboard: createLazyRoute(
-    () => import('../shared/pages/AdminDashboard'),
+    () => import('../local/pages/AdminDashboard'),
     { routePath: '/admin', preloadPriority: 'low' }
   ),
   SystemMonitoring: createLazyRoute(
-    () => import('../shared/pages/SystemMonitoring'),
+    () => import('../local/pages/SystemMonitoring'),
     { routePath: '/monitoring', preloadPriority: 'low' }
   ),
 
   /* --- Demo & Utility Routes --- */
-  MVPDemo: createLazyRoute(() => import('../shared/pages/MVP-Demo'), {
+  MVPDemo: createLazyRoute(() => import('../local/pages/MVP-Demo'), {
     routePath: '/mvp-demo',
     preloadPriority: 'high',
   }),
-  Demo: createLazyRoute(() => import('../shared/pages/Demo'), {
+  Demo: createLazyRoute(() => import('../local/pages/Demo'), {
     routePath: '/demo',
     preloadPriority: 'high',
   }),
   NavigationTest: createLazyRoute(
-    () => import('../shared/pages/NavigationTest'),
+    () => import('../local/pages/NavigationTest'),
     {
       routePath: '/nav-test',
       preloadPriority: 'low',
     }
   ),
-  ApiDemo: createLazyRoute(() => import('../shared/pages/ApiDemo'), {
+  ApiDemo: createLazyRoute(() => import('../local/pages/ApiDemo'), {
     routePath: '/api-demo',
     preloadPriority: 'normal',
   }),
 
   ContactSales: createLazyRoute(
-    () => import('../shared/pages/ContactSales'),
+    () => import('../local/pages/ContactSales'),
     { routePath: '/contact-sales', preloadPriority: 'normal' }
   ),
 
   /* --- Document Management Routes --- */
   DocumentsPage: createLazyRoute(
-    () => import('../shared/pages/DocumentsPage'),
+    () => import('../local/pages/DocumentsPage'),
     { routePath: '/documents', preloadPriority: 'normal' }
   ),
   DocumentUpload: createLazyRoute(
-    () => import('../shared/pages/DocumentUpload'),
+    () => import('../local/pages/DocumentUpload'),
     { routePath: '/documents/upload', preloadPriority: 'normal' }
   ),
   DocumentViewer: createLazyRoute(
-    () => import('../shared/pages/DocumentViewer'),
+    () => import('../local/pages/DocumentViewer'),
     { routePath: '/documents/:id', preloadPriority: 'normal' }
   ),
 
   /* --- Location Services Routes --- */
   LocationServices: createLazyRoute(
-    () => import('../shared/pages/LocationServices'),
+    () => import('../local/pages/LocationServices'),
     { routePath: '/location', preloadPriority: 'normal' }
   ),
 
   /* --- Error & Fallback Routes --- */
-  NotFound: createLazyRoute(() => import('../shared/pages/NotFound'), {
+  NotFound: createLazyRoute(() => import('../local/pages/NotFound'), {
     routePath: '/404',
     preloadPriority: 'normal',
   }),
@@ -675,19 +675,19 @@ export const LazyRoutes = {
     { routePath: '/messages', preloadPriority: 'normal' }
   ),
   ExpertCoordination: createLazyRoute(
-    () => import('../shared/pages/ExpertCoordination'),
+    () => import('../local/pages/ExpertCoordination'),
     { routePath: '/expert-coordination', preloadPriority: 'normal' }
   ),
   PhysicalVerification: createLazyRoute(
-    () => import('../shared/pages/PhysicalVerification'),
+    () => import('../local/pages/PhysicalVerification'),
     { routePath: '/physical-verification', preloadPriority: 'normal' }
   ),
   CommunityIntelligence: createLazyRoute(
-    () => import('../shared/pages/CommunityIntelligence'),
+    () => import('../local/pages/CommunityIntelligence'),
     { routePath: '/community-intelligence', preloadPriority: 'normal' }
   ),
   FindProfessionals: createLazyRoute(
-    () => import('../shared/pages/FindProfessionals'),
+    () => import('../local/pages/FindProfessionals'),
     {
       routePath: '/find-professionals',
       preloadPriority: 'normal',
@@ -714,23 +714,23 @@ export const LazyRoutes = {
 
   /* --- Solution Segment Routes --- */
   SolutionsBuyers: createLazyRoute(
-    () => import('../shared/pages/solutions/PropertyBuyers'),
+    () => import('../local/pages/solutions/PropertyBuyers'),
     { routePath: '/solutions/buyers', preloadPriority: 'normal' }
   ),
   SolutionsSellers: createLazyRoute(
-    () => import('../shared/pages/solutions/PropertySellers'),
+    () => import('../local/pages/solutions/PropertySellers'),
     { routePath: '/solutions/sellers', preloadPriority: 'normal' }
   ),
   SolutionsAgents: createLazyRoute(
-    () => import('../shared/pages/solutions/RealEstateAgents'),
+    () => import('../local/pages/solutions/RealEstateAgents'),
     { routePath: '/solutions/agents', preloadPriority: 'normal' }
   ),
   SolutionsDevelopers: createLazyRoute(
-    () => import('../shared/pages/solutions/PropertyDevelopers'),
+    () => import('../local/pages/solutions/PropertyDevelopers'),
     { routePath: '/solutions/developers', preloadPriority: 'normal' }
   ),
   SolutionsLegalExperts: createLazyRoute(
-    () => import('../shared/pages/solutions/LegalExperts'),
+    () => import('../local/pages/solutions/LegalExperts'),
     { routePath: '/solutions/legal-experts', preloadPriority: 'normal' }
   ),
 } as const;
@@ -794,11 +794,11 @@ export const preloadRoutes = {
   core: async (): Promise<SettledResult[]> =>
     handleBatchResults(
       await Promise.allSettled([
-        import('../shared/pages/Home'),
-        import('../shared/pages/Features'),
-        import('../shared/pages/Pricing'),
-        import('../shared/pages/About'),
-        import('../shared/pages/Properties'),
+        import('../local/pages/Home'),
+        import('../local/pages/Features'),
+        import('../local/pages/Pricing'),
+        import('../local/pages/About'),
+        import('../local/pages/Properties'),
       ]),
       'core'
     ),
@@ -896,14 +896,14 @@ export const preloadRoutes = {
   content: async (): Promise<SettledResult[]> =>
     handleBatchResults(
       await Promise.allSettled([
-        import('../shared/pages/Blog'),
-        import('../shared/pages/Community'),
-        import('../shared/pages/Resources'),
-        import('../shared/pages/Services'),
-        import('../shared/pages/Solutions'),
-        import('../shared/pages/Help'),
-        import('../shared/pages/FindProfessionals'),
-        import('../shared/pages/CommunityAndResources'),
+        import('../local/pages/Blog'),
+        import('../local/pages/Community'),
+        import('../local/pages/Resources'),
+        import('../local/pages/Services'),
+        import('../local/pages/Solutions'),
+        import('../local/pages/Help'),
+        import('../local/pages/FindProfessionals'),
+        import('../local/pages/CommunityAndResources'),
       ]),
       'content'
     ),
@@ -911,12 +911,12 @@ export const preloadRoutes = {
   legal: async (): Promise<SettledResult[]> =>
     handleBatchResults(
       await Promise.allSettled([
-        import('../shared/pages/Help'),
-        import('../shared/pages/Contact'),
-        import('../shared/pages/Privacy'),
-        import('../shared/pages/Terms'),
-        import('../shared/pages/Security'),
-        import('../shared/pages/Cookies'),
+        import('../local/pages/Help'),
+        import('../local/pages/Contact'),
+        import('../local/pages/Privacy'),
+        import('../local/pages/Terms'),
+        import('../local/pages/Security'),
+        import('../local/pages/Cookies'),
       ]),
       'legal'
     ),
@@ -924,9 +924,9 @@ export const preloadRoutes = {
   document: async (): Promise<SettledResult[]> =>
     handleBatchResults(
       await Promise.allSettled([
-        import('../shared/pages/DocumentsPage'),
-        import('../shared/pages/DocumentUpload'),
-        import('../shared/pages/DocumentViewer'),
+        import('../local/pages/DocumentsPage'),
+        import('../local/pages/DocumentUpload'),
+        import('../local/pages/DocumentViewer'),
       ]),
       'document'
     ),
@@ -934,7 +934,7 @@ export const preloadRoutes = {
   location: async (): Promise<SettledResult[]> =>
     handleBatchResults(
       await Promise.allSettled([
-        import('../shared/pages/LocationServices'),
+        import('../local/pages/LocationServices'),
       ]),
       'location'
     ),
@@ -950,11 +950,11 @@ export const preloadRoutes = {
   developer: async (): Promise<SettledResult[]> =>
     handleBatchResults(
       await Promise.allSettled([
-        import('../shared/pages/DeveloperDashboard'),
-        import('../shared/pages/AdminDashboard'),
-        import('../shared/pages/SystemMonitoring'),
-        import('../shared/pages/NavigationTest'),
-        import('../shared/pages/ApiDemo'),
+        import('../local/pages/DeveloperDashboard'),
+        import('../local/pages/AdminDashboard'),
+        import('../local/pages/SystemMonitoring'),
+        import('../local/pages/NavigationTest'),
+        import('../local/pages/ApiDemo'),
       ]),
       'developer'
     ),
@@ -962,9 +962,9 @@ export const preloadRoutes = {
   expert: async (): Promise<SettledResult[]> =>
     handleBatchResults(
       await Promise.allSettled([
-        import('../shared/pages/ExpertCoordination'),
-        import('../shared/pages/PhysicalVerification'),
-        import('../shared/pages/CommunityIntelligence'),
+        import('../local/pages/ExpertCoordination'),
+        import('../local/pages/PhysicalVerification'),
+        import('../local/pages/CommunityIntelligence'),
       ]),
       'expert'
     ),

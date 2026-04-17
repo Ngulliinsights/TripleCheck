@@ -13,7 +13,7 @@
     "preview": "cd client && vite preview",
     "test": "vitest",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit --project tsconfig.check.json"
   },
   "dependencies": {
     "@casl/ability": "^6.7.1",
