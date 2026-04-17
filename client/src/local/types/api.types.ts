@@ -1,6 +1,9 @@
 // Unified API response types for consistent frontend-backend communication
 import { Property, PropertyFeatures } from './property'
 
+// Re-export Property types for external consumers
+export type { Property, PropertyFeatures }
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;

@@ -5,33 +5,23 @@ import { BrowserRouter } from "react-router-dom"
 
 import App from "./app/App"
 import { AppProviders } from "./app/providers"
-// TODO: Locate and import globals CSS after directory restructuring
-// import "./shared/styles/globals.css";
+import "./local/styles/design-system.css"
+import "./local/styles/globals.css"
 
-
-// Initialize MSW for development (non-blocking)
-if (import.meta.env.DEV) {
-  // Missing module: ./shared/test-utils/msw-browser
-  // import('./shared/test-utils/msw-browser').then(({ startMswWorker }) => {
-  //   startMswWorker().catch((error: unknown) => {
-  //     console.warn('MSW worker failed to start:', error);
-  //   });
-  // }).catch((error: unknown) => {
-  //   console.warn('Failed to load MSW:', error);
-  // });
+// Initialize MSW in development (non-blocking, fails silently)
+async function initMockServiceWorker() {
+  if (!import.meta.env.DEV) return
+  
+  try {
+    // MSW is disabled or not found in the project.
+    // const { startMswWorker } = await import("./shared/test-utils/msw-browser")
+    // await startMswWorker()
+  } catch (error) {
+    console.warn("[MSW] Mock service worker initialization failed:", error)
+  }
 }
 
-// Development logging
-if (import.meta.env.DEV) {
-  // eslint-disable-next-line no-console
-  console.log("Starting TripleCheck application...");
-  // eslint-disable-next-line no-console
-  console.log("Environment:", import.meta.env.MODE);
-  // eslint-disable-next-line no-console
-  console.log("Base URL:", import.meta.env.BASE_URL);
-}
-
-// Create query client for the full app
+// Configure React Query with sensible defaults
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -40,53 +30,53 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
-});
+})
 
-// Add error boundary for production debugging
-const rootElement = document.getElementById("root");
-if (!rootElement) {
-  // eslint-disable-next-line no-console
-  console.error("Root element not found!");
-  document.body.innerHTML = `
-    <div style="padding: 20px; color: red; font-family: monospace;">
-      <h2>Critical Error: Root element not found</h2>
-      <p>The application failed to find the root element.</p>
-    </div>
-  `;
-  throw new Error("Root element not found");
-}
-
-// Using full TripleCheck app with proper React Router bundling
+// Dev-only diagnostics
 if (import.meta.env.DEV) {
-  // eslint-disable-next-line no-console
-  console.log("Loading full TripleCheck application for competition...");
+  console.log("Starting TripleCheck application...")
+  console.log("Environment:", import.meta.env.MODE)
+  console.log("Base URL:", import.meta.env.BASE_URL)
 }
 
-// Initialize theme preference (let ThemeProvider handle the actual theme application)
-if (typeof window !== 'undefined') {
-  // Clear any conflicting theme state and let ThemeProvider handle initialization
-  // The ThemeProvider default is already set to 'dark' in ThemeContext.tsx
-}
+// Initialize MSW (development only)
+initMockServiceWorker()
 
-// Simple React availability check
-if (!React || !ReactDOM) {
-  console.error("React or ReactDOM not loaded");
-  document.body.innerHTML = `
-    <div style="padding: 20px; color: red; font-family: monospace;">
-      <h2>Application Loading Error</h2>
-      <p>Failed to load React libraries. Please refresh the page.</p>
+// Fatal error fallback UI
+function renderFatalError(message: string, details?: string): never {
+  const rootElement = document.getElementById("root")
+  
+  const errorHtml = `
+    <div style="padding: 2rem; font-family: system-ui, monospace; color: #dc2626;">
+      <h1 style="margin: 0 0 1rem; font-size: 1.25rem;">Application Failed to Load</h1>
+      <p style="margin: 0 0 0.5rem;"><strong>Error:</strong> ${message}</p>
+      ${details ? `<pre style="background: #f5f5f4; padding: 1rem; border-radius: 0.375rem; overflow: auto; font-size: 0.875rem;">${details}</pre>` : ""}
+      <p style="margin-top: 1rem; color: #57534e;">
+        Try refreshing the page or clearing your browser cache.
+      </p>
     </div>
-  `;
-  throw new Error("React or ReactDOM not available");
+  `
+  
+  if (rootElement) {
+    rootElement.innerHTML = errorHtml
+  } else {
+    document.body.insertAdjacentHTML("afterbegin", errorHtml)
+  }
+  
+  throw new Error(message)
 }
 
+// Application entry point
+function bootstrap() {
+  const rootElement = document.getElementById("root")
+  
+  if (!rootElement) {
+    renderFatalError("Root element #root not found in document")
+  }
 
-
-// Render with better error handling for production builds
-const renderApp = () => {
   try {
-    const root = ReactDOM.createRoot(rootElement);
-    
+    const root = ReactDOM.createRoot(rootElement)
+
     root.render(
       <React.StrictMode>
         <QueryClientProvider client={queryClient}>
@@ -97,48 +87,16 @@ const renderApp = () => {
           </BrowserRouter>
         </QueryClientProvider>
       </React.StrictMode>
-    );
-    
-    if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.log("Full TripleCheck app rendered successfully");
-    }
-  } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to render TripleCheck app:", error);
-    
-    // More robust fallback error display
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = 'padding: 20px; color: red; font-family: monospace; background: white; margin: 20px; border: 1px solid red;';
-    errorDiv.innerHTML = `
-      <h2>TripleCheck Failed to Load</h2>
-      <p><strong>Error:</strong> ${error instanceof Error ? error.message : 'Unknown error'}</p>
-      <p><strong>Environment:</strong> ${import.meta.env.MODE}</p>
-      <p><strong>Suggestion:</strong> Try refreshing the page or clearing your browser cache</p>
-      <details>
-        <summary>Technical Details</summary>
-        <pre>${error instanceof Error ? error.stack : 'No stack trace available'}</pre>
-      </details>
-    `;
-    
-    rootElement.appendChild(errorDiv);
-    
-    // Also try to render a minimal fallback
-    setTimeout(() => {
-      try {
-        const fallbackRoot = ReactDOM.createRoot(rootElement);
-        fallbackRoot.render(
-          <div style={{ padding: '20px', textAlign: 'center' }}>
-            <h1>Loading...</h1>
-            <p>If this message persists, please refresh the page.</p>
-          </div>
-        );
-      } catch (fallbackError) {
-        // eslint-disable-next-line no-console
-        console.error("Even fallback render failed:", fallbackError);
-      }
-    }, 1000);
-  }
-};
+    )
 
-renderApp();
+    if (import.meta.env.DEV) {
+      console.log("TripleCheck app rendered successfully")
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown render error"
+    const stackTrace = error instanceof Error ? error.stack : undefined
+    renderFatalError(errorMessage, stackTrace)
+  }
+}
+
+bootstrap()

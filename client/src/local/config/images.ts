@@ -293,25 +293,25 @@ export function getBlogImage(postId: keyof typeof blogAssets): { webp?: string; 
 export const loadingStrategies = {
   hero: {
     loading: 'eager' as const,
-    fetchPriority: 'high' as const,
+    fetchpriority: 'high' as const,
     decoding: 'sync' as const
   },
   
   aboveFold: {
     loading: 'eager' as const,
-    fetchPriority: 'high' as const,
+    fetchpriority: 'high' as const,
     decoding: 'async' as const
   },
   
   belowFold: {
     loading: 'lazy' as const,
-    fetchPriority: 'low' as const,
+    fetchpriority: 'low' as const,
     decoding: 'async' as const
   },
   
   avatar: {
     loading: 'lazy' as const,
-    fetchPriority: 'low' as const,
+    fetchpriority: 'low' as const,
     decoding: 'async' as const
   }
 } as const;

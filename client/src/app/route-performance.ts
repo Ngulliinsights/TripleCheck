@@ -100,7 +100,7 @@ export async function validateAndLogRoute(pathname: string): Promise<void> {
   console.log("Router rendering, current path:", pathname);
 
   // Validate the current route
-  const routeValidatorModule = await import("../shared/utils/route-validator");
+  const routeValidatorModule = await import("../local/utils/route-validator");
   const routeValidation =
     routeValidatorModule.routeValidator.validateRoute(pathname);
 

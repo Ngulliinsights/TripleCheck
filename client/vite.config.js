@@ -1,18 +1,21 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var vite_1 = require("vite");
-var plugin_react_1 = require("@vitejs/plugin-react");
-var path_1 = require("path");
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // https://vitejs.dev/config/
-exports.default = (0, vite_1.defineConfig)({
-    plugins: [(0, plugin_react_1.default)()],
+export default defineConfig({
+    plugins: [react()],
     resolve: {
         alias: {
-            '@': path_1.default.resolve(__dirname, './src'),
-            '@client': path_1.default.resolve(__dirname, './src'),
-            '@local': path_1.default.resolve(__dirname, './'),
-            '@server': path_1.default.resolve(__dirname, '../server'),
-            '@shared': path_1.default.resolve(__dirname, '../shared'),
+            '@': path.resolve(__dirname, './src'),
+            '@client': path.resolve(__dirname, './src'),
+            '@local': path.resolve(__dirname, './'),
+            '@server': path.resolve(__dirname, '../server'),
+            '@shared': path.resolve(__dirname, '../shared'),
         },
     },
     server: {

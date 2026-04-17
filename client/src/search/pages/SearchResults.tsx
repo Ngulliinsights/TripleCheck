@@ -1,112 +1,40 @@
-import {
-  Filter,
-  SlidersHorizontal,
-  MapPin,
-  Search,
-  X,
-  Loader2,
-} from "lucide-react"
-import React, { useState, useCallback, useMemo, useEffect } from "react"
-import { useSearchParams } from "react-router-dom"
+import { MapPin, Search } from "lucide-react";
+import React, { useCallback, useMemo, useState } from "react";
 
-import { CompareBar } from "../../property/components/CompareBar"
-import { CompareModal } from "../../property/components/CompareModal"
-import { PropertyCard } from "../../local/components/property"
-import { Badge } from "../../local/components/ui/badge"
-import { Button } from "../../local/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../local/components/ui/card"
-import { Input } from "../../local/components/ui/input"
-import { Label } from "../../local/components/ui/label"
+import { CompareBar } from "../../property/components/CompareBar";
+import { CompareModal } from "../../property/components/CompareModal";
+import { Button } from "../../local/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../local/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../local/components/ui/select"
-import { Slider } from "../../local/components/ui/slider"
-import { Switch } from "../../local/components/ui/switch"
-import { Property, NormalizedProperty } from "../../local/types/property"
-import { useSearch } from "../hooks/useSearch"
-import ConsolidatedSearch from "../components/ConsolidatedSearch"
+} from "../../local/components/ui/select";
+import { NormalizedProperty } from "../../local/types/property";
+import ConsolidatedSearch from "../components/ConsolidatedSearch";
 
-// Enhanced type definitions for better TypeScript safety
-interface LocalSearchFilters {
-  minPrice: string;
-  maxPrice: string;
-  bedrooms: string;
-  propertyType: string;
-  location: string;
-}
+// ============================================================================
+// Types & Constants
+// ============================================================================
 
 type SortOption = "price-asc" | "price-desc" | "newest" | "relevance";
 
-interface SortConfig {
-  readonly label: string;
-  readonly value: SortOption;
-}
-
-interface FilterOption {
-  readonly label: string;
-  readonly value: string;
-}
-
-interface FilterInputProps {
-  label: string;
-  type?: "text" | "number" | "select";
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  options?: readonly FilterOption[];
-}
-
-// Constants moved outside component to prevent recreation on each render
-const SORT_OPTIONS: readonly SortConfig[] = [
-  { label: "Price: Low to High", value: "price-asc" },
-  { label: "Price: High to Low", value: "price-desc" },
-  { label: "Newest First", value: "newest" },
-  { label: "Most Relevant", value: "relevance" },
+const SORT_OPTIONS = [
+  { label: "Most Relevant", value: "relevance" as SortOption },
+  { label: "Price: Low to High", value: "price-asc" as SortOption },
+  { label: "Price: High to Low", value: "price-desc" as SortOption },
+  { label: "Newest First", value: "newest" as SortOption },
 ] as const;
 
-const BEDROOM_OPTIONS: readonly FilterOption[] = [
-  { label: "Any", value: "" },
-  { label: "1+", value: "1" },
-  { label: "2+", value: "2" },
-  { label: "3+", value: "3" },
-  { label: "4+", value: "4" },
-] as const;
-
-const PROPERTY_TYPE_OPTIONS: readonly FilterOption[] = [
-  { label: "Any", value: "" },
-  { label: "Apartment", value: "apartment" },
-  { label: "House", value: "house" },
-  { label: "Condo", value: "condo" },
-  { label: "Townhouse", value: "townhouse" },
-] as const;
-
-// Initial filter state - extracted for reusability
-const INITIAL_FILTERS: LocalSearchFilters = {
-  minPrice: "",
-  maxPrice: "",
-  bedrooms: "",
-  propertyType: "",
-  location: "",
-};
-
-// Mock data with enhanced TypeScript compliance
-const mockProperties: NormalizedProperty[] = [
+const MOCK_PROPERTIES: NormalizedProperty[] = [
   {
     id: "1",
     title: "Modern 3-Bedroom Apartment in Westlands",
-    description:
-      "Beautiful modern apartment with city views and premium amenities",
+    description: "Beautiful modern apartment with city views and premium amenities",
     location: "Westlands, Nairobi",
-    price: 150000,
+    price: 150_000,
     images: [
       "/assets/apartment-luxury-1.jpg",
       "/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg",
@@ -132,10 +60,9 @@ const mockProperties: NormalizedProperty[] = [
   {
     id: "2",
     title: "Spacious Family Home in Karen",
-    description:
-      "Perfect family home with large garden and quiet neighborhood setting",
+    description: "Perfect family home with large garden and quiet neighborhood setting",
     location: "Karen, Nairobi",
-    price: 280000,
+    price: 280_000,
     images: [
       "/assets/house-executive-1.jpg",
       "/assets/Residential/luke-van-zyl-koH7IVuwRLw-unsplash.jpg",
@@ -160,341 +87,166 @@ const mockProperties: NormalizedProperty[] = [
   },
 ];
 
-// Helper function to safely parse location string
-const getLocationString = (location: string): string => {
-  return location || "";
-};
-
-// Helper function to safely convert price to number for comparison
-const getPriceAsNumber = (price: number): number => {
-  return price || 0;
-};
-
-// Enhanced filter input component extracted for better reusability and type safety
-const FilterInput: React.FC<FilterInputProps> = React.memo(
-  ({ label, type = "text", value, onChange, placeholder, options }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-      {type === "select" ?
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          aria-label={label}
-          title={label}
-        >
-          {options?.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      : <input
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          placeholder={placeholder}
-          aria-label={label}
-        />
-      }
-    </div>
-  )
-);
-
-// Set display name for better debugging experience
-FilterInput.displayName = "FilterInput";
+// ============================================================================
+// Component
+// ============================================================================
 
 export default function SearchResults(): JSX.Element {
-  // State management with proper TypeScript typing
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [filters, setFilters] = useState<LocalSearchFilters>(INITIAL_FILTERS);
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
-  const [showCompareModal, setShowCompareModal] = useState<boolean>(false);
+  const [showCompareModal, setShowCompareModal] = useState(false);
 
-  // Optimized event handlers using useCallback to prevent unnecessary re-renders
-  const handleSearch = useCallback((query: string): void => {
-    setSearchQuery(query);
-    // In a real application, this would trigger an API call with debouncing
-    // Example: debouncedSearchAPI(query, filters)
+  const handleSortChange = useCallback((value: SortOption) => {
+    setSortBy(value);
   }, []);
 
-  const handleFilterChange = useCallback(
-    (key: keyof LocalSearchFilters, value: string): void => {
-      setFilters((prev) => ({
-        ...prev,
-        [key]: value,
-      }));
-    },
-    []
-  );
-
-  const handleClearFilters = useCallback((): void => {
-    setFilters(INITIAL_FILTERS);
-  }, []);
-
-  const handleShowCompareModal = useCallback((): void => {
-    setShowCompareModal(true);
-  }, []);
-
-  const handleCloseCompareModal = useCallback((): void => {
-    setShowCompareModal(false);
-  }, []);
-
-  const handleSortChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>): void => {
-      setSortBy(event.target.value as SortOption);
-    },
-    []
-  );
-
-  const toggleFilters = useCallback((): void => {
-    setShowFilters((prev) => !prev);
-  }, []);
-
-  // Memoized check for active filters to improve performance
-  const hasActiveFilters = useMemo((): boolean => {
-    return Object.values(filters).some((value) => value !== "");
-  }, [filters]);
-
-  // Memoized filtered and sorted results to prevent unnecessary recalculations
-  const processedProperties = useMemo((): NormalizedProperty[] => {
-    let filtered = [...mockProperties]; // Create a shallow copy to avoid mutating the original array
-
-    // Apply filters - in a real app, this would be handled by the backend
-    if (filters.minPrice) {
-      const minPrice = parseInt(filters.minPrice, 10);
-      if (!isNaN(minPrice)) {
-        filtered = filtered.filter(
-          (property) => getPriceAsNumber(property.price) >= minPrice
-        );
-      }
+  const sortedProperties = useMemo(() => {
+    const list = [...MOCK_PROPERTIES];
+    switch (sortBy) {
+      case "price-asc":
+        return list.sort((a, b) => a.price - b.price);
+      case "price-desc":
+        return list.sort((a, b) => b.price - a.price);
+      case "newest":
+        return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      case "relevance":
+      default:
+        return list;
     }
-
-    if (filters.maxPrice) {
-      const maxPrice = parseInt(filters.maxPrice, 10);
-      if (!isNaN(maxPrice)) {
-        filtered = filtered.filter(
-          (property) => getPriceAsNumber(property.price) <= maxPrice
-        );
-      }
-    }
-
-    if (filters.bedrooms) {
-      const minBedrooms = parseInt(filters.bedrooms, 10);
-      if (!isNaN(minBedrooms)) {
-        filtered = filtered.filter(
-          (property) =>
-            property.features?.bedrooms !== undefined &&
-            property.features.bedrooms >= minBedrooms
-        );
-      }
-    }
-
-    if (filters.propertyType) {
-      filtered = filtered.filter(
-        (property) =>
-          property.type?.toLowerCase() === filters.propertyType.toLowerCase()
-      );
-    }
-
-    if (filters.location) {
-      const locationQuery = filters.location.toLowerCase();
-      filtered = filtered.filter((property) =>
-        getLocationString(property.location)
-          .toLowerCase()
-          .includes(locationQuery)
-      );
-    }
-
-    // Apply sorting with improved type safety and null checking
-    return filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "price-asc":
-          return getPriceAsNumber(a.price) - getPriceAsNumber(b.price);
-        case "price-desc":
-          return getPriceAsNumber(b.price) - getPriceAsNumber(a.price);
-        case "newest":
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        case "relevance":
-        default:
-          // In a real app, this would use a relevance score from the search API
-          return 0;
-      }
-    });
-  }, [filters, sortBy]);
-
-  // Memoized results count to prevent unnecessary recalculations
-  const resultCount = useMemo(
-    (): number => processedProperties.length,
-    [processedProperties]
-  );
-
-  // Memoized search description for better UX
-  const searchDescription = useMemo((): string => {
-    const propertyText = resultCount === 1 ? "property" : "properties";
-    const baseText = `${resultCount} ${propertyText} found`;
-
-    if (searchQuery.trim()) {
-      return `${baseText} for "${searchQuery}"`;
-    }
-
-    return baseText;
-  }, [resultCount, searchQuery]);
+  }, [sortBy]);
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 navbar-offset pb-8">
-          {/* Enhanced search header with better accessibility */}
-          <header className="mb-8">
-            <h1 className="text-3xl font-bold mb-4 text-gray-900">
-              Search Properties
-            </h1>
-            <ConsolidatedSearch
-              onResults={(results) => {
-                // Handle search results if needed
-                console.log("Search results:", results);
-              }}
-              onFiltersChange={(filters) => {
-                // Handle filter changes if needed
-                console.log("Filters changed:", filters);
-              }}
-              showAdvancedFilters={showFilters}
-            />
-          </header>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 navbar-offset pb-8">
+        {/* Header */}
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold mb-4 text-gray-900">Search Properties</h1>
+          <ConsolidatedSearch
+            onResults={(results) => console.log("Search results:", results)}
+            onFiltersChange={(filters) => console.log("Filters changed:", filters)}
+          />
+        </header>
 
-          {/* Enhanced search results section */}
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Results list with improved header */}
-            <main className="flex-1">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    Search Results
-                  </h2>
-                  <p className="text-gray-600">{searchDescription}</p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <label
-                    htmlFor="sort-select"
-                    className="text-sm text-gray-600 whitespace-nowrap"
-                  >
-                    Sort by:
-                  </label>
-                  <select
-                    id="sort-select"
-                    value={sortBy}
-                    onChange={handleSortChange}
-                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    title="Sort search results by different criteria"
-                    aria-label="Sort search results"
-                  >
-                    {SORT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Main Results */}
+          <main className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Search Results</h2>
+                <p className="text-gray-600">
+                  {sortedProperties.length} {sortedProperties.length === 1 ? "property" : "properties"} found
+                </p>
               </div>
 
-              {/* Results grid with conditional rendering */}
-              {resultCount > 0 ?
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {processedProperties.map((property) => (
-                    <PropertyCard key={property.id} property={property} />
-                  ))}
-                </div>
-              : <Card className="text-center py-12">
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      No properties found matching your criteria.
-                    </p>
-                    <Button variant="outline" onClick={handleClearFilters}>
-                      Clear Filters
-                    </Button>
-                  </CardContent>
-                </Card>
-              }
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 whitespace-nowrap">Sort by:</span>
+                <Select value={sortBy} onValueChange={(v) => handleSortChange(v as SortOption)}>
+                  <SelectTrigger className="w-44" aria-label="Sort results">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-              {/* Enhanced pagination with proper accessibility */}
-              {resultCount > 0 && (
-                <nav
-                  className="flex justify-center mt-8"
-                  aria-label="Search results pagination"
-                >
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      disabled
-                      aria-label="Previous page"
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="bg-blue-600 text-white"
-                      aria-current="page"
-                    >
-                      1
-                    </Button>
-                    <Button variant="outline" aria-label="Go to page 2">
-                      2
-                    </Button>
-                    <Button variant="outline" aria-label="Go to page 3">
-                      3
-                    </Button>
-                    <Button variant="outline" aria-label="Next page">
-                      Next
-                    </Button>
-                  </div>
-                </nav>
-              )}
-            </main>
-
-            {/* Enhanced map sidebar */}
-            <aside className="lg:w-96">
-              <Card className="sticky top-4">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <MapPin className="w-5 h-5 mr-2 text-blue-600" />
-                    Map View
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-gray-200 h-64 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                    <div className="text-center">
-                      <MapPin className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600 text-sm">
-                        Interactive map will display here
-                      </p>
-                      <p className="text-gray-500 text-xs mt-1">
-                        Showing {resultCount} properties
-                      </p>
+            {/* Grid */}
+            {sortedProperties.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {sortedProperties.map((property) => (
+                  <Card key={property.id} className="overflow-hidden">
+                    <div className="aspect-video bg-gray-100 relative">
+                      {property.images?.[0] ? (
+                        <img
+                          src={property.images[0]}
+                          alt={property.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <MapPin className="w-8 h-8" />
+                        </div>
+                      )}
                     </div>
-                  </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
+                      <p className="text-sm text-gray-600 mb-2">{property.location}</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        KES {property.price.toLocaleString()}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2 text-gray-900">No properties found</h3>
+                  <p className="text-gray-600 max-w-md mx-auto">
+                    Try adjusting your search filters or criteria to find more properties.
+                  </p>
                 </CardContent>
               </Card>
-            </aside>
-          </div>
+            )}
+
+            {/* Pagination Placeholder */}
+            {sortedProperties.length > 0 && (
+              <nav className="flex justify-center mt-8" aria-label="Pagination">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" disabled>
+                    Previous
+                  </Button>
+                  <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">
+                    1
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    2
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    3
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    Next
+                  </Button>
+                </div>
+              </nav>
+            )}
+          </main>
+
+          {/* Map Sidebar */}
+          <aside className="lg:w-96">
+            <Card className="sticky top-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-blue-600" />
+                  Map View
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-gray-200 h-64 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                  <div className="text-center">
+                    <MapPin className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600 text-sm">Interactive map will display here</p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Showing {sortedProperties.length} properties
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
         </div>
-
-        {/* Floating Compare Bar */}
-        <CompareBar onQuickCompare={handleShowCompareModal} />
-
-        {/* Compare Modal */}
-        <CompareModal
-          isOpen={showCompareModal}
-          onClose={handleCloseCompareModal}
-        />
       </div>
-    </>
+
+      {/* Compare UI */}
+      <CompareBar onQuickCompare={() => setShowCompareModal(true)} />
+      <CompareModal isOpen={showCompareModal} onClose={() => setShowCompareModal(false)} />
+    </div>
   );
 }

@@ -163,7 +163,7 @@ class ResourceHintsManager {
 
     // Set fetchpriority if supported
     if ('fetchPriority' in link && hint.priority) {
-      (link as any).fetchPriority = hint.priority;
+      (link as any).fetchpriority = hint.priority;
     }
 
     document.head.appendChild(link);

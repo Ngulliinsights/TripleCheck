@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query";
 import {
   Search,
   Filter,
@@ -8,62 +8,49 @@ import {
   Bed,
   Bath,
   Car,
-  Calendar,
-  DollarSign,
-  Star,
   Shield,
-  Sliders,
-} from "lucide-react"
-import React, { useState, useCallback, useMemo } from "react"
+  SlidersHorizontal,
+} from "lucide-react";
+import React, { useCallback, useMemo, useState } from "react";
 
-import { Badge } from "../../local/components/ui/badge"
-import { Button } from "../../local/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../local/components/ui/card"
-import { Checkbox } from "../../local/components/ui/checkbox"
-import { Input } from "../../local/components/ui/input"
-import { Label } from "../../local/components/ui/label"
+import { Badge } from "../../local/components/ui/badge";
+import { Button } from "../../local/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../local/components/ui/card";
+import { Checkbox } from "../../local/components/ui/checkbox";
+import { Input } from "../../local/components/ui/input";
+import { Label } from "../../local/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../local/components/ui/select"
-import { Separator } from "../../local/components/ui/separator"
-import { Slider } from "../../local/components/ui/slider"
+} from "../../local/components/ui/select";
+import { Separator } from "../../local/components/ui/separator";
+import { Slider } from "../../local/components/ui/slider";
 
-import {
-  PropertySearchFilters,
-  SearchOptions,
-} from "../../local/types/search"
+import { PropertySearchFilters, SearchOptions } from "../../local/types/search";
 
-// Enhanced interface with proper type definitions
+// ============================================================================
+// Local Types
+// ============================================================================
+
+/**
+ * AdvancedSearchFilters extends the base PropertySearchFilters with UI-specific
+ * fields that only exist in the advanced search panel (range tuples, sorting, etc.)
+ */
 interface AdvancedSearchFilters extends PropertySearchFilters {
-  // Basic search properties - ensuring string types are non-nullable when needed
-  query: string;
-  location: string;
-
-  // Property type as array to support multiple selections
-  propertyType: string[];
-
-  // Price ranges with proper tuple typing
   priceRange: [number, number];
-
-  // Size ranges
   squareFeet: [number, number];
   yearBuilt: [number, number];
-
-  // Trust and scoring
-  trustScore?: number;
-
-  // Sorting configuration
   sortBy: string;
   sortOrder: "asc" | "desc";
+}
+
+interface SavedSearch {
+  id: number;
+  name: string;
+  filters: Partial<AdvancedSearchFilters>;
 }
 
 interface AdvancedSearchProps {
@@ -74,29 +61,29 @@ interface AdvancedSearchProps {
   className?: string;
 }
 
-// Properly typed default filters that match the interface exactly
+// ============================================================================
+// Constants
+// ============================================================================
+
 const DEFAULT_FILTERS: AdvancedSearchFilters = {
   query: "",
   location: "",
-  propertyType: [] as string[], // Mutable array
-  priceRange: [0, 10000000] as [number, number], // Mutable tuple
-  squareFeet: [0, 10000] as [number, number], // Mutable tuple
-  yearBuilt: [1950, new Date().getFullYear()] as [number, number], // Mutable tuple
+  propertyType: [],
+  priceRange: [0, 10_000_000],
+  squareFeet: [0, 10_000],
+  yearBuilt: [1950, new Date().getFullYear()],
   sortBy: "relevance",
   sortOrder: "desc",
-  // Optional properties are omitted rather than set to undefined
 };
 
-// Property types configuration
 const PROPERTY_TYPES = [
-  { value: "apartment", label: "Apartment", icon: Home },
-  { value: "house", label: "House", icon: Home },
-  { value: "condo", label: "Condo", icon: Home },
-  { value: "townhouse", label: "Townhouse", icon: Home },
-  { value: "studio", label: "Studio", icon: Home },
+  { value: "apartment", label: "Apartment" },
+  { value: "house", label: "House" },
+  { value: "condo", label: "Condo" },
+  { value: "townhouse", label: "Townhouse" },
+  { value: "studio", label: "Studio" },
 ] as const;
 
-// Available amenities
 const AMENITIES = [
   "Swimming Pool",
   "Gym",
@@ -115,21 +102,17 @@ const AMENITIES = [
   "Air Conditioning",
 ] as const;
 
-// Location options
 const LOCATIONS = [
   "Nairobi CBD",
   "Westlands",
   "Karen",
   "Kilimani",
-  // cspell:disable-next-line - These are real locations in Kenya
   "Lavington",
   "Runda",
-  // cspell:disable-next-line - These are real locations in Nairobi, Kenya
   "Kileleshwa",
   "Parklands",
   "Kasarani",
   "Embakasi",
-  // cspell:disable-next-line - These are real cities in Kenya
   "Mombasa",
   "Nakuru",
   "Kisumu",
@@ -137,7 +120,6 @@ const LOCATIONS = [
   "Thika",
 ] as const;
 
-// Sorting options
 const SORT_OPTIONS = [
   { value: "relevance", label: "Relevance" },
   { value: "price", label: "Price" },
@@ -146,152 +128,106 @@ const SORT_OPTIONS = [
   { value: "trust_score", label: "Trust Score" },
 ] as const;
 
-export function AdvancedSearch({
+const COUNT_OPTS = [0, 1, 2, 3, 4, 5] as const;
+const PARKING_OPTS = [0, 1, 2, 3, 4] as const;
+
+// ============================================================================
+// Utilities
+// ============================================================================
+
+function formatPrice(price: number): string {
+  if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(1)}M`;
+  if (price >= 1_000) return `${(price / 1_000).toFixed(0)}K`;
+  return price.toString();
+}
+
+// ============================================================================
+// Component
+// ============================================================================
+
+export default function AdvancedSearch({
   onSearch,
   onReset,
   initialFilters = {},
   isLoading = false,
   className = "",
 }: AdvancedSearchProps) {
-  // Initialize state with proper type merging
   const [filters, setFilters] = useState<AdvancedSearchFilters>(() => ({
     ...DEFAULT_FILTERS,
     ...initialFilters,
   }));
-
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Get saved searches for quick access
-  const { data: savedSearches } = useQuery({
-    queryKey: ["/api/searches/saved"],
-    queryFn: async () => {
-      // Mock data with proper typing
-      return [
-        {
-          id: 1,
-          name: "Westlands Apartments",
-          filters: {
-            location: "Westlands",
-            propertyType: ["apartment"],
-          } as Partial<AdvancedSearchFilters>,
-        },
-        {
-          id: 2,
-          name: "Family Homes Karen",
-          filters: {
-            location: "Karen",
-            bedrooms: 3,
-            propertyType: ["house"],
-          } as Partial<AdvancedSearchFilters>,
-        },
-      ];
-    },
+  const { data: savedSearches } = useQuery<SavedSearch[]>({
+    queryKey: ["saved-searches"],
+    queryFn: async () => [
+      {
+        id: 1,
+        name: "Westlands Apartments",
+        filters: { location: "Westlands", propertyType: ["apartment"] },
+      },
+      {
+        id: 2,
+        name: "Family Homes Karen",
+        filters: { location: "Karen", bedrooms: 3, propertyType: ["house"] },
+      },
+    ],
+    staleTime: Infinity,
   });
 
-  // Type-safe filter update function
-  const updateFilter = useCallback(
-    <K extends keyof AdvancedSearchFilters>(
-      key: K,
-      value: AdvancedSearchFilters[K]
-    ) => {
-      setFilters((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
+  const updateFilter = useCallback(<K extends keyof AdvancedSearchFilters>(
+    key: K,
+    value: AdvancedSearchFilters[K]
+  ) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
-  // Enhanced array filter toggle with proper typing
-  const toggleArrayFilter = useCallback(
-    (
-      key: "amenities" | "verificationStatus" | "propertyType",
-      value: string
-    ) => {
-      setFilters((prev) => {
-        const currentArray = prev[key] || [];
-        const newArray =
-          currentArray.includes(value) ?
-            currentArray.filter((item) => item !== value)
-          : [...currentArray, value];
-        return { ...prev, [key]: newArray };
-      });
-    },
-    []
-  );
+  const toggleInArray = useCallback(<K extends "amenities" | "verificationStatus" | "propertyType">(
+    key: K,
+    value: string
+  ) => {
+    setFilters((prev) => {
+      const current = (prev[key] ?? []) as string[];
+      const next = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return { ...prev, [key]: next };
+    });
+  }, []);
 
-  // Search handler with proper error handling
-  const handleSearch = useCallback(() => {
-    try {
-      onSearch(filters);
-    } catch (error) {
-      console.error("Search failed:", error);
-    }
-  }, [filters, onSearch]);
+  const handleSearch = useCallback(() => onSearch(filters), [filters, onSearch]);
 
-  // Reset handler that maintains type safety
   const handleReset = useCallback(() => {
     setFilters({ ...DEFAULT_FILTERS });
     onReset();
   }, [onReset]);
 
-  // Optimized filter count calculation
-  const appliedFiltersCount = useMemo(() => {
+  const appliedCount = useMemo(() => {
     let count = 0;
-
-    // Check each filter condition systematically
-    if (filters.query.trim()) count++;
+    if (filters.query?.trim()) count++;
     if (filters.location) count++;
-    if (filters.propertyType.length > 0) count++;
-    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 10000000) count++;
+    if (filters.propertyType?.length) count++;
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 10_000_000) count++;
     if (filters.bedrooms !== undefined) count++;
     if (filters.bathrooms !== undefined) count++;
-    if (filters.amenities && filters.amenities.length > 0) count++;
-    if (filters.verificationStatus && filters.verificationStatus.length > 0) count++;
+    if (filters.amenities?.length) count++;
+    if (filters.verificationStatus?.length) count++;
     if (filters.furnished !== undefined) count++;
     if (filters.petFriendly !== undefined) count++;
     if (filters.parkingSpaces !== undefined) count++;
-
     return count;
   }, [filters]);
-
-  // Price formatting utility
-  const formatPrice = useCallback((price: number): string => {
-    if (price >= 1000000) {
-      return `${(price / 1000000).toFixed(1)}M`;
-    }
-    if (price >= 1000) {
-      return `${(price / 1000).toFixed(0)}K`;
-    }
-    return price.toString();
-  }, []);
-
-  // Helper function to safely handle select values
-  const handleSelectChange = useCallback(
-    (key: "bedrooms" | "bathrooms" | "parkingSpaces", value: string) => {
-      const numericValue = value ? parseInt(value, 10) : undefined;
-      updateFilter(key, numericValue);
-    },
-    [updateFilter]
-  );
-
-  // Helper function for boolean select changes
-  const handleBooleanSelectChange = useCallback(
-    (key: "furnished" | "petFriendly", value: string) => {
-      const booleanValue = value === "" ? undefined : value === "true";
-      updateFilter(key, booleanValue);
-    },
-    [updateFilter]
-  );
 
   return (
     <Card className={className}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
+            <Search className="h-5 w-5" aria-hidden />
             Advanced Search
-            {appliedFiltersCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {appliedFiltersCount} filter
-                {appliedFiltersCount !== 1 ? "s" : ""}
+            {appliedCount > 0 && (
+              <Badge variant="secondary">
+                {appliedCount} filter{appliedCount !== 1 ? "s" : ""}
               </Badge>
             )}
           </CardTitle>
@@ -299,20 +235,14 @@ export function AdvancedSearch({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={() => setIsExpanded((p) => !p)}
               aria-expanded={isExpanded}
-              aria-controls="advanced-filters"
             >
-              <Sliders className="h-4 w-4 mr-2" />
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
               {isExpanded ? "Simple" : "Advanced"}
             </Button>
-            {appliedFiltersCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleReset}
-                disabled={isLoading}
-              >
+            {appliedCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={handleReset} disabled={isLoading}>
                 <X className="h-4 w-4 mr-2" />
                 Clear
               </Button>
@@ -322,15 +252,15 @@ export function AdvancedSearch({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Basic Search Section */}
+        {/* Basic Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="search-query">Search Keywords</Label>
+            <Label htmlFor="adv-query">Keywords</Label>
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                id="search-query"
-                placeholder="Property title, description..."
+                id="adv-query"
+                placeholder="Title, description..."
                 value={filters.query}
                 onChange={(e) => updateFilter("query", e.target.value)}
                 className="pl-9"
@@ -339,19 +269,19 @@ export function AdvancedSearch({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="adv-location">Location</Label>
             <Select
-              value={filters.location || ""}
-              onValueChange={(value) => updateFilter("location", value)}
+              value={filters.location ?? ""}
+              onValueChange={(v) => updateFilter("location", v || undefined)}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select location" />
+              <SelectTrigger id="adv-location">
+                <SelectValue placeholder="All Locations" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Locations</SelectItem>
-                {LOCATIONS.map((location) => (
-                  <SelectItem key={location} value={location}>
-                    {location}
+                {LOCATIONS.map((loc) => (
+                  <SelectItem key={loc} value={loc}>
+                    {loc}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -363,15 +293,15 @@ export function AdvancedSearch({
             <div className="flex gap-2">
               <Select
                 value={filters.sortBy}
-                onValueChange={(value) => updateFilter("sortBy", value)}
+                onValueChange={(v) => updateFilter("sortBy", v)}
               >
                 <SelectTrigger className="flex-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SORT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                  {SORT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -380,12 +310,9 @@ export function AdvancedSearch({
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  updateFilter(
-                    "sortOrder",
-                    filters.sortOrder === "asc" ? "desc" : "asc"
-                  )
+                  updateFilter("sortOrder", filters.sortOrder === "asc" ? "desc" : "asc")
                 }
-                title={`Currently sorting ${filters.sortOrder === "asc" ? "ascending" : "descending"}`}
+                title={`Sort ${filters.sortOrder === "asc" ? "ascending" : "descending"}`}
               >
                 {filters.sortOrder === "asc" ? "↑" : "↓"}
               </Button>
@@ -393,147 +320,95 @@ export function AdvancedSearch({
           </div>
         </div>
 
-        {/* Advanced Filters Section */}
+        {/* Advanced Section */}
         {isExpanded && (
-          <div id="advanced-filters">
+          <div className="space-y-6 animate-in slide-in-from-top-2">
             <Separator />
 
-            {/* Property Type Selection */}
-            <div className="space-y-3 mt-6">
+            {/* Property Types */}
+            <div className="space-y-3">
               <Label>Property Type</Label>
               <div className="flex flex-wrap gap-2">
-                {PROPERTY_TYPES.map((type) => (
-                  <Button
-                    key={type.value}
-                    variant={
-                      filters.propertyType.includes(type.value) ?
-                        "default"
-                      : "outline"
-                    }
-                    size="sm"
-                    onClick={() =>
-                      toggleArrayFilter("propertyType", type.value)
-                    }
-                    className="flex items-center gap-2"
-                  >
-                    <type.icon className="h-4 w-4" />
-                    {type.label}
-                  </Button>
-                ))}
+                {PROPERTY_TYPES.map((type) => {
+                  const active = filters.propertyType?.includes(type.value);
+                  return (
+                    <Button
+                      key={type.value}
+                      variant={active ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleInArray("propertyType", type.value)}
+                      className="gap-2"
+                    >
+                      <Home className="h-4 w-4" />
+                      {type.label}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Price Range Slider */}
+            {/* Price Slider */}
             <div className="space-y-3">
               <Label>Price Range (KES)</Label>
-              <div className="px-3">
-                <Slider
-                  value={[...filters.priceRange]} // Spread to create mutable array for Slider
-                  onValueChange={(value) =>
-                    updateFilter("priceRange", value as [number, number])
-                  }
-                  max={10000000}
-                  min={0}
-                  step={50000}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                  <span>KES {formatPrice(filters.priceRange[0])}</span>
-                  <span>KES {formatPrice(filters.priceRange[1])}</span>
-                </div>
+              <Slider
+                value={[filters.priceRange[0], filters.priceRange[1]]}
+                onValueChange={(v) => updateFilter("priceRange", v as [number, number])}
+                max={10_000_000}
+                step={50_000}
+                className="w-full"
+              />
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>KES {formatPrice(filters.priceRange[0])}</span>
+                <span>KES {formatPrice(filters.priceRange[1])}</span>
               </div>
             </div>
 
-            {/* Room Configuration */}
+            {/* Room Counts */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Bedrooms</Label>
-                <Select
-                  value={filters.bedrooms?.toString() || ""}
-                  onValueChange={(value) =>
-                    handleSelectChange("bedrooms", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any</SelectItem>
-                    {[0, 1, 2, 3, 4, 5].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num === 0 ?
-                          "Studio"
-                        : `${num}+ bed${num > 1 ? "s" : ""}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Bathrooms</Label>
-                <Select
-                  value={filters.bathrooms?.toString() || ""}
-                  onValueChange={(value) =>
-                    handleSelectChange("bathrooms", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any</SelectItem>
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num}+ bath{num > 1 ? "s" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Parking</Label>
-                <Select
-                  value={filters.parkingSpaces?.toString() || ""}
-                  onValueChange={(value) =>
-                    handleSelectChange("parkingSpaces", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any</SelectItem>
-                    {[0, 1, 2, 3, 4].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num === 0 ?
-                          "No parking"
-                        : `${num}+ space${num > 1 ? "s" : ""}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {([
+                { key: "bedrooms" as const, label: "Bedrooms", icon: Bed, opts: COUNT_OPTS },
+                { key: "bathrooms" as const, label: "Bathrooms", icon: Bath, opts: COUNT_OPTS },
+                { key: "parkingSpaces" as const, label: "Parking", icon: Car, opts: PARKING_OPTS },
+              ] as const).map(({ key, label, icon: Icon, opts }) => (
+                <div key={key} className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Label>
+                  <Select
+                    value={filters[key]?.toString() ?? ""}
+                    onValueChange={(v) =>
+                      updateFilter(key, v ? parseInt(v, 10) : undefined)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any</SelectItem>
+                      {opts.map((n) => (
+                        <SelectItem key={n} value={n.toString()}>
+                          {n === 0 && key === "bedrooms" ? "Studio" : n === 0 ? "None" : `${n}+`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
             </div>
 
-            {/* Amenities Selection */}
+            {/* Amenities */}
             <div className="space-y-3">
               <Label>Amenities</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {AMENITIES.map((amenity) => (
                   <div key={amenity} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`amenity-${amenity}`}
-                      checked={filters.amenities?.includes(amenity) || false}
-                      onCheckedChange={() =>
-                        toggleArrayFilter("amenities", amenity)
-                      }
+                      id={`am-${amenity}`}
+                      checked={filters.amenities?.includes(amenity) ?? false}
+                      onCheckedChange={() => toggleInArray("amenities", amenity)}
                     />
-                    <Label
-                      htmlFor={`amenity-${amenity}`}
-                      className="text-sm cursor-pointer"
-                    >
+                    <Label htmlFor={`am-${amenity}`} className="text-sm cursor-pointer">
                       {amenity}
                     </Label>
                   </div>
@@ -541,72 +416,44 @@ export function AdvancedSearch({
               </div>
             </div>
 
-            {/* Property Features */}
+            {/* Features */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Furnished</Label>
-                <Select
-                  value={
-                    filters.furnished === undefined ?
-                      ""
-                    : filters.furnished.toString()
-                  }
-                  onValueChange={(value) =>
-                    handleBooleanSelectChange("furnished", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any</SelectItem>
-                    <SelectItem value="true">Furnished</SelectItem>
-                    <SelectItem value="false">Unfurnished</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {(["furnished", "petFriendly"] as const).map((key) => (
+                <div key={key} className="space-y-2">
+                  <Label className="capitalize">
+                    {key.replace(/([A-Z])/g, " $1").trim()}
+                  </Label>
+                  <Select
+                    value={filters[key] === undefined ? "" : filters[key].toString()}
+                    onValueChange={(v) =>
+                      updateFilter(key, v === "" ? undefined : v === "true")
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="true">Yes</SelectItem>
+                      <SelectItem value="false">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
 
               <div className="space-y-2">
-                <Label>Pet Friendly</Label>
-                <Select
-                  value={
-                    filters.petFriendly === undefined ?
-                      ""
-                    : filters.petFriendly.toString()
-                  }
-                  onValueChange={(value) =>
-                    handleBooleanSelectChange("petFriendly", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any</SelectItem>
-                    <SelectItem value="true">Pet Friendly</SelectItem>
-                    <SelectItem value="false">No Pets</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Verification Status</Label>
+                <Label className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Verification
+                </Label>
                 <div className="flex flex-wrap gap-2">
                   {["verified", "pending"].map((status) => (
                     <Button
                       key={status}
-                      variant={
-                        filters.verificationStatus?.includes(status) ?
-                          "default"
-                        : "outline"
-                      }
+                      variant={filters.verificationStatus?.includes(status) ? "default" : "outline"}
                       size="sm"
-                      onClick={() =>
-                        toggleArrayFilter("verificationStatus", status)
-                      }
-                      className="flex items-center gap-2"
+                      onClick={() => toggleInArray("verificationStatus", status)}
                     >
-                      <Shield className="h-4 w-4" />
                       {status === "verified" ? "Verified" : "Pending"}
                     </Button>
                   ))}
@@ -616,54 +463,43 @@ export function AdvancedSearch({
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* Footer Actions */}
         <div className="flex items-center justify-between pt-4 border-t">
-          <div className="flex items-center gap-2">
-            {savedSearches && savedSearches.length > 0 && (
-              <Select
-                onValueChange={(value) => {
-                  const saved = savedSearches.find(
-                    (s) => s.id.toString() === value
-                  );
-                  if (saved?.filters) {
-                    setFilters((prev) => ({ ...prev, ...saved.filters }));
-                  }
-                }}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Saved searches" />
-                </SelectTrigger>
-                <SelectContent>
-                  {savedSearches.map((search) => (
-                    <SelectItem key={search.id} value={search.id.toString()}>
-                      {search.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+          {savedSearches && savedSearches.length > 0 ? (
+            <Select
+              onValueChange={(val) => {
+                const saved = savedSearches.find((s) => s.id.toString() === val);
+                if (saved?.filters) setFilters((p) => ({ ...p, ...saved.filters }));
+              }}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Saved searches" />
+              </SelectTrigger>
+              <SelectContent>
+                {savedSearches.map((s) => (
+                  <SelectItem key={s.id} value={s.id.toString()}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div />
+          )}
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleReset}
-              disabled={isLoading}
-            >
+            <Button variant="outline" onClick={handleReset} disabled={isLoading}>
               Reset
             </Button>
-            <Button
-              onClick={handleSearch}
-              disabled={isLoading}
-              className="min-w-24"
-            >
-              {isLoading ?
+            <Button onClick={handleSearch} disabled={isLoading} className="min-w-24">
+              {isLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-              : <>
+              ) : (
+                <>
                   <Search className="h-4 w-4 mr-2" />
                   Search
                 </>
-              }
+              )}
             </Button>
           </div>
         </div>
@@ -671,5 +507,3 @@ export function AdvancedSearch({
     </Card>
   );
 }
-
-export default AdvancedSearch;
