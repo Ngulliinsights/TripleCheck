@@ -10,7 +10,7 @@ import { useState } from 'react'
 
 import { formatDate } from '../../local/utils/date-utils'
 
-import { User as UserType } from '../../auth/types/auth.types'
+import { User as UserType } from '../../auth/types'
 
 
 interface UserProfileProps {
@@ -136,6 +136,10 @@ export function UserProfile({ user, onEdit, isEditable = false, onAvatarUpdate }
                   <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${getTrustScoreWidth(user.trustScore)}%` }}
+                    role="progressbar"
+                    aria-valuenow={user.trustScore}
+                    aria-valuemin={0}
+                    aria-valuemax={1000}
                   />
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
@@ -197,7 +201,7 @@ export function UserProfile({ user, onEdit, isEditable = false, onAvatarUpdate }
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="min-h-[200px]">
+            <div className="min-h-50">
               <PropertyImageVault
                 maxFiles={1}
                 maxFileSize={5 * 1024 * 1024} // 5MB

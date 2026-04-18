@@ -563,7 +563,7 @@ export function RegistrationWizard({
                             />
                             {passwordStrength.warning && (
                               <div className="flex items-start gap-2 text-xs text-amber-600">
-                                <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
                                 <span>{passwordStrength.warning}</span>
                               </div>
                             )}
@@ -571,7 +571,7 @@ export function RegistrationWizard({
                               <div className="space-y-1">
                                 {passwordStrength.feedback.map((suggestion, index) => (
                                   <div key={index} className="flex items-start gap-2 text-xs text-blue-600">
-                                    <CheckCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                    <CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />
                                     <span>{suggestion}</span>
                                   </div>
                                 ))}
@@ -615,13 +615,14 @@ export function RegistrationWizard({
                             {form.getValues('firstName')?.[0]}{form.getValues('lastName')?.[0]}
                           </AvatarFallback>
                         </Avatar>
-                        <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors">
+                        <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors" title="Upload profile photo">
                           <Camera className="w-4 h-4" />
                           <input
                             type="file"
                             accept="image/*"
                             onChange={handlePhotoUpload}
                             className="hidden"
+                            aria-label="Upload profile photo"
                           />
                         </label>
                       </div>
