@@ -8,7 +8,6 @@ import { Button } from "../../local/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../local/components/ui/card"
 import { Label } from "../../local/components/ui/label"
 import { Progress } from "../../local/components/ui/progress"
-import { useToast } from "../../local/hooks/use-toast"
 import { useFormValidation } from "../../local/hooks/useFormValidation"
 import { useReviewListVirtualization } from "../../local/hooks/useMemoryOptimization"
 import { formatDate } from "../../local/utils/date-utils"
@@ -47,8 +46,7 @@ const VirtualizedReviewsList: React.FC<{ reviews: Review[] }> = ({ reviews }) =>
   const listProps = useReviewListVirtualization<Review>(
     reviews,
     containerHeight,
-    (index: number) => {
-      const review = reviews[index];
+    (review: Review) => {
       return review ? 150 + (review.comment.length / 4) : 150;
     }
   );
@@ -110,8 +108,6 @@ const VirtualizedReviewsList: React.FC<{ reviews: Review[] }> = ({ reviews }) =>
 };
 
 export default function ReviewsPage() {
-  const { toast } = useToast();
-
   // Simulated reviews data with proper React Query configuration
   const { data: reviews, isLoading } = useQuery<Review[]>({
     queryKey: ["/api/reviews"],
@@ -150,7 +146,7 @@ export default function ReviewsPage() {
   });
 
   const {
-    formState: { data: values, touched, isValid, isSubmitting },
+    formState: { data: values, isValid, isSubmitting },
     handleSubmit,
     setValue,
     getFieldProps,
@@ -178,26 +174,21 @@ export default function ReviewsPage() {
       }
     },
     onSubmit: async (formData) => {
-      try {
-        // Import FormService dynamically
-        const { formService } = await import('../../local/services/FormService');
-        
-        // Submit review using FormService
-        const result = await formService.submitReview({
-          ...formData,
-          reviewType: 'service' // Default to service review
-        });
+      // Import FormService dynamically
+      const { formService } = await import('../../local/services/FormService');
+      
+      // Submit review using FormService
+      const result = await formService.submitReview({
+        ...formData,
+        reviewType: 'service' // Default to service review
+      });
 
-        if (result.success) {
-          // Reset form after successful submission
-          setValue('rating', 0);
-          setValue('comment', '');
-        } else {
-          throw new Error(result.message);
-        }
-      } catch (error) {
-        // Error handling is done in FormService, but we re-throw for form state
-        throw error;
+      if (result.success) {
+        // Reset form after successful submission
+        setValue('rating', 0);
+        setValue('comment', '');
+      } else {
+        throw new Error(result.message);
       }
     }
   });
@@ -327,8 +318,6 @@ export default function ReviewsPage() {
                 placeholder="Share your experience..."
                 required
                 helpText="Minimum 10 characters, maximum 500 characters"
-                error={getFieldError('comment')}
-                touched={touched.comment}
                 {...getFieldProps('comment')}
               />
               
