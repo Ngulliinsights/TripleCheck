@@ -2,11 +2,8 @@
 export * from './types/property.types'
 // New consolidated hooks
 export * from './hooks/useProperty'
-export * from './hooks/usePropertySearch'
 
 // Legacy hooks (deprecated - use consolidated hooks above)
-export * from './hooks/useProperty'
-export * from './hooks/usePropertySearch'
 export * from './hooks/useLandProperty'
 
 // Services - Unified PropertyApi

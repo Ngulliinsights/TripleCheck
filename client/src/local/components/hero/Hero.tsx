@@ -12,7 +12,7 @@ import {
 import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { usePropertySearch } from "../../../property/hooks/usePropertySearch"
+import { usePropertySearch } from "../../../property"
 import { HERO_VARIANTS } from "../../config/assets"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"

@@ -45,7 +45,7 @@ export {
 export {
   PerformanceMonitoringProvider,
   PerformanceDebugger,
-} from './PerformanceMonitoringProvider'
+} from '../../monitoring/components/PerformanceMonitoringProvider'
 
 // Legacy performance monitor (enhanced)
 export {
