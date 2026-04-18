@@ -214,6 +214,8 @@ export interface LandVerificationBadge {
 }
 
 // Filter interfaces for different property types
+export type PropertySearchFilters = BasePropertyFilters;
+
 export interface BasePropertyFilters {
   query: string;
   location: string;

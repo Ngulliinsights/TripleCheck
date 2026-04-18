@@ -208,7 +208,7 @@ export const ApiClientDashboard: React.FC<DashboardProps> = ({
         </button>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .api-dashboard {
           padding: 20px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

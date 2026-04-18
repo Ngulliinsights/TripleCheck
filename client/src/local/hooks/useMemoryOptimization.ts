@@ -73,8 +73,8 @@ export function useVirtualization<T>(items: T[], options: VirtualizationOptions)
 // 1.1 Specialized Virtualization Helpers
 // ---------------------------------------------------------------------------
 
-export function usePropertyListVirtualization(
-  properties:      readonly BaseEntity[],
+export function usePropertyListVirtualization<T extends BaseEntity>(
+  properties:      readonly T[],
   containerHeight: number,
   itemHeight = 280,
 ) {
@@ -82,14 +82,14 @@ export function usePropertyListVirtualization(
     items:          properties,
     itemHeight,
     containerHeight,
-    keyExtractor:   (p: BaseEntity, i: number) => `${p.id}-${i}`,
+    keyExtractor:   (p: T, i: number) => `${p.id}-${i}`,
     // cspell:disable-next-line
     overscanCount:  3,
   }), [properties, containerHeight, itemHeight]);
 }
 
-export function usePropertyGridVirtualization(
-  properties:      readonly BaseEntity[],
+export function usePropertyGridVirtualization<T extends BaseEntity>(
+  properties:      readonly T[],
   containerWidth:  number,
   containerHeight: number,
   cardWidth  = 280,
@@ -102,14 +102,14 @@ export function usePropertyGridVirtualization(
     containerWidth,
     containerHeight,
     gap:            16,
-    keyExtractor:   (p: BaseEntity, i: number) => `${p.id}-${i}`,
+    keyExtractor:   (p: T, i: number) => `${p.id}-${i}`,
     // cspell:disable-next-line
     overscanCount:  1,
   }), [properties, containerWidth, containerHeight, cardWidth, cardHeight]);
 }
 
-export function useNotificationListVirtualization(
-  notifications:   readonly BaseEntity[],
+export function useNotificationListVirtualization<T extends BaseEntity>(
+  notifications:   readonly T[],
   containerHeight: number,
   itemHeight = 80,
 ) {
@@ -117,29 +117,32 @@ export function useNotificationListVirtualization(
     items:          notifications,
     itemHeight,
     containerHeight,
-    keyExtractor:   (n: BaseEntity, i: number) => `${n.id}-${i}`,
+    keyExtractor:   (n: T, i: number) => `${n.id}-${i}`,
     // cspell:disable-next-line
     overscanCount:  5,
   }), [notifications, containerHeight, itemHeight]);
 }
 
-export function useReviewListVirtualization(
-  reviews:         readonly BaseEntity[],
+export function useReviewListVirtualization<T extends BaseEntity>(
+  reviews:         readonly T[],
   containerHeight: number,
-  getItemHeight:   (review: BaseEntity) => number = () => 120,
+  getItemHeight:   (review: T) => number = () => 120,
 ) {
   return useMemo(() => ({
     items:          reviews,
-    itemHeight:     getItemHeight,
+    itemHeight:     (index: number) => {
+      const review = reviews[index];
+      return review ? getItemHeight(review) : 120;
+    },
     containerHeight,
-    keyExtractor:   (r: BaseEntity, i: number) => `${r.id}-${i}`,
+    keyExtractor:   (r: T, i: number) => `${r.id}-${i}`,
     // cspell:disable-next-line
     overscanCount:  2,
   }), [reviews, containerHeight, getItemHeight]);
 }
 
-export function useTenantListVirtualization(
-  tenants:         readonly BaseEntity[],
+export function useTenantListVirtualization<T extends BaseEntity>(
+  tenants:         readonly T[],
   containerHeight: number,
   itemHeight = 200,
 ) {
@@ -147,7 +150,7 @@ export function useTenantListVirtualization(
     items:          tenants,
     itemHeight,
     containerHeight,
-    keyExtractor:   (t: BaseEntity, i: number) => `${t.id}-${i}`,
+    keyExtractor:   (t: T, i: number) => `${t.id}-${i}`,
     // cspell:disable-next-line
     overscanCount:  3,
   }), [tenants, containerHeight, itemHeight]);

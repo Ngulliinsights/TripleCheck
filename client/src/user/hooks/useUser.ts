@@ -65,6 +65,10 @@ const userApi = {
     const currentUserResponse = await userApi.getUser(userId);
     const currentUser = currentUserResponse.data;
 
+    if (!currentUser) {
+      throw new Error('Cannot update user: User data not found');
+    }
+
     // Validate the update
     const validation = UserBusinessLogic.validateSettingsUpdate(
       currentUser,

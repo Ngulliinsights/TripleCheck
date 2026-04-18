@@ -143,7 +143,7 @@ export function useFraudDetection() {
   // Process transaction for fraud analysis
   const processTransactionMutation = useMutation({
     mutationFn: async (transactionData: TransactionData): Promise<FraudAlert[]> => {
-      const response = await apiClient.post('/api/fraud-detection/analyze', transactionData);
+      const response = await apiClient.post<FraudAlert[]>('/api/fraud-detection/analyze', transactionData);
       return response.data;
     },
     onSuccess: (alerts) => {
@@ -160,7 +160,7 @@ export function useFraudDetection() {
   // Update alert status
   const updateAlertMutation = useMutation({
     mutationFn: async ({ alertId, updates }: { alertId: string; updates: Partial<FraudAlert> }): Promise<FraudAlert> => {
-      const response = await apiClient.patch(`/api/fraud-detection/alerts/${alertId}`, updates);
+      const response = await apiClient.patch<FraudAlert>(`/api/fraud-detection/alerts/${alertId}`, updates);
       return response.data;
     },
     onSuccess: (alert) => {
@@ -178,7 +178,7 @@ export function useFraudDetection() {
       description: string;
       priority: 'low' | 'medium' | 'high' | 'urgent';
     }) => {
-      const response = await apiClient.post('/api/fraud-detection/reports', reportData);
+      const response = await apiClient.post<any>('/api/fraud-detection/reports', reportData);
       return response.data;
     },
     onSuccess: () => {
@@ -195,7 +195,7 @@ export function useFraudDetection() {
         if (userId) params.append('userId', userId);
         if (options?.timeRange) params.append('timeRange', options.timeRange);
         
-        const response = await apiClient.get(`/api/fraud-detection/dashboard?${params}`);
+        const response = await apiClient.get<FraudDashboardData>(`/api/fraud-detection/dashboard?${params}`);
         return response.data;
       },
       refetchInterval: 30000, // Refresh every 30 seconds
@@ -222,7 +222,7 @@ export function useFraudDetection() {
         if (filters?.limit) params.append('limit', filters.limit.toString());
         if (filters?.offset) params.append('offset', filters.offset.toString());
         
-        const response = await apiClient.get(`/api/fraud-detection/alerts?${params}`);
+        const response = await apiClient.get<FraudAlert[]>(`/api/fraud-detection/alerts?${params}`);
         return response.data;
       },
       refetchInterval: 15000, // Refresh every 15 seconds for alerts
@@ -234,7 +234,7 @@ export function useFraudDetection() {
     return useQuery({
       queryKey: ['fraud-detection', 'alert', alertId],
       queryFn: async (): Promise<FraudAlert> => {
-        const response = await apiClient.get(`/api/fraud-detection/alerts/${alertId}`);
+        const response = await apiClient.get<FraudAlert>(`/api/fraud-detection/alerts/${alertId}`);
         return response.data;
       },
       enabled: !!alertId,
@@ -246,7 +246,7 @@ export function useFraudDetection() {
     return useQuery({
       queryKey: ['fraud-detection', 'system-status'],
       queryFn: async (): Promise<SystemStatus> => {
-        const response = await apiClient.get('/api/fraud-detection/system/status');
+        const response = await apiClient.get<SystemStatus>('/api/fraud-detection/system/status');
         return response.data;
       },
       refetchInterval: 60000, // Refresh every minute
@@ -267,7 +267,7 @@ export function useFraudDetection() {
         if (options?.propertyId) params.append('propertyId', options.propertyId);
         if (options?.timeRange) params.append('timeRange', options.timeRange);
         
-        const response = await apiClient.get(`/api/fraud-detection/network-analysis?${params}`);
+        const response = await apiClient.get<NetworkAnalysis[]>(`/api/fraud-detection/network-analysis?${params}`);
         return response.data;
       },
     });
@@ -281,7 +281,7 @@ export function useFraudDetection() {
         const params = new URLSearchParams();
         if (options?.timeRange) params.append('timeRange', options.timeRange);
         
-        const response = await apiClient.get(`/api/fraud-detection/ml-analytics?${params}`);
+        const response = await apiClient.get<MLAnalytics>(`/api/fraud-detection/ml-analytics?${params}`);
         return response.data;
       },
     });
@@ -301,7 +301,7 @@ export function useFraudDetection() {
         if (filters?.priority) params.append('priority', filters.priority);
         if (filters?.limit) params.append('limit', filters.limit.toString());
         
-        const response = await apiClient.get(`/api/fraud-detection/reports?${params}`);
+        const response = await apiClient.get<any[]>(`/api/fraud-detection/reports?${params}`);
         return response.data;
       },
     });

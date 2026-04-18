@@ -5,7 +5,7 @@
  * Provides comprehensive insights and alerting for AI operations.
  */
 
-import { logger as loggingService } from '../../../../../server/infrastructure/monitoring/logger'
+import { logger as loggingService } from '../../../utils/logger'
 import { AppError, ErrorSeverity } from '../../../error-handling/errors/base-error'
 import { ErrorCategory } from '../../../error-handling/constants/error-categories'
 import { aiMetricsCollector, AISystemMetrics, UsageAnalytics, CostBreakdown } from './ai-metrics-collector'

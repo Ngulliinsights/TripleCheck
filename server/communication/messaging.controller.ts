@@ -17,7 +17,7 @@ import {
   ThreadType,
   NotificationType,
   NotificationPriority
-} from '../types/messaging.types';
+} from '@shared/types/messaging';
 
 // Validation schemas
 const sendMessageSchema = z.object({

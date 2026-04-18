@@ -6,7 +6,7 @@
  */
 
 import { EventEmitter } from 'events'
-import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
+import { logger as loggingService } from '../../utils/logger'
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
 
 // Performance monitoring interfaces
@@ -107,15 +107,20 @@ export interface AIMonitoringConfig {
   };
 }
 
-class AIPerformanceMonitorError extends BaseError {
-  constructor(message: string, operation: string, cause?: Error) {
-    super(message, {
-      code: 'AI_PERFORMANCE_MONITOR_ERROR',
-      domain: ErrorDomain.SYSTEM,
-      severity: ErrorSeverity.MEDIUM,
-      cause,
-      details: { operation }
-    });
+class AIPerformanceMonitorError extends Error implements BaseError {
+  readonly code = 'AI_PERFORMANCE_MONITOR_ERROR'
+  readonly details: Record<string, unknown> | undefined
+  readonly timestamp: string
+  readonly correlationId: string | undefined
+  readonly cause?: Error
+
+  constructor(message: string, public readonly operation: string, cause?: Error) {
+    super(message)
+    this.name = 'AIPerformanceMonitorError'
+    this.timestamp = new Date().toISOString()
+    this.cause = cause
+    this.details = { operation }
+    Object.setPrototypeOf(this, AIPerformanceMonitorError.prototype)
   }
 }
 
@@ -715,7 +720,7 @@ export const aiMonitoringUtils = {
     const startTime = Date.now();
     let success = false;
     let errorType: string | undefined;
-    let result: T;
+    let result: T | undefined;
     let confidence: number | undefined;
 
     try {
@@ -727,7 +732,7 @@ export const aiMonitoringUtils = {
         confidence = (result as any).confidence;
       }
 
-      return result;
+      return result as T;
     } catch (error) {
       errorType = error instanceof Error ? error.constructor.name : 'UnknownError';
       throw error;

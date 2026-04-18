@@ -8,7 +8,7 @@ export { useMessaging, useThreads, useMessages, useTypingIndicators } from './ho
 export { useNotifications, useNotificationSettings, useUnreadNotificationCount, useNotificationPermission } from './hooks/useNotifications'
 
 // Legacy hooks (for backward compatibility)
-export * from './hooks/useMessages'
+export * from './hooks/useMessaging'
 
 // Components
 export { MessageThread } from './components/MessageThread'

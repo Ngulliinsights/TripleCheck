@@ -6,7 +6,7 @@
  */
 
 import { huggingFaceClient } from '../huggingface-api-client'
-import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
+import { logger as loggingService } from '../../utils/logger'
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
 import { LandVerificationSession, VerificationLayer } from '../../../types/land-verification'
 
@@ -97,15 +97,20 @@ export interface LandVerificationWorkflowResult {
   estimatedCompletion: Date;
 }
 
-class DocumentProcessingIntegrationError extends BaseError {
-  constructor(message: string, operation: string, cause?: Error) {
-    super(message, {
-      code: 'DOCUMENT_PROCESSING_ERROR',
-      domain: ErrorDomain.BUSINESS,
-      severity: ErrorSeverity.MEDIUM,
-      cause,
-      details: { operation }
-    });
+class DocumentProcessingIntegrationError extends Error implements BaseError {
+  readonly code = 'DOCUMENT_PROCESSING_ERROR'
+  readonly details: Record<string, unknown> | undefined
+  readonly timestamp: string
+  readonly correlationId: string | undefined
+  readonly cause?: Error
+
+  constructor(message: string, public readonly operation: string, cause?: Error) {
+    super(message)
+    this.name = 'DocumentProcessingIntegrationError'
+    this.timestamp = new Date().toISOString()
+    this.cause = cause
+    this.details = { operation }
+    Object.setPrototypeOf(this, DocumentProcessingIntegrationError.prototype)
   }
 }
 
@@ -469,18 +474,18 @@ export class DocumentProcessingIntegrationService {
     return {
       isComplete,
       completenessScore,
-      missingFields,
+      missingFields: missingFields as CompletenessResult['missingFields'],
       requiredActions
     };
   }
 
   private async verifyConsistency(extractedData: any, sessionId?: string): Promise<ConsistencyResult> {
     // Simplified consistency check
-    const inconsistencies = [];
-    const crossReferences = [];
+    const inconsistencies: any[] = [];
+    const crossReferences: any[] = [];
 
     // Check internal consistency
-    const dateEntities = extractedData.entities.filter(e => e.type === 'date');
+    const dateEntities = extractedData.entities.filter((e: any) => e.type === 'date');
     if (dateEntities.length > 1) {
       // Check for date consistency logic here
     }
@@ -488,8 +493,8 @@ export class DocumentProcessingIntegrationService {
     return {
       isConsistent: inconsistencies.length === 0,
       consistencyScore: inconsistencies.length === 0 ? 100 : 70,
-      inconsistencies,
-      crossReferences
+      inconsistencies: inconsistencies as ConsistencyResult['inconsistencies'],
+      crossReferences: crossReferences as ConsistencyResult['crossReferences']
     };
   }
 
@@ -559,7 +564,7 @@ export class DocumentProcessingIntegrationService {
       ]
     };
 
-    return requirements[layerType] || [];
+    return requirements[layerType as keyof typeof requirements] || [];
   }
 
   private async checkRequirement(documentResult: DocumentProcessingResult, requirement: any): Promise<any> {
@@ -591,8 +596,8 @@ export class DocumentProcessingIntegrationService {
     return recommendations;
   }
 
-  private getRequiredFields(documentType: string): Array<{ name: string; importance: string; description: string; weight: number }> {
-    const fieldMappings = {
+  private getRequiredFields(documentType: string): Array<{ name: string; importance: 'critical' | 'important' | 'optional'; description: string; weight: number }> {
+    const fieldMappings: Record<string, Array<{ name: string; importance: 'critical' | 'important' | 'optional'; description: string; weight: number }>> = {
       'title_deed': [
         { name: 'owner_name', importance: 'critical', description: 'Property owner name', weight: 25 },
         { name: 'property_description', importance: 'critical', description: 'Property description', weight: 25 },
@@ -607,12 +612,12 @@ export class DocumentProcessingIntegrationService {
       ]
     };
 
-    return fieldMappings[documentType] || [];
+    return fieldMappings[documentType as keyof typeof fieldMappings] || [];
   }
 
   private checkFieldPresence(extractedData: any, field: any): boolean {
     // Check if field is present in extracted entities
-    return extractedData.entities.some(entity => 
+    return extractedData.entities.some((entity: any) => 
       entity.value.toLowerCase().includes(field.name.replace('_', ' ')) ||
       extractedData.text.toLowerCase().includes(field.name.replace('_', ' '))
     );

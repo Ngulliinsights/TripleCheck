@@ -4,6 +4,7 @@
  */
 
 import { onCLS, onFID, onLCP, onFCP, onTTFB, onINP, Metric } from 'web-vitals';
+import { logger } from '../utils/logger'
 
 interface PerformanceMetric {
   name: string;
@@ -27,7 +28,7 @@ class PerformanceMonitoring {
     onTTFB(this.handleMetric.bind(this));
     onINP(this.handleMetric.bind(this));
 
-    console.log('Performance monitoring initialized');
+    logger.info('Performance monitoring initialized');
   }
 
   private handleMetric(metric: Metric) {
@@ -47,7 +48,7 @@ class PerformanceMonitoring {
 
     // Log in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[Performance] ${metric.name}:`, {
+      logger.debug(`[Performance] ${metric.name}:`, {
         value: metric.value,
         rating: metric.rating,
       });
@@ -115,7 +116,7 @@ class PerformanceMonitoring {
         });
       }
     } catch (error) {
-      console.warn('Failed to measure timing:', error);
+      logger.warn('Failed to measure timing:', error);
     }
   }
 
@@ -126,7 +127,7 @@ class PerformanceMonitoring {
     try {
       performance.mark(name);
     } catch (error) {
-      console.warn('Failed to mark performance:', error);
+      logger.warn('Failed to mark performance:', error);
     }
   }
 
@@ -139,7 +140,7 @@ class PerformanceMonitoring {
       performance.clearMeasures();
       this.metrics = [];
     } catch (error) {
-      console.warn('Failed to clear performance data:', error);
+      logger.warn('Failed to clear performance data:', error);
     }
   }
 }

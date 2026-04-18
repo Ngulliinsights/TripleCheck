@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { Message, MessageThread } from '../hooks/useMessages'
+import { Message, MessageThread } from '../hooks/useMessaging'
 
 // Communication validation schemas
 export const MessageSchema = z.object({
@@ -13,6 +13,7 @@ export const MessageSchema = z.object({
   content: z.string()
     .min(10, 'Message must be at least 10 characters')
     .max(5000, 'Message must not exceed 5000 characters'),
+  messageType: z.enum(['text', 'image', 'document', 'property_inquiry', 'system_message', 'verification_request', 'appointment_request']).default('text'),
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
   threadId: z.string().uuid().optional(),
 });
@@ -38,8 +39,11 @@ export class CommunicationBusinessLogic {
     'investment opportunity', 'make money fast', 'work from home',
   ];
 
-  // Validate message data
-  static validateMessage(data: unknown): Omit<Message, 'id' | 'timestamp' | 'isRead'> {
+  /**
+   * Validate message data
+   * Maps Zod output to the expected Message structure
+   */
+  static validateMessage(data: unknown): Omit<Message, 'id' | 'createdAt' | 'updatedAt' | 'isRead' | 'status'> {
     try {
       return MessageSchema.parse(data);
     } catch (error) {
@@ -102,7 +106,7 @@ export class CommunicationBusinessLogic {
     // Check sender history
     if (message.senderHistory) {
       const recentMessages = message.senderHistory.filter(
-        (msg: any) => new Date(msg.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+        (msg: any) => new Date(msg.createdAt).getTime() > new Date(Date.now() - 24 * 60 * 60 * 1000).getTime()
       );
 
       if (recentMessages.length > 20) {
@@ -227,7 +231,7 @@ export class CommunicationBusinessLogic {
 
     threadsMap.forEach((threadMessages, threadId) => {
       const sortedMessages = threadMessages.sort(
-        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
       const lastMessage = sortedMessages[0];
@@ -236,28 +240,33 @@ export class CommunicationBusinessLogic {
         ...threadMessages.map(m => m.recipientId),
       ]));
 
-      const unreadCount = threadMessages.filter(m => !m.isRead).length;
+      const unreadCount = threadMessages.filter(m => m.status !== 'read').length;
 
       threads.push({
         id: threadId,
         participants,
-        subject: lastMessage.subject,
+        subject: lastMessage.subject || 'No Subject',
         lastMessage,
         messageCount: threadMessages.length,
         unreadCount,
+        threadType: 'direct_message', // Default for organized threads
+        lastActivity: lastMessage.createdAt,
+        isArchived: false,
+        createdAt: sortedMessages[sortedMessages.length - 1].createdAt,
+        updatedAt: lastMessage.createdAt,
       });
     });
 
     // Sort threads by last message timestamp
     return threads.sort(
-      (a, b) => new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
+      (a, b) => new Date(b.lastMessage!.createdAt).getTime() - new Date(a.lastMessage!.createdAt).getTime()
     );
   }
 
   // Message priority calculation
   static calculateMessagePriority(message: {
     content: string;
-    subject: string;
+    subject?: string;
     senderId: string;
     recipientId: string;
     senderTrustScore?: number;
@@ -297,7 +306,7 @@ export class CommunicationBusinessLogic {
     }
 
     // Subject line analysis
-    const subjectUrgent = /urgent|asap|emergency|important/i.test(message.subject);
+    const subjectUrgent = message.subject ? /urgent|asap|emergency|important/i.test(message.subject) : false;
     if (subjectUrgent) {
       const subjectBonus = 20;
       score += subjectBonus;
@@ -361,9 +370,12 @@ export class CommunicationBusinessLogic {
     }
 
     messages.forEach(message => {
-      const priorityAnalysis = this.calculateMessagePriority(message);
-      const priorityLevel = this.PRIORITY_WEIGHTS[priorityAnalysis.priority];
-      const thresholdLevel = this.PRIORITY_WEIGHTS[recipientPreferences.priorityThreshold];
+      const priorityAnalysis = this.calculateMessagePriority({
+        ...message,
+        subject: message.subject || undefined
+      });
+      const priorityLevel = this.PRIORITY_WEIGHTS[priorityAnalysis.priority as keyof typeof CommunicationBusinessLogic.PRIORITY_WEIGHTS];
+      const thresholdLevel = this.PRIORITY_WEIGHTS[recipientPreferences.priorityThreshold as keyof typeof CommunicationBusinessLogic.PRIORITY_WEIGHTS];
 
       // High priority messages always go through immediately
       if (priorityAnalysis.priority === 'high') {
@@ -429,7 +441,7 @@ export class CommunicationBusinessLogic {
     if (query.text) {
       const searchTerm = query.text.toLowerCase();
       filteredMessages = filteredMessages.filter(message =>
-        message.subject.toLowerCase().includes(searchTerm) ||
+        (message.subject || '').toLowerCase().includes(searchTerm) ||
         message.content.toLowerCase().includes(searchTerm)
       );
     }
@@ -444,13 +456,13 @@ export class CommunicationBusinessLogic {
     // Date range filter
     if (query.dateFrom) {
       filteredMessages = filteredMessages.filter(message =>
-        new Date(message.timestamp) >= query.dateFrom!
+        new Date(message.createdAt) >= query.dateFrom!
       );
     }
 
     if (query.dateTo) {
       filteredMessages = filteredMessages.filter(message =>
-        new Date(message.timestamp) <= query.dateTo!
+        new Date(message.createdAt) <= query.dateTo!
       );
     }
 
@@ -464,7 +476,7 @@ export class CommunicationBusinessLogic {
     // Read status filter
     if (query.isRead !== undefined) {
       filteredMessages = filteredMessages.filter(message =>
-        message.isRead === query.isRead
+        (message.status === 'read') === query.isRead
       );
     }
 
@@ -477,11 +489,12 @@ export class CommunicationBusinessLogic {
 
     filteredMessages.forEach(message => {
       // Priority stats
-      searchStats.byPriority[message.priority] = 
-        (searchStats.byPriority[message.priority] || 0) + 1;
+      const priorityKey = message.priority || 'medium';
+      searchStats.byPriority[priorityKey] = 
+        (searchStats.byPriority[priorityKey] || 0) + 1;
 
       // Date stats (by day)
-      const dateKey = new Date(message.timestamp).toDateString();
+      const dateKey = new Date(message.createdAt).toDateString();
       searchStats.byDate[dateKey] = 
         (searchStats.byDate[dateKey] || 0) + 1;
 

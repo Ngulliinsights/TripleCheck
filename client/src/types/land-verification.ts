@@ -104,6 +104,8 @@ export interface VerificationSessionResponse extends LandVerificationSession {
   communityFeedback?: CommunityFeedback[];
   expertAssignments?: ExpertAssignment[];
   completionPercentage: number;
+  overallRiskLevel: RiskLevel;
+  overallRiskScore: number;
   estimatedTimeRemaining?: number;
 }
 

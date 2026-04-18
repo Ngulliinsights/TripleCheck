@@ -10,6 +10,6 @@
  * import { ComponentName } from '@user/components'
  */
 
-// Standard exports
-export { default as UserNotifications } from './UserNotifications'
-export { default as UserProfile } from './UserProfile'
+// Standard name exports
+export { UserNotifications } from './UserNotifications'
+export { UserProfile } from './UserProfile'

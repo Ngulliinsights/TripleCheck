@@ -34,7 +34,7 @@ import type {
 interface RiskFactorAnalysisProps {
   riskFactors: RiskFactorWithContext[];
   riskInteractions: RiskInteraction[];
-  onFactorUpdate: (factorId: number, updates: Partial<RiskFactorWithContext>) => void;
+  onFactorUpdate: (factorId: string | number, updates: Partial<RiskFactorWithContext>) => void;
   className?: string;
 }
 
@@ -149,7 +149,7 @@ export default function RiskFactorAnalysis({
 
   const RiskFactorCard = ({ factor }: { factor: RiskFactorWithContext }) => {
     const relatedInteractions = riskInteractions.filter(
-      i => i.primaryFactorId === factor.id || i.secondaryFactorId === factor.id
+      i => String(i.primaryFactorId) === String(factor.id) || String(i.secondaryFactorId) === String(factor.id)
     );
 
     return (
@@ -207,8 +207,8 @@ export default function RiskFactorAnalysis({
   };
 
   const InteractionCard = ({ interaction }: { interaction: RiskInteraction }) => {
-    const primaryFactor = riskFactors.find(f => f.id === interaction.primaryFactorId);
-    const secondaryFactor = riskFactors.find(f => f.id === interaction.secondaryFactorId);
+    const primaryFactor = riskFactors.find(f => String(f.id) === String(interaction.primaryFactorId));
+    const secondaryFactor = riskFactors.find(f => String(f.id) === String(interaction.secondaryFactorId));
 
     if (!primaryFactor || !secondaryFactor) return null;
 
@@ -310,7 +310,7 @@ export default function RiskFactorAnalysis({
         )}
 
         <div className="flex gap-2 pt-4 border-t">
-          <Button size="sm" onClick={() => onFactorUpdate(factor.id, { mitigationStatus: 'planned' })}>
+          <Button size="sm" onClick={() => onFactorUpdate(factor.id as any, { mitigationStatus: 'planned' })}>
             <Edit className="h-4 w-4 mr-2" />
             Update Status
           </Button>

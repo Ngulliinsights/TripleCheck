@@ -5,6 +5,17 @@
  * throughout the application.
  */
 
+import { aiIntegrationOrchestrator } from './ai-integration-orchestrator';
+import { 
+  PropertyValuationResult, 
+  PropertyRiskAssessment, 
+  PropertyInsights 
+} from './property-analysis-integration';
+import { FraudDetectionResult } from './fraud-detection-integration';
+import { PropertyRecommendation } from './recommendation-integration';
+import { aiPerformanceMonitor } from './ai-performance-monitor';
+
+
 // Main orchestrator
 export { 
   aiIntegrationOrchestrator,
@@ -58,45 +69,14 @@ export {
 
 // Monitoring and testing suite
 export {
-  // Metrics Collection
-  aiMetricsCollector,
-  type AIOperationMetrics,
-  type AIServiceMetrics,
-  type AISystemMetrics,
-  type CostBreakdown,
-  type UsageAnalytics,
-  
-  // Health Monitoring
-  aiHealthMonitor,
-  type HealthCheckResult,
-  type SystemHealthStatus,
-  type HealthAlert,
-  
-  // Performance Dashboard
-  aiPerformanceDashboard,
-  type DashboardMetrics,
-  type PerformanceInsights,
-  type DashboardRecommendation,
-  
-  // Testing Suite - Commented out as files don't exist yet
-  // AITestSuite,
-  // aiTestUtils,
-  // type AITestConfig,
-  // type AITestResult,
-  // type AITestSuiteReport,
-  
-  // Comprehensive Test Runner - Commented out as files don't exist yet
-  // ComprehensiveAITestRunner,
-  // type ComprehensiveTestConfig,
-  // type ComprehensiveTestReport,
-  
-  // Utility Functions
-  initializeAIMonitoring,
-  getAISystemStatus,
-  quickAIHealthCheck,
-  exportAllMonitoringData,
-  cleanupAIMonitoring
-} from './monitoring'
+  aiPerformanceMonitor,
+  type AIPerformanceMetrics,
+  type AIUsageAnalytics,
+  type AIHealthStatus,
+  type AICostTracking,
+  type AIMonitoringConfig,
+  aiMonitoringUtils
+} from './ai-performance-monitor'
 
 // Utility functions for AI integration
 export const aiIntegrationUtils = {

@@ -1,8 +1,8 @@
 /**
- * Property Image Validation Service - Refactored
- * 
+ * Property Image Validation Service
+ *
  * Focused service that handles only validation operations.
- * Uses shared core to eliminate duplication while maintaining clear boundaries.
+ * Uses the shared core to eliminate duplication while maintaining clear boundaries.
  */
 
 import { ImageServiceCore, ImageServiceRegistry } from './core/ImageServiceCore'
@@ -17,213 +17,241 @@ import type {
 import { DOCUMENT_VALIDATION_PROFILES } from '../../types/images'
 import { ImageUtils } from '../../utils/images/unified-utils'
 
+// ---------------------------------------------------------------------------
+// Public interfaces
+// ---------------------------------------------------------------------------
+
 export interface IPropertyImageValidationService {
-  validateFile(file: File, options?: ValidationOptions, documentType?: DocumentType): Promise<ValidationResult>;
-  validateUrl(url: string, options?: ValidationOptions): Promise<ValidationResult>;
-  validateBatch(files: File[], options?: ValidationOptions, onProgress?: (completed: number, total: number) => void): Promise<{ [fileName: string]: ValidationResult }>;
-  getValidationProfile(documentType: DocumentType): ValidationOptions;
+  validateFile(
+    file: File,
+    options?: ValidationOptions,
+    documentType?: DocumentType,
+  ): Promise<ValidationResult>
+  validateUrl(url: string, options?: ValidationOptions): Promise<ValidationResult>
+  validateBatch(
+    files: File[],
+    options?: ValidationOptions,
+    onProgress?: (completed: number, total: number) => void,
+  ): Promise<Record<string, ValidationResult>>
+  getValidationProfile(documentType: DocumentType): ValidationOptions
 }
 
 export interface ValidationDependencies {
   documentAuthService?: {
-    authenticateDocument: (file: File, documentType: DocumentType) => Promise<DocumentAuthResult>;
-  };
+    authenticateDocument(file: File, documentType: DocumentType): Promise<DocumentAuthResult>
+  }
   fraudDetectionService?: {
-    analyzeFraudRisk: (file: File, metadata: PropertyImageMetadata) => Promise<number>;
-  };
+    analyzeFraudRisk(file: File, metadata: PropertyImageMetadata): Promise<number>
+  }
   geoLocationService?: {
-    validateLocation: (latitude: number, longitude: number, expectedRegion?: string) => Promise<boolean>;
-  };
+    validateLocation(
+      latitude: number,
+      longitude: number,
+      expectedRegion?: string,
+    ): Promise<boolean>
+  }
 }
 
-export class PropertyImageValidationService extends ImageServiceCore implements IPropertyImageValidationService {
-  readonly serviceName = 'PropertyImageValidationService';
-  readonly version = '2.0.0';
+// ---------------------------------------------------------------------------
+// Service implementation
+// ---------------------------------------------------------------------------
+
+export class PropertyImageValidationService
+  extends ImageServiceCore
+  implements IPropertyImageValidationService
+{
+  readonly serviceName = 'PropertyImageValidationService'
+  readonly version = '2.0.0'
 
   constructor(
-    private dependencies: ValidationDependencies = {},
-    config?: ImageServiceConfig
+    private readonly dependencies: ValidationDependencies = {},
+    config?: ImageServiceConfig,
   ) {
-    super(config, ImageServiceRegistry.getInstance().getAuditService());
+    super(config, ImageServiceRegistry.getInstance().getAuditService())
   }
+
+  // -------------------------------------------------------------------------
+  // Public API
+  // -------------------------------------------------------------------------
 
   async validateFile(
     file: File,
     options?: ValidationOptions,
-    documentType?: DocumentType
+    documentType?: DocumentType,
   ): Promise<ValidationResult> {
-    const validationOptions = options || this.getValidationProfile(documentType || 'other_document');
-    
-    const result: ValidationResult = {
-      isValid: true,
-      errors: [],
-      warnings: [],
-    };
+    const validationOptions = options ?? this.getValidationProfile(documentType ?? 'other_document')
+
+    const result: ValidationResult = { isValid: true, errors: [], warnings: [] }
 
     try {
       await this.logEvent('validation_started', {
         fileName: file.name,
         fileSize: file.size,
-        documentType: documentType || 'unknown',
-      });
+        documentType: documentType ?? 'unknown',
+      })
 
-      // Use shared validation helpers
+      // --- Basic checks ---
+
       if (!this.validateFileSize(file.size)) {
-        result.isValid = false;
+        result.isValid = false
         result.errors.push(
-          `File size (${ImageUtils.formatFileSize(file.size)}) exceeds maximum allowed size (${ImageUtils.formatFileSize(this.config.validation.maxFileSize)})`
-        );
+          `File size (${ImageUtils.formatFileSize(file.size)}) exceeds the maximum allowed ` +
+            `(${ImageUtils.formatFileSize(this.config.validation.maxFileSize)})`,
+        )
       }
 
       if (!this.validateFileFormat(file.name)) {
-        result.isValid = false;
+        result.isValid = false
         result.errors.push(
-          `File format '${ImageUtils.getFileExtension(file.name)}' is not allowed. Allowed formats: ${this.config.validation.allowedFormats.join(', ')}`
-        );
+          `File format '${ImageUtils.getFileExtension(file.name)}' is not allowed. ` +
+            `Allowed formats: ${this.config.validation.allowedFormats.join(', ')}`,
+        )
       }
 
-      // MIME type validation
-      if (!file.type.startsWith('image/') && !file.type.startsWith('application/pdf')) {
-        result.isValid = false;
-        result.errors.push('File is not a valid image or PDF document');
-        return result;
+      const isImage = file.type.startsWith('image/')
+      const isPdf = file.type === 'application/pdf'
+      if (!isImage && !isPdf) {
+        result.isValid = false
+        result.errors.push('File must be a valid image or PDF document.')
+        // Bail early – metadata extraction would fail on an unsupported type.
+        return result
       }
 
-      // Extract metadata using shared helper
-      const metadata = await this.extractImageMetadata(file);
-      result.metadata = metadata;
+      // --- Metadata extraction ---
+      const metadata = await this.extractImageMetadata(file)
+      result.metadata = metadata
 
-      // Perform advanced validations
-      await this.performAdvancedValidations(file, metadata, result, documentType);
+      // --- Advanced checks ---
+      await this.performAdvancedValidations(file, metadata, result, documentType)
 
       await this.logEvent('validation_completed', {
         fileName: file.name,
         isValid: result.isValid,
         errorCount: result.errors.length,
         warningCount: result.warnings.length,
-        documentType: documentType || 'unknown',
-      });
+        documentType: documentType ?? 'unknown',
+      })
 
-      return result;
+      return result
     } catch (error) {
-      result.isValid = false;
+      result.isValid = false
       result.errors.push(
-        `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+        `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      )
 
       await this.logEvent('validation_error', {
         fileName: file.name,
         error: error instanceof Error ? error.message : 'Unknown error',
-        documentType: documentType || 'unknown',
-      });
+        documentType: documentType ?? 'unknown',
+      })
 
-      return result;
+      return result
     }
   }
 
-  async validateUrl(url: string, options?: ValidationOptions): Promise<ValidationResult> {
-    const result: ValidationResult = {
-      isValid: true,
-      errors: [],
-      warnings: [],
-    };
+  async validateUrl(url: string, _options?: ValidationOptions): Promise<ValidationResult> {
+    const result: ValidationResult = { isValid: true, errors: [], warnings: [] }
 
     if (!url) {
-      result.isValid = false;
-      result.errors.push('No URL provided');
-      return result;
+      result.isValid = false
+      result.errors.push('No URL provided.')
+      return result
     }
 
     try {
-      new URL(url);
+      new URL(url)
     } catch {
-      result.isValid = false;
-      result.errors.push('Invalid URL format');
-      return result;
+      result.isValid = false
+      result.errors.push('Invalid URL format.')
+      return result
     }
 
-    // URL validation implementation would go here
-    return result;
+    // TODO: Add HEAD-request reachability check and MIME-type validation.
+    return result
   }
 
   async validateBatch(
     files: File[],
     options?: ValidationOptions,
-    onProgress?: (completed: number, total: number) => void
-  ): Promise<{ [fileName: string]: ValidationResult }> {
-    const results: { [fileName: string]: ValidationResult } = {};
-    const progressTracker = { completed: 0 };
+    onProgress?: (completed: number, total: number) => void,
+  ): Promise<Record<string, ValidationResult>> {
+    const results: Record<string, ValidationResult> = {}
+    let completed = 0
+    const CONCURRENCY = 3
 
-    // Process files with concurrency limit
-    const concurrencyLimit = 3;
-    const batches: File[][] = [];
+    // Process in fixed-size batches to avoid overwhelming the browser / server.
+    for (let i = 0; i < files.length; i += CONCURRENCY) {
+      const batch = files.slice(i, i + CONCURRENCY)
 
-    for (let i = 0; i < files.length; i += concurrencyLimit) {
-      batches.push(files.slice(i, i + concurrencyLimit));
+      await Promise.all(
+        batch.map(async file => {
+          try {
+            results[file.name] = await this.validateFile(file, options)
+          } catch (error) {
+            results[file.name] = {
+              isValid: false,
+              errors: [error instanceof Error ? error.message : 'Validation failed'],
+              warnings: [],
+            }
+          }
+
+          completed++
+          onProgress?.(completed, files.length)
+        }),
+      )
     }
 
-    for (const batch of batches) {
-      const batchPromises = batch.map(async (file) => {
-        try {
-          const result = await this.validateFile(file, options);
-          results[file.name] = result;
-        } catch (error) {
-          results[file.name] = {
-            isValid: false,
-            errors: [error instanceof Error ? error.message : 'Validation failed'],
-            warnings: [],
-          };
-        }
-
-        progressTracker.completed++;
-        onProgress?.(progressTracker.completed, files.length);
-      });
-
-      await Promise.all(batchPromises);
-    }
-
-    return results;
+    return results
   }
 
   getValidationProfile(documentType: DocumentType): ValidationOptions {
-    const profile = DOCUMENT_VALIDATION_PROFILES[documentType as keyof typeof DOCUMENT_VALIDATION_PROFILES];
-    return profile || DOCUMENT_VALIDATION_PROFILES.other_document;
+    return (
+      DOCUMENT_VALIDATION_PROFILES[documentType as keyof typeof DOCUMENT_VALIDATION_PROFILES] ??
+      DOCUMENT_VALIDATION_PROFILES.other_document
+    )
   }
 
-  // Private methods
-  private async extractImageMetadata(file: File): Promise<PropertyImageMetadata> {
-    // Use shared basic metadata extraction
-    const basicMetadata = await this.extractBasicMetadata(file);
-    
+  // -------------------------------------------------------------------------
+  // Private helpers
+  // -------------------------------------------------------------------------
+
+  private extractImageMetadata(file: File): Promise<PropertyImageMetadata> {
     return new Promise((resolve, reject) => {
-      if (file.type.startsWith('application/pdf')) {
-        resolve({
-          ...basicMetadata,
-          technicalMetadata: {
-            format: 'pdf',
-            colorSpace: 'sRGB',
-            bitDepth: 24,
-            compression: 'PDF',
-            orientation: 1,
-          },
-        } as PropertyImageMetadata);
-        return;
+      const basicMetadata = this.extractBasicMetadata(file)
+
+      // PDFs cannot be loaded as <img> elements.
+      if (file.type === 'application/pdf') {
+        void basicMetadata.then(base =>
+          resolve({
+            ...base,
+            technicalMetadata: {
+              format: 'pdf',
+              colorSpace: 'sRGB',
+              bitDepth: 24,
+              compression: 'PDF',
+              orientation: 1,
+            },
+          } as PropertyImageMetadata),
+        )
+        return
       }
 
       if (typeof window === 'undefined' || typeof Image === 'undefined') {
-        reject(new Error('Image metadata extraction not supported in this environment'));
-        return;
+        reject(new Error('Image metadata extraction is not supported in this environment.'))
+        return
       }
 
-      const img = new Image();
+      const objectUrl = URL.createObjectURL(file)
+      const img = new Image()
+
+      const cleanup = () => URL.revokeObjectURL(objectUrl)
+
       img.onload = () => {
-        try {
-          const metadata: PropertyImageMetadata = {
-            ...basicMetadata,
-            dimensions: {
-              width: img.naturalWidth,
-              height: img.naturalHeight,
-            },
+        cleanup()
+        void basicMetadata.then(base =>
+          resolve({
+            ...base,
+            dimensions: { width: img.naturalWidth, height: img.naturalHeight },
             technicalMetadata: {
               format: ImageUtils.getFileExtension(file.name).toLowerCase(),
               colorSpace: 'sRGB',
@@ -231,34 +259,26 @@ export class PropertyImageValidationService extends ImageServiceCore implements 
               compression: 'JPEG',
               orientation: 1,
             },
-          } as PropertyImageMetadata;
-
-          resolve(metadata);
-        } catch (error) {
-          reject(error);
-        }
-      };
+          } as PropertyImageMetadata),
+        )
+      }
 
       img.onerror = () => {
-        reject(new Error('Failed to load image - file may be corrupted'));
-      };
+        cleanup()
+        reject(new Error('Failed to load image – file may be corrupted.'))
+      }
 
-      const objectUrl = URL.createObjectURL(file);
-      img.src = objectUrl;
-
-      setTimeout(() => {
-        URL.revokeObjectURL(objectUrl);
-      }, 5000);
-    });
+      img.src = objectUrl
+    })
   }
 
   private async performAdvancedValidations(
     file: File,
     metadata: PropertyImageMetadata,
     result: ValidationResult,
-    documentType?: DocumentType
+    documentType?: DocumentType,
   ): Promise<void> {
-    // Document authentication
+    // Document authentication (skipped for raw property photos).
     if (
       this.config.validation.documentAuthEnabled &&
       this.dependencies.documentAuthService &&
@@ -266,45 +286,70 @@ export class PropertyImageValidationService extends ImageServiceCore implements 
       documentType !== 'property_photo'
     ) {
       try {
-        const authResult = await this.dependencies.documentAuthService.authenticateDocument(file, documentType);
-        result.documentAuthResult = authResult;
+        const authResult = await this.dependencies.documentAuthService.authenticateDocument(
+          file,
+          documentType,
+        )
+        result.documentAuthResult = authResult
 
         if (!authResult.isAuthentic) {
-          result.isValid = false;
-          result.errors.push(`Document authentication failed: ${authResult.anomalies.join(', ')}`);
+          result.isValid = false
+          result.errors.push(
+            `Document authentication failed: ${authResult.anomalies.join(', ')}`,
+          )
         } else if (authResult.confidence < 0.8) {
-          result.warnings.push(`Document authentication confidence is low (${Math.round(authResult.confidence * 100)}%)`);
+          result.warnings.push(
+            `Document authentication confidence is low (${Math.round(authResult.confidence * 100)} %)`,
+          )
         }
       } catch (error) {
-        result.warnings.push(`Document authentication service unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        result.warnings.push(
+          `Document authentication service unavailable: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
+        )
       }
     }
 
-    // Fraud detection
+    // Fraud detection.
     if (
       this.config.validation.fraudDetectionEnabled &&
       this.dependencies.fraudDetectionService
     ) {
       try {
-        const fraudScore = await this.dependencies.fraudDetectionService.analyzeFraudRisk(file, metadata);
-        result.fraudRiskScore = fraudScore;
+        const fraudScore = await this.dependencies.fraudDetectionService.analyzeFraudRisk(
+          file,
+          metadata,
+        )
+        result.fraudRiskScore = fraudScore
 
         if (fraudScore > 0.8) {
-          result.isValid = false;
-          result.errors.push(`High fraud risk detected (score: ${Math.round(fraudScore * 100)}%)`);
+          result.isValid = false
+          result.errors.push(
+            `High fraud risk detected (score: ${Math.round(fraudScore * 100)} %)`,
+          )
         } else if (fraudScore > 0.5) {
-          result.warnings.push(`Moderate fraud risk detected (score: ${Math.round(fraudScore * 100)}%)`);
+          result.warnings.push(
+            `Moderate fraud risk detected (score: ${Math.round(fraudScore * 100)} %)`,
+          )
         }
       } catch (error) {
-        result.warnings.push(`Fraud detection service unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        result.warnings.push(
+          `Fraud detection service unavailable: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
+        )
       }
     }
   }
 }
 
-// Register service in the registry
-export const propertyImageValidationService = ImageServiceRegistry.getInstance().register(
-  new PropertyImageValidationService()
-);
+// ---------------------------------------------------------------------------
+// Module-level singleton
+// ---------------------------------------------------------------------------
 
-export default PropertyImageValidationService;
+export const propertyImageValidationService = ImageServiceRegistry.getInstance().register(
+  new PropertyImageValidationService(),
+)
+
+export default PropertyImageValidationService

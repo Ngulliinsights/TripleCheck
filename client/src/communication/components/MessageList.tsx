@@ -13,7 +13,7 @@ interface Message {
   senderAvatar?: string;
   subject: string;
   content: string;
-  timestamp: Date;
+  createdAt: Date;
   isRead: boolean;
   priority: 'low' | 'medium' | 'high';
 }
@@ -99,7 +99,7 @@ export function MessageList({
                     </Badge>
                   </div>
                   <span className="text-xs text-gray-500">
-                    {formatDistanceToNow(message.timestamp, { addSuffix: true })}
+                    {formatDistanceToNow(message.createdAt, { addSuffix: true })}
                   </span>
                 </div>
                 

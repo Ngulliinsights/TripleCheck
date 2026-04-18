@@ -1,6 +1,6 @@
 # Project Structure
 
-**Generated:** 4/17/2026, 2:23:28 PM
+**Generated:** 4/18/2026, 11:23:53 PM
 **Max Depth:** 7 levels
 
 ```
@@ -55,7 +55,6 @@
 │   │   │   ├── context/
 │   │   │   │   └── CommunicationContext.tsx
 │   │   │   ├── hooks/
-│   │   │   │   ├── useMessages.ts
 │   │   │   │   ├── useMessaging.ts
 │   │   │   │   └── useNotifications.ts
 │   │   │   ├── pages/
@@ -391,7 +390,6 @@
 │   │   │   │   ├── useComponentPerformance.tsx
 │   │   │   │   ├── useConfigurableHook.ts
 │   │   │   │   ├── useDebounce.ts
-│   │   │   │   ├── useDebouncedCallback.ts
 │   │   │   │   ├── useErrorRecovery.ts
 │   │   │   │   ├── useFileUpload.ts
 │   │   │   │   ├── useFilterState.ts
@@ -541,7 +539,6 @@
 │   │   │   │   ├── api.types.ts
 │   │   │   │   ├── compare.ts
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── property.ts
 │   │   │   │   ├── search.ts
 │   │   │   │   └── service-interfaces.ts
 │   │   │   ├── utils/
@@ -552,8 +549,10 @@
 │   │   │   │   ├── compare-utils.tsx
 │   │   │   │   ├── date-utils.ts
 │   │   │   │   ├── formatters.ts
+│   │   │   │   ├── generic-formatters.ts
 │   │   │   │   ├── globalPerformanceMonitor.ts
 │   │   │   │   ├── index.ts
+│   │   │   │   ├── logger.ts
 │   │   │   │   ├── mockPropertyApi.ts
 │   │   │   │   ├── navigation.ts
 │   │   │   │   ├── property-mapper.ts
@@ -637,6 +636,11 @@
 │   │   │   │   ├── property-api.ts
 │   │   │   │   ├── property-validation.ts
 │   │   │   │   └── PropertyDocumentIntegration.ts
+│   │   │   ├── shared/
+│   │   │   │   ├── components.tsx
+│   │   │   │   ├── LandSections.tsx
+│   │   │   │   ├── PropertyGallery.tsx
+│   │   │   │   └── utils.ts
 │   │   │   ├── tests/
 │   │   │   │   └── performanceTest.ts
 │   │   │   ├── types/
@@ -692,7 +696,8 @@
 │   │   │   │   ├── Reports.tsx
 │   │   │   │   ├── Reputation.tsx
 │   │   │   │   ├── Reviews.tsx
-│   │   │   │   └── TrustPoints.tsx
+│   │   │   │   ├── TrustPoints.tsx
+│   │   │   │   └── VerificationDashboard.tsx
 │   │   │   ├── services/
 │   │   │   │   ├── DocumentTrustIntegration.ts
 │   │   │   │   ├── fraudDetectionApi.ts
@@ -740,6 +745,8 @@
 │   │   ├── README.md
 │   │   └── vite-env.d.ts
 │   ├── index.html
+│   ├── postcss.config.js
+│   ├── tsc_errors.txt
 │   ├── tsconfig.json
 │   ├── tsconfig.node.json
 │   ├── vite.config.js
@@ -766,12 +773,6 @@
 │   │   ├── 018-logging-architecture.md
 │   │   ├── project-structure.md
 │   │   └── README.md
-│   ├── archive/
-│   │   ├── DEMO_READINESS_FIXES.md
-│   │   ├── DEMO_READY_CHECKLIST.md
-│   │   ├── POST_DEMO_IMPROVEMENTS_COMPLETE.md
-│   │   ├── project-demo-readiness-analysis.md
-│   │   └── project-demo-readiness-audit-results.md
 │   ├── dcs/
 │   │   ├── CONSOLIDATION_COMPLETE.md
 │   │   ├── migration.log.md
@@ -782,7 +783,6 @@
 │   │   └── triplecheck_evaluation.md
 │   ├── standards/
 │   │   └── NAMING_CONVENTIONS.md
-│   ├── COMPLETE_DEMO_READINESS_SUMMARY.md
 │   ├── LOGGING_GUIDE.md
 │   ├── project-structure.md
 │   ├── QUICK_REFERENCE.md
@@ -1221,6 +1221,8 @@
 │   │   │   └── email.service.ts
 │   │   ├── events/
 │   │   │   └── EventBus.ts
+│   │   ├── external-api/
+│   │   │   └── RateLimitedApiWrapper.ts
 │   │   ├── http/
 │   │   │   └── resilient-client.ts
 │   │   ├── monitoring/
@@ -1406,6 +1408,7 @@
 │   │   ├── integration.service.ts
 │   │   ├── trust.controller.ts
 │   │   ├── TrustScoringService.ts
+│   │   ├── verification.controller.test.ts
 │   │   └── verification.controller.ts
 │   ├── types/
 │   │   ├── api.types.ts
@@ -1414,7 +1417,6 @@
 │   │   ├── auth.types.ts
 │   │   ├── fraud.types.ts
 │   │   ├── index.ts
-│   │   ├── messaging.types.ts
 │   │   ├── property.types.ts
 │   │   ├── review.types.ts
 │   │   ├── user.types.ts
@@ -1438,6 +1440,7 @@
 │   │   ├── api-contracts.ts
 │   │   ├── api.types.ts
 │   │   ├── index.ts
+│   │   ├── messaging.ts
 │   │   └── property.ts
 │   ├── tsconfig.json
 ├── tests/
@@ -1477,13 +1480,12 @@
 ├── types/
 │   ├── css.d.ts
 │   └── PropertyCardShowcase.css.d.ts
-├── uploads/
-├── cleanup-artifacts.mjs
-├── fix-backslashes-imports.mjs
-├── fix-baseline.mjs
 ├── generate-structure.mjs
 ├── package-lock.json
 ├── package.json
+├── postcss.config.js
+├── tailwind.config.js
+├── TASK_COMPLETION_REPORT.md
 ├── tsconfig.check.json
 ├── tsconfig.json
 ├── tsconfig.server.json

@@ -170,7 +170,7 @@ export default function AdminDashboard() {
     });
   }, [toast]);
 
-  const filterUsers = () => {
+  const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin':
         return 'bg-purple-100 text-purple-800';

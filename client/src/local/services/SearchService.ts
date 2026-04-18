@@ -14,6 +14,7 @@ import {
   SearchError,
   SearchValidationResult
 } from '../types/search'
+import { logger } from '../utils/logger'
 
 class SearchService {
   private baseUrl = '/api';
@@ -84,7 +85,7 @@ class SearchService {
 
       return searchResult;
     } catch (error) {
-      console.error('Search properties error:', error);
+      logger.error('Search properties error:', error);
       throw this.handleSearchError(error);
     } finally {
       // Clean up the abort controller
@@ -125,7 +126,7 @@ class SearchService {
       this.setCache(cacheKey, suggestions, 2 * 60 * 1000); // 2 minutes
       return suggestions;
     } catch (error) {
-      console.error('Get suggestions error:', error);
+      logger.error('Get suggestions error:', error);
       // Return fallback suggestions based on query analysis
       return this.getFallbackSuggestions(trimmedQuery);
     } finally {
@@ -163,7 +164,7 @@ class SearchService {
       this.setCache(cacheKey, locations, 10 * 60 * 1000); // 10 minutes for locations
       return locations;
     } catch (error) {
-      console.error('Get location suggestions error:', error);
+      logger.error('Get location suggestions error:', error);
       return this.getFallbackLocations(trimmedQuery);
     } finally {
       this.requestAbortControllers.delete(cacheKey);
@@ -186,7 +187,7 @@ class SearchService {
       this.setCache(cacheKey, popular, 30 * 60 * 1000); // 30 minutes
       return popular;
     } catch (error) {
-      console.error('Get popular searches error:', error);
+      logger.error('Get popular searches error:', error);
       return this.getDefaultPopularSearches();
     }
   }
@@ -212,7 +213,7 @@ class SearchService {
       this.setCache(cacheKey, enhancedFacets, 10 * 60 * 1000); // 10 minutes
       return enhancedFacets;
     } catch (error) {
-      console.error('Get search facets error:', error);
+      logger.error('Get search facets error:', error);
       return this.getDefaultFacets();
     }
   }
@@ -240,7 +241,7 @@ class SearchService {
       });
     } catch (error) {
       // Don't throw error for analytics failures - just log
-      console.warn('Save search failed:', error);
+      logger.warn('Save search failed:', error);
     }
   }
 

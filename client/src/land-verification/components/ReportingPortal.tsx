@@ -237,7 +237,11 @@ export const ReportingPortal: React.FC<ReportingPortalProps> = ({
       window.open(report.downloadUrl, '_blank');
     } else {
       // Create blob and download
-      const blob = new Blob([report.content], { 
+      const content = typeof report.content === 'string' 
+        ? report.content 
+        : new Uint8Array(report.content as any);
+        
+      const blob = new Blob([content], { 
         type: report.format === 'pdf' ? 'application/pdf' : 
               report.format === 'html' ? 'text/html' : 'application/json'
       });

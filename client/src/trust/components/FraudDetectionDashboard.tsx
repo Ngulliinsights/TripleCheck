@@ -224,7 +224,7 @@ export function FraudDetectionDashboard({ userId, showControls = true }: FraudDe
                   {dashboardData?.totalAlerts || 0}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {dashboardData?.alertsChange > 0 ? '+' : ''}{dashboardData?.alertsChange || 0}% from last period
+                  {(dashboardData?.alertsChange ?? 0) > 0 ? '+' : ''}{dashboardData?.alertsChange || 0}% from last period
                 </p>
               </div>
               <div className="p-3 bg-red-100 rounded-full">
@@ -476,10 +476,11 @@ export function FraudDetectionDashboard({ userId, showControls = true }: FraudDe
                   <div className="space-y-3">
                     {dashboardData?.recentActivity?.map((activity: any, index: number) => (
                       <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className={`p-2 rounded-full ${SEVERITY_CONFIG[activity.severity as keyof typeof SEVERITY_CONFIG]?.bgColor}`}>
-                          {React.createElement(SEVERITY_CONFIG[activity.severity as keyof typeof SEVERITY_CONFIG]?.icon || AlertTriangle, {
-                            className: `h-4 w-4 ${SEVERITY_CONFIG[activity.severity as keyof typeof SEVERITY_CONFIG]?.color}`
-                          })}
+                        <div className={`p-2 rounded-full ${SEVERITY_CONFIG[activity.severity as keyof typeof SEVERITY_CONFIG]?.bgColor || ''}`}>
+                          {(() => {
+                            const Icon = SEVERITY_CONFIG[activity.severity as keyof typeof SEVERITY_CONFIG]?.icon || AlertTriangle;
+                            return <Icon className={`h-4 w-4 ${SEVERITY_CONFIG[activity.severity as keyof typeof SEVERITY_CONFIG]?.color || ''}`} />;
+                          })()}
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-medium text-gray-900">

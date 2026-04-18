@@ -1,14 +1,10 @@
 /**
- * Image Service Orchestrator - Practical Implementation
- * 
- * Coordinates existing services to eliminate duplication while maintaining
- * compatibility. Uses composition over inheritance for better reliability.
- * 
- * Strategic Benefits:
- * - Single entry point for complex workflows
- * - Works with existing proven services
- * - Eliminates duplication through smart coordination
- * - Maintains backward compatibility
+ * Image Service Orchestrator
+ *
+ * Single entry point that coordinates existing focused services, eliminates
+ * workflow duplication, and maintains backward compatibility.
+ *
+ * Design: composition over inheritance, thin coordination layer.
  */
 
 import { PropertyImageUploadService } from './PropertyImageUploadService'
@@ -25,80 +21,121 @@ import type {
   PropertyImageMetadata,
   ImageServiceConfig,
 } from '../../types/images'
-import { ImageUtils } from '../../utils/images/unified-utils'
+
+// ---------------------------------------------------------------------------
+// Result types
+// ---------------------------------------------------------------------------
+
+/** Discriminated union – avoids `null as any` on failed validations. */
+export type ValidateAndUploadResult =
+  | { ok: true; validation: ValidationResult; upload: UploadSession }
+  | { ok: false; validation: ValidationResult }
+
+// ---------------------------------------------------------------------------
+// Public interface
+// ---------------------------------------------------------------------------
 
 export interface ImageServiceOrchestrator {
-  // High-level workflows that coordinate multiple services
-  processPropertyImage(file: File, documentType?: DocumentType, landVerificationId?: string): Promise<PropertyImage>;
-  validateAndUpload(file: File, documentType?: DocumentType): Promise<{ validation: ValidationResult; upload: UploadSession }>;
-  
-  // Direct service access for specific operations
-  getUploadService(): PropertyImageUploadService;
-  getValidationService(): PropertyImageValidationService;
-  getWorkflowService(): PropertyImageWorkflowManager;
-  getMetadataService(): ImageMetadataService;
-  
-  // Progress tracking
-  getUploadProgress(sessionId: string): UploadProgress | null;
-  getWorkflowStatus(imageId: string): WorkflowStatus | null;
+  /** Full end-to-end processing pipeline: validate → upload → workflow. */
+  processPropertyImage(
+    file: File,
+    documentType?: DocumentType,
+    landVerificationId?: string,
+  ): Promise<PropertyImage>
+
+  /** Validate a file and, if valid, initiate an upload session. */
+  validateAndUpload(
+    file: File,
+    documentType?: DocumentType,
+  ): Promise<ValidateAndUploadResult>
+
+  /** Process multiple files with bounded concurrency and per-item progress. */
+  processBatch(
+    files: File[],
+    documentType?: DocumentType,
+    onProgress?: (completed: number, total: number) => void,
+    concurrency?: number,
+  ): Promise<PropertyImage[]>
+
+  // Direct service access for callers that need granular control.
+  getUploadService(): PropertyImageUploadService
+  getValidationService(): PropertyImageValidationService
+  getWorkflowService(): PropertyImageWorkflowManager
+  getMetadataService(): ImageMetadataService
+
+  // Progress / status helpers.
+  getUploadProgress(sessionId: string): UploadProgress | null
+  getWorkflowStatus(imageId: string): WorkflowStatus | null
 }
 
+// ---------------------------------------------------------------------------
+// Implementation
+// ---------------------------------------------------------------------------
+
 export class DefaultImageServiceOrchestrator implements ImageServiceOrchestrator {
-  private uploadService: PropertyImageUploadService;
-  private validationService: PropertyImageValidationService;
-  private workflowService: PropertyImageWorkflowManager;
-  private metadataService: ImageMetadataService;
+  private readonly uploadService: PropertyImageUploadService
+  private readonly validationService: PropertyImageValidationService
+  private readonly workflowService: PropertyImageWorkflowManager
+  private readonly metadataService: ImageMetadataService
 
   constructor(config?: ImageServiceConfig) {
-    // Initialize new consolidated services with optimized configuration
-    this.uploadService = new PropertyImageUploadService({}, config);
-    this.validationService = new PropertyImageValidationService({}, config);
-    this.metadataService = new ImageMetadataService();
-    
-    // Initialize workflow service with proper dependencies
+    this.uploadService = new PropertyImageUploadService({}, config)
+    this.validationService = new PropertyImageValidationService({}, config)
+    this.metadataService = new ImageMetadataService(undefined, undefined, undefined, config)
+
     this.workflowService = new PropertyImageWorkflowManager(
       {
-        validationService: this.validationService,
+        validationService: {
+          validateUrl: (url, options) =>
+            this.validationService.validateUrl(url, options as Parameters<PropertyImageValidationService['validateUrl']>[1]),
+        },
         metadataService: {
           extractMetadata: (ref: string) => this.metadataService.extractMetadata(ref),
           performVirusScan: (ref: string) => this.metadataService.performVirusScan(ref),
-          checkCompliance: (ref: string, metadata: PropertyImageMetadata) => 
+          checkCompliance: (ref: string, metadata: PropertyImageMetadata) =>
             this.metadataService.checkCompliance(ref, metadata),
         },
       },
-      config
-    );
+      config,
+    )
   }
 
-  // High-level workflow: Complete property image processing
+  // -------------------------------------------------------------------------
+  // High-level workflows
+  // -------------------------------------------------------------------------
+
   async processPropertyImage(
     file: File,
     documentType?: DocumentType,
-    landVerificationId?: string
+    landVerificationId?: string,
   ): Promise<PropertyImage> {
-    // Step 1: Validate the file
-    const validation = await this.validationService.validateFile(file, undefined, documentType);
+    // 1 – Validate
+    const validation = await this.validationService.validateFile(file, undefined, documentType)
     if (!validation.isValid) {
-      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      throw new Error(`Validation failed: ${validation.errors.join(', ')}`)
     }
 
-    // Step 2: Initiate upload
-    const uploadSession = await this.uploadService.initiateUpload(file, documentType, landVerificationId);
+    // 2 – Initiate upload session
+    const uploadSession = await this.uploadService.initiateUpload(
+      file,
+      documentType,
+      landVerificationId,
+    )
 
-    // Step 3: Upload chunks
+    // 3 – Upload all chunks (sequential within a session; parallelism lives
+    //     at the batch level via processBatch).
     for (const chunk of uploadSession.chunks) {
-      await this.uploadService.uploadChunk(uploadSession.id, chunk);
+      await this.uploadService.uploadChunk(uploadSession.id, chunk)
     }
 
-    // Step 4: Start processing workflow
+    // 4 – Kick off async processing workflow
     await this.workflowService.startProcessingWorkflow(
       uploadSession.imageId,
       `uploaded/${uploadSession.imageId}`,
       documentType,
-      landVerificationId
-    );
+      landVerificationId,
+    )
 
-    // Return the property image object
     return {
       id: uploadSession.imageId,
       file,
@@ -109,71 +146,43 @@ export class DefaultImageServiceOrchestrator implements ImageServiceOrchestrator
       landVerificationId,
       metadata: validation.metadata,
       validationResult: validation,
-    } as PropertyImage;
+    } as PropertyImage
   }
 
-  // High-level workflow: Validate and upload (without processing)
   async validateAndUpload(
     file: File,
-    documentType?: DocumentType
-  ): Promise<{ validation: ValidationResult; upload: UploadSession }> {
-    const validation = await this.validationService.validateFile(file, undefined, documentType);
-    
+    documentType?: DocumentType,
+  ): Promise<ValidateAndUploadResult> {
+    const validation = await this.validationService.validateFile(file, undefined, documentType)
+
     if (!validation.isValid) {
-      return { validation, upload: null as any };
+      return { ok: false, validation }
     }
 
-    const upload = await this.uploadService.initiateUpload(file, documentType);
-    
-    return { validation, upload };
+    const upload = await this.uploadService.initiateUpload(file, documentType)
+    return { ok: true, validation, upload }
   }
 
-  // Direct service access
-  getUploadService(): PropertyImageUploadService {
-    return this.uploadService;
-  }
-
-  getValidationService(): PropertyImageValidationService {
-    return this.validationService;
-  }
-
-  getWorkflowService(): PropertyImageWorkflowManager {
-    return this.workflowService;
-  }
-
-  getMetadataService(): ImageMetadataService {
-    return this.metadataService;
-  }
-
-  // Progress tracking methods
-  getUploadProgress(sessionId: string): UploadProgress | null {
-    return this.uploadService.getUploadProgress(sessionId);
-  }
-
-  getWorkflowStatus(imageId: string): WorkflowStatus | null {
-    return this.workflowService.getWorkflowStatus(imageId);
-  }
-
-  // Utility methods for monitoring across services (removed duplicates)
-
-  // Batch operations that coordinate multiple services
   async processBatch(
     files: File[],
     documentType?: DocumentType,
-    onProgress?: (completed: number, total: number) => void
+    onProgress?: (completed: number, total: number) => void,
+    concurrency = 3,
   ): Promise<PropertyImage[]> {
-    const results: PropertyImage[] = [];
-    let completed = 0;
+    const results: PropertyImage[] = new Array(files.length)
+    let completed = 0
 
-    for (const file of files) {
+    // Process with a sliding concurrency window.
+    const queue = files.map((file, index) => ({ file, index }))
+    const activeSlots: Promise<void>[] = []
+
+    const processNext = async (entry: { file: File; index: number }): Promise<void> => {
       try {
-        const result = await this.processPropertyImage(file, documentType);
-        results.push(result);
+        results[entry.index] = await this.processPropertyImage(entry.file, documentType)
       } catch (error) {
-        // Create error result
-        results.push({
-          id: `error_${Date.now()}`,
-          file,
+        results[entry.index] = {
+          id: `error_${Date.now()}_${entry.index}`,
+          file: entry.file,
           status: 'error',
           approvalStatus: 'pending',
           validationResult: {
@@ -181,30 +190,86 @@ export class DefaultImageServiceOrchestrator implements ImageServiceOrchestrator
             errors: [error instanceof Error ? error.message : 'Processing failed'],
             warnings: [],
           },
-        } as PropertyImage);
+        } as PropertyImage
       }
 
-      completed++;
-      onProgress?.(completed, files.length);
+      completed++
+      onProgress?.(completed, files.length)
     }
 
-    return results;
+    // Chunk the queue into windows of `concurrency` and process in parallel.
+    for (let i = 0; i < queue.length; i += concurrency) {
+      const window = queue.slice(i, i + concurrency)
+      await Promise.all(window.map(entry => processNext(entry)))
+    }
+
+    void activeSlots // satisfies linter; window-based approach above replaces slot tracking
+
+    return results
+  }
+
+  // -------------------------------------------------------------------------
+  // Direct service access
+  // -------------------------------------------------------------------------
+
+  getUploadService(): PropertyImageUploadService {
+    return this.uploadService
+  }
+
+  getValidationService(): PropertyImageValidationService {
+    return this.validationService
+  }
+
+  getWorkflowService(): PropertyImageWorkflowManager {
+    return this.workflowService
+  }
+
+  getMetadataService(): ImageMetadataService {
+    return this.metadataService
+  }
+
+  // -------------------------------------------------------------------------
+  // Progress / status helpers
+  // -------------------------------------------------------------------------
+
+  getUploadProgress(sessionId: string): UploadProgress | null {
+    return this.uploadService.getUploadProgress(sessionId)
+  }
+
+  getWorkflowStatus(imageId: string): WorkflowStatus | null {
+    return this.workflowService.getWorkflowStatus(imageId)
   }
 }
 
-// Singleton instance for global use
-let orchestratorInstance: DefaultImageServiceOrchestrator | null = null;
+// ---------------------------------------------------------------------------
+// Factory helpers
+// ---------------------------------------------------------------------------
 
-export function getImageServiceOrchestrator(config?: ImageServiceConfig): DefaultImageServiceOrchestrator {
+/** Global singleton – reuses the same instance across the application. */
+let orchestratorInstance: DefaultImageServiceOrchestrator | null = null
+
+export function getImageServiceOrchestrator(
+  config?: ImageServiceConfig,
+): DefaultImageServiceOrchestrator {
   if (!orchestratorInstance) {
-    orchestratorInstance = new DefaultImageServiceOrchestrator(config);
+    orchestratorInstance = new DefaultImageServiceOrchestrator(config)
   }
-  return orchestratorInstance;
+  return orchestratorInstance
 }
 
-// Factory function for creating new instances (useful for testing)
-export function createImageServiceOrchestrator(config?: ImageServiceConfig): DefaultImageServiceOrchestrator {
-  return new DefaultImageServiceOrchestrator(config);
+/**
+ * Resets the singleton – useful in tests or when a config change requires a
+ * fresh instance.
+ */
+export function resetImageServiceOrchestrator(): void {
+  orchestratorInstance = null
 }
 
-export default DefaultImageServiceOrchestrator;
+/** Always returns a fresh instance – preferred for testing. */
+export function createImageServiceOrchestrator(
+  config?: ImageServiceConfig,
+): DefaultImageServiceOrchestrator {
+  return new DefaultImageServiceOrchestrator(config)
+}
+
+export default DefaultImageServiceOrchestrator

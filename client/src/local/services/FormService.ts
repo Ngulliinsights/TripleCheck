@@ -1,11 +1,41 @@
 /**
- * Form Service - Centralized form submission and validation
- * Handles all form submissions with proper error handling and validation
+ * Form Service — Centralised form submission and validation
+ *
+ * Handles all form submissions with typed errors, unified fetch logic,
+ * optional toast feedback, and composable validation rules.
  */
 
-import { toast } from '../hooks/use-toast'
+import { toast } from '../hooks/use-toast';
 
-// Form data interfaces
+// ─── Analytics shim ───────────────────────────────────────────────────────────
+// Keeps gtag calls opt-in and SSR-safe without polluting call sites.
+
+type GtagEvent = {
+  event_category: string;
+  event_label: string;
+  [key: string]: unknown;
+};
+
+function trackEvent(name: string, payload: GtagEvent): void {
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    window.gtag('event', name, payload);
+  }
+}
+
+// ─── Errors ───────────────────────────────────────────────────────────────────
+
+export class FormSubmissionError extends Error {
+  constructor(
+    message: string,
+    public readonly errors?: Record<string, string[]>
+  ) {
+    super(message);
+    this.name = 'FormSubmissionError';
+  }
+}
+
+// ─── Form data types ──────────────────────────────────────────────────────────
+
 export interface ContactFormData {
   name: string;
   email: string;
@@ -45,298 +75,334 @@ export interface ReviewSubmissionData {
 
 export interface AlertSubscriptionData {
   location: string;
-  priceRange: {
-    min: number;
-    max: number;
-  };
+  priceRange: { min: number; max: number };
   propertyType: string;
   alertFrequency: 'immediate' | 'daily' | 'weekly';
   email: string;
 }
 
-// API Response interfaces
-export interface ApiResponse<T = any> {
+export interface UserProfileData {
+  displayName?: string;
+  phone?: string;
+  avatarUrl?: string;
+  [key: string]: unknown;
+}
+
+export interface PropertyListingData {
+  address: string;
+  price: number;
+  propertyType: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
+// ─── API + result types ───────────────────────────────────────────────────────
+
+interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
   errors?: Record<string, string[]>;
 }
 
-export interface FormSubmissionResult {
+export interface FormSubmissionResult<T = unknown> {
   success: boolean;
   message: string;
-  data?: any;
+  data?: T;
   errors?: Record<string, string[]>;
 }
 
-class FormService {
-  private baseUrl = '/api';
+// ─── Submit options ────────────────────────────────────────────────────────────
 
-  /**
-   * Generic form submission handler with error handling
-   */
-  private async submitForm<T>(
+interface SubmitOptions {
+  method?: 'POST' | 'PUT' | 'PATCH';
+  /** Show a toast on success (default: true). */
+  showSuccessToast?: boolean;
+  successMessage?: string;
+  errorMessage?: string;
+}
+
+// ─── Validation types ─────────────────────────────────────────────────────────
+
+type Validator<V = unknown> = (value: V) => string | null;
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: Record<string, string>;
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
+
+class FormService {
+  private readonly baseUrl: string;
+
+  constructor(baseUrl = '/api') {
+    this.baseUrl = baseUrl.replace(/\/$/, '');
+  }
+
+  // ── Core JSON submit ────────────────────────────────────────────────────────
+
+  private async submitJson<TData, TResult = unknown>(
     endpoint: string,
-    data: T,
-    options: {
-      method?: 'POST' | 'PUT' | 'PATCH';
-      showSuccessToast?: boolean;
-      successMessage?: string;
-      errorMessage?: string;
-    } = {}
-  ): Promise<FormSubmissionResult> {
+    data: TData,
+    options: SubmitOptions = {}
+  ): Promise<FormSubmissionResult<TResult>> {
     const {
       method = 'POST',
       showSuccessToast = true,
       successMessage = 'Form submitted successfully!',
-      errorMessage = 'Failed to submit form. Please try again.'
+      errorMessage = 'Failed to submit form. Please try again.',
     } = options;
 
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...data,
-          timestamp: new Date().toISOString(),
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, timestamp: new Date().toISOString() }),
       });
 
-      const result: ApiResponse = await response.json();
+      const result: ApiResponse<TResult> = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.message || `HTTP ${response.status}`);
+      if (!response.ok || !result.success) {
+        throw new FormSubmissionError(
+          result.message ?? (response.ok ? errorMessage : `HTTP ${response.status}`),
+          result.errors
+        );
       }
 
-      if (result.success) {
-        if (showSuccessToast) {
-          toast({
-            title: 'Success!',
-            description: result.message || successMessage,
-          });
-        }
-
-        return {
-          success: true,
-          message: result.message || successMessage,
-          data: result.data,
-        };
-      } else {
-        throw new Error(result.message || errorMessage);
+      if (showSuccessToast) {
+        toast({ title: 'Success!', description: result.message ?? successMessage });
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : errorMessage;
-      
-      toast({
-        title: 'Submission Failed',
-        description: message,
-        variant: 'destructive',
-      });
 
       return {
-        success: false,
-        message,
-        errors: error instanceof Error && 'errors' in error ? (error as any).errors : undefined,
+        success: true,
+        message: result.message ?? successMessage,
+        data: result.data,
       };
+    } catch (err) {
+      return this.handleError(err, errorMessage);
     }
   }
 
-  /**
-   * Submit contact form
-   */
-  async submitContactForm(data: ContactFormData): Promise<FormSubmissionResult> {
-    // Track form submission
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'contact_form_submit', {
-        event_category: 'Contact',
-        event_label: data.inquiryType,
-      });
-    }
+  // ── Multipart (file) submit ─────────────────────────────────────────────────
 
-    return this.submitForm('/contact', data, {
+  private async submitMultipart<TResult = unknown>(
+    endpoint: string,
+    formData: FormData,
+    options: Pick<SubmitOptions, 'showSuccessToast' | 'successMessage' | 'errorMessage'> = {}
+  ): Promise<FormSubmissionResult<TResult>> {
+    const {
+      showSuccessToast = true,
+      successMessage = 'Upload successful!',
+      errorMessage = 'Failed to upload. Please try again.',
+    } = options;
+
+    try {
+      // Do not set Content-Type — the browser sets it with the correct boundary.
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result: ApiResponse<TResult> = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new FormSubmissionError(
+          result.message ?? (response.ok ? errorMessage : `HTTP ${response.status}`),
+          result.errors
+        );
+      }
+
+      if (showSuccessToast) {
+        toast({ title: 'Uploaded!', description: result.message ?? successMessage });
+      }
+
+      return {
+        success: true,
+        message: result.message ?? successMessage,
+        data: result.data,
+      };
+    } catch (err) {
+      return this.handleError(err, errorMessage);
+    }
+  }
+
+  // ── Error normalisation ─────────────────────────────────────────────────────
+
+  private handleError<TResult = unknown>(err: unknown, fallbackMessage: string): FormSubmissionResult<TResult> {
+    const message =
+      err instanceof Error ? err.message : fallbackMessage;
+    const errors =
+      err instanceof FormSubmissionError ? err.errors : undefined;
+
+    toast({ title: 'Submission Failed', description: message, variant: 'destructive' });
+
+    return { success: false, message, errors };
+  }
+
+  // ── Public submission methods ───────────────────────────────────────────────
+
+  async submitContactForm(data: ContactFormData): Promise<FormSubmissionResult> {
+    trackEvent('contact_form_submit', {
+      event_category: 'Contact',
+      event_label: data.inquiryType,
+    });
+
+    return this.submitJson('/contact', data, {
       successMessage: "Thank you for contacting us! We'll get back to you within 24 hours.",
     });
   }
 
-  /**
-   * Submit sales inquiry
-   */
   async submitSalesInquiry(data: SalesInquiryData): Promise<FormSubmissionResult> {
-    // Track sales inquiry
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'sales_inquiry', {
-        event_category: 'B2B',
-        event_label: 'contact_sales_form',
-        custom_parameters: {
-          company: data.company,
-          role: data.role,
-          use_case: data.useCase,
-          monthly_volume: data.monthlyVolume,
-        },
-      });
-    }
+    trackEvent('sales_inquiry', {
+      event_category: 'B2B',
+      event_label: 'contact_sales_form',
+      company: data.company,
+      role: data.role,
+      use_case: data.useCase,
+      monthly_volume: data.monthlyVolume,
+    });
 
-    return this.submitForm('/b2b/sales-inquiry', data, {
+    return this.submitJson('/b2b/sales-inquiry', data, {
       successMessage: 'Thank you for your interest! Our sales team will contact you within 24 hours.',
     });
   }
 
-  /**
-   * Submit verification request
-   */
   async submitVerificationRequest(data: VerificationRequestData): Promise<FormSubmissionResult> {
-    return this.submitForm('/trust/verification-request', data, {
-      successMessage: 'Verification request submitted successfully! You will receive updates via email.',
+    return this.submitJson('/trust/verification-request', data, {
+      successMessage: 'Verification request submitted! You will receive updates via email.',
     });
   }
 
-  /**
-   * Submit review
-   */
   async submitReview(data: ReviewSubmissionData): Promise<FormSubmissionResult> {
-    return this.submitForm('/reviews', data, {
+    return this.submitJson('/reviews', data, {
       successMessage: 'Thank you for your review! It helps other users make informed decisions.',
     });
   }
 
-  /**
-   * Subscribe to property alerts
-   */
   async subscribeToAlerts(data: AlertSubscriptionData): Promise<FormSubmissionResult> {
-    return this.submitForm('/alerts/subscribe', data, {
+    return this.submitJson('/alerts/subscribe', data, {
       successMessage: 'Alert subscription created! You will receive notifications based on your preferences.',
     });
   }
 
-  /**
-   * Update user profile
-   */
-  async updateUserProfile(data: any): Promise<FormSubmissionResult> {
-    return this.submitForm('/users/profile', data, {
+  async updateUserProfile(data: UserProfileData): Promise<FormSubmissionResult> {
+    return this.submitJson('/users/profile', data, {
       method: 'PATCH',
       successMessage: 'Profile updated successfully!',
     });
   }
 
-  /**
-   * Submit property listing
-   */
-  async submitPropertyListing(data: any): Promise<FormSubmissionResult> {
-    return this.submitForm('/properties', data, {
-      successMessage: 'Property listing submitted successfully! It will be reviewed and published shortly.',
+  async submitPropertyListing(data: PropertyListingData): Promise<FormSubmissionResult> {
+    return this.submitJson('/properties', data, {
+      successMessage: 'Property listing submitted! It will be reviewed and published shortly.',
     });
   }
 
-  /**
-   * Submit document for verification
-   */
   async submitDocumentVerification(data: FormData): Promise<FormSubmissionResult> {
-    try {
-      const response = await fetch(`${this.baseUrl}/documents/verify`, {
-        method: 'POST',
-        body: data, // FormData for file uploads
-      });
-
-      const result: ApiResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || `HTTP ${response.status}`);
-      }
-
-      if (result.success) {
-        toast({
-          title: 'Document Uploaded',
-          description: 'Your document has been uploaded and is being verified.',
-        });
-
-        return {
-          success: true,
-          message: result.message || 'Document uploaded successfully',
-          data: result.data,
-        };
-      } else {
-        throw new Error(result.message || 'Failed to upload document');
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to upload document';
-      
-      toast({
-        title: 'Upload Failed',
-        description: message,
-        variant: 'destructive',
-      });
-
-      return {
-        success: false,
-        message,
-      };
-    }
+    return this.submitMultipart('/documents/verify', data, {
+      successMessage: 'Your document has been uploaded and is being verified.',
+      errorMessage: 'Failed to upload document. Please try again.',
+    });
   }
 
+  // ── Validation ─────────────────────────────────────────────────────────────
+
   /**
-   * Validate form data before submission
+   * Validate a record against required-field checks and optional per-field rules.
+   *
+   * @param data           — the form data object
+   * @param requiredFields — fields that must be non-empty
+   * @param rules          — optional map of field → validator function
+   *
+   * @example
+   * const { isValid, errors } = formService.validate(data, ['email'], {
+   *   email: FormService.rules.email,
+   *   phone: FormService.rules.phone,
+   * });
    */
-  validateFormData<T extends Record<string, any>>(
+  validate<T extends Record<string, unknown>>(
     data: T,
     requiredFields: (keyof T)[],
-    validationRules?: Record<keyof T, (value: any) => string | null>
-  ): { isValid: boolean; errors: Record<string, string> } {
+    rules?: Partial<Record<keyof T, Validator>>
+  ): ValidationResult {
     const errors: Record<string, string> = {};
 
-    // Check required fields
     for (const field of requiredFields) {
-      if (!data[field] || (typeof data[field] === 'string' && data[field].trim() === '')) {
+      const value = data[field];
+      if (value === undefined || value === null || String(value).trim() === '') {
         errors[field as string] = 'This field is required';
       }
     }
 
-    // Apply custom validation rules
-    if (validationRules) {
-      for (const [field, validator] of Object.entries(validationRules)) {
-        if (data[field] && !errors[field]) {
+    if (rules) {
+      for (const [field, validator] of Object.entries(rules) as [keyof T, Validator][]) {
+        // Only run rule when there's a value and no prior required-field error.
+        if (data[field] !== undefined && data[field] !== null && !errors[field as string]) {
           const error = validator(data[field]);
-          if (error) {
-            errors[field] = error;
-          }
+          if (error) errors[field as string] = error;
         }
       }
     }
 
-    return {
-      isValid: Object.keys(errors).length === 0,
-      errors,
-    };
+    return { isValid: Object.keys(errors).length === 0, errors };
   }
 
+  // ── Built-in validation rules ──────────────────────────────────────────────
+
   /**
-   * Common validation rules
+   * Ready-made validators for common fields.
+   * Pass directly to `validate()` or compose with custom rules.
    */
-  static validationRules = {
-    email: (value: string) => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(value) ? null : 'Please enter a valid email address';
+  static readonly rules = {
+    email: (value: unknown): string | null => {
+      const ok = typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      return ok ? null : 'Please enter a valid email address';
     },
-    phone: (value: string) => {
-      const phoneRegex = /^(\+254|0)[17]\d{8}$/; // Kenyan phone number format
-      return phoneRegex.test(value.replace(/\s/g, '')) ? null : 'Please enter a valid phone number';
+
+    /** Accepts Kenyan mobile numbers: +2547xxxxxxxx or 07xxxxxxxx / 01xxxxxxxx */
+    phone: (value: unknown): string | null => {
+      const ok =
+        typeof value === 'string' &&
+        /^(\+254|0)[17]\d{8}$/.test(value.replace(/\s/g, ''));
+      return ok ? null : 'Please enter a valid Kenyan phone number (+2547xx or 07xx)';
     },
-    required: (value: any) => {
-      return value && value.toString().trim() ? null : 'This field is required';
+
+    rating: (value: unknown): string | null => {
+      const n = Number(value);
+      return Number.isInteger(n) && n >= 1 && n <= 5
+        ? null
+        : 'Rating must be a whole number between 1 and 5';
     },
-    minLength: (min: number) => (value: string) => {
-      return value && value.length >= min ? null : `Must be at least ${min} characters`;
-    },
-    maxLength: (max: number) => (value: string) => {
-      return value && value.length <= max ? null : `Must be no more than ${max} characters`;
-    },
-    rating: (value: number) => {
-      return value >= 1 && value <= 5 ? null : 'Rating must be between 1 and 5';
-    },
-  };
+
+    minLength:
+      (min: number): Validator<string> =>
+      (value) =>
+        typeof value === 'string' && value.length >= min
+          ? null
+          : `Must be at least ${min} characters`,
+
+    maxLength:
+      (max: number): Validator<string> =>
+      (value) =>
+        typeof value === 'string' && value.length <= max
+          ? null
+          : `Must be no more than ${max} characters`,
+
+    /** Compose multiple validators — returns the first error found. */
+    compose:
+      (...validators: Validator[]): Validator =>
+      (value) => {
+        for (const v of validators) {
+          const error = v(value);
+          if (error) return error;
+        }
+        return null;
+      },
+  } as const;
 }
 
-// Export singleton instance
+// ─── Singleton ────────────────────────────────────────────────────────────────
+
 export const formService = new FormService();
 export default formService;

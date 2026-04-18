@@ -4,7 +4,8 @@
  */
 
 import { DocumentVerificationResult } from '../../trust/types';
-import { NotificationChannel, DocumentContext } from '../../../server/types/messaging.types';
+import { NotificationChannel, DocumentContext } from '@shared/types/messaging';
+import { logger as loggingService } from '../../local/utils/logger';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -376,41 +377,32 @@ export class DocumentCommunicationIntegrationService {
     notification: DocumentNotification,
     recipients: readonly string[]
   ): Promise<void> {
-    const { NotificationService } = await import('../../../server/communication/notification.service');
-    const notificationService = new NotificationService(undefined);
+    loggingService.info('Dispatching in-app notification', {
+      documentId: notification.documentId,
+      recipientsCount: recipients.length
+    });
 
-    for (const recipientId of recipients) {
-      await notificationService.createNotification(
-        parseInt(recipientId, 10),
-        'document_processed',
-        {
-          documentId: notification.documentId,
-          title: notification.title,
-          message: notification.message,
-        },
-        {
-          priority: notification.actionRequired ? 'high' : 'medium',
-          data: notification.metadata,
-        }
-      );
-    }
+    // NOTE: This should be handled via a client-side API client that calls a backend endpoint.
+    // example: await api.notifications.create(...)
+
+    // NOTE: In-app notification dispatch logic removed for client-side environment safety.
+    // The previous server-side notificationService call is replaced by logging above.
   }
 
   private async sendEmailNotification(
     notification: DocumentNotification,
     recipients: readonly string[]
   ): Promise<void> {
-    const { getEmailService } = await import('../../../server/infrastructure/email/email.service');
-    const emailService = await getEmailService();
-
-    const emailHtml = this.buildEmailTemplate(notification);
-
-    await emailService.sendEmail({
-      to: recipients as string[],
-      subject: notification.title,
-      html: emailHtml,
-      text: notification.message,
+    loggingService.info('Dispatching email notification', {
+      documentId: notification.documentId,
+      recipientsCount: recipients.length
     });
+
+    // NOTE: This should be handled via a client-side API client that calls a backend endpoint.
+    // example: await api.email.send(...)
+
+    // NOTE: Email dispatch logic removed for client-side environment safety.
+    // The previous server-side emailService call is replaced by logging above.
   }
 
   /** SMS dispatch — critical issues only; integrates with M-Pesa / local SMS provider. */
@@ -446,8 +438,7 @@ export class DocumentCommunicationIntegrationService {
     notification: DocumentNotification,
     recipients: readonly string[]
   ): Promise<void> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    logger.info('Document notification sent', 'COMMUNICATION', {
+    loggingService.info('Document notification sent', {
       type: notification.type,
       documentId: notification.documentId,
       propertyId: notification.propertyId,
@@ -463,9 +454,7 @@ export class DocumentCommunicationIntegrationService {
     alert: DocumentAlert,
     channels: readonly NotificationChannel[]
   ): Promise<void> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.warn('Immediate document alert', 'SECURITY', {
+    loggingService.warn('Immediate document alert', {
       documentId: alert.documentId,
       severity: alert.severity,
       issueCount: alert.issues.length,
@@ -497,9 +486,7 @@ export class DocumentCommunicationIntegrationService {
   ): Promise<void> {
     // For lower severity alerts, batch them for scheduled delivery
     // In production, this would use a job queue (Bull, BullMQ, etc.)
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.info('Scheduled document alert', 'COMMUNICATION', {
+    loggingService.info('Scheduled document alert', {
       documentId: alert.documentId,
       severity: alert.severity,
       channels,
@@ -513,19 +500,14 @@ export class DocumentCommunicationIntegrationService {
   private async updateUserDashboard(alert: DocumentAlert): Promise<void> {
     // Update user dashboard with alert information
     // This would typically update a database table or cache
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.debug('Dashboard updated with alert', 'COMMUNICATION', {
+    loggingService.debug('Dashboard updated with alert', {
       documentId: alert.documentId,
       severity: alert.severity,
     });
   }
 
   private async logSecurityAlert(alert: DocumentAlert): Promise<void> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.securityEvent('document_alert', undefined, undefined);
-    logger.warn('Security alert logged', 'SECURITY', {
+    loggingService.warn('Security alert logged', {
       documentId: alert.documentId,
       severity: alert.severity,
       issues: alert.issues,
@@ -561,11 +543,9 @@ export class DocumentCommunicationIntegrationService {
     reason: string,
     evidence?: readonly string[]
   ): Promise<CommunityFlag> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
     const flag: CommunityFlag = { documentId, flaggedBy, reason, evidence };
     
-    logger.info('Community flag created', 'COMMUNITY', {
+    loggingService.info('Community flag created', {
       documentId,
       flaggedBy,
       reason,
@@ -577,9 +557,7 @@ export class DocumentCommunicationIntegrationService {
   }
 
   private async notifyDocumentOwner(flag: CommunityFlag): Promise<void> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.info('Notifying document owner of flag', 'COMMUNICATION', {
+    loggingService.info('Notifying document owner of flag', {
       documentId: flag.documentId,
       reason: flag.reason,
     });
@@ -589,9 +567,7 @@ export class DocumentCommunicationIntegrationService {
   }
 
   private async notifyModerators(flag: CommunityFlag): Promise<void> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.info('Notifying moderators of flag', 'COMMUNICATION', {
+    loggingService.info('Notifying moderators of flag', {
       documentId: flag.documentId,
       flaggedBy: flag.flaggedBy,
       reason: flag.reason,
@@ -601,9 +577,7 @@ export class DocumentCommunicationIntegrationService {
   }
 
   private async updateCommunityTrustMetrics(flag: CommunityFlag): Promise<void> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.debug('Updating community trust metrics', 'TRUST', {
+    loggingService.debug('Updating community trust metrics', {
       documentId: flag.documentId,
     });
 
@@ -623,9 +597,7 @@ export class DocumentCommunicationIntegrationService {
   }
 
   private async triggerExpertReview(flag: CommunityFlag): Promise<void> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.warn('Triggering expert review for flagged document', 'VERIFICATION', {
+    loggingService.warn('Triggering expert review for flagged document', {
       documentId: flag.documentId,
       reason: flag.reason,
     });
@@ -640,12 +612,10 @@ export class DocumentCommunicationIntegrationService {
     type: ExpertType,
     urgency: ReviewUrgency
   ): Promise<Expert> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
     // In production, query expert database with availability and specialization
     const expertId = `expert_${type}_${Date.now()}`;
     
-    logger.info('Expert assigned', 'COORDINATION', {
+    loggingService.info('Expert assigned', {
       expertType: type,
       urgency,
       expertId,
@@ -659,20 +629,18 @@ export class DocumentCommunicationIntegrationService {
     expert: Expert,
     urgency: ReviewUrgency
   ): Promise<ExpertAssignment> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
     // Calculate estimated completion based on urgency
     const hoursToComplete = urgency === 'critical' ? 4 : urgency === 'urgent' ? 24 : 72;
     const estimatedCompletion = new Date(Date.now() + hoursToComplete * 60 * 60 * 1000);
     
     const trackingId = `assignment_${documentId}_${expert.id}_${Date.now()}`;
     
-    logger.info('Expert assignment created', 'COORDINATION', {
+    loggingService.info('Expert assignment created', {
       documentId,
       expertId: expert.id,
       urgency,
       trackingId,
-      estimatedCompletion,
+      estimatedCompletion: estimatedCompletion.toISOString(),
     });
 
     return { estimatedCompletion, trackingId };
@@ -681,11 +649,9 @@ export class DocumentCommunicationIntegrationService {
   private async setupExpertCommunication(
     assignment: ExpertAssignment
   ): Promise<CommunicationChannel> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
     const channelId = `channel_${assignment.trackingId}`;
     
-    logger.info('Expert communication channel created', 'COORDINATION', {
+    loggingService.info('Expert communication channel created', {
       trackingId: assignment.trackingId,
       channelId,
     });
@@ -698,9 +664,7 @@ export class DocumentCommunicationIntegrationService {
     assignment: ExpertAssignment,
     channel: CommunicationChannel
   ): Promise<void> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.info('Expert briefing sent', 'COORDINATION', {
+    loggingService.info('Expert briefing sent', {
       trackingId: assignment.trackingId,
       channelId: channel.id,
     });
@@ -709,9 +673,7 @@ export class DocumentCommunicationIntegrationService {
   }
 
   private async notifyStakeholders(assignment: ExpertAssignment): Promise<void> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.info('Stakeholders notified of expert assignment', 'COORDINATION', {
+    loggingService.info('Stakeholders notified of expert assignment', {
       trackingId: assignment.trackingId,
       estimatedCompletion: assignment.estimatedCompletion,
     });
@@ -726,18 +688,14 @@ export class DocumentCommunicationIntegrationService {
   ): Promise<DocumentMessageContext[]> {
     // In production, query document database for property
     // For now, return mock data structure
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.debug('Fetching property document context', 'DATA_ACCESS', { propertyId });
+    loggingService.debug('Fetching property document context', { propertyId });
 
     // This would query the database for all documents related to the property
     return [];
   }
 
   private async generateRiskAssessment(propertyId: string): Promise<string> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.debug('Generating risk assessment', 'ANALYSIS', { propertyId });
+    loggingService.debug('Generating risk assessment', { propertyId });
 
     // In production, analyze documents and generate comprehensive risk assessment
     return 'Risk assessment pending - all documents under review';
@@ -746,9 +704,7 @@ export class DocumentCommunicationIntegrationService {
   private async getPropertyVerificationStatus(
     propertyId: string
   ): Promise<VerificationStatus> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.debug('Fetching property verification status', 'DATA_ACCESS', { propertyId });
+    loggingService.debug('Fetching property verification status', { propertyId });
 
     // In production, query verification database
     return { 
@@ -759,9 +715,7 @@ export class DocumentCommunicationIntegrationService {
   }
 
   private async getDocumentSummary(propertyId: string): Promise<DocumentSummary> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.debug('Fetching document summary', 'DATA_ACCESS', { propertyId });
+    loggingService.debug('Fetching document summary', { propertyId });
 
     // In production, aggregate document statistics
     return { 
@@ -773,9 +727,7 @@ export class DocumentCommunicationIntegrationService {
   }
 
   private async getRiskIndicators(propertyId: string): Promise<string[]> {
-    const { logger } = await import('../../../server/infrastructure/monitoring/logger');
-    
-    logger.debug('Fetching risk indicators', 'ANALYSIS', { propertyId });
+    loggingService.debug('Fetching risk indicators', { propertyId });
 
     // In production, analyze documents and return risk indicators
     return [];

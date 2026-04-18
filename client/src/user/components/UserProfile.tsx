@@ -4,7 +4,7 @@ import { Badge } from '../../local/components/ui/badge'
 import { Button } from '../../local/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../local/components/ui/dialog'
-import { PropertyImage } from '../../property/utils/propertyImages'
+import { PropertyImage } from '../../local/types/images'
 import { User, Edit, Mail, Phone, Calendar, Camera } from 'lucide-react'
 import { useState } from 'react'
 

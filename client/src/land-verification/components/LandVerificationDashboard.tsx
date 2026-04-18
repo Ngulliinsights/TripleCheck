@@ -28,7 +28,7 @@ import type {
 
 interface LandVerificationDashboardProps {
   sessions: VerificationSessionResponse[];
-  onSessionSelect: (sessionId: number) => void;
+  onSessionSelect: (sessionId: string) => void;
   onNewVerification: () => void;
   loading?: boolean;
 }
@@ -113,8 +113,9 @@ export default function LandVerificationDashboard({
           </Badge>
         </div>
         <CardDescription className="flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          {session.property?.location || 'Location not specified'}
+          {typeof session.property?.location === 'string' 
+            ? session.property.location 
+            : session.property?.location?.address || 'Location not specified'}
         </CardDescription>
       </CardHeader>
       <CardContent>

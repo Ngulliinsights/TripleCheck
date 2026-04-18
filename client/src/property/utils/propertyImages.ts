@@ -8,6 +8,8 @@ export interface PropertyImage {
   url: string;
   alt: string;
   category: 'residential' | 'commercial';
+  file?: File; // Added for compatibility with upload flows
+  preview?: string; // Added for compatibility with preview flows
 }
 
 // Commercial property images

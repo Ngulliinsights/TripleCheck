@@ -83,3 +83,10 @@ backup/
 
 # Error logs from build
 tsc_errors*.txt
+
+# Temporary files from sed/shell operations
+sed[a-zA-Z0-9]*
+
+# Accidental compiler/build artifacts
+*.error
+*.errors

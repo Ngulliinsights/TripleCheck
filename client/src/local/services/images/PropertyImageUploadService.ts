@@ -1,8 +1,8 @@
 /**
- * Property Image Upload Service - Refactored
- * 
+ * Property Image Upload Service
+ *
  * Focused service that handles only upload operations.
- * Uses shared core to eliminate duplication while maintaining clear boundaries.
+ * Uses the shared core to eliminate duplication while maintaining clear boundaries.
  */
 
 import { ImageServiceCore, ImageServiceRegistry } from './core/ImageServiceCore'
@@ -15,54 +15,72 @@ import type {
 } from '../../types/images'
 import { ImageUtils } from '../../utils/images/unified-utils'
 
+// ---------------------------------------------------------------------------
+// Public interfaces
+// ---------------------------------------------------------------------------
+
 export interface IPropertyImageUploadService {
-  initiateUpload(file: File, documentType?: DocumentType, landVerificationId?: string): Promise<UploadSession>;
-  uploadChunk(sessionId: string, chunk: ImageChunk): Promise<void>;
-  pauseUpload(sessionId: string): void;
-  resumeUpload(sessionId: string): void;
-  cancelUpload(sessionId: string): void;
-  getUploadProgress(sessionId: string): UploadProgress | null;
-  onProgressUpdate(sessionId: string, callback: (progress: UploadProgress) => void): void;
+  initiateUpload(
+    file: File,
+    documentType?: DocumentType,
+    landVerificationId?: string,
+  ): Promise<UploadSession>
+  uploadChunk(sessionId: string, chunk: ImageChunk): Promise<void>
+  pauseUpload(sessionId: string): void
+  resumeUpload(sessionId: string): void
+  cancelUpload(sessionId: string): void
+  getUploadProgress(sessionId: string): UploadProgress | null
+  onProgressUpdate(sessionId: string, callback: (progress: UploadProgress) => void): void
 }
 
 export interface UploadDependencies {
   apiClient?: {
-    uploadChunk: (sessionId: string, chunk: ImageChunk, metadata?: any) => Promise<void>;
-    createUploadSession: (metadata: any) => Promise<any>;
-    completeUpload: (sessionId: string) => Promise<void>;
-  };
+    uploadChunk(sessionId: string, chunk: ImageChunk, metadata?: unknown): Promise<void>
+    createUploadSession(metadata: unknown): Promise<{ sessionId?: string }>
+    completeUpload(sessionId: string): Promise<void>
+  }
   storageService?: {
-    uploadChunk: (sessionId: string, chunk: ImageChunk) => Promise<void>;
-    createSession: (metadata: any) => Promise<string>;
-  };
+    uploadChunk(sessionId: string, chunk: ImageChunk): Promise<void>
+    createSession(metadata: unknown): Promise<string>
+  }
 }
 
-export class PropertyImageUploadService extends ImageServiceCore implements IPropertyImageUploadService {
-  readonly serviceName = 'PropertyImageUploadService';
-  readonly version = '2.0.0';
+// ---------------------------------------------------------------------------
+// Service implementation
+// ---------------------------------------------------------------------------
 
-  private activeSessions = new Map<string, UploadSession>();
-  private progressCallbacks = new Map<string, (progress: UploadProgress) => void>();
-  private pausedSessions = new Set<string>();
+export class PropertyImageUploadService
+  extends ImageServiceCore
+  implements IPropertyImageUploadService
+{
+  readonly serviceName = 'PropertyImageUploadService'
+  readonly version = '2.0.0'
+
+  private readonly activeSessions = new Map<string, UploadSession>()
+  private readonly progressCallbacks = new Map<string, (progress: UploadProgress) => void>()
+  private readonly pausedSessions = new Set<string>()
 
   constructor(
-    private dependencies: UploadDependencies = {},
-    config?: ImageServiceConfig
+    private readonly dependencies: UploadDependencies = {},
+    config?: ImageServiceConfig,
   ) {
-    super(config, ImageServiceRegistry.getInstance().getAuditService());
+    super(config, ImageServiceRegistry.getInstance().getAuditService())
   }
+
+  // -------------------------------------------------------------------------
+  // Public API
+  // -------------------------------------------------------------------------
 
   async initiateUpload(
     file: File,
     documentType?: DocumentType,
-    landVerificationId?: string
+    landVerificationId?: string,
   ): Promise<UploadSession> {
-    const sessionId = ImageUtils.generateUniqueId();
+    const sessionId = ImageUtils.generateUniqueId()
 
     try {
-      // Use shared core functionality
-      const chunks = await this.createFileChunks(file, sessionId);
-      
+      const chunks = await this.createFileChunks(file, sessionId)
+
       const sessionMetadata = {
         sessionId,
         fileName: file.name,
@@ -72,17 +90,18 @@ export class PropertyImageUploadService extends ImageServiceCore implements IPro
         timestamp: new Date().toISOString(),
         ...(documentType && { documentType }),
         ...(landVerificationId && { landVerificationId }),
-      };
+      }
 
-      // Handle backend session creation
-      let finalSessionId = sessionId;
+      // Optionally resolve a backend-assigned session ID.
+      let finalSessionId = sessionId
       if (this.dependencies.apiClient) {
-        const backendResponse = await this.dependencies.apiClient.createUploadSession(sessionMetadata);
+        const backendResponse =
+          await this.dependencies.apiClient.createUploadSession(sessionMetadata)
         if (backendResponse.sessionId && backendResponse.sessionId !== sessionId) {
-          finalSessionId = backendResponse.sessionId;
-          chunks.forEach(chunk => {
-            chunk.id = chunk.id.replace(sessionId, finalSessionId);
-          });
+          finalSessionId = backendResponse.sessionId
+          for (const chunk of chunks) {
+            chunk.id = chunk.id.replace(sessionId, finalSessionId)
+          }
         }
       }
 
@@ -94,128 +113,120 @@ export class PropertyImageUploadService extends ImageServiceCore implements IPro
         progress: 0,
         uploadSpeed: 0,
         startTime: Date.now(),
-      };
+      }
 
-      this.activeSessions.set(finalSessionId, session);
+      this.activeSessions.set(finalSessionId, session)
 
-      // Use shared audit logging
       await this.logEvent('upload_initiated', {
         sessionId: finalSessionId,
         fileName: file.name,
         fileSize: file.size,
         documentType,
         landVerificationId,
-      });
+      })
 
-      return session;
+      return session
     } catch (error) {
       throw this.createError(
         `Failed to initiate upload: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'UPLOAD_INITIATION_FAILED',
         undefined,
         undefined,
-        true
-      );
+        true,
+      )
     }
   }
 
   async uploadChunk(sessionId: string, chunk: ImageChunk): Promise<void> {
-    const session = this.activeSessions.get(sessionId);
+    const session = this.activeSessions.get(sessionId)
     if (!session) {
-      throw this.createError(`Upload session ${sessionId} not found`, 'SESSION_NOT_FOUND');
+      throw this.createError(
+        `Upload session ${sessionId} not found`,
+        'SESSION_NOT_FOUND',
+      )
     }
 
     if (this.pausedSessions.has(sessionId)) {
-      return;
+      return // Silently skip – caller can resume later.
     }
 
-    const startTime = Date.now();
+    const startTime = Date.now()
 
     try {
-      // Use shared retry logic
-      await this.withRetry(async () => {
-        if (this.dependencies.apiClient) {
-          await this.dependencies.apiClient.uploadChunk(sessionId, chunk);
-        } else if (this.dependencies.storageService) {
-          await this.dependencies.storageService.uploadChunk(sessionId, chunk);
-        } else {
-          await this.mockChunkUpload(chunk);
-        }
-      }, this.config.upload.maxRetries, this.config.upload.retryDelay);
+      await this.withRetry(
+        () => this.sendChunk(sessionId, chunk),
+        this.config.upload.maxRetries,
+        this.config.upload.retryDelay,
+      )
 
-      chunk.uploaded = true;
-      chunk.uploadTime = Date.now() - startTime;
-      this.updateSessionProgress(sessionId);
+      chunk.uploaded = true
+      chunk.uploadTime = Date.now() - startTime
+      this.updateSessionProgress(sessionId)
 
       await this.logEvent('chunk_uploaded', {
         sessionId,
         chunkIndex: chunk.index,
         chunkSize: chunk.size,
         uploadTime: chunk.uploadTime,
-      });
-
+      })
     } catch (error) {
-      chunk.retryCount = (chunk.retryCount || 0) + 1;
-      
+      chunk.retryCount = (chunk.retryCount ?? 0) + 1
+
       await this.logEvent('chunk_upload_failed', {
         sessionId,
         chunkIndex: chunk.index,
         error: error instanceof Error ? error.message : 'Unknown error',
         retryCount: chunk.retryCount,
-      });
+      })
 
       throw this.createError(
         `Chunk upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'CHUNK_UPLOAD_FAILED',
         session.imageId,
         undefined,
-        false
-      );
+        false,
+      )
     }
   }
 
   pauseUpload(sessionId: string): void {
-    this.pausedSessions.add(sessionId);
-    const session = this.activeSessions.get(sessionId);
+    this.pausedSessions.add(sessionId)
+    const session = this.activeSessions.get(sessionId)
     if (session) {
-      session.status = 'paused';
-      this.notifyProgress(sessionId);
+      session.status = 'paused'
+      this.notifyProgress(sessionId)
     }
   }
 
   resumeUpload(sessionId: string): void {
-    this.pausedSessions.delete(sessionId);
-    const session = this.activeSessions.get(sessionId);
+    this.pausedSessions.delete(sessionId)
+    const session = this.activeSessions.get(sessionId)
     if (session) {
-      session.status = 'uploading';
-      this.notifyProgress(sessionId);
+      session.status = 'uploading'
+      this.notifyProgress(sessionId)
     }
   }
 
   cancelUpload(sessionId: string): void {
-    const session = this.activeSessions.get(sessionId);
-    if (session) {
-      session.status = 'cancelled';
-      this.activeSessions.delete(sessionId);
-      this.progressCallbacks.delete(sessionId);
-      this.pausedSessions.delete(sessionId);
+    const session = this.activeSessions.get(sessionId)
+    if (!session) return
 
-      this.logEvent('upload_cancelled', {
-        sessionId,
-        progress: session.progress,
-      });
-    }
+    session.status = 'cancelled'
+    this.activeSessions.delete(sessionId)
+    this.progressCallbacks.delete(sessionId)
+    this.pausedSessions.delete(sessionId)
+
+    // Fire-and-forget – cancellation audit log is best-effort.
+    void this.logEvent('upload_cancelled', { sessionId, progress: session.progress })
   }
 
   getUploadProgress(sessionId: string): UploadProgress | null {
-    const session = this.activeSessions.get(sessionId);
-    if (!session) return null;
+    const session = this.activeSessions.get(sessionId)
+    if (!session) return null
 
-    const completedChunks = session.chunks.filter(chunk => chunk.uploaded).length;
-    const totalBytes = session.chunks.reduce((sum, chunk) => sum + chunk.size, 0);
-    const uploadedBytes = session.chunks
-      .filter(chunk => chunk.uploaded)
-      .reduce((sum, chunk) => sum + chunk.size, 0);
+    const completedChunks = session.chunks.filter(c => c.uploaded)
+    const uploadedBytes = completedChunks.reduce((sum, c) => sum + c.size, 0)
+    const totalBytes = session.chunks.reduce((sum, c) => sum + c.size, 0)
 
     return {
       sessionId,
@@ -223,77 +234,98 @@ export class PropertyImageUploadService extends ImageServiceCore implements IPro
       progress: session.progress,
       uploadSpeed: session.uploadSpeed,
       status: session.status,
-      chunksCompleted: completedChunks,
+      chunksCompleted: completedChunks.length,
       totalChunks: session.chunks.length,
       bytesUploaded: uploadedBytes,
       totalBytes,
-      ...(session.estimatedTimeRemaining !== undefined && { estimatedTimeRemaining: session.estimatedTimeRemaining }),
-    };
+      ...(session.estimatedTimeRemaining !== undefined && {
+        estimatedTimeRemaining: session.estimatedTimeRemaining,
+      }),
+    }
   }
 
-  onProgressUpdate(sessionId: string, callback: (progress: UploadProgress) => void): void {
-    this.progressCallbacks.set(sessionId, callback);
+  onProgressUpdate(
+    sessionId: string,
+    callback: (progress: UploadProgress) => void,
+  ): void {
+    this.progressCallbacks.set(sessionId, callback)
   }
 
-  // Private methods
+  // -------------------------------------------------------------------------
+  // Private helpers
+  // -------------------------------------------------------------------------
+
+  /** Routes a chunk to the appropriate transport layer. */
+  private async sendChunk(sessionId: string, chunk: ImageChunk): Promise<void> {
+    if (this.dependencies.apiClient) {
+      await this.dependencies.apiClient.uploadChunk(sessionId, chunk)
+    } else if (this.dependencies.storageService) {
+      await this.dependencies.storageService.uploadChunk(sessionId, chunk)
+    } else {
+      await this.mockChunkUpload(chunk)
+    }
+  }
+
   private updateSessionProgress(sessionId: string): void {
-    const session = this.activeSessions.get(sessionId);
-    if (!session) return;
+    const session = this.activeSessions.get(sessionId)
+    if (!session) return
 
-    const completedChunks = session.chunks.filter(chunk => chunk.uploaded).length;
-    const totalChunks = session.chunks.length;
-    
-    // Use shared progress calculation
-    session.progress = this.calculateProgress(completedChunks, totalChunks);
+    const completed = session.chunks.filter(c => c.uploaded)
+    const totalChunks = session.chunks.length
 
-    const currentTime = Date.now();
-    const elapsedTime = (currentTime - session.startTime) / 1000;
-    const uploadedBytes = session.chunks
-      .filter(chunk => chunk.uploaded)
-      .reduce((sum, chunk) => sum + chunk.size, 0);
-    
-    // Use shared speed calculation
-    session.uploadSpeed = this.calculateSpeed(uploadedBytes, elapsedTime);
+    session.progress = this.calculateProgress(completed.length, totalChunks)
+
+    const elapsedSec = (Date.now() - session.startTime) / 1000
+    const uploadedBytes = completed.reduce((sum, c) => sum + c.size, 0)
+    session.uploadSpeed = this.calculateSpeed(uploadedBytes, elapsedSec)
 
     const remainingBytes = session.chunks
-      .filter(chunk => !chunk.uploaded)
-      .reduce((sum, chunk) => sum + chunk.size, 0);
-    
-    // Use shared ETA calculation
-    session.estimatedTimeRemaining = this.calculateETA(remainingBytes, session.uploadSpeed);
+      .filter(c => !c.uploaded)
+      .reduce((sum, c) => sum + c.size, 0)
+    session.estimatedTimeRemaining = this.calculateETA(remainingBytes, session.uploadSpeed)
 
-    if (completedChunks === totalChunks) {
-      session.status = 'completed';
-      session.endTime = currentTime;
-      this.dependencies.apiClient?.completeUpload(sessionId);
+    if (completed.length === totalChunks) {
+      session.status = 'completed'
+      session.endTime = Date.now()
+      // Best-effort server-side completion – do not block progress updates.
+      void this.dependencies.apiClient?.completeUpload(sessionId)
     } else {
-      session.status = 'uploading';
+      session.status = 'uploading'
     }
 
-    this.notifyProgress(sessionId);
+    this.notifyProgress(sessionId)
   }
 
   private notifyProgress(sessionId: string): void {
-    const callback = this.progressCallbacks.get(sessionId);
-    const progress = this.getUploadProgress(sessionId);
+    const callback = this.progressCallbacks.get(sessionId)
+    const progress = this.getUploadProgress(sessionId)
     if (callback && progress) {
-      callback(progress);
+      callback(progress)
     }
   }
 
+  /**
+   * Simulates a network upload with proportional delay.
+   * Introduces a tiny random failure rate to exercise retry logic.
+   */
   private async mockChunkUpload(chunk: ImageChunk): Promise<void> {
-    const delay = Math.min(chunk.size / 1024, 1000);
-    await new Promise(resolve => setTimeout(resolve, delay));
-    
+    const delayMs = Math.min(chunk.size / 1024, 1000)
+    await new Promise<void>(resolve => setTimeout(resolve, delayMs))
+
+    // ~1 % failure rate – use a non-cryptographic check here since this is
+    // purely a development simulation, not a security-sensitive path.
     if (Math.random() < 0.01) {
-      throw new Error('Simulated network error for testing');
+      throw new Error('Simulated network error for testing')
     }
   }
 }
 
-// Register service in the registry
-export const propertyImageUploadService = ImageServiceRegistry.getInstance().register(
-  new PropertyImageUploadService()
-);
+// ---------------------------------------------------------------------------
+// Module-level singleton
+// ---------------------------------------------------------------------------
 
-export default PropertyImageUploadService;
+export const propertyImageUploadService = ImageServiceRegistry.getInstance().register(
+  new PropertyImageUploadService(),
+)
+
+export default PropertyImageUploadService

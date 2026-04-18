@@ -285,7 +285,7 @@ export default function RiskManagementInterface({
             assessment={riskAssessment}
             onRefresh={handleRecalculateRisk}
             onExportReport={() => handleExportReport('pdf')}
-            onViewDetails={(factorId) => {
+            onViewDetails={(factorId: string | number) => {
               // Handle factor detail view
               console.log('View factor details:', factorId);
             }}

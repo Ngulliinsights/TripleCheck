@@ -26,9 +26,14 @@ import { Separator } from '../../local/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
 import { useToast } from '../../local/hooks/use-toast'
 import { useLandVerification, RiskAssessment, RiskFactor, Recommendation } from '../hooks/useLandVerification'
+import type { RiskAssessmentResponse } from '@/types/land-verification'
 
 interface RiskAssessmentDisplayProps {
   sessionId: string;
+  assessment?: RiskAssessmentResponse;
+  onRefresh?: () => void;
+  onExportReport?: () => void;
+  onViewDetails?: (factorId: string | number) => void;
   onRecommendationAction?: (action: string) => void;
   showActions?: boolean;
 }
@@ -75,7 +80,7 @@ const PRIORITY_COLORS = {
   low: 'bg-gray-100 text-gray-800',
   medium: 'bg-blue-100 text-blue-800',
   high: 'bg-orange-100 text-orange-800',
-  urgent: 'bg-red-100 text-red-800'
+  critical: 'bg-red-100 text-red-800'
 };
 
 export function RiskAssessmentDisplay({ 
@@ -88,7 +93,9 @@ export function RiskAssessmentDisplay({
   const [expandedRiskFactor, setExpandedRiskFactor] = useState<string | null>(null);
 
   const { useRiskAssessment } = useLandVerification();
-  const { data: assessment, isLoading, error } = useRiskAssessment(sessionId);
+  const { data: fetchedAssessment, isLoading, error } = useRiskAssessment(sessionId, { enabled: !passedAssessment });
+  
+  const assessment = passedAssessment || fetchedAssessment;
 
   const handleRecommendationAction = (action: string, recommendation: Recommendation) => {
     if (onRecommendationAction) {
@@ -102,6 +109,10 @@ export function RiskAssessmentDisplay({
   };
 
   const handleExportReport = () => {
+    if (onExportReport) {
+      onExportReport();
+      return;
+    }
     // In a real implementation, this would generate and download a PDF report
     toast({
       title: "Report Export",
@@ -465,7 +476,7 @@ export function RiskAssessmentDisplay({
           <AlertTitle>Next Steps</AlertTitle>
           <AlertDescription>
             Based on this risk assessment, we recommend addressing{' '}
-            <strong>{assessment.recommendations.filter(r => r.priority === 'urgent' || r.priority === 'high').length}</strong>{' '}
+            <strong>{assessment.recommendations.filter(r => r.priority === 'critical' || r.priority === 'high').length}</strong>{' '}
             high-priority items before proceeding with the transaction.
           </AlertDescription>
         </Alert>

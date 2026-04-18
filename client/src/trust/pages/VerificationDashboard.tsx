@@ -14,7 +14,8 @@ import {
   Loader2,
   RefreshCw,
   Download,
-  Share2
+  Share2,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../../local/hooks/use-toast';
@@ -28,7 +29,7 @@ const FraudDetectionDashboard = React.lazy(() =>
 
 const LandVerificationDashboard = React.lazy(() =>
   import('../../land-verification/components/LandVerificationDashboard').then(m => ({
-    default: m.default || m.LandVerificationDashboard
+    default: m.default
   }))
 );
 
@@ -126,7 +127,7 @@ export default function VerificationDashboard({
         const progressEvent: VerificationProgress = {
           type: message.type,
           message: message.message,
-          timestamp: new Date(message.timestamp || Date.now()),
+          timestamp: new Date(message.createdAt || message.timestamp || Date.now()),
           status: message.status,
           error: message.error,
           result: message.result,

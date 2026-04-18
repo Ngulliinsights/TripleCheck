@@ -1,4 +1,4 @@
-﻿// Dashboard.tsx - Merged: Rich Features + Performance Optimizations
+// Dashboard.tsx - Merged: Rich Features + Performance Optimizations
 // Combines full feature set with React.memo, immutable data, and optimized callbacks
 
 import { GridVirtualizedList } from "../../local/components/index"
@@ -53,6 +53,7 @@ interface DashboardProperty {
   readonly price: number;
   readonly image?: string;
   readonly status: "verified" | "pending" | "draft";
+  [key: string]: unknown; // satisfy BaseEntity index signature
 }
 
 interface ActivityItem {

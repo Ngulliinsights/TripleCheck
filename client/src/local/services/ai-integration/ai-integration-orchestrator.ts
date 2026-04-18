@@ -9,7 +9,7 @@ import { propertyAnalysisIntegration, PropertyValuationResult, PropertyRiskAsses
 import { documentProcessingIntegration, DocumentProcessingResult, LandVerificationWorkflowResult } from './document-processing-integration'
 import { fraudDetectionIntegration, PropertyFraudAnalysis, UserFraudAnalysis, NetworkFraudAnalysis } from './fraud-detection-integration'
 import { recommendationIntegration, PropertyRecommendation, SmartMatchResult, UserPreferenceProfile } from './recommendation-integration'
-import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
+import { logger as loggingService } from '../../utils/logger'
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
 import { Property, PropertySearchFilters } from '@shared/types/property'
 import { User } from '../../types/contracts/user-contracts'
@@ -86,6 +86,7 @@ export interface PropertyListingEnhancement {
   trustScoreAdjustment: {
     originalScore: number;
     adjustedScore: number;
+    adjustment: number;
     adjustmentReason: string;
   };
   processingTime: number;
@@ -116,15 +117,20 @@ export interface SearchResultsEnhancement {
   };
 }
 
-class AIIntegrationOrchestratorError extends BaseError {
-  constructor(message: string, operation: string, cause?: Error) {
-    super(message, {
-      code: 'AI_INTEGRATION_ORCHESTRATOR_ERROR',
-      domain: ErrorDomain.SYSTEM,
-      severity: ErrorSeverity.HIGH,
-      cause,
-      details: { operation }
-    });
+class AIIntegrationOrchestratorError extends Error implements BaseError {
+  readonly code = 'AI_INTEGRATION_ORCHESTRATOR_ERROR'
+  readonly details: Record<string, unknown> | undefined
+  readonly timestamp: string
+  readonly correlationId: string | undefined
+  readonly cause?: Error
+
+  constructor(message: string, public readonly operation: string, cause?: Error) {
+    super(message)
+    this.name = 'AIIntegrationOrchestratorError'
+    this.timestamp = new Date().toISOString()
+    this.cause = cause
+    this.details = { operation }
+    Object.setPrototypeOf(this, AIIntegrationOrchestratorError.prototype)
   }
 }
 
@@ -187,7 +193,7 @@ export class AIIntegrationOrchestrator {
       });
 
       // Check cache first
-      const cacheKey = `property_enhancement_${property.id}`;
+      const cacheKey = `property_enhancement_${String(property.id)}`;
       const cached = this.getFromCache(cacheKey);
       if (cached) {
         loggingService.info('Returning cached property enhancement', {
@@ -243,7 +249,7 @@ export class AIIntegrationOrchestrator {
       const processingTime = Date.now() - startTime;
 
       const result: PropertyListingEnhancement = {
-        propertyId: property.id,
+        propertyId: String(property.id),
         aiEnhancements: {
           ...enhancements,
           recommendations
@@ -501,7 +507,7 @@ export class AIIntegrationOrchestrator {
       // Prepare entities for network analysis
       const entities = [
         ...users.map(user => ({ id: user.id, type: 'user' as const, data: user })),
-        ...properties.map(property => ({ id: property.id, type: 'property' as const, data: property }))
+        ...properties.map(property => ({ id: String(property.id), type: 'property' as const, data: property }))
       ];
 
       // Perform network fraud analysis
@@ -690,6 +696,7 @@ export class AIIntegrationOrchestrator {
     return {
       originalScore,
       adjustedScore: Math.max(0, Math.min(100, originalScore + adjustment)),
+      adjustment,
       adjustmentReason: adjustment > 0 ? 'Positive AI analysis results' :
                        adjustment < 0 ? 'Risk factors identified' :
                        'No significant changes detected'
@@ -779,7 +786,7 @@ export class AIIntegrationOrchestrator {
   ): Promise<any> {
     return {
       suggestedFilters: {
-        maxPrice: searchFilters.maxPrice ? searchFilters.maxPrice * 1.1 : undefined
+        priceMax: searchFilters.priceMax ? searchFilters.priceMax * 1.1 : undefined
       },
       alternativeSearches: [
         'Similar properties in nearby areas',

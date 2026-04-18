@@ -5,28 +5,7 @@
  */
 
 import { EventEmitter } from 'events';
-import {
-  Message,
-  MessageThread,
-  Notification,
-  SendMessageRequest,
-  CreateThreadRequest,
-  MessageSearchFilters,
-  ThreadSearchFilters,
-  NotificationFilters,
-  MessagesResponse,
-  ThreadsResponse,
-  NotificationsResponse,
-  MessageType,
-  MessageStatus,
-  ThreadType,
-  NotificationType,
-  NotificationPriority,
-  WebSocketEvent,
-  TypingIndicator,
-  UserPresence,
-  MessageMetrics
-} from '../types/messaging.types';
+} from '@shared/types/messaging';
 
 class MessagingService extends EventEmitter {
   private messages: Map<string, Message> = new Map();

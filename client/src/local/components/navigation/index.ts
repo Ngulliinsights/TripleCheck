@@ -10,9 +10,9 @@
  * import { ComponentName } from '@shared/components/navigation'
  */
 
-// Standard exports
-export { default as BreadcrumbNavigation } from './BreadcrumbNavigation'
-export { default as ContextualSidebar } from './ContextualSidebar'
+// Standard named exports
+export { BreadcrumbNavigation } from './BreadcrumbNavigation'
+export { ContextualSidebar } from './ContextualSidebar'
 export { Navigation, Navigation as EnhancedNavigation } from './Navigation' // Named export with backward compatibility
 export { default as MobileNav } from './MobileNav'
 // export { default as NavigationDebug } from './NavigationDebug' // File doesn't exist

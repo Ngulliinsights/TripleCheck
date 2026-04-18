@@ -10,9 +10,12 @@ export interface Message {
   recipientId: string;
   content: string;
   messageType: MessageType;
+  subject?: string;
   status: MessageStatus;
+  isRead?: boolean;
   attachments?: MessageAttachment[];
   metadata?: MessageMetadata;
+  priority?: NotificationPriority;
   createdAt: Date;
   updatedAt: Date;
   readAt?: Date;
@@ -22,11 +25,12 @@ export interface Message {
 export interface MessageThread {
   id: string;
   participants: string[];
-  subject?: string;
-  threadType: ThreadType;
   propertyId?: string; // For property-related conversations
+  subject?: string;
   lastMessage?: Message;
   lastActivity: Date;
+  messageCount?: number;
+  unreadCount?: number;
   isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -144,7 +148,7 @@ export interface SendMessageRequest {
   messageType: MessageType;
   propertyId?: string;
   subject?: string; // For new threads
-  attachments?: File[];
+  attachments?: any[]; // Replaced File[] with any[] for shared compatibility
   metadata?: MessageMetadata;
 }
 
@@ -156,7 +160,7 @@ export interface CreateThreadRequest {
   initialMessage?: {
     content: string;
     messageType: MessageType;
-    attachments?: File[];
+    attachments?: any[];
   };
   metadata?: ThreadMetadata;
 }
@@ -191,94 +195,4 @@ export interface NotificationFilters {
   priority?: NotificationPriority;
   dateFrom?: Date;
   dateTo?: Date;
-}
-
-// Response interfaces
-export interface MessagesResponse {
-  messages: Message[];
-  total: number;
-  page: number;
-  limit: number;
-  hasMore: boolean;
-}
-
-export interface ThreadsResponse {
-  threads: MessageThread[];
-  total: number;
-  page: number;
-  limit: number;
-  hasMore: boolean;
-}
-
-export interface NotificationsResponse {
-  notifications: Notification[];
-  total: number;
-  unreadCount: number;
-  page: number;
-  limit: number;
-  hasMore: boolean;
-}
-
-// WebSocket event types
-export interface WebSocketEvent {
-  type: WebSocketEventType;
-  data: any;
-  timestamp: Date;
-  userId?: string;
-}
-
-export type WebSocketEventType = 
-  | 'message_sent'
-  | 'message_delivered'
-  | 'message_read'
-  | 'user_typing'
-  | 'user_online'
-  | 'user_offline'
-  | 'notification_received'
-  | 'thread_updated';
-
-export interface TypingIndicator {
-  threadId: string;
-  userId: string;
-  isTyping: boolean;
-  timestamp: Date;
-}
-
-export interface UserPresence {
-  userId: string;
-  status: 'online' | 'offline' | 'away';
-  lastSeen: Date;
-}
-
-// Validation schemas
-export interface MessageValidation {
-  content: {
-    minLength: number;
-    maxLength: number;
-    allowedTypes: MessageType[];
-  };
-  attachments: {
-    maxCount: number;
-    maxFileSize: number;
-    allowedMimeTypes: string[];
-  };
-  rateLimit: {
-    messagesPerMinute: number;
-    messagesPerHour: number;
-  };
-}
-
-// Analytics and metrics
-export interface MessageMetrics {
-  totalMessages: number;
-  totalThreads: number;
-  activeThreads: number;
-  averageResponseTime: number;
-  messagesByType: Record<MessageType, number>;
-  threadsByType: Record<ThreadType, number>;
-  userEngagement: {
-    dailyActiveUsers: number;
-    messagesSent: number;
-    messagesReceived: number;
-  };
 }

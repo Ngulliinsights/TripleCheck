@@ -8,7 +8,7 @@ import { Input } from "../../local/components/ui/input"
 import { Label } from "../../local/components/ui/label"
 import { Switch } from "../../local/components/ui/switch"
 import { useToast } from "../../local/hooks/use-toast"
-// import { useForm } from "../../local/hooks/useFormValidation"
+import { useFormValidation as useForm } from "../../local/hooks/useFormValidation"
 
 interface AlertPreference {
   id: string;
@@ -179,8 +179,6 @@ export default function AlertsPage() {
                 placeholder="Enter preferred locations (e.g., Nairobi, Mombasa)"
                 required
                 helpText="Specify cities or areas where you want to receive alerts"
-                error={getFieldError('location')}
-                touched={touched.location}
                 {...getFieldProps('location')}
               />
               
@@ -190,9 +188,7 @@ export default function AlertsPage() {
                   type="number"
                   placeholder="0"
                   min={0}
-                  helpText="Leave empty for no minimum"
-                  error={getFieldError('minPrice')}
-                  touched={touched.minPrice}
+                   helpText="Leave empty for no minimum"
                   {...getFieldProps('minPrice')}
                 />
                 <FormField
@@ -201,8 +197,6 @@ export default function AlertsPage() {
                   placeholder="10000000"
                   min={0}
                   helpText="Leave empty for no maximum"
-                  error={getFieldError('maxPrice')}
-                  touched={touched.maxPrice}
                   {...getFieldProps('maxPrice')}
                 />
               </div>
@@ -219,7 +213,7 @@ export default function AlertsPage() {
                   { value: 'commercial', label: 'Commercial' },
                   { value: 'any', label: 'Any Type' }
                 ]}
-                error={getFieldError('propertyType')}
+                 error={getFieldError('propertyType')}
                 touched={touched.propertyType}
                 {...getFieldProps('propertyType')}
               />

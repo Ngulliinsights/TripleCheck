@@ -50,7 +50,7 @@ export interface UIElement {
   children?: UIElement[];
   
   // Added missing properties
-  status: ElementStatus;
+  status?: ElementStatus;
   priority?: Priority;
   location?: ComponentLocation;
   currentBehavior?: string;
@@ -63,7 +63,7 @@ export interface UIElement {
   handlers?: Array<{
     name: string;
     code: string;
-    event: string;
+    event?: string;
   }>;
   apiCalls?: Array<{
     endpoint: string;

@@ -11,14 +11,17 @@ import { useWebSocket, useWebSocketMessage } from '../../infrastructure/realtime
 // Types
 export interface Message {
   id: string;
-  threadId: string;
+  threadId?: string;
   senderId: string;
   recipientId: string;
   content: string;
   messageType: MessageType;
+  subject?: string;
   status: MessageStatus;
+  isRead?: boolean;
   attachments?: MessageAttachment[];
   metadata?: Record<string, any>;
+  priority?: MessagePriority;
   createdAt: string;
   updatedAt: string;
   readAt?: string;
@@ -33,6 +36,8 @@ export interface MessageThread {
   propertyId?: string;
   lastMessage?: Message;
   lastActivity: string;
+  messageCount?: number;
+  unreadCount?: number;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -65,6 +70,8 @@ export type MessageStatus =
   | 'read' 
   | 'failed'
   | 'pending';
+
+export type MessagePriority = 'low' | 'medium' | 'high';
 
 export type ThreadType = 
   | 'property_inquiry' 
@@ -239,7 +246,7 @@ export function useMessaging() {
     onSuccess: (message) => {
       // Update thread messages cache
       queryClient.setQueryData(
-        messagingKeys.messages(message.threadId, 1),
+        messagingKeys.messages(message.threadId!, 1),
         (old: any) => {
           if (!old) return { messages: [message], total: 1, hasMore: false };
           return {

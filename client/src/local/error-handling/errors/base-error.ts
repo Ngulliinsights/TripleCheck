@@ -14,6 +14,20 @@ export interface BaseError {
   }
   
   /**
+   * Application error domains
+   */
+  export enum ErrorDomain {
+    AI = 'AI',
+    PROPERTY = 'PROPERTY',
+    USER = 'USER',
+    SYSTEM = 'SYSTEM',
+    SECURITY = 'SECURITY',
+    NETWORK = 'NETWORK',
+    FINANCE = 'FINANCE',
+    STORAGE = 'STORAGE',
+  }
+  
+  /**
    * Application error severity levels
    */
   export enum ErrorSeverity {

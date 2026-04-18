@@ -6,7 +6,7 @@
  */
 
 import { huggingFaceClient } from '../huggingface-api-client'
-import { logger } from '../../../../server/infrastructure/monitoring/logger'
+import { logger } from '../../utils/logger'
 import { BaseError } from '../../error-handling/errors/base-error'
 import { Property } from '@shared/types/property'
 import { User } from '../../types/contracts/user-contracts'

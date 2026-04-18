@@ -17,8 +17,8 @@ interface Notification extends BaseEntity {
   type: 'info' | 'success' | 'warning' | 'error';
   title: string;
   message: string;
-  timestamp: string;
-  read: boolean;
+  createdAt: string;
+  isRead: boolean;
 }
 
 interface UserNotificationsProps {
@@ -91,7 +91,7 @@ const VirtualizedNotificationsList: React.FC<{
       <div className="notification-item p-1" style={style}>
         <div
           className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-            notification.read ? 'bg-muted/30' : 'bg-background border-primary/20'
+            notification.isRead ? 'bg-muted/30' : 'bg-background border-primary/20'
           }`}
         >
           <Icon className={`h-5 w-5 mt-0.5 ${iconColor}`} />
@@ -100,10 +100,10 @@ const VirtualizedNotificationsList: React.FC<{
               <div className="flex-1">
                 <h4 className="font-medium text-sm">{notification.title}</h4>
                 <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                <span className="text-xs text-muted-foreground">{notification.timestamp}</span>
+                <span className="text-xs text-muted-foreground">{notification.createdAt}</span>
               </div>
               <div className="flex items-center gap-1">
-                {!notification.read && (
+                {!notification.isRead && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -113,7 +113,7 @@ const VirtualizedNotificationsList: React.FC<{
                     <Check className="h-4 w-4" />
                   </Button>
                 )}
-                <div className={`w-2 h-2 rounded-full bg-primary ${notification.read ? 'notification-read-indicator' : 'notification-unread-indicator'}`} />
+                <div className={`w-2 h-2 rounded-full bg-primary ${notification.isRead ? 'notification-read-indicator' : 'notification-unread-indicator'}`} />
               </div>
             </div>
           </div>
@@ -140,18 +140,18 @@ export function UserNotifications({
 }: UserNotificationsProps) {
   const [localNotifications, setLocalNotifications] = useState(notifications);
   
-  const unreadCount = Array.isArray(localNotifications) ? localNotifications.filter(n => n && !n.read).length : 0;
+  const unreadCount = Array.isArray(localNotifications) ? localNotifications.filter(n => n && !n.isRead).length : 0;
 
   const handleMarkAsRead = (id: string) => {
     setLocalNotifications(prev => 
-      Array.isArray(prev) ? prev.map(n => n && n.id === id ? { ...n, read: true } : n) : []
+      Array.isArray(prev) ? prev.map(n => n && n.id === id ? { ...n, isRead: true } : n) : []
     );
     onMarkAsRead?.(id);
   };
 
   const handleMarkAllAsRead = () => {
     setLocalNotifications(prev => 
-      Array.isArray(prev) ? prev.map(n => n ? { ...n, read: true } : n) : []
+      Array.isArray(prev) ? prev.map(n => n ? { ...n, isRead: true } : n) : []
     );
     onMarkAllAsRead?.();
   };

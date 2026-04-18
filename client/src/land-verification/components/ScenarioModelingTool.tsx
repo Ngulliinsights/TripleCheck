@@ -52,7 +52,7 @@ interface RiskScenario {
 }
 
 interface RiskModification {
-  factorId: number;
+  factorId: string;
   type: 'severity_change' | 'impact_change' | 'likelihood_change' | 'mitigation_applied' | 'new_factor';
   originalValue: number;
   newValue: number;
@@ -134,8 +134,8 @@ export default function ScenarioModelingTool({
     return (totalImpact / baselineRiskFactors.length) * 10; // Scale to 0-100
   }, [baselineRiskFactors]);
 
-  const handleAddModification = (factorId: number) => {
-    const factor = baselineRiskFactors.find(f => f.id === factorId);
+  const handleAddModification = (factorId: string) => {
+    const factor = baselineRiskFactors.find(f => String(f.id) === String(factorId));
     if (!factor) return;
 
     const newModification: RiskModification = {
@@ -211,7 +211,7 @@ export default function ScenarioModelingTool({
       baselineRiskFactors.forEach(factor => {
         if (factor.severity === 'high' || factor.severity === 'critical') {
           modifications.push({
-            factorId: factor.id,
+            factorId: String(factor.id),
             type: 'mitigation_applied',
             originalValue: factor.impact,
             newValue: Math.max(1, factor.impact - 3),
@@ -223,7 +223,7 @@ export default function ScenarioModelingTool({
       baselineRiskFactors.forEach(factor => {
         if (factor.impact < 8) {
           modifications.push({
-            factorId: factor.id,
+            factorId: String(factor.id),
             type: 'impact_change',
             originalValue: factor.impact,
             newValue: Math.min(10, factor.impact + 2),
@@ -235,7 +235,7 @@ export default function ScenarioModelingTool({
       baselineRiskFactors.forEach((factor, index) => {
         if (index % 2 === 0 && factor.impact > 3) {
           modifications.push({
-            factorId: factor.id,
+            factorId: String(factor.id),
             type: 'mitigation_applied',
             originalValue: factor.impact,
             newValue: Math.max(1, factor.impact - 2),
@@ -265,7 +265,7 @@ export default function ScenarioModelingTool({
   };
 
   const ModificationCard = ({ modification, index }: { modification: RiskModification; index: number }) => {
-    const factor = baselineRiskFactors.find(f => f.id === modification.factorId);
+    const factor = baselineRiskFactors.find(f => String(f.id) === String(modification.factorId));
     if (!factor) return null;
 
     return (
@@ -509,7 +509,7 @@ export default function ScenarioModelingTool({
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Risk Factor Modifications</CardTitle>
-                  <Select onValueChange={(value) => handleAddModification(parseInt(value))}>
+                  <Select onValueChange={(value) => handleAddModification(value)}>
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="Add modification" />
                     </SelectTrigger>

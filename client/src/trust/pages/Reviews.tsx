@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../local/components
 import { Label } from "../../local/components/ui/label"
 import { Progress } from "../../local/components/ui/progress"
 import { useToast } from "../../local/hooks/use-toast"
-// import { useForm } from "../../local/hooks/useFormValidation"
+import { useFormValidation } from "../../local/hooks/useFormValidation"
 import { useReviewListVirtualization } from "../../local/hooks/useMemoryOptimization"
 import { formatDate } from "../../local/utils/date-utils"
 
@@ -22,6 +22,7 @@ interface Review {
   userName: string;
   createdAt: string;
   helpful: number;
+  [key: string]: unknown;
 }
 
 // Virtualized Reviews List Component
@@ -43,10 +44,13 @@ const VirtualizedReviewsList: React.FC<{ reviews: Review[] }> = ({ reviews }) =>
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
 
-  const listProps = useReviewListVirtualization(
+  const listProps = useReviewListVirtualization<Review>(
     reviews,
     containerHeight,
-    (review) => 150 + (review.comment.length / 4) // Dynamic height based on comment length
+    (index: number) => {
+      const review = reviews[index];
+      return review ? 150 + (review.comment.length / 4) : 150;
+    }
   );
 
   const renderReviewItem = useCallback((review: Review, index: number, style: React.CSSProperties) => {
@@ -146,26 +150,22 @@ export default function ReviewsPage() {
   });
 
   const {
-    values,
-    touched,
-    isValid,
-    isSubmitting,
+    formState: { data: values, touched, isValid, isSubmitting },
     handleSubmit,
     setValue,
     getFieldProps,
     getFieldError
-  } = useForm({
-    initialValues: {
+  } = useFormValidation({
+    initialData: {
       rating: 0,
       comment: ''
     },
     validationRules: {
       rating: {
         required: true,
-        min: 1,
-        max: 5,
         custom: (value: unknown) => {
-          if (!value || (typeof value === 'number' && value < 1)) {
+          const n = Number(value);
+          if (isNaN(n) || n < 1) {
             return 'Please select a rating';
           }
           return null;

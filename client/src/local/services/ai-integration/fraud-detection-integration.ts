@@ -6,7 +6,7 @@
  */
 
 import { huggingFaceClient } from '../huggingface-api-client'
-import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
+import { logger as loggingService } from '../../utils/logger'
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
 import { Property } from '@shared/types/property'
 import { User } from '../../types/contracts/user-contracts'
@@ -102,15 +102,20 @@ export interface NetworkFraudAnalysis {
   }>;
 }
 
-class FraudDetectionIntegrationError extends BaseError {
-  constructor(message: string, operation: string, cause?: Error) {
-    super(message, {
-      code: 'FRAUD_DETECTION_ERROR',
-      domain: ErrorDomain.SECURITY,
-      severity: ErrorSeverity.HIGH,
-      cause,
-      details: { operation }
-    });
+class FraudDetectionIntegrationError extends Error implements BaseError {
+  readonly code = 'FRAUD_DETECTION_ERROR'
+  readonly details: Record<string, unknown> | undefined
+  readonly timestamp: string
+  readonly correlationId: string | undefined
+  readonly cause?: Error
+
+  constructor(message: string, public readonly operation: string, cause?: Error) {
+    super(message)
+    this.name = 'FraudDetectionIntegrationError'
+    this.timestamp = new Date().toISOString()
+    this.cause = cause
+    this.details = { operation }
+    Object.setPrototypeOf(this, FraudDetectionIntegrationError.prototype)
   }
 }
 
@@ -131,7 +136,7 @@ export class FraudDetectionIntegrationService {
     try {
       loggingService.info('Starting property fraud analysis', {
         module: 'FraudDetectionIntegration',
-        propertyId: property.id,
+        propertyId: String(property.id),
         propertyType: property.type,
         hasAdditionalContext: !!additionalContext
       });
@@ -153,7 +158,7 @@ export class FraudDetectionIntegrationService {
 
       // Combine all analysis results
       const analysis: PropertyFraudAnalysis = {
-        propertyId: property.id,
+        propertyId: String(property.id),
         riskLevel: this.calculateOverallRiskLevel(fraudPatterns, fraudCategories),
         riskScore: this.calculateRiskScore(fraudPatterns, fraudCategories),
         confidence: this.calculateConfidence(fraudPatterns),
@@ -177,7 +182,7 @@ export class FraudDetectionIntegrationService {
     } catch (error) {
       loggingService.error('Property fraud analysis failed', {
         module: 'FraudDetectionIntegration',
-        propertyId: property.id,
+        propertyId: String(property.id),
         error: error instanceof Error ? error.message : String(error)
       });
 
@@ -366,6 +371,17 @@ export class FraudDetectionIntegrationService {
   }
 
   // Private helper methods
+  private propertyFeatures(p: Property): string[] {
+    const f = p.features
+    if (!f) return []
+    // The shared Property type specifies features as PropertyFeatures or null
+    // Here we handle cases where it might be used as a simple array or an object
+    if (Array.isArray(f)) return f.filter(v => typeof v === 'string')
+    if (typeof f === 'object' && 'amenities' in f && Array.isArray(f.amenities)) {
+      return f.amenities.filter((v): v is string => typeof v === 'string')
+    }
+    return []
+  }
 
   private createPropertyAnalysisText(property: Property, additionalContext?: any): string {
     return `
@@ -375,8 +391,8 @@ export class FraudDetectionIntegrationService {
       Location: ${property.location}
       Price: ${property.price}
       Description: ${property.description || 'No description'}
-      Features: ${property.features?.join(', ') || 'No features'}
-      Owner: ${property.owner?.name || 'Unknown'}
+      Features: ${this.propertyFeatures(property).join(', ')}
+      Owner: ${property.owner?.username || 'Unknown'}
       Listed Date: ${property.createdAt || 'Unknown'}
       ${additionalContext ? `Additional Context: ${JSON.stringify(additionalContext)}` : ''}
     `.trim();
@@ -389,7 +405,7 @@ export class FraudDetectionIntegrationService {
       Name: ${user.firstName} ${user.lastName}
       Email: ${user.email}
       Role: ${user.role}
-      Verified: ${user.isVerified}
+      Verified: ${user.verificationStatus === 'verified'}
       Trust Score: ${user.trustScore || 'N/A'}
       Join Date: ${user.createdAt}
       Activity History: ${activityHistory ? `${activityHistory.length} activities` : 'No history'}
@@ -504,7 +520,7 @@ export class FraudDetectionIntegrationService {
 
   private calculateRiskScore(fraudPatterns: any[], fraudCategories: any[]): number {
     const patternScore = fraudPatterns.reduce((sum, p) => {
-      const severityWeight = { low: 10, medium: 25, high: 50 };
+      const severityWeight: Record<string, number> = { low: 10, medium: 25, high: 50 };
       return sum + (severityWeight[p.severity] || 0) * p.confidence;
     }, 0);
 
@@ -527,7 +543,7 @@ export class FraudDetectionIntegrationService {
 
   private calculateUserRiskScore(fraudPatterns: any[], behaviorAnalysis: any): number {
     const patternScore = fraudPatterns.reduce((sum, p) => {
-      const severityWeight = { low: 15, medium: 30, high: 60 };
+      const severityWeight: Record<string, number> = { low: 15, medium: 30, high: 60 };
       return sum + (severityWeight[p.severity] || 0) * p.confidence;
     }, 0);
 

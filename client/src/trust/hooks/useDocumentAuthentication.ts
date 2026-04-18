@@ -121,7 +121,7 @@ export function useDocumentAuthentication() {
       formData.append('size', file.size.toString());
       formData.append('uploadedAt', new Date().toISOString());
 
-      const response = await apiClient.post('/api/document-auth/verify', formData, {
+      const response = await apiClient.post<DocumentVerificationResult>('/api/document-auth/verify', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -139,7 +139,7 @@ export function useDocumentAuthentication() {
     return useQuery({
       queryKey: ['document-auth', 'result', documentId],
       queryFn: async (): Promise<DocumentVerificationResult> => {
-        const response = await apiClient.get(`/api/document-auth/results/${documentId}`);
+        const response = await apiClient.get<DocumentVerificationResult>(`/api/document-auth/results/${documentId}`);
         return response.data;
       },
       enabled: !!documentId,
@@ -151,7 +151,7 @@ export function useDocumentAuthentication() {
     return useQuery({
       queryKey: ['document-auth', 'status', documentId],
       queryFn: async (): Promise<'processing' | 'completed' | 'not_found'> => {
-        const response = await apiClient.get(`/api/document-auth/status/${documentId}`);
+        const response = await apiClient.get<{ status: 'processing' | 'completed' | 'not_found' }>(`/api/document-auth/status/${documentId}`);
         return response.data.status;
       },
       enabled: !!documentId,
@@ -164,7 +164,7 @@ export function useDocumentAuthentication() {
     return useQuery({
       queryKey: ['document-auth', 'stats'],
       queryFn: async (): Promise<SystemStats> => {
-        const response = await apiClient.get('/api/document-auth/stats');
+        const response = await apiClient.get<SystemStats>('/api/document-auth/stats');
         return response.data;
       },
       refetchInterval: 30000, // Refresh every 30 seconds
@@ -180,7 +180,7 @@ export function useDocumentAuthentication() {
         if (options?.limit) params.append('limit', options.limit.toString());
         if (options?.offset) params.append('offset', options.offset.toString());
         
-        const response = await apiClient.get(`/api/document-auth/history/${userId}?${params}`);
+        const response = await apiClient.get<DocumentVerificationResult[]>(`/api/document-auth/history/${userId}?${params}`);
         return response.data;
       },
       enabled: !!userId,
@@ -192,7 +192,7 @@ export function useDocumentAuthentication() {
     return useQuery({
       queryKey: ['document-auth', 'recent', limit],
       queryFn: async (): Promise<DocumentVerificationResult[]> => {
-        const response = await apiClient.get(`/api/document-auth/recent?limit=${limit}`);
+        const response = await apiClient.get<DocumentVerificationResult[]>(`/api/document-auth/recent?limit=${limit}`);
         return response.data;
       },
     });
@@ -202,7 +202,7 @@ export function useDocumentAuthentication() {
   const clearOldResultsMutation = useMutation({
     mutationFn: async (olderThan?: Date): Promise<number> => {
       const params = olderThan ? `?olderThan=${olderThan.toISOString()}` : '';
-      const response = await apiClient.delete(`/api/document-auth/results${params}`);
+      const response = await apiClient.delete<{ cleared: number }>(`/api/document-auth/results${params}`);
       return response.data.cleared;
     },
     onSuccess: () => {
