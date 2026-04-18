@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Card, CardContent } from '../../local/components/ui/card'
 import { LoginForm } from '../components/LoginForm'
-import { User } from '../types/auth.types'
+import { User } from '@shared/types/auth.types'
 
 export default function Login() {
   const navigate = useNavigate();

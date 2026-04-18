@@ -3,8 +3,8 @@ import React from 'react'
 
 import { Button } from '../../local/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
-import { useUnifiedProperty } from '../hooks/useUnifiedProperty'
-import { useConsolidatedPropertySearch } from '../hooks/useConsolidatedPropertySearch'
+import { useProperty } from '../hooks/useProperty'
+import { usePropertySearch } from '../hooks/usePropertySearch'
 
 /**
  * Test component to verify that infinite API calls are resolved
@@ -14,9 +14,9 @@ export function PropertyTestComponent() {
   const [testPropertyId, setTestPropertyId] = React.useState<string>('');
   
   // Get unified property hooks
-  const { usePropertyDetail, useProperties } = useUnifiedProperty();
+  const { usePropertyDetail, useProperties } = useProperty();
   
-  // Test the consolidated property search hook with debouncing
+  // Test the property search hook with debouncing
   const {
     searchParams,
     properties: searchResults,
@@ -24,7 +24,7 @@ export function PropertyTestComponent() {
     updateSearch,
     clearSearch,
     hasActiveFilters
-  } = useConsolidatedPropertySearch();
+  } = usePropertySearch();
 
   // Test individual property fetch
   const {

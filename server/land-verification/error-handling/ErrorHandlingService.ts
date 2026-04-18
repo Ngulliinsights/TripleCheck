@@ -13,7 +13,7 @@ import {
 } from "../../../src/local/error-handling";
 import { logger } from "../../infrastructure/monitoring/logger";
 
-import { auditLogger, AuditSeverity } from "./AuditLogger";
+import { auditLogger, AuditSeverity } from "../AuditLogger";
 import { fallbackManager, FallbackResult } from "./FallbackManager";
 import {
   gracefulDegradationManager,

@@ -23,7 +23,7 @@ import {
 // Unified import — formatDate lives in date-utils, formatPrice in formatters
 import { formatDate } from "../../local/utils/date-utils"
 import { formatPrice } from "../../local/utils/formatters"
-import { useUnifiedProperty } from "../hooks/useUnifiedProperty"
+import { useProperty } from "../hooks/useProperty"
 import { PropertyErrorState, PropertyLoadingState } from "../shared/components"
 import {
   LandFeaturesSection,
@@ -224,7 +224,7 @@ export default function LandDetails({ id }: LandDetailsProps) {
   const navigate = useNavigate()
   const landId = id ?? params.id ?? ""
 
-  const { useLandProperty } = useUnifiedProperty()
+  const { useLandProperty } = useProperty()
   const { data: land, isLoading, error } = useLandProperty(landId)
 
   if (isLoading) {

@@ -1,6 +1,6 @@
 ﻿import { apiRequest } from "../../infrastructure/api/queryClient"
 import { requestManager } from "../../infrastructure/api/request-manager"
-import { ApiResponse, PaginatedResponse } from "../../local/types/api.types"
+import { ApiResponse, PaginatedResponse } from "@shared/types/api.types"
 import { Property } from "@shared/types/property"
 import { PropertySearchParams, PropertySearchInput } from "../types/property.types"
 

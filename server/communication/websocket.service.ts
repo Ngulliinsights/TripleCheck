@@ -9,7 +9,6 @@ import { createClient } from 'redis';
 import { instrument } from '@socket.io/admin-ui';
 import * as jwt from 'jsonwebtoken';
 import { legacyLogger as logger } from '../infrastructure/observability/telemetry';
-import { messagingService } from './messaging.service';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -100,9 +99,6 @@ export class SocketIOService {
       this.handleConnection(socket);
     });
 
-    // Setup messaging service listeners
-    this.setupMessagingListeners();
-
     logger.info('Socket.IO service initialized');
   }
 
@@ -132,13 +128,6 @@ export class SocketIOService {
         isTyping: true,
         timestamp: Date.now(),
       });
-
-      // Update typing indicator in messaging service
-      messagingService
-        .setTypingIndicator(threadId, userId, true)
-        .catch((error) => {
-          logger.error('Failed to set typing indicator', { error });
-        });
     });
 
     socket.on('typing:stop', ({ threadId }) => {
@@ -149,12 +138,6 @@ export class SocketIOService {
         isTyping: false,
         timestamp: Date.now(),
       });
-
-      messagingService
-        .setTypingIndicator(threadId, userId, false)
-        .catch((error) => {
-          logger.error('Failed to clear typing indicator', { error });
-        });
     });
 
     // Handle thread joining
@@ -181,79 +164,17 @@ export class SocketIOService {
     // Handle presence updates
     socket.on('presence:update', ({ status }) => {
       logger.debug('User presence updated', { userId, status });
-      messagingService
-        .updateUserPresence(userId, status)
-        .catch((error) => {
-          logger.error('Failed to update presence', { error });
-        });
     });
 
     // Handle disconnection
     socket.on('disconnect', (reason) => {
       logger.info('User disconnected', { userId, socketId: socket.id, reason });
-
-      // Update user presence to offline
-      messagingService
-        .updateUserPresence(userId, 'offline')
-        .catch((error) => {
-          logger.error('Failed to update presence on disconnect', { error });
-        });
+    });
     });
 
     // Handle errors
     socket.on('error', (error) => {
       logger.error('Socket error', { userId, error: error.message });
-    });
-  }
-
-  /**
-   * Setup listeners for messaging service events
-   */
-  private setupMessagingListeners() {
-    if (!messagingService.on) {
-      logger.warn('Messaging service does not support event listeners');
-      return;
-    }
-
-    // New message
-    messagingService.on('message_sent', (event: any) => {
-      const message = event.data;
-      this.sendToUser(message.recipientId, 'message:new', message);
-    });
-
-    // Message delivered
-    messagingService.on('message_delivered', (event: any) => {
-      const message = event.data;
-      this.sendToUser(message.senderId, 'message:delivered', {
-        messageId: message.id,
-        deliveredAt: message.deliveredAt,
-      });
-    });
-
-    // Message read
-    messagingService.on('message_read', (event: any) => {
-      const message = event.data;
-      this.sendToUser(message.senderId, 'message:read', {
-        messageId: message.id,
-        readAt: message.readAt,
-      });
-    });
-
-    // New notification
-    messagingService.on('notification_received', (event: any) => {
-      const notification = event.data;
-      this.sendToUser(notification.userId, 'notification:new', notification);
-    });
-
-    // User presence changed
-    messagingService.on('user_online', (event: any) => {
-      const presence = event.data;
-      this.broadcast('presence:changed', presence, presence.userId);
-    });
-
-    messagingService.on('user_offline', (event: any) => {
-      const presence = event.data;
-      this.broadcast('presence:changed', presence, presence.userId);
     });
   }
 

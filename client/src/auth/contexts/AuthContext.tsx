@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react'
 
-import { User } from '../types/auth.types'
+import { User } from '@shared/types/auth.types'
 
 interface AuthState {
   user: User | null;

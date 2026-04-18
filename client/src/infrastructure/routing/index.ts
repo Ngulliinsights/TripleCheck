@@ -23,10 +23,7 @@ export type {
   RoutePreloaderState 
 } from './useRoutePreloader'
 
-export { 
-  RoutePerformanceMonitor, 
-  RoutePerformanceDashboard 
-} from './RoutePerformanceMonitor'
+// RoutePerformanceMonitor moved to tests/manual/components/ (Phase 8 infrastructure purity)
 
 // Convenience re-exports for common use cases
 export const preloadStrategies = {

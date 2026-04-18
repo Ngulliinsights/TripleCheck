@@ -1,12 +1,14 @@
 /**
  * Central export file for all type definitions
+ * Note: api.types and auth.types are now canonical in @shared/types
+ * These re-exports maintain backward compatibility
  */
 
-// API types
-export * from "./api.types";
+// API types (canonical: @shared/types/api.types)
+export * from "@shared/types/api.types";
 
-// Authentication types
-export * from "./auth.types";
+// Authentication types (canonical: @shared/types/auth.types)
+export * from "@shared/types/auth.types";
 
 // Property types
 export * from "./property.types";

@@ -6,12 +6,12 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
-import fs from './index';
-import path from './index';
+import fs from 'fs';
+import path from 'path';
 import { performance } from 'perf_hooks';
 
 import { CheckpointManager } from './generators/checkpoint-manager';
-import { KenyanDataGenerator } from './kenyan-data-generator';
+import { KenyanDataGenerator } from './generators/KenyanDataGenerator';
 
 /**
  * Data generation scenarios with predefined configurations

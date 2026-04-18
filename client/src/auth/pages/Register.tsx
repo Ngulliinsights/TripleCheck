@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { RegistrationWizard } from '../components/RegistrationWizard'
-import { RegisterData } from '../types/auth.types'
+import { RegisterData } from '@shared/types/auth.types'
 
 export default function Register() {
   const navigate = useNavigate();

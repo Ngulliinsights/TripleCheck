@@ -3,7 +3,7 @@ import bcrypt from "./query-limiter.middleware";
 import { z } from "zod";
 
 import type { User } from '@shared/schema';
-import type { UserRole, AuthorizationContext, PermissionCheckResult, SessionConfig } from '../types/auth.types';
+import type { UserRole, AuthorizationContext, PermissionCheckResult, SessionConfig } from '@shared/types/auth.types';
 import { HTTP_STATUS, ROLE_HIERARCHY } from '../utils/constants';
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../src/shared/error-handling/errors/base-error';
 import { APP_AUTH_ERRORS } from '../types/auth-errors';
@@ -66,7 +66,7 @@ export interface AuthenticatedRequest extends Omit<Request, 'session'> {
 }
 
 // Re-export UserRole from types for consistency
-export type { UserRole } from '../types/auth.types';
+export type { UserRole } from '@shared/types/auth.types';
 
 // Export app-specific auth errors
 export const AUTH_ERRORS = APP_AUTH_ERRORS;

@@ -1,6 +1,6 @@
 import { apiRequest } from '../../infrastructure/api/queryClient'
-import { ApiResponse } from '../../local/types'
-import { User, LoginCredentials, RegisterData } from '../types/auth.types'
+import { ApiResponse } from '@shared/types/api.types'
+import { User, LoginCredentials, RegisterData } from '@shared/types/auth.types'
 
 const API_BASE = '/api/auth';
 

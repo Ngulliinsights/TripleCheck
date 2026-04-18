@@ -8,13 +8,13 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
-import fs from '../../../../../scripts/cleanup-redundancies';
-import path from '../../../../../scripts/cleanup-redundancies';
+import fs from 'fs';
+import path from 'path';
 import { performance } from 'perf_hooks';
 
 import { CheckpointManager } from './checkpoint-manager';
 import { DataValidator } from './data-validator';
-import { KenyanDataGenerator } from './KenyanDataGenerator';
+import { KenyanDataGenerator } from '../../../seeds/generators/KenyanDataGenerator';
 
 /**
  * Data generation scenarios with predefined configurations

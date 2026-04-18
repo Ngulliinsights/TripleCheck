@@ -22,7 +22,7 @@ import { Logo } from '../../local/components/ui/logo'
 import { Progress } from '../../local/components/ui/progress'
 import { Separator } from '../../local/components/ui/separator'
 import { useLogin } from '../hooks/useAuth'
-import { LoginCredentials, User } from '../types/auth.types'
+import { LoginCredentials, User } from '@shared/types/auth.types'
 
 // Validation schema with proper typing
 const loginSchema = z.object({

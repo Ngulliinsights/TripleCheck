@@ -12,8 +12,8 @@
  * - CSS processing time
  */
 
-import fs from './PerformanceOptimizer';
-import path from './PerformanceOptimizer';
+import fs from 'fs';
+import path from 'path';
 import { performance } from 'perf_hooks';
 
 interface BuildMetrics {

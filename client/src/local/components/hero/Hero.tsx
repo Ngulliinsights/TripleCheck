@@ -12,7 +12,7 @@ import {
 import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { useConsolidatedPropertySearch } from "../../../property/hooks/useConsolidatedPropertySearch"
+import { usePropertySearch } from "../../../property/hooks/usePropertySearch"
 import { HERO_VARIANTS } from "../../config/assets"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
@@ -297,7 +297,7 @@ export function EnhancedHero({
   }, [currentSlide, navigateToSlide]);
 
   const navigate = useNavigate();
-  const { updateSearch } = useConsolidatedPropertySearch();
+  const { updateSearch } = usePropertySearch();
 
   const handleSearchSubmit = useCallback(
     (event: React.FormEvent): void => {

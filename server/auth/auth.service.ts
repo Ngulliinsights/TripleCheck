@@ -4,7 +4,7 @@ import bcrypt from '../app';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 
-import { LoginCredentials, RegisterData, User } from '../../src/auth/types/auth.types';
+import { LoginCredentials, RegisterData, User } from '@shared/types/auth.types';
 
 interface AuthResponse<T> {
   success: boolean;

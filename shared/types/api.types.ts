@@ -1,6 +1,12 @@
 // Unified API response types for consistent frontend-backend communication
 import { Property, PropertyFeatures } from './property'
 
+/**
+ * CANONICAL API types for entire monorepo (client + server)
+ * Single source of truth for API contracts
+ */
+
+// Common API response interface
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -8,6 +14,52 @@ export interface ApiResponse<T = unknown> {
   error?: string;
   status?: number;
   timestamp?: string;
+  errors?: unknown[];
+  metadata?: ApiMetadata;
+}
+
+// API metadata for responses (server-side enrichment)
+export interface ApiMetadata {
+  totalCount?: number;
+  page?: number;
+  limit?: number;
+  filters?: SearchFilters;
+  verificationStatus?: string;
+  riskLevel?: string;
+  fraudDetectionPerformed?: boolean;
+  requiresManualReview?: boolean;
+  correlationId?: string;
+  // API Versioning metadata
+  supportedVersions?: string[];
+  availableVersions?: string[];
+  availableInVersions?: string[];
+  currentVersion?: string;
+  feature?: string;
+  versioningMethods?: string[];
+  versionDetails?: Array<{
+    version: string;
+    status: string;
+    releaseDate: Date;
+  }>;
+}
+
+// Search filters interface
+export interface SearchFilters {
+  location?: string;
+  priceMin?: number;
+  priceMax?: number;
+  propertyType?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  verified?: boolean;
+}
+
+// Pagination parameters
+export interface PaginationParams {
+  page: number;
+  limit: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface PaginatedResponse<T = unknown> {
@@ -102,5 +154,23 @@ export interface AuthResponse {
     token?: string;
   };
   message?: string;
+  error?: string;
+}
+
+// Location data interface
+export interface LocationData {
+  id: number;
+  name: string;
+  description?: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  } | null;
+}
+
+// Validation result interface
+export interface ValidationResult<T = unknown> {
+  valid: boolean;
+  data?: T;
   error?: string;
 }

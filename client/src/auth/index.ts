@@ -1,5 +1,5 @@
 // Auth Domain Exports
-export * from './types/auth.types'
+export * from '@shared/types/auth.types'
 export * from './hooks/useAuth'
 export * from './services/auth-api'
 

@@ -34,7 +34,7 @@ import { Input } from '../../local/components/ui/input'
 import { Progress } from '../../local/components/ui/progress'
 import { Textarea } from '../../local/components/ui/textarea'
 import { useRegister } from '../hooks/useAuth'
-import { RegisterData } from '../types/auth.types'
+import { RegisterData } from '@shared/types/auth.types'
 
 import { Logo } from '../../local/components/ui/logo'
 

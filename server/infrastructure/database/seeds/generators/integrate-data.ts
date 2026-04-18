@@ -7,8 +7,8 @@
 
 import 'dotenv/config';
 import { spawn } from 'child_process';
-import fs from './KenyanDataGenerator';
-import path from './KenyanDataGenerator';
+import fs from 'fs';
+import path from 'path';
 
 import { UnifiedDataGenerator } from '../UnifiedDataGenerator';
 

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
-import { useUnifiedProperty } from "./property/hooks/useUnifiedProperty"
-import { useConsolidatedPropertySearch } from "./property/hooks/useConsolidatedPropertySearch"
+import { useProperty } from "./property/hooks/useProperty"
+import { usePropertySearch } from "./property/hooks/usePropertySearch"
 
 // Create a test query client
 const testQueryClient = new QueryClient({
@@ -35,9 +35,9 @@ function PropertyHooksTestComponent() {
   }
 
   // Get unified property hooks
-  const { usePropertyDetail, useProperties } = useUnifiedProperty();
+  const { usePropertyDetail, useProperties } = useProperty();
 
-  // Test consolidated property search hook
+  // Test property search hook
   const {
     searchParams,
     properties: searchResults,
@@ -45,7 +45,7 @@ function PropertyHooksTestComponent() {
     updateSearch,
     clearSearch,
     hasActiveFilters,
-  } = useConsolidatedPropertySearch();
+  } = usePropertySearch();
 
   // Test individual property hook
   const {

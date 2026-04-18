@@ -42,7 +42,7 @@ import {
   // getTrustLevelRequirements,
   // calculateTrustScore,
   // getTrustLevelFromScore,
-} from "../local/community-trust-schema";
+} from "../shared/community-trust-schema";
 
 
 // Initialize database

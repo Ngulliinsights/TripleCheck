@@ -35,7 +35,7 @@ import { Input } from '../../local/components/ui/input'
 import { Logo } from '../../local/components/ui/logo'
 import { Separator } from '../../local/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
-import { User } from '../types/auth.types'
+import { User } from '@shared/types/auth.types'
 
 // Validation schemas
 const verificationSchema = z.object({

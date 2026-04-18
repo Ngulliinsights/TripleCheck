@@ -20,7 +20,7 @@ interface Notification {
   type: 'payment' | 'property' | 'message' | 'verification' | 'system';
   title: string;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   read: boolean;
   createdAt: Date;
@@ -40,13 +40,21 @@ export class NotificationService {
   private notifications: Map<string, Notification> = new Map();
   private templates: Map<string, NotificationTemplate> = new Map();
 
-  constructor(server: any) {
-    this.wss = new WebSocketServer({ 
-      server,
-      path: '/ws/notifications'
-    });
+  constructor(server?: any) {
+    // Only initialize WebSocket server if a proper server is provided
+    if (server && typeof server.on === 'function') {
+      this.wss = new WebSocketServer({
+        server: server as any,
+        path: '/ws/notifications'
+      });
+      this.setupWebSocketServer();
+    } else {
+      // Create a mock WebSocket server for testing/development
+      this.wss = new WebSocketServer({
+        noServer: true
+      });
+    }
 
-    this.setupWebSocketServer();
     this.setupNotificationTemplates();
     this.startCleanupInterval();
   }
@@ -160,7 +168,7 @@ export class NotificationService {
     });
   }
 
-  private handleClientMessage(userId: number, message: any) {
+  private handleClientMessage(userId: number, message: Record<string, unknown>) {
     switch (message.type) {
       case 'ping':
         this.sendToClient(userId, { type: 'pong', timestamp: new Date().toISOString() });
@@ -187,7 +195,7 @@ export class NotificationService {
     }
   }
 
-  private sendToClient(userId: number, data: any) {
+  private sendToClient(userId: number, data: Record<string, unknown>) {
     const client = this.clients.get(userId);
     if (client && client.ws.readyState === WebSocket.OPEN) {
       try {
@@ -231,9 +239,9 @@ export class NotificationService {
     }
 
     // Replace variables in template
-    let {title} = template;
-    let {message} = template;
-    
+    let { title } = template;
+    let { message } = template;
+
     Object.entries(variables).forEach(([key, value]) => {
       const placeholder = `{${key}}`;
       title = title.replace(new RegExp(placeholder, 'g'), String(value));
@@ -241,20 +249,23 @@ export class NotificationService {
     });
 
     // Create notification
-    const notificationId = `notif_${Date.now()}_${userId}_${Math.random().toString(36).substr(2, 9)}`;
+    const notificationId = `notif_${Date.now()}_${userId}_${Math.random().toString(36).substring(2, 11)}`;
     const notification: Notification = {
       id: notificationId,
       userId,
       type: template.type as any,
       title,
       message,
-      data: options.data,
+      ...(options.data && { data: options.data }),
       priority: options.priority || template.priority,
       read: false,
       createdAt: new Date(),
-      expiresAt: options.expiresAt,
       ...options
     };
+
+    if (options.expiresAt !== undefined) {
+      notification.expiresAt = options.expiresAt;
+    }
 
     // Store notification
     this.notifications.set(notificationId, notification);
@@ -275,11 +286,11 @@ export class NotificationService {
   public async broadcastNotification(
     userIds: number[],
     templateKey: string,
-    variables: Record<string, any> = {},
+    variables: Record<string, unknown> = {},
     options: Partial<Notification> = {}
   ): Promise<string[]> {
     const notificationIds: string[] = [];
-    
+
     for (const userId of userIds) {
       try {
         const id = await this.createNotification(userId, templateKey, variables, options);
@@ -288,7 +299,7 @@ export class NotificationService {
         console.error(`Failed to create notification for user ${userId}:`, error);
       }
     }
-    
+
     return notificationIds;
   }
 
@@ -374,6 +385,45 @@ export class NotificationService {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Send fraud report notification to fraud team
+   */
+  async sendFraudReportNotification(report: Record<string, unknown>): Promise<void> {
+    // This would send notifications to fraud investigation team
+    console.log('Fraud report notification:', report.id);
+
+    // In a real implementation, this would:
+    // 1. Send email to fraud team
+    // 2. Create internal notifications
+    // 3. Trigger alerts if high-severity
+  }
+
+  /**
+   * Send community moderation notification
+   */
+  async sendCommunityModerationNotification(experience: Record<string, unknown>): Promise<void> {
+    // This would send notifications to community moderators
+    console.log('Community moderation notification:', experience.id);
+
+    // In a real implementation, this would:
+    // 1. Send notifications to moderators
+    // 2. Auto-flag content based on keywords
+    // 3. Queue for review if needed
+  }
+
+  /**
+   * Send content report notification
+   */
+  async sendContentReportNotification(_report: Record<string, unknown>): Promise<void> {
+    // This would send notifications to content moderators
+
+
+    // In a real implementation, this would:
+    // 1. Send notifications to content moderators
+    // 2. Escalate based on report type
+    // 3. Auto-hide content if multiple reports
   }
 }
 

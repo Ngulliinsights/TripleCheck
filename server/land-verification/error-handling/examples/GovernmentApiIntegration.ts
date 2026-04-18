@@ -9,7 +9,7 @@ import {
   HttpStatusCode 
 } from '../../../../src/local/error-handling';
 import { logger } from '../../../infrastructure/monitoring/logger';
-import { auditLogger, AuditSeverity } from '../AuditLogger';
+import { auditLogger, AuditSeverity } from '../../AuditLogger';
 import { errorHandlingService } from '../ErrorHandlingService';
 import { fallbackManager } from '../FallbackManager';
 import { retryPolicyManager } from '../RetryPolicyManager';

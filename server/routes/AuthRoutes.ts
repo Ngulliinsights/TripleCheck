@@ -4,7 +4,7 @@ import { requireAuth, authRateLimit, clearAuthAttempts, type AuthenticatedReques
 import { validateRequest, UserValidationSchemas, type ValidatedRequest } from '../middleware/validation.middleware';
 import { AuthService } from '../services/AuthService';
 import { UserService } from '../services/UserService';
-import type { LoginRequest, RegisterRequest } from '../types/auth.types';
+import type { LoginRequest, RegisterRequest } from '@shared/types/auth.types';
 import { HTTP_STATUS } from '../utils/constants';
 import { AUTH_ERROR_MESSAGES } from '../../core/src/error-handling';
 import { ResponseHelper } from '../utils/response-helpers';

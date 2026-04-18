@@ -1,8 +1,8 @@
 // Property Domain Exports
 export * from './types/property.types'
 // New consolidated hooks
-export * from './hooks/useUnifiedProperty'
-export * from './hooks/useConsolidatedPropertySearch'
+export * from './hooks/useProperty'
+export * from './hooks/usePropertySearch'
 
 // Legacy hooks (deprecated - use consolidated hooks above)
 export * from './hooks/useProperty'

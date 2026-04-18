@@ -11,8 +11,6 @@
  */
 
 // Standard exports
-export * from './useConsolidatedPropertySearch'
+export * from './usePropertySearch'
 export * from './useLandProperty'
 export * from './useProperty'
-export * from './usePropertySearch'
-export * from './useUnifiedProperty'

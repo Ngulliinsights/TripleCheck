@@ -90,3 +90,8 @@ sed[a-zA-Z0-9]*
 # Accidental compiler/build artifacts
 *.error
 *.errors
+
+# Planning/analysis docs should NOT be committed to src/ — move to docs/ instead
+client/src/**/*.md
+server/**/*.md
+!**/README.md
