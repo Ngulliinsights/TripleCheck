@@ -378,7 +378,7 @@ export function useWebSocket({
 // Domain-specific hooks
 // ---------------------------------------------------------------------------
 
-const WS_BASE = process.env.REACT_APP_WS_URL ?? 'ws://localhost:8080';
+const WS_BASE = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8080';
 
 export function useMessagingWebSocket(userId: string) {
   const [messages,     setMessages]     = useState<unknown[]>([]);

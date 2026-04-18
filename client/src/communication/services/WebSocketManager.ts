@@ -22,7 +22,7 @@ export interface WebSocketConnectionStatus {
  * Hook to manage all communication WebSocket connections
  */
 export function useWebSocketManager(config: WebSocketManagerConfig) {
-  const { userId, authToken, baseUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:8080' } = config;
+  const { userId, authToken, baseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080' } = config;
 
   // Initialize WebSocket connections
   const messagingWS = useMessagingWebSocket(userId);

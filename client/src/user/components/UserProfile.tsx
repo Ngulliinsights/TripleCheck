@@ -156,40 +156,44 @@ export function UserProfile({ user, onEdit, isEditable = false, onAvatarUpdate }
           <h4 className="text-lg font-medium">Account Details</h4>
           <div className="grid gap-3">
             <div className="flex items-center space-x-3">
-              <Calendar className="h-4 w-4 text-gray-500" />
-              <span>Member since {formatDate(user.createdAt?.toISOString())}</span>
-            </div>
-            <div className="flex items-center space-x-3">
               <User className="h-4 w-4 text-gray-500" />
-              <span>Last updated {formatDate(user.updatedAt?.toISOString())}</span>
+              <span>ID: {user.id || 'N/A'}</span>
             </div>
+            {user.username && (
+              <div className="flex items-center space-x-3">
+                <Mail className="h-4 w-4 text-gray-500" />
+                <span>Username: {user.username}</span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Preferences */}
-        <div className="space-y-3">
-          <h4 className="text-lg font-medium">Preferences</h4>
-          <div className="grid gap-2">
-            <div className="flex justify-between items-center">
-              <span>Email Notifications</span>
-              <Badge variant={user.preferences.notifications.email ? "default" : "secondary"}>
-                {user.preferences.notifications.email ? "Enabled" : "Disabled"}
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>SMS Notifications</span>
-              <Badge variant={user.preferences.notifications.sms ? "default" : "secondary"}>
-                {user.preferences.notifications.sms ? "Enabled" : "Disabled"}
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Profile Visibility</span>
-              <Badge variant={user.preferences.privacy.showProfile ? "default" : "secondary"}>
-                {user.preferences.privacy.showProfile ? "Public" : "Private"}
-              </Badge>
+        {user.preferences && (
+          <div className="space-y-3">
+            <h4 className="text-lg font-medium">Preferences</h4>
+            <div className="grid gap-2">
+              <div className="flex justify-between items-center">
+                <span>Email Notifications</span>
+                <Badge variant={user.preferences.notifications?.email ? "default" : "secondary"}>
+                  {user.preferences.notifications?.email ? "Enabled" : "Disabled"}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>SMS Notifications</span>
+                <Badge variant={user.preferences.notifications?.sms ? "default" : "secondary"}>
+                  {user.preferences.notifications?.sms ? "Enabled" : "Disabled"}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Profile Visibility</span>
+                <Badge variant={user.preferences.privacy?.showProfile ? "default" : "secondary"}>
+                  {user.preferences.privacy?.showProfile ? "Public" : "Private"}
+                </Badge>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </CardContent>
 
       {/* Avatar Upload Dialog */}

@@ -774,7 +774,7 @@ export class DocumentCommunicationIntegrationService {
       ${notification.metadata.riskLevel ? `<p><strong>Risk Level:</strong> ${notification.metadata.riskLevel}</p>` : ''}
     </div>
     
-    <a class="button" href="${process.env.FRONTEND_URL || 'https://triplecheck.co.ke'}/documents/${notification.documentId}">View Document</a>
+    <a class="button" href="${import.meta.env.VITE_FRONTEND_URL || 'https://triplecheck.co.ke'}/documents/${notification.documentId}">View Document</a>
   </div>
   <div class="footer">
     © ${new Date().getFullYear()} TripleCheck Kenya - Trusted Land Verification
