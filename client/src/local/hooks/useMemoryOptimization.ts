@@ -406,7 +406,8 @@ export function useArrayOperations<T extends BaseEntity>(
 // 8. Component Performance Monitor
 // ---------------------------------------------------------------------------
 
-export function usePerformanceMonitor(componentName: string) {
+/** @deprecated Use `useComponentPerformance` from `useComponentPerformance.tsx` for the full-featured version. */
+export function useSimplePerformanceMonitor(componentName: string) {
   const renderCountRef       = useRef(0);
   const lastRenderTimeRef    = useRef(Date.now());
   const [metrics, setMetrics] = useState({
