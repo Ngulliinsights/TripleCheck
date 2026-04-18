@@ -10,7 +10,7 @@ import { useState } from 'react'
 
 import { formatDate } from '../../local/utils/date-utils'
 
-import { User as UserType } from '../../auth/types'
+import { User as UserType } from '@shared/types/auth.types'
 
 
 interface UserProfileProps {
@@ -137,7 +137,8 @@ export function UserProfile({ user, onEdit, isEditable = false, onAvatarUpdate }
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${getTrustScoreWidth(user.trustScore)}%` }}
                     role="progressbar"
-                    aria-valuenow={user.trustScore}
+                    aria-label="Trust score progress"
+                    aria-valuenow={Math.round(user.trustScore)}
                     aria-valuemin={0}
                     aria-valuemax={1000}
                   />
