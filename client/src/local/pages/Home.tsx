@@ -27,7 +27,7 @@ import { Skeleton } from "../components/ui/skeleton"
 import { VideoModal } from "../components/VideoModal"
 import { usePageSpacing } from "../hooks/useNavigationSpacing"
 import { useSafePropertiesQuery } from "../hooks/useSafeQuery"
-import type { NormalizedProperty, Property } from "../types/property"
+import type { NormalizedProperty, Property } from '@shared/types/property'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */

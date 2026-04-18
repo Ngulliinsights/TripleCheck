@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+﻿import React, { useCallback, useMemo, useState } from "react";
 import {
   Bath,
   Bed,
@@ -25,7 +25,7 @@ import { Input } from "../../local/components/ui/input";
 import { Label } from "../../local/components/ui/label";
 import { Slider } from "../../local/components/ui/slider";
 import { useToast } from "../../local/hooks/use-toast";
-import { NormalizedProperty } from "../../local/types/property";
+import { NormalizedProperty } from "@shared/types/property";
 import { PropertySearchFilters } from "../../local/types/search";
 
 // ============================================================================

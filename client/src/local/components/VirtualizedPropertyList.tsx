@@ -10,7 +10,7 @@ import React, {
 } from "react"
 import { Grid, List } from "react-window"
 
-import type { NormalizedProperty, ViewMode } from "../types/property"
+import type { NormalizedProperty, ViewMode } from '@shared/types/property'
 import type { EnterpriseVirtualizedListHandle } from "./VirtualizedList"
 
 // ─── Types ───────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Home,
   X,
   BarChart3,
@@ -12,7 +12,7 @@ import React, { useState, useMemo, useCallback, useEffect } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 
 import { useCompareError } from "../../local/hooks/useCompareError"
-import type { Property } from "../../local/types/property"
+import type { Property } from "@shared/types/property"
 import {
   normalizePropertyForComparison,
   formatComparePrice,
@@ -677,7 +677,7 @@ const PropertyCompareInner: React.FC<PropertyCompareProps> = ({
                   {/* Selection indicator */}
                   {isSelected && (
                     <div className="absolute top-3 right-3 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                      ✓
+                      âœ“
                     </div>
                   )}
 
@@ -1220,7 +1220,7 @@ const PropertyCompareInner: React.FC<PropertyCompareProps> = ({
                 {statistics &&
                   statistics.advanced.verificationScore === 100 && (
                     <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                      All properties verified ✓
+                      All properties verified âœ“
                     </span>
                   )}
               </div>

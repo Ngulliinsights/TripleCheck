@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react"
-import type { NormalizedProperty } from "../types/property"
+import type { NormalizedProperty } from '@shared/types/property'
 
 export interface GalleryImage {
   id: string;

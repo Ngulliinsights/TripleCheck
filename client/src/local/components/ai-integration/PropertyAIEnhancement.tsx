@@ -27,7 +27,7 @@ import {
   Info
 } from 'lucide-react'
 import { usePropertyAI } from '../../hooks/useAIIntegration'
-import { Property } from '../../types/property'
+import { Property } from '@shared/types/property'
 import { formatCurrency } from '../../utils/images/unified-utils'
 
 interface PropertyAIEnhancementProps {

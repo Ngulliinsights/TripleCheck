@@ -1,4 +1,4 @@
-// Dashboard.tsx - Merged: Rich Features + Performance Optimizations
+﻿// Dashboard.tsx - Merged: Rich Features + Performance Optimizations
 // Combines full feature set with React.memo, immutable data, and optimized callbacks
 
 import { GridVirtualizedList } from "../../local/components/index"
@@ -32,7 +32,7 @@ import React, { useMemo, useState, useCallback, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { formatDate } from "../../local/utils/date-utils"
-import { Property } from "../../local/types/property"
+import { Property } from "@shared/types/property"
 
 /* ---------- TYPES ---------- */
 type MembershipTier = "basic" | "premium" | "enterprise";

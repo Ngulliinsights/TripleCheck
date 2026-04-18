@@ -12,7 +12,7 @@ import {
   VariableSizeList,
   FixedSizeList,
   ListOnScrollProps,
-} from "react-window"
+} from "react-window/dist/react-window.cjs"
 
 // Styles are now consolidated in design-system.css
 

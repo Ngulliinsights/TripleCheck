@@ -1,4 +1,4 @@
-import { Property } from '../../types/property'
+import { Property } from '@shared/types/property'
 import { SafeQueryOptions } from '../useSafeQuery'
 
 // Property-specific query configurations for common use cases

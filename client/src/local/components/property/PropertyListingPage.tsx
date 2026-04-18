@@ -19,7 +19,7 @@ import type {
   NormalizedProperty,
   ViewMode,
   SortOption,
-} from "../../types/property"
+} from '@shared/types/property'
 import {
   EnhancedVirtualizedPropertyList,
   useVirtualizedPropertyList,

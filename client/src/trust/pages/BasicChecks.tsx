@@ -156,7 +156,7 @@ export default function BasicChecks() {
     
     try {
       // Import FormService dynamically
-      const { formService } = await import('../../shared/services/FormService');
+      const { formService } = await import('../../local/services/FormService');
       
       // Submit verification request
       const result = await formService.submitVerificationRequest(formData);

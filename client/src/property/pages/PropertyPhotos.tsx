@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+﻿import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Camera, Image as ImageIcon, AlertTriangle, Zap } from "lucide-react"
 import { useState, useCallback } from "react"
 
@@ -19,19 +19,24 @@ import {
 import { useToast } from "../../local/hooks/use-toast"
 import { useSafePropertiesQuery } from "../../local/hooks/useSafeQuery"
 import type { PropertyImage as VaultImage } from "../../local/types/images"
+import type { Property } from "@shared/types/property"
 
-// Simplified upload mutation parameters
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 interface UploadMutationParams {
-  readonly propertyId: string;
-  readonly images: ReadonlyArray<VaultImage>;
+  readonly propertyId: string
+  readonly images: ReadonlyArray<VaultImage>
 }
 
-import type { Property } from "../../local/types/property"
+// Use the unified Property interface
+type PropertyWithImages = Property
 
-// Use the unified Property interface instead of local PropertyWithImages
-type PropertyWithImages = Property;
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
-// Photography tips for user guidance
 const PHOTO_TIPS = [
   {
     icon: <Camera className="w-5 h-5 text-blue-500" />,
@@ -57,15 +62,54 @@ const PHOTO_TIPS = [
     description:
       "Clean, de-clutter, and arrange furniture to make rooms look inviting",
   },
-] as const;
+] as const
+
+// ---------------------------------------------------------------------------
+// Upload function
+// ---------------------------------------------------------------------------
+
+/**
+ * Calls the real upload API.
+ *
+ * TODO: replace the stub below with `apiClient.post('/api/properties/:id/images', ...)`
+ * The dev-only simulation block is intentionally separated so it is easy to
+ * delete once the endpoint is ready.
+ */
+async function uploadPropertyImages(
+  propertyId: string,
+  images: ReadonlyArray<VaultImage>
+): Promise<{ success: boolean; uploadedImages: VaultImage[] }> {
+  if (process.env.NODE_ENV === "development") {
+    // Simulated network delay for local development only
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    return { success: true, uploadedImages: images as VaultImage[] }
+  }
+
+  // Production: replace with actual API call
+  const response = await fetch(`/api/properties/${propertyId}/images`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ images }),
+  })
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.statusText}`)
+  }
+  return response.json() as Promise<{
+    success: boolean
+    uploadedImages: VaultImage[]
+  }>
+}
+
+// ---------------------------------------------------------------------------
+// PropertyPhotosPage
+// ---------------------------------------------------------------------------
 
 export default function PropertyPhotosPage() {
-  const [selectedProperty, setSelectedProperty] = useState<string>("");
-  const [images, setImages] = useState<VaultImage[]>([]);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [selectedProperty, setSelectedProperty] = useState<string>("")
+  const [images, setImages] = useState<VaultImage[]>([])
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
 
-  // Fetch user's properties
   const {
     data: properties,
     isLoading,
@@ -74,144 +118,96 @@ export default function PropertyPhotosPage() {
     context: "property-photos",
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-  });
+  })
 
-  // Upload mutation for final submission
   const uploadMutation = useMutation({
-    mutationFn: async ({
-      propertyId: _propertyId,
-      images,
-    }: UploadMutationParams) => {
-      // Mock API call - replace with actual implementation
-      return new Promise<{ success: boolean; uploadedImages: VaultImage[] }>(
-        (resolve, reject) => {
-          // Using crypto.getRandomValues for better randomness in production
-          const randomArray = new Uint32Array(1);
-          let randomValue: number;
-          if (globalThis.crypto?.getRandomValues) {
-            globalThis.crypto.getRandomValues(randomArray);
-            randomValue = randomArray[0] ?? 0;
-          } else {
-            // Fallback for environments without crypto - using a more predictable approach for testing
-            randomValue = Date.now() % 0xffffffff;
-          }
-          const shouldFail = randomValue / (0xffffffff + 1) < 0.1; // 10% failure rate for testing
-          setTimeout(() => {
-            if (shouldFail) {
-              reject(new Error("Upload failed due to network error"));
-            } else {
-              resolve({
-                success: true,
-                uploadedImages: images as VaultImage[],
-              });
-            }
-          }, 2000);
-        }
-      );
-    },
-    onSuccess: (data) => {
+    mutationFn: ({ propertyId, images }: UploadMutationParams) =>
+      uploadPropertyImages(propertyId, images),
+    onSuccess: data => {
       toast({
         title: "Photos uploaded successfully",
-        description: `${data.uploadedImages.length} photos have been uploaded to your property`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
-      setImages([]);
+        description: `${data.uploadedImages.length} photos have been added to your property`,
+      })
+      queryClient.invalidateQueries({ queryKey: ["/api/properties"] })
+      setImages([])
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Upload failed",
-        description:
-          error.message || "Failed to upload photos. Please try again.",
+        description: error.message || "Failed to upload photos. Please try again.",
         variant: "destructive",
-      });
+      })
     },
-  });
+  })
 
-  // Handle final upload to property
   const handleUpload = useCallback(() => {
     if (!selectedProperty) {
       toast({
         title: "Select a property",
         description: "Please select a property to upload photos to",
         variant: "destructive",
-      });
-      return;
+      })
+      return
     }
 
-    const uploadableImages = images.filter((img) => img.status === "uploaded");
+    const uploadableImages = images.filter(img => img.status === "uploaded")
     if (uploadableImages.length === 0) {
       toast({
         title: "No photos ready",
         description:
           "Please wait for photos to finish uploading or add new photos",
         variant: "destructive",
-      });
-      return;
+      })
+      return
     }
 
-    uploadMutation.mutate({
-      propertyId: selectedProperty,
-      images: uploadableImages,
-    });
-  }, [selectedProperty, images, uploadMutation, toast]);
+    uploadMutation.mutate({ propertyId: selectedProperty, images: uploadableImages })
+  }, [selectedProperty, images, uploadMutation, toast])
 
-  // Format location string helper
   const formatLocation = useCallback(
     (location: PropertyWithImages["location"]): string => {
-      if (typeof location === 'string') {
-        return location;
-      }
-      return `${location.address}, ${location.city}, ${location.state}, ${location.country}`;
+      if (typeof location === "string") return location
+      return `${location.address}, ${location.city}, ${location.state}, ${location.country}`
     },
     []
-  );
+  )
 
-  // Convert property images to BaseImage format for ImageViewer
   const convertToBaseImages = useCallback(
     (property: PropertyWithImages): BaseImage[] => {
-      if (!property.imageUrls || property.imageUrls.length === 0) return [];
-
+      if (!property.imageUrls || property.imageUrls.length === 0) return []
       return property.imageUrls.map((url, index) => {
         const baseImage: BaseImage = {
           id: `${property.id}-${index}`,
           src: url,
           alt: `${property.title} - Image ${index + 1}`,
-        };
-
-        // Only add caption if it has a value to satisfy exactOptionalPropertyTypes
-        if (index === 0) {
-          baseImage.caption = "Main photo";
         }
-
-        return baseImage;
-      });
+        if (index === 0) baseImage.caption = "Main photo"
+        return baseImage
+      })
     },
     []
-  );
+  )
 
-  // Render property selection
   const renderPropertySelection = useCallback((): JSX.Element => {
     if (isLoading) {
       return (
         <div className="col-span-full text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
           <p className="text-muted-foreground mt-2">Loading properties...</p>
         </div>
-      );
+      )
     }
 
     if (error) {
       return (
         <div className="col-span-full text-center py-8">
           <AlertTriangle className="w-16 h-16 mx-auto text-red-500 mb-4" />
-          <h3 className="text-lg font-medium mb-2">
-            Failed to load properties
-          </h3>
+          <h3 className="text-lg font-medium mb-2">Failed to load properties</h3>
           <p className="text-muted-foreground">
             There was an error loading your properties. Please try again.
           </p>
         </div>
-      );
+      )
     }
 
     if (!properties || properties.length === 0) {
@@ -223,72 +219,58 @@ export default function PropertyPhotosPage() {
             You need to list a property before you can upload photos.
           </p>
         </div>
-      );
+      )
     }
 
     return (
       <div className="contents">
-        {properties.map((property) => {
-          // Type assertion to ensure property matches our expected interface
-          const typedProperty = property as PropertyWithImages;
+        {properties.map(property => {
+          const typed = property as PropertyWithImages
           return (
             <Card
-              key={typedProperty.id}
+              key={typed.id}
               className={`cursor-pointer transition-all hover:shadow-md ${
-                selectedProperty === typedProperty.id ?
-                  "ring-2 ring-primary"
-                : ""
+                selectedProperty === typed.id ? "ring-2 ring-primary" : ""
               }`}
-              onClick={() => setSelectedProperty(String(typedProperty.id))}
+              onClick={() => setSelectedProperty(String(typed.id))}
             >
               <CardContent className="p-4">
                 <div className="aspect-video bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                  {(
-                    typedProperty.imageUrls &&
-                    typedProperty.imageUrls.length > 0
-                  ) ?
+                  {typed.imageUrls && typed.imageUrls.length > 0 ? (
                     <ImageGallery
-                      images={convertToBaseImages(typedProperty)}
+                      images={convertToBaseImages(typed)}
                       {...IMAGE_COMPONENT_PRESETS.SIMPLE_VIEWER}
                       className="h-full"
                     />
-                  : <div className="w-full h-full flex items-center justify-center">
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
                       <ImageIcon className="w-8 h-8 text-gray-400" />
                     </div>
-                  }
+                  )}
                 </div>
-                <h3 className="font-medium mb-1">{typedProperty.title}</h3>
+                <h3 className="font-medium mb-1">{typed.title}</h3>
                 <p className="text-sm text-muted-foreground mb-2">
-                  {formatLocation(typedProperty.location)}
+                  {formatLocation(typed.location)}
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-primary">
-                    KES {typedProperty.price.toLocaleString()}
+                    KES {typed.price.toLocaleString()}
                   </span>
                   <Badge
                     variant={
-                      (typedProperty.imageUrls?.length || 0) > 0 ?
-                        "default"
-                      : "secondary"
+                      (typed.imageUrls?.length || 0) > 0 ? "default" : "secondary"
                     }
                   >
-                    {typedProperty.imageUrls?.length || 0} photos
+                    {typed.imageUrls?.length || 0} photos
                   </Badge>
                 </div>
               </CardContent>
             </Card>
-          );
+          )
         })}
       </div>
-    );
-  }, [
-    isLoading,
-    error,
-    properties,
-    selectedProperty,
-    formatLocation,
-    convertToBaseImages,
-  ]);
+    )
+  }, [isLoading, error, properties, selectedProperty, formatLocation, convertToBaseImages])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -298,12 +280,11 @@ export default function PropertyPhotosPage() {
           <h1 className="text-3xl font-bold mb-4">Property Photo Management</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Upload high-quality photos to showcase your properties. Great photos
-            can increase inquiries by up to 300% and help your listings stand
-            out.
+            can increase inquiries by up to 300% and help your listings stand out.
           </p>
         </div>
 
-        {/* Property Selection */}
+        {/* Property selection */}
         <Card>
           <CardHeader>
             <CardTitle>Select Property</CardTitle>
@@ -315,6 +296,7 @@ export default function PropertyPhotosPage() {
           </CardContent>
         </Card>
 
+        {/* Upload panel — only shown once a property is selected */}
         {selectedProperty && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -323,47 +305,48 @@ export default function PropertyPhotosPage() {
                 <Button
                   onClick={handleUpload}
                   disabled={
-                    !images.some((img) => img.status === "uploaded") ||
+                    !images.some(img => img.status === "uploaded") ||
                     uploadMutation.isPending
                   }
                 >
-                  {uploadMutation.isPending ?
+                  {uploadMutation.isPending ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                       Uploading...
                     </>
-                  : <>
+                  ) : (
+                    <>
                       <ImageIcon className="w-4 h-4 mr-2" />
                       Upload to Property
                     </>
-                  }
+                  )}
                 </Button>
               )}
             </CardHeader>
             <CardContent>
               <PropertyImageVault
-                maxFileSize={10 * 1024 * 1024} // 10MB
+                maxFileSize={10 * 1024 * 1024}
                 acceptedFormats={["image/jpeg", "image/png", "image/webp"]}
                 maxFiles={20}
-                allowReorder={true}
-                allowAnnotation={true}
-                allowPrimaryFlag={true}
+                allowReorder
+                allowAnnotation
+                allowPrimaryFlag
                 onChange={setImages}
-                onError={(error) => {
+                onError={error => {
                   toast({
                     title: "Upload Error",
                     description: error,
                     variant: "destructive",
-                  });
+                  })
                 }}
                 defaultDocumentType="property_photo"
-                showWorkflowProgress={true}
+                showWorkflowProgress
               />
             </CardContent>
           </Card>
         )}
 
-        {/* Photography Tips */}
+        {/* Photography tips */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -389,5 +372,5 @@ export default function PropertyPhotosPage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

@@ -180,7 +180,7 @@ export default function ReviewsPage() {
     onSubmit: async (formData) => {
       try {
         // Import FormService dynamically
-        const { formService } = await import('../../shared/services/FormService');
+        const { formService } = await import('../../local/services/FormService');
         
         // Submit review using FormService
         const result = await formService.submitReview({

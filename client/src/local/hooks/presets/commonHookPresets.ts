@@ -1,4 +1,4 @@
-import { Property } from '../../types/property'
+import { Property } from '@shared/types/property'
 import {
   createPropertyFormConfig,
   createUserRegistrationFormConfig,

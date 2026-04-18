@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import type { NormalizedProperty } from "../types/property"
+import type { NormalizedProperty } from '@shared/types/property'
 import type { CompareProperty } from "../types/compare"
 
 export interface UsePropertyCompareActionsOptions {
@@ -31,10 +31,10 @@ export interface UsePropertyCompareActionsReturn {
 }
 
 /**
- * Enhanced shared hook for managing property comparison actions
- * Handles adding/removing properties from comparison with error handling and analytics
- * Used by PropertyCard, EnhancedLandCard, and other property components
- * 
+ * Shared hook for managing property comparison actions.
+ * Handles adding/removing properties from comparison with error handling and analytics.
+ * Used by PropertyCard, EnhancedLandCard, and other property components.
+ *
  * @param options - Configuration options for comparison actions
  * @returns Comparison action handlers and state
  */
@@ -45,60 +45,47 @@ export function usePropertyCompareActions({
   addToCompare,
   removeFromCompare,
   locationString,
+  onAnalyticsEvent,
 }: UsePropertyCompareActionsOptions): UsePropertyCompareActionsReturn {
-  
+
   const handleCompareClick = useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
-      
+
       try {
         if (isInCompare) {
           removeFromCompare(property.id);
-          
-          // Analytics tracking
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Property removed from comparison:', property.id);
-          }
+          onAnalyticsEvent?.('remove', property.id);
         } else if (canAddMore) {
-          // Create compare-compatible property object with validation
           const compareProperty: CompareProperty = {
             id: property.id,
             title: property.title || 'Untitled Property',
-            price: typeof property.price === "string" ? parseFloat(property.price) || 0 : property.price || 0,
+            price: typeof property.price === 'string'
+              ? parseFloat(property.price) || 0
+              : property.price || 0,
             location: locationString || 'Location not specified',
-            description: property.description || "",
+            description: property.description || '',
             images: Array.isArray(property.images) ? [...property.images] : [],
             features: property.features || {},
             verificationStatus: property.verificationStatus || 'pending',
-            trustScore: Math.max(0, Math.min(100, property.trustScore || 0)), // Clamp between 0-100
+            // Clamp trust score between 0–100
+            trustScore: Math.max(0, Math.min(100, property.trustScore || 0)),
             type: mapPropertyTypeForComparison(property),
           };
-          
+
           addToCompare(compareProperty);
-          
-          // Analytics tracking
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Property added to comparison:', property.id);
-          }
+          onAnalyticsEvent?.('add', property.id);
         } else {
-          // Handle case where comparison limit is reached
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('Cannot add more properties to comparison - limit reached');
-          }
+          onAnalyticsEvent?.('limit_reached', property.id);
         }
       } catch (error) {
-        console.error('Error handling comparison action:', error);
-        // Could emit error event or show user notification here
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.error('Error handling comparison action:', error);
+        }
       }
     },
-    [
-      isInCompare,
-      canAddMore,
-      addToCompare,
-      removeFromCompare,
-      property,
-      locationString,
-    ]
+    [isInCompare, canAddMore, addToCompare, removeFromCompare, property, locationString, onAnalyticsEvent]
   );
 
   return {
@@ -110,27 +97,20 @@ export function usePropertyCompareActions({
 }
 
 /**
- * Maps various property types to comparison-compatible types with validation
- * Ensures consistent type mapping across the comparison system
- * 
- * @param property - The property to map type for
- * @returns Standardized property type for comparison
+ * Maps various property types to the two-value set expected by the comparison system.
+ * Defaults to "residential" for land and any unrecognised type so all properties remain comparable.
  */
-function mapPropertyTypeForComparison(property: NormalizedProperty): "residential" | "commercial" {
+function mapPropertyTypeForComparison(property: NormalizedProperty): 'residential' | 'commercial' {
   const type = property.type || property.category;
-  
-  // Validate and normalize property type
+
   if (typeof type === 'string') {
-    const normalizedType = type.toLowerCase().trim();
-    
-    if (normalizedType === "commercial" || normalizedType === "office" || normalizedType === "retail") {
-      return "commercial";
+    const normalised = type.toLowerCase().trim();
+    if (normalised === 'commercial' || normalised === 'office' || normalised === 'retail') {
+      return 'commercial';
     }
   }
-  
-  // Default to residential for land, residential, and other types
-  // This ensures all properties can be compared even with unknown types
-  return "residential";
+
+  return 'residential';
 }
 
 export default usePropertyCompareActions;

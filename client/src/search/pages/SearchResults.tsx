@@ -1,4 +1,4 @@
-import { MapPin, Search } from "lucide-react";
+﻿import { MapPin, Search } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 
 import { CompareBar } from "../../property/components/CompareBar";
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../local/components/ui/select";
-import { NormalizedProperty } from "../../local/types/property";
+import { NormalizedProperty } from "@shared/types/property";
 import ConsolidatedSearch from "../components/ConsolidatedSearch";
 
 // ============================================================================

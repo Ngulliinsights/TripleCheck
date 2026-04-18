@@ -14,7 +14,7 @@ import { fraudDetectionIntegration, PropertyFraudAnalysis, UserFraudAnalysis } f
 import { recommendationIntegration, PropertyRecommendation, SmartMatchResult } from '../services/ai-integration/recommendation-integration'
 
 // Fixed imports with proper type definitions
-import { Property } from '../types/property'
+import { Property } from '@shared/types/property'
 import { User } from '../types/contracts/user-contracts'
 
 // Create the missing PropertySearchFilters interface

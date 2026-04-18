@@ -13,4 +13,4 @@ export { PropertyListingPage } from "./PropertyListingPage"
 export * from './shared'
 
 // Types
-export type { NormalizedProperty, ViewMode, SortOption } from "../../types/property"
+export type { NormalizedProperty, ViewMode, SortOption } from '@shared/types/property'

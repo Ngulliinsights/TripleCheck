@@ -437,7 +437,7 @@ function useClientPagination<T>(
 // ------------------------------------------------------------------
 // Property-specific Pagination Hooks (Compatibility Layer)
 // ------------------------------------------------------------------
-import { Property } from '../types/property'
+import { Property } from '@shared/types/property'
 
 interface PropertyFilters {
   priceMin?: number;

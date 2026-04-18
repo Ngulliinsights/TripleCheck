@@ -1,56 +1,20 @@
-import React, { useState, useCallback } from "react"
+import React from "react"
 
-import { PropertyListingPage } from "../../local/components/property/PropertyListingPage"
 import { landConfig } from "../../local/config/propertyTypes"
-import { CompareBar } from "../components/CompareBar"
-import { CompareModal } from "../components/CompareModal"
-/**
- * Modern Land Properties page using the enhanced property listing architecture
- *
- * Features:
- * - Generic PropertyListingPage component for consistency
- * - Advanced filter state management with URL synchronization
- * - Paginated query management with prefetching
- * - Normalized property types for land category
- * - Integrated photo management system
- * - Compare functionality with floating UI
- * - Responsive design with virtualization
- * - Error boundaries and loading states
- */
+import { PropertyListingRoute } from "../shared/PropertyListingRoute"
+
 export default function Lands(): React.ReactElement {
-  const [showCompareModal, setShowCompareModal] = useState(false);
-
-  const handleShowCompareModal = useCallback(() => {
-    setShowCompareModal(true);
-  }, []);
-
-  const handleCloseCompareModal = useCallback(() => {
-    setShowCompareModal(false);
-  }, []);
-
   return (
-    <>
-      <PropertyListingPage
-        config={landConfig}
-        enableCompare={true}
-        enablePhotoManagement={true}
-        heroConfig={{
-          title: "Land Properties",
-          subtitle:
-            "Verified land with comprehensive verification and documentation across Kenya.",
-        }}
-        className="land-properties-page"
-      />
-
-      {/* Compare functionality - floating UI components */}
-      <CompareBar onQuickCompare={handleShowCompareModal} />
-      <CompareModal
-        isOpen={showCompareModal}
-        onClose={handleCloseCompareModal}
-      />
-    </>
-  );
+    <PropertyListingRoute
+      config={landConfig}
+      heroConfig={{
+        title: "Land Properties",
+        subtitle:
+          "Verified land with comprehensive documentation across Kenya.",
+      }}
+      className="land-properties-page"
+    />
+  )
 }
 
-// Export display name for debugging
-Lands.displayName = "Lands";
+Lands.displayName = "Lands"

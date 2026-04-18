@@ -1,4 +1,4 @@
-import type { Property, BasePropertyFilters } from '../types/property'
+import type { Property, BasePropertyFilters } from '@shared/types/property'
 
 // Enhanced seeded random number generator for consistent, predictable results
 class SeededRandom {

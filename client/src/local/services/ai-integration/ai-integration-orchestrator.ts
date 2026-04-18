@@ -11,7 +11,7 @@ import { fraudDetectionIntegration, PropertyFraudAnalysis, UserFraudAnalysis, Ne
 import { recommendationIntegration, PropertyRecommendation, SmartMatchResult, UserPreferenceProfile } from './recommendation-integration'
 import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
-import { Property, PropertySearchFilters } from '../../types/property'
+import { Property, PropertySearchFilters } from '@shared/types/property'
 import { User } from '../../types/contracts/user-contracts'
 import { LandVerificationSession, VerificationLayer } from '../../../types/land-verification'
 

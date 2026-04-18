@@ -5,7 +5,7 @@ import type {
   CommercialProperty,
   LandProperty,
   PropertyAdapter
-} from '../types/property'
+} from '@shared/types/property'
 
 /**
  * Utility functions to convert legacy Property objects to normalized format

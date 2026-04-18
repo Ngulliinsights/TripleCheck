@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react"
-import type { NormalizedProperty } from "../types/property"
+import { useCallback, useEffect, useRef, useState } from "react"
+import type { NormalizedProperty } from '@shared/types/property'
 
 export interface PropertyActionCallbacks {
   /** Callback when property is saved/bookmarked */
@@ -36,13 +36,17 @@ export interface UsePropertyCardActionsReturn {
 }
 
 /**
- * Enhanced shared hook for managing property card actions
- * Handles save, share, view details, verify, and card click actions with comprehensive error handling
- * Used by PropertyCard, EnhancedLandCard, and other property components
- * 
+ * Shared hook for managing property card actions.
+ * Handles save, share, view details, verify, and card click actions with comprehensive error handling.
+ * Used by PropertyCard, EnhancedLandCard, and other property components.
+ *
  * @param property - The property to create actions for
  * @param callbacks - Action callbacks and configuration
  * @returns Action handlers and state
+ *
+ * @note Pass stable (memoised) `callbacks` and `property` references to avoid unnecessary handler
+ * recreation. The hook uses the latest-ref pattern internally so stale closures are not a concern,
+ * but recreating these objects on every parent render does cause React to flush extra paint cycles.
  */
 export function usePropertyCardActions(
   property: NormalizedProperty,
@@ -51,50 +55,62 @@ export function usePropertyCardActions(
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
 
-  // Enhanced generic action handler with comprehensive error handling
+  // --- Stable refs -----------------------------------------------------------
+  // isProcessingRef lets handleAction guard against concurrent actions without
+  // being included in its dependency array (which would cause all derived
+  // handlers to be recreated each time isProcessing flips).
+  const isProcessingRef = useRef(false);
+
+  // callbacksRef always holds the latest callbacks object so handlers that were
+  // created on a previous render still call the current version.
+  const callbacksRef = useRef(callbacks);
+  useEffect(() => { callbacksRef.current = callbacks; });
+
+  // propertyRef similarly stabilises the property identity used inside handlers.
+  const propertyRef = useRef(property);
+  useEffect(() => { propertyRef.current = property; });
+
+  // ---------------------------------------------------------------------------
+
   const handleAction = useCallback(
     async (
       event: React.MouseEvent | undefined,
       action: () => Promise<void> | void,
-      actionName: string
+      actionName: 'save' | 'share' | 'view' | 'verify' | 'click'
     ) => {
       event?.stopPropagation();
-      
-      if (isProcessing) {
-        return; // Prevent multiple simultaneous actions
-      }
 
+      if (isProcessingRef.current) return;
+
+      isProcessingRef.current = true;
       setIsProcessing(true);
       setLastError(null);
 
       try {
         await action();
-        
-        // Track successful action
-        callbacks.onAnalyticsEvent?.(actionName as any, property.id);
+        callbacksRef.current.onAnalyticsEvent?.(actionName, propertyRef.current.id);
       } catch (error) {
         const actionError = error instanceof Error ? error : new Error(`${actionName} action failed`);
         setLastError(actionError);
-        
-        // Call error handler if provided
-        callbacks.onError?.(actionName, actionError);
-        
-        // Log error for debugging
-        console.error(`${actionName} action failed:`, actionError);
+        callbacksRef.current.onError?.(actionName, actionError);
+
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.error(`[usePropertyCardActions] ${actionName} failed:`, actionError);
+        }
       } finally {
+        isProcessingRef.current = false;
         setIsProcessing(false);
       }
     },
-    [isProcessing, callbacks, property.id]
+    [] // No deps: all values are accessed through stable refs
   );
 
   const handleSave = useCallback(
     (event: React.MouseEvent) => {
-      handleAction(event, async () => {
-        await callbacks.onSave?.(property.id);
-      }, "save");
+      handleAction(event, () => callbacksRef.current.onSave?.(propertyRef.current.id), 'save');
     },
-    [handleAction, callbacks, property.id]
+    [handleAction]
   );
 
   const handleShare = useCallback(
@@ -102,74 +118,59 @@ export function usePropertyCardActions(
       handleAction(
         event,
         async () => {
-          const shareUrl = `${window.location.origin}/property/${property.id}`;
-          const shareTitle = property.title || 'Property Listing';
-          const shareText = `Check out this ${property.type || property.category || 'property'}: ${shareTitle}`;
+          const { id, title, type, category } = propertyRef.current;
+          const shareUrl = `${window.location.origin}/property/${id}`;
+          const shareTitle = title || 'Property Listing';
+          const shareText = `Check out this ${type || category || 'property'}: ${shareTitle}`;
 
-          // Try native sharing first (mobile devices)
+          // Prefer the native share sheet on mobile devices.
           if (navigator.share && navigator.canShare?.({ title: shareTitle, text: shareText, url: shareUrl })) {
-            await navigator.share({
-              title: shareTitle,
-              text: shareText,
-              url: shareUrl,
-            });
+            await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
           } else if (navigator.clipboard) {
-            // Fallback to clipboard with user feedback
             await navigator.clipboard.writeText(shareUrl);
-            
-            // Could show a toast notification here
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Property URL copied to clipboard:', shareUrl);
-            }
           } else {
-            // Final fallback to callback
-            await callbacks.onShare?.(property.id);
+            await callbacksRef.current.onShare?.(id);
           }
         },
-        "share"
+        'share'
       );
     },
-    [handleAction, callbacks, property.id, property.title, property.type, property.category]
+    [handleAction]
   );
 
   const handleViewDetails = useCallback(
     (event?: React.MouseEvent) => {
       handleAction(
         event,
-        async () => {
-          await callbacks.onViewDetails?.(property.id);
-        },
-        "view"
+        () => callbacksRef.current.onViewDetails?.(propertyRef.current.id),
+        'view'
       );
     },
-    [handleAction, callbacks, property.id]
+    [handleAction]
   );
 
   const handleVerify = useCallback(
     (event: React.MouseEvent) => {
-      handleAction(event, async () => {
-        await callbacks.onVerify?.(property.id);
-      }, "verify");
+      handleAction(event, () => callbacksRef.current.onVerify?.(propertyRef.current.id), 'verify');
     },
-    [handleAction, callbacks, property.id]
+    [handleAction]
   );
 
+  // Card-click is synchronous and must not be blocked by isProcessing, so we
+  // route it through handleAction separately to ensure stopPropagation fires
+  // only when an onClick handler is actually registered.
   const handleCardClick = useCallback(
     (event: React.MouseEvent) => {
-      if (callbacks.onClick && !isProcessing) {
-        event.preventDefault();
-        
-        try {
-          callbacks.onClick(property);
-          callbacks.onAnalyticsEvent?.("click", property.id);
-        } catch (error) {
-          const clickError = error instanceof Error ? error : new Error('Card click failed');
-          setLastError(clickError);
-          callbacks.onError?.("click", clickError);
-        }
-      }
+      if (!callbacksRef.current.onClick) return;
+      // Prevent navigation bubbling when a handler is present.
+      event.preventDefault();
+      handleAction(
+        event,
+        () => callbacksRef.current.onClick!(propertyRef.current),
+        'click'
+      );
     },
-    [callbacks, property, isProcessing]
+    [handleAction]
   );
 
   return {

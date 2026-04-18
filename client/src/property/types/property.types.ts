@@ -1,4 +1,4 @@
-// Re-export the unified Property interface from shared types
+﻿// Re-export the unified Property interface from shared types
 export type { 
   Property, 
   PropertyFeatures, 
@@ -7,7 +7,7 @@ export type {
   LocationData,
   Coordinates,
   AIVerificationResults
-} from '../../../src/local/types/property'
+} from '@shared/types/property'
 
 export interface PropertySearchParams {
   query: string;

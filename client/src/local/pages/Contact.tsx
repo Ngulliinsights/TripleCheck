@@ -18,9 +18,10 @@ import { useState } from "react"
 import FormField from "../components/forms/FormField"
 import { Button } from "../components/ui/button"
 import { useToast } from "../hooks/use-toast"
-// import { useForm } from "../hooks/useFormValidation"
+import useForm from "../hooks/useFormValidation"
 // ValidationRule is now part of useFormValidation
 import { useNavigationTracking } from "../utils/navigation"
+import type { ContactFormData } from "../services/FormService"
 
 // Constants
 const BASIC_CHECKS_URL = "/services/basic-checks";
@@ -61,17 +62,14 @@ export default function Contact() {
   };
 
   const {
-    errors,
-    touched,
-    isValid,
-    isSubmitting,
+    formState: { errors, touched, isValid, isSubmitting },
     isDirty,
     getFieldProps,
     getFieldError,
     handleSubmit,
     handleReset,
-  } = useForm({
-    initialValues: {
+  } = useForm<ContactFormData>({
+    initialData: {
       name: "",
       email: "",
       phone: "",
@@ -318,8 +316,6 @@ export default function Contact() {
                     label="Full Name"
                     required
                     placeholder="Your full name"
-                    error={getFieldError("name")}
-                    touched={touched.name}
                     {...getFieldProps("name")}
                   />
 
@@ -328,8 +324,6 @@ export default function Contact() {
                     type="email"
                     required
                     placeholder="your.email@example.com"
-                    error={getFieldError("email")}
-                    touched={touched.email}
                     {...getFieldProps("email")}
                   />
                 </div>
@@ -339,8 +333,6 @@ export default function Contact() {
                     label="Phone Number"
                     type="tel"
                     placeholder="+254 xxx xxx xxxx"
-                    error={getFieldError("phone")}
-                    touched={touched.phone}
                     {...getFieldProps("phone")}
                   />
 
@@ -349,8 +341,6 @@ export default function Contact() {
                     type="select"
                     required
                     options={inquiryTypes}
-                    error={getFieldError("inquiryType")}
-                    touched={touched.inquiryType}
                     {...getFieldProps("inquiryType")}
                   />
                 </div>
@@ -359,8 +349,6 @@ export default function Contact() {
                   label="Subject"
                   required
                   placeholder="Brief description of your inquiry"
-                  error={getFieldError("subject")}
-                  touched={touched.subject}
                   {...getFieldProps("subject")}
                 />
 
@@ -370,8 +358,6 @@ export default function Contact() {
                   required
                   rows={6}
                   placeholder="Please provide details about your inquiry..."
-                  error={getFieldError("message")}
-                  touched={touched.message}
                   {...getFieldProps("message")}
                 />
 
@@ -414,7 +400,7 @@ export default function Contact() {
                       </p>
                       <ul className="mt-1 text-sm text-red-700 list-disc list-inside">
                         {Object.entries(errors).map(([field, error]) => (
-                          <li key={field}>{error}</li>
+                          <li key={field}>{String(error)}</li>
                         ))}
                       </ul>
                     </div>

@@ -1,7 +1,7 @@
 import { Home, Bed, Bath, Star, Heart, PawPrint } from "lucide-react"
 import React, { useCallback } from "react"
 
-import type { ResidentialFilters } from "../../../types/property"
+import type { ResidentialFilters } from '@shared/types/property'
 import { Badge } from "../../ui/badge"
 import { Button } from "../../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card"

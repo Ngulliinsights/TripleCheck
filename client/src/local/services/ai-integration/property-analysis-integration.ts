@@ -7,7 +7,7 @@
 
 import { huggingFaceClient } from '../huggingface-api-client';
 import { logger } from '../../../../server/infrastructure/monitoring/logger';
-import { Property } from '../../types/property';
+import { Property } from '@shared/types/property';
 import { BaseError } from '../../error-handling/errors/base-error';
 
 // ─── Constants ────────────────────────────────────────────────────────────────

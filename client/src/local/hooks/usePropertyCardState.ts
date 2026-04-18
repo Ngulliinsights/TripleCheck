@@ -39,10 +39,10 @@ export interface UsePropertyCardStateReturn {
 }
 
 /**
- * Enhanced shared hook for managing property card UI state
- * Handles hover, focus, active states and keyboard interactions with accessibility support
- * Used by PropertyCard, EnhancedLandCard, and other interactive property components
- * 
+ * Shared hook for managing property card UI state.
+ * Handles hover, focus, active states and keyboard interactions with accessibility support.
+ * Used by PropertyCard, EnhancedLandCard, and other interactive property components.
+ *
  * @param options - Configuration options for state management
  * @returns State values and event handlers
  */
@@ -71,7 +71,7 @@ export function usePropertyCardState(
   const handleMouseLeave = useCallback(() => {
     if (enableHover) {
       setIsHovered(false);
-      setIsActive(false); // Reset active state when mouse leaves
+      setIsActive(false);
       onStateChange?.('hover', false);
     }
   }, [enableHover, onStateChange]);
@@ -94,51 +94,43 @@ export function usePropertyCardState(
   const handleBlur = useCallback(() => {
     if (enableFocus) {
       setIsFocused(false);
-      setIsActive(false); // Reset active state when focus is lost
+      setIsActive(false);
       onStateChange?.('blur', false);
     }
   }, [enableFocus, onStateChange]);
 
+  // cardRef is a stable object (same reference for the component lifetime), so it is safe
+  // and correct to include it in the dependency array.
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent, onClick?: () => void) => {
       if (!enableKeyboard || !onClick) return;
 
       switch (event.key) {
-        case "Enter":
-        case " ": // Space key
+        case 'Enter':
+        case ' ':
           event.preventDefault();
           setIsActive(true);
           onClick();
-          
-          // Reset active state after a short delay
           setTimeout(() => setIsActive(false), 150);
           break;
-        case "Escape":
-          // Remove focus from the card
-          if (cardRef.current) {
-            cardRef.current.blur();
-          }
+        case 'Escape':
+          cardRef.current?.blur();
           break;
         default:
           break;
       }
     },
-    [enableKeyboard]
+    [enableKeyboard, cardRef]
   );
 
-  // Handle global mouse up to reset active state
+  // Single global mouseup listener to reset active state when the mouse is released
+  // outside the card element (e.g. after a drag).
   useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      setIsActive(false);
-    };
-
+    const handleGlobalMouseUp = () => setIsActive(false);
     document.addEventListener('mouseup', handleGlobalMouseUp);
-    return () => {
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
+    return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
   }, []);
 
-  // Manual setter with analytics
   const setIsHoveredWithAnalytics = useCallback((hovered: boolean) => {
     setIsHovered(hovered);
     onStateChange?.('hover', hovered);

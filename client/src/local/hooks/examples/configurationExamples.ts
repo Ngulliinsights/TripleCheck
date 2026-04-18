@@ -12,7 +12,7 @@ import {
   getFormPreset,
   createDataFetchingConfig
 } from '../index'
-import { Property } from '../../types/property'
+import { Property } from '@shared/types/property'
 
 // Example 1: Using preset configurations
 export function usePropertyListingWithPreset(searchParams?: Record<string, unknown>) {

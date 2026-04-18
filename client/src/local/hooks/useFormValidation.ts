@@ -1,17 +1,19 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
-import { formService } from '../services/FormService'
-import { useAnalyticsMetrics } from '../../analytics/hooks/useAnalytics'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 
-// Enhanced validation rule interface with better type safety
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 export interface ValidationRule {
   required?: boolean;
   minLength?: number;
   maxLength?: number;
   pattern?: RegExp;
+  /** Return an error string on failure, or null on success. */
   custom?: (value: any, formData?: any) => string | null;
-  // New: conditional validation based on other fields
+  /** When this returns false the rule is skipped entirely. */
   when?: (formData: any) => boolean;
-  // New: debounced validation for expensive operations
+  /** Debounce validation by N ms (useful for async/expensive rules). */
   debounce?: number;
 }
 
@@ -19,7 +21,6 @@ export interface ValidationRules {
   [key: string]: ValidationRule;
 }
 
-// Enhanced form state with loading states and submission history
 export interface FormState<T> {
   data: T;
   errors: Record<keyof T, string>;
@@ -37,17 +38,18 @@ export interface UseFormValidationOptions<T> {
   onSubmit: (data: T) => Promise<void>;
   validateOnChange?: boolean;
   validateOnBlur?: boolean;
-  // New: transform data before validation and submission
+  /** Transform data before validation and submission. */
   transformData?: (data: T) => T;
-  // New: reset form after successful submission
+  /** Reset to initialData after a successful submission. */
   resetOnSuccess?: boolean;
-  // New: prevent multiple rapid submissions
+  /** Ignore submissions within 1 second of each other. */
   preventDoubleSubmit?: boolean;
 }
 
 export interface UseFormValidationReturn<T> {
   formState: FormState<T>;
   setValue: (field: keyof T, value: any) => void;
+  setMultipleValues: (values: Partial<T>) => void;
   setError: (field: keyof T, error: string) => void;
   clearError: (field: keyof T) => void;
   setTouched: (field: keyof T, touched?: boolean) => void;
@@ -55,50 +57,72 @@ export interface UseFormValidationReturn<T> {
   handleReset: () => void;
   validateField: (field: keyof T, value: any) => Promise<string | null>;
   validateForm: () => Promise<boolean>;
-  getFieldProps: (field: keyof T) => {
-    value: any;
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-    onBlur: () => void;
-    error: string;
-    touched: boolean;
-  };
+  getFieldProps: (field: keyof T) => FieldProps;
   getFieldError: (field: keyof T) => string | null;
   isFieldValid: (field: keyof T) => boolean;
-  // New utility methods
-  setFieldValue: (field: keyof T, value: any) => void;
-  setMultipleValues: (values: Partial<T>) => void;
   clearForm: () => void;
   isDirty: boolean;
   canSubmit: boolean;
 }
 
-// Utility function to safely convert values to strings with null checks
-function safeStringValue(value: any): string {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  if (typeof value === 'string') {
-    return value;
-  }
-  return String(value);
+interface FieldProps {
+  name: string;
+  value: any;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onBlur: () => void;
+  error: string;
+  touched: boolean;
 }
 
-// Utility function to check if a value is considered empty
-function isEmpty(value: any): boolean {
-  if (value === null || value === undefined) {
-    return true;
-  }
-  if (typeof value === 'string') {
-    return value.trim() === '';
-  }
-  if (Array.isArray(value)) {
-    return value.length === 0;
-  }
-  if (typeof value === 'object') {
-    return Object.keys(value).length === 0;
-  }
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+
+/** Safely coerce any value to a string. Never returns undefined/null. */
+function toStr(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return typeof value === 'string' ? value : String(value);
+}
+
+/** True for null, undefined, empty string (trimmed), empty array, empty object. */
+function isEmpty(value: unknown): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'string') return value.trim() === '';
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === 'object') return Object.keys(value as object).length === 0;
   return false;
 }
+
+/**
+ * Structural equality check that handles primitives, arrays, and plain objects.
+ * Used for isDirty — avoids the pitfall of coercing booleans/numbers to strings.
+ */
+function isEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a === null || b === null) return false;
+  if (typeof a !== typeof b) return false;
+  if (typeof a !== 'object') return false;
+  const keysA = Object.keys(a as object);
+  const keysB = Object.keys(b as object);
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every(k =>
+    isEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])
+  );
+}
+
+function makeRecord<T extends Record<string, any>, V>(
+  obj: T,
+  value: V
+): Record<keyof T, V> {
+  return Object.keys(obj).reduce((acc, key) => {
+    (acc as any)[key] = value;
+    return acc;
+  }, {} as Record<keyof T, V>);
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
 
 export function useFormValidation<T extends Record<string, any>>({
   initialData,
@@ -110,395 +134,305 @@ export function useFormValidation<T extends Record<string, any>>({
   resetOnSuccess = false,
   preventDoubleSubmit = true,
 }: UseFormValidationOptions<T>): UseFormValidationReturn<T> {
-  // Core state management with proper initialization
+
+  // ── State ────────────────────────────────────────────────────────────────
+
   const [data, setData] = useState<T>(() => ({ ...initialData }));
-  const [errors, setErrors] = useState<Record<keyof T, string>>(() => 
-    Object.keys(initialData).reduce((acc, key) => {
-      acc[key as keyof T] = '';
-      return acc;
-    }, {} as Record<keyof T, string>)
+  const [errors, setErrors] = useState<Record<keyof T, string>>(
+    () => makeRecord(initialData, '')
   );
-  const [touched, setTouchedState] = useState<Record<keyof T, boolean>>(() =>
-    Object.keys(initialData).reduce((acc, key) => {
-      acc[key as keyof T] = false;
-      return acc;
-    }, {} as Record<keyof T, boolean>)
+  const [touched, setTouchedState] = useState<Record<keyof T, boolean>>(
+    () => makeRecord(initialData, false)
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [submitCount, setSubmitCount] = useState(0);
-  const [lastSubmissionTime, setLastSubmissionTime] = useState<Date>();
+  const [lastSubmissionTime, setLastSubmissionTime] = useState<Date | undefined>();
 
-  // Refs for managing async operations and preventing memory leaks
-  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
-  const validationAbortControllers = useRef<Record<string, AbortController>>({});
+  // ── Refs ─────────────────────────────────────────────────────────────────
+
+  // Keep a live ref to data so validators always see the current snapshot,
+  // solving the stale-closure problem without adding data to every dep array.
+  const dataRef = useRef<T>(data);
+  useEffect(() => { dataRef.current = data; }, [data]);
+
   const initialDataRef = useRef<T>(initialData);
+  useEffect(() => { initialDataRef.current = initialData; }, [initialData]);
 
-  // Update initial data ref when it changes
-  useEffect(() => {
-    initialDataRef.current = initialData;
-  }, [initialData]);
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const lastSubmissionTimeRef = useRef<Date | undefined>();
 
-  // Enhanced validation function with async support and better error handling
-  const validateField = useCallback(async (field: keyof T, value: any): Promise<string | null> => {
-    const fieldKey = field as string;
-    const rule = validationRules[fieldKey];
-    
+  // ── Field validation ─────────────────────────────────────────────────────
+
+  const validateField = useCallback(async (
+    field: keyof T,
+    value: any
+  ): Promise<string | null> => {
+    const key = field as string;
+    const rule = validationRules[key];
     if (!rule) return null;
 
-    // Check conditional validation
-    if (rule.when && !rule.when(data)) {
-      return null;
-    }
+    // Conditional skip
+    if (rule.when && !rule.when(dataRef.current)) return null;
 
-    // Required validation with type-safe empty checking
-    if (rule.required && isEmpty(value)) {
-      return 'This field is required';
-    }
+    // Required
+    if (rule.required && isEmpty(value)) return 'This field is required';
 
-    // Skip other validations if field is empty and not required
-    if (isEmpty(value)) {
-      return null;
-    }
+    // Skip remaining checks when empty and optional
+    if (isEmpty(value)) return null;
 
-    // Convert to string safely for string-based validations
-    const stringValue = safeStringValue(value);
+    const str = toStr(value);
 
-    // String-specific validations
-    if (typeof value === 'string' || stringValue) {
-      const valueToCheck = typeof value === 'string' ? value : stringValue;
+    if (rule.minLength !== undefined && str.length < rule.minLength)
+      return `Must be at least ${rule.minLength} characters`;
 
-      // Min length validation
-      if (rule.minLength !== undefined && valueToCheck.length < rule.minLength) {
-        return `Must be at least ${rule.minLength} characters`;
-      }
+    if (rule.maxLength !== undefined && str.length > rule.maxLength)
+      return `Must be no more than ${rule.maxLength} characters`;
 
-      // Max length validation
-      if (rule.maxLength !== undefined && valueToCheck.length > rule.maxLength) {
-        return `Must be no more than ${rule.maxLength} characters`;
-      }
-
-      // Pattern validation with safe regex testing
-      if (rule.pattern) {
-        try {
-          if (!rule.pattern.test(valueToCheck)) {
-            return 'Invalid format';
-          }
-        } catch (regexError) {
-          console.warn(`Regex validation error for field ${fieldKey}:`, regexError);
-          return 'Validation error occurred';
-        }
+    if (rule.pattern) {
+      try {
+        if (!rule.pattern.test(str)) return 'Invalid format';
+      } catch (err) {
+        console.warn(`[useFormValidation] Regex error on field "${key}":`, err);
+        return 'Validation error occurred';
       }
     }
 
-    // Custom validation with error handling
     if (rule.custom) {
       try {
-        const customResult = rule.custom(value, data);
-        return customResult;
-      } catch (customError) {
-        console.error(`Custom validation error for field ${fieldKey}:`, customError);
+        return rule.custom(value, dataRef.current);
+      } catch (err) {
+        console.error(`[useFormValidation] Custom validator error on field "${key}":`, err);
         return 'Validation error occurred';
       }
     }
 
     return null;
-  }, [validationRules, data]);
+  }, [validationRules]); // dataRef is a stable ref — not needed in deps
 
-  // Debounced validation for expensive operations
-  const validateFieldDebounced = useCallback(async (field: keyof T, value: any): Promise<void> => {
-    const fieldKey = field as string;
-    const rule = validationRules[fieldKey];
-    
-    if (!rule || !rule.debounce) {
-      const error = await validateField(field, value);
-      setErrors(prev => ({ ...prev, [field]: error || '' }));
-      return;
+  // Runs validation and writes result to errors, respecting debounce config.
+  const scheduleValidation = useCallback((field: keyof T, value: any): void => {
+    const key = field as string;
+    const rule = validationRules[key];
+    const delay = rule?.debounce ?? 0;
+
+    if (debounceTimers.current[key]) clearTimeout(debounceTimers.current[key]);
+
+    if (delay > 0) {
+      debounceTimers.current[key] = setTimeout(async () => {
+        const error = await validateField(field, value);
+        setErrors(prev => ({ ...prev, [field]: error ?? '' }));
+      }, delay);
+    } else {
+      // Fire synchronously (still async under the hood via validateField)
+      validateField(field, value).then(error => {
+        setErrors(prev => ({ ...prev, [field]: error ?? '' }));
+      });
     }
-
-    // Cancel previous timer
-    if (debounceTimers.current[fieldKey]) {
-      clearTimeout(debounceTimers.current[fieldKey]);
-    }
-
-    // Set new timer
-    debounceTimers.current[fieldKey] = setTimeout(async () => {
-      const error = await validateField(field, value);
-      setErrors(prev => ({ ...prev, [field]: error || '' }));
-    }, rule.debounce);
   }, [validateField, validationRules]);
 
-  // Enhanced form validation with async support
+  // ── Full-form validation ─────────────────────────────────────────────────
+
   const validateForm = useCallback(async (): Promise<boolean> => {
     setIsValidating(true);
-    const newErrors: Record<keyof T, string> = {} as Record<keyof T, string>;
-    let isValid = true;
-
     try {
-      // Use Promise.all for concurrent validation
-      const validationPromises = Object.keys(data).map(async (field) => {
-        const fieldKey = field as keyof T;
-        const error = await validateField(fieldKey, data[fieldKey]);
-        return { field: fieldKey, error };
-      });
+      const snapshot = dataRef.current;
+      const results = await Promise.all(
+        Object.keys(snapshot).map(async key => {
+          const field = key as keyof T;
+          const error = await validateField(field, snapshot[field]);
+          return [field, error ?? ''] as const;
+        })
+      );
 
-      const validationResults = await Promise.all(validationPromises);
-
-      validationResults.forEach(({ field, error }) => {
-        if (error) {
-          newErrors[field] = error;
-          isValid = false;
-        } else {
-          newErrors[field] = '';
-        }
-      });
-
+      const newErrors = Object.fromEntries(results) as Record<keyof T, string>;
       setErrors(newErrors);
-      return isValid;
-    } catch (validationError) {
-      console.error('Form validation error:', validationError);
+      return results.every(([, error]) => !error);
+    } catch (err) {
+      console.error('[useFormValidation] validateForm error:', err);
       return false;
     } finally {
       setIsValidating(false);
     }
-  }, [data, validateField]);
+  }, [validateField]); // dataRef is stable — not needed in deps
 
-  // Enhanced setValue with type safety and optional validation
+  // ── Reset (defined before handleSubmit so it can be referenced safely) ───
+
+  const handleReset = useCallback(() => {
+    const initial = initialDataRef.current;
+    setData({ ...initial });
+    setErrors(makeRecord(initial, ''));
+    setTouchedState(makeRecord(initial, false));
+    setIsSubmitting(false);
+    setIsValidating(false);
+    setSubmitCount(0);
+    setLastSubmissionTime(undefined);
+    lastSubmissionTimeRef.current = undefined;
+  }, []); // initialDataRef is stable
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+
+  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    if (preventDoubleSubmit && isSubmitting) return;
+
+    // 1-second cooldown guard (use ref to avoid stale closure)
+    if (preventDoubleSubmit && lastSubmissionTimeRef.current) {
+      if (Date.now() - lastSubmissionTimeRef.current.getTime() < 1000) return;
+    }
+
+    const now = new Date();
+    lastSubmissionTimeRef.current = now;
+    setLastSubmissionTime(now);
+    setIsSubmitting(true);
+
+    try {
+      // Mark everything touched so errors are visible
+      setTouchedState(makeRecord(dataRef.current, true));
+
+      const isValid = await validateForm();
+      if (!isValid) return;
+
+      const submissionData = transformData
+        ? transformData({ ...dataRef.current })
+        : { ...dataRef.current };
+
+      await onSubmit(submissionData);
+      setSubmitCount(prev => prev + 1);
+
+      if (resetOnSuccess) handleReset();
+    } catch (err) {
+      // Bubble up so callers can show error toasts etc.
+      throw err;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    isSubmitting,
+    preventDoubleSubmit,
+    validateForm,
+    transformData,
+    onSubmit,
+    resetOnSuccess,
+    handleReset,
+  ]);
+
+  // ── Field mutators ───────────────────────────────────────────────────────
+
   const setValue = useCallback((field: keyof T, value: any) => {
-    // Type-safe value setting
-    const safeValue = value === undefined ? null : value;
-    
-    setData(prev => ({ 
-      ...prev, 
-      [field]: safeValue 
-    }));
+    const safe = value === undefined ? null : value;
+    setData(prev => ({ ...prev, [field]: safe }));
+    // Always clear the error immediately so typing feels responsive
+    setErrors(prev => ({ ...prev, [field]: '' }));
+    if (validateOnChange) scheduleValidation(field, safe);
+  }, [validateOnChange, scheduleValidation]);
 
-    // Clear error when user starts typing (UX improvement)
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-
-    // Validate on change if enabled
-    if (validateOnChange) {
-      validateFieldDebounced(field, safeValue);
-    }
-  }, [validateOnChange, validateFieldDebounced, errors]);
-
-  // Utility method for setting multiple values at once
   const setMultipleValues = useCallback((values: Partial<T>) => {
     setData(prev => ({ ...prev, ...values }));
-    
-    // Clear errors for updated fields
-    const updatedFields = Object.keys(values);
-    if (updatedFields.length > 0) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        updatedFields.forEach(field => {
-          newErrors[field as keyof T] = '';
-        });
-        return newErrors;
-      });
-    }
-
-    // Validate if enabled
+    setErrors(prev => {
+      const next = { ...prev };
+      for (const key of Object.keys(values)) next[key as keyof T] = '';
+      return next;
+    });
     if (validateOnChange) {
-      Object.entries(values).forEach(([field, value]) => {
-        validateFieldDebounced(field as keyof T, value);
-      });
+      Object.entries(values).forEach(([field, value]) =>
+        scheduleValidation(field as keyof T, value)
+      );
     }
-  }, [validateOnChange, validateFieldDebounced]);
+  }, [validateOnChange, scheduleValidation]);
 
-  // Type-safe error management
   const setError = useCallback((field: keyof T, error: string) => {
-    setErrors(prev => ({ ...prev, [field]: safeStringValue(error) }));
+    setErrors(prev => ({ ...prev, [field]: toStr(error) }));
   }, []);
 
   const clearError = useCallback((field: keyof T) => {
     setErrors(prev => ({ ...prev, [field]: '' }));
   }, []);
 
-  // Enhanced touched state management
-  const setTouched = useCallback((field: keyof T, touchedValue = true) => {
-    setTouchedState(prev => ({ ...prev, [field]: Boolean(touchedValue) }));
+  const setTouched = useCallback((field: keyof T, value = true) => {
+    setTouchedState(prev => ({ ...prev, [field]: Boolean(value) }));
   }, []);
 
-  // Enhanced form submission with comprehensive error handling
-  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
-
-    // Prevent double submission if enabled
-    if (preventDoubleSubmit && isSubmitting) {
-      return;
-    }
-
-    // Check for rapid successive submissions
-    if (lastSubmissionTime && preventDoubleSubmit) {
-      const timeSinceLastSubmission = Date.now() - lastSubmissionTime.getTime();
-      if (timeSinceLastSubmission < 1000) { // 1 second cooldown
-        return;
-      }
-    }
-
-    setIsSubmitting(true);
-    const submissionTime = new Date();
-    setLastSubmissionTime(submissionTime);
-
-    try {
-      // Mark all fields as touched for validation display
-      const allTouched = Object.keys(data).reduce((acc, field) => {
-        acc[field as keyof T] = true;
-        return acc;
-      }, {} as Record<keyof T, boolean>);
-      setTouchedState(allTouched);
-
-      // Validate form
-      const isValid = await validateForm();
-      if (!isValid) {
-        return;
-      }
-
-      // Transform data if transformer provided
-      const submissionData = transformData ? transformData({ ...data }) : { ...data };
-
-      // Submit form with proper error handling
-      await onSubmit(submissionData);
-      
-      // Increment success counter
-      setSubmitCount(prev => prev + 1);
-
-      // Reset form if configured to do so
-      if (resetOnSuccess) {
-        handleReset();
-      }
-    } catch (error) {
-      console.error('Form submission error:', error);
-      // Re-throw error to allow parent components to handle it
-      throw error;
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [
-    data, 
-    validateForm, 
-    onSubmit, 
-    transformData, 
-    resetOnSuccess, 
-    preventDoubleSubmit, 
-    isSubmitting, 
-    lastSubmissionTime
-  ]);
-
-  // Enhanced reset functionality
-  const handleReset = useCallback(() => {
-    setData({ ...initialDataRef.current });
-    setErrors(Object.keys(initialDataRef.current).reduce((acc, key) => {
-      acc[key as keyof T] = '';
-      return acc;
-    }, {} as Record<keyof T, string>));
-    setTouchedState(Object.keys(initialDataRef.current).reduce((acc, key) => {
-      acc[key as keyof T] = false;
-      return acc;
-    }, {} as Record<keyof T, boolean>));
-    setIsSubmitting(false);
-    setIsValidating(false);
-  }, []);
-
-  // Clear form (reset to empty values rather than initial values)
+  // Resets to empty values (not initialData) while preserving field types.
   const clearForm = useCallback(() => {
-    // Create empty data while preserving the original structure and types
-    const emptyData = Object.keys(data).reduce((acc, key) => {
-      const fieldKey = key as keyof T;
-      // Use type-safe empty value assignment based on original data type
-      const originalValue = initialDataRef.current[fieldKey];
-      if (typeof originalValue === 'boolean') {
-        (acc as any)[fieldKey] = false;
-      } else if (typeof originalValue === 'number') {
-        (acc as any)[fieldKey] = 0;
-      } else if (Array.isArray(originalValue)) {
-        (acc as any)[fieldKey] = [];
-      } else if (typeof originalValue === 'object' && originalValue !== null) {
-        (acc as any)[fieldKey] = {};
-      } else {
-        // Default to empty string for string types and others
-        (acc as any)[fieldKey] = '';
-      }
+    const initial = initialDataRef.current;
+    const emptyData = Object.keys(initial).reduce((acc, key) => {
+      const k = key as keyof T;
+      const orig = initial[k];
+      let empty: unknown;
+      if (typeof orig === 'boolean') empty = false;
+      else if (typeof orig === 'number') empty = 0;
+      else if (Array.isArray(orig)) empty = [];
+      else if (orig !== null && typeof orig === 'object') empty = {};
+      else empty = '';
+      (acc as any)[k] = empty;
       return acc;
     }, {} as T);
-    
-    setData(emptyData);
-    setErrors(Object.keys(data).reduce((acc, key) => {
-      acc[key as keyof T] = '';
-      return acc;
-    }, {} as Record<keyof T, string>));
-    setTouchedState(Object.keys(data).reduce((acc, key) => {
-      acc[key as keyof T] = false;
-      return acc;
-    }, {} as Record<keyof T, boolean>));
-  }, [data]);
 
-  // Enhanced field props with better event handling
-  const getFieldProps = useCallback((field: keyof T) => ({
-    value: safeStringValue(data[field]),
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      const value = e.target.type === 'checkbox' 
-        ? (e.target as HTMLInputElement).checked 
-        : e.target.value;
+    setData(emptyData);
+    setErrors(makeRecord(emptyData, ''));
+    setTouchedState(makeRecord(emptyData, false));
+  }, []); // initialDataRef is stable
+
+  // ── Field accessors ──────────────────────────────────────────────────────
+
+  const getFieldProps = useCallback((field: keyof T): FieldProps => ({
+    name: field as string,
+    value: data[field] ?? '',
+    onChange: (e) => {
+      const value =
+        e.target.type === 'checkbox'
+          ? (e.target as HTMLInputElement).checked
+          : e.target.value;
       setValue(field, value);
     },
     onBlur: () => {
       setTouched(field, true);
-      if (validateOnBlur) {
-        validateFieldDebounced(field, data[field]);
-      }
+      if (validateOnBlur) scheduleValidation(field, dataRef.current[field]);
     },
-    error: safeStringValue(errors[field]),
+    error: toStr(errors[field]),
     touched: Boolean(touched[field]),
-  }), [data, errors, touched, setValue, setTouched, validateOnBlur, validateFieldDebounced]);
+  }), [data, errors, touched, setValue, setTouched, validateOnBlur, scheduleValidation]);
 
-  // Type-safe field error retrieval
   const getFieldError = useCallback((field: keyof T): string | null => {
-    const fieldTouched = Boolean(touched[field]);
-    const fieldError = safeStringValue(errors[field]);
-    return (fieldTouched && fieldError) || null;
-  }, [touched, errors]);
-
-  // Enhanced field validation check
-  const isFieldValid = useCallback((field: keyof T): boolean => {
-    const fieldError = safeStringValue(errors[field]);
-    const fieldTouched = Boolean(touched[field]);
-    return !fieldError || !fieldTouched;
+    const error = toStr(errors[field]);
+    return touched[field] && error ? error : null;
   }, [errors, touched]);
 
-  // Computed properties for enhanced UX
-  const isValid = useMemo(() => {
-    return Object.values(errors).every(error => !safeStringValue(error));
-  }, [errors]);
+  const isFieldValid = useCallback((field: keyof T): boolean => {
+    return !(touched[field] && toStr(errors[field]));
+  }, [errors, touched]);
 
+  // ── Derived values ───────────────────────────────────────────────────────
+
+  const isValid = useMemo(
+    () => Object.values(errors).every(e => !toStr(e)),
+    [errors]
+  );
+
+  // Uses structural equality so booleans, numbers, and objects are compared correctly.
   const isDirty = useMemo(() => {
     return Object.keys(data).some(key => {
-      const currentValue = safeStringValue(data[key as keyof T]);
-      const initialValue = safeStringValue(initialDataRef.current[key as keyof T]);
-      return currentValue !== initialValue;
+      const k = key as keyof T;
+      return !isEqual(data[k], initialDataRef.current[k]);
     });
   }, [data]);
 
-  const canSubmit = useMemo(() => {
-    return isValid && !isSubmitting && !isValidating;
-  }, [isValid, isSubmitting, isValidating]);
+  const canSubmit = useMemo(
+    () => isValid && !isSubmitting && !isValidating,
+    [isValid, isSubmitting, isValidating]
+  );
 
-  // Cleanup debounce timers on unmount
+  // ── Cleanup ──────────────────────────────────────────────────────────────
+
   useEffect(() => {
     return () => {
-      Object.values(debounceTimers.current).forEach(timer => {
-        clearTimeout(timer);
-      });
-      Object.values(validationAbortControllers.current).forEach(controller => {
-        controller.abort();
-      });
+      Object.values(debounceTimers.current).forEach(clearTimeout);
     };
   }, []);
+
+  // ── Return ───────────────────────────────────────────────────────────────
 
   const formState: FormState<T> = {
     data,
@@ -514,6 +448,7 @@ export function useFormValidation<T extends Record<string, any>>({
   return {
     formState,
     setValue,
+    setMultipleValues,
     setError,
     clearError,
     setTouched,
@@ -524,111 +459,97 @@ export function useFormValidation<T extends Record<string, any>>({
     getFieldProps,
     getFieldError,
     isFieldValid,
-    // New utility methods
-    setFieldValue: setValue, // Alias for consistency
-    setMultipleValues,
     clearForm,
     isDirty,
     canSubmit,
   };
 }
 
-// Enhanced common validation rules with TypeScript safety
+// ---------------------------------------------------------------------------
+// Common validation rules
+// ---------------------------------------------------------------------------
+
 export const commonValidationRules = {
   email: {
     required: true,
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     custom: (value: string) => {
-      const stringValue = safeStringValue(value);
-      if (stringValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(stringValue)) {
-        return 'Please enter a valid email address';
-      }
-      return null;
-    }
+      const s = toStr(value);
+      return s && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
+        ? 'Please enter a valid email address'
+        : null;
+    },
   },
   phone: {
     pattern: /^(\+254|0)[17]\d{8}$/,
     custom: (value: string) => {
-      const stringValue = safeStringValue(value);
-      if (stringValue && !/^(\+254|0)[17]\d{8}$/.test(stringValue.replace(/\s/g, ''))) {
-        return 'Please enter a valid Kenyan phone number';
-      }
-      return null;
-    }
+      const s = toStr(value).replace(/\s/g, '');
+      return s && !/^(\+254|0)[17]\d{8}$/.test(s)
+        ? 'Please enter a valid Kenyan phone number'
+        : null;
+    },
   },
   required: {
-    required: true
+    required: true,
   },
   name: {
     required: true,
     minLength: 2,
     maxLength: 50,
     custom: (value: string) => {
-      const stringValue = safeStringValue(value);
-      if (stringValue && !/^[a-zA-Z\s'-]+$/.test(stringValue)) {
-        return 'Name can only contain letters, spaces, hyphens, and apostrophes';
-      }
-      return null;
-    }
+      const s = toStr(value);
+      return s && !/^[a-zA-Z\s'-]+$/.test(s)
+        ? 'Name can only contain letters, spaces, hyphens, and apostrophes'
+        : null;
+    },
   },
   message: {
     required: true,
     minLength: 10,
-    maxLength: 1000
+    maxLength: 1000,
   },
   rating: {
     required: true,
     custom: (value: any) => {
-      const numValue = Number(value);
-      if (isNaN(numValue) || numValue < 1 || numValue > 5) {
-        return 'Rating must be between 1 and 5';
-      }
-      return null;
-    }
+      const n = Number(value);
+      return isNaN(n) || n < 1 || n > 5 ? 'Rating must be between 1 and 5' : null;
+    },
   },
-  // New common validation rules
   url: {
     pattern: /^https?:\/\/.+/,
     custom: (value: string) => {
-      const stringValue = safeStringValue(value);
-      if (stringValue) {
-        try {
-          new URL(stringValue);
-          return null;
-        } catch {
-          return 'Please enter a valid URL';
-        }
+      const s = toStr(value);
+      if (!s) return null;
+      try {
+        new URL(s);
+        return null;
+      } catch {
+        return 'Please enter a valid URL';
       }
-      return null;
-    }
+    },
   },
   positiveNumber: {
     custom: (value: any) => {
-      const numValue = Number(value);
-      if (value && (isNaN(numValue) || numValue <= 0)) {
-        return 'Must be a positive number';
-      }
-      return null;
-    }
+      const n = Number(value);
+      return value && (isNaN(n) || n <= 0) ? 'Must be a positive number' : null;
+    },
   },
   password: {
     required: true,
     minLength: 8,
     custom: (value: string) => {
-      const stringValue = safeStringValue(value);
-      if (stringValue && stringValue.length >= 8) {
-        const hasUpper = /[A-Z]/.test(stringValue);
-        const hasLower = /[a-z]/.test(stringValue);
-        const hasNumber = /\d/.test(stringValue);
-        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(stringValue);
-        
-        if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
-          return 'Password must contain uppercase, lowercase, number, and special character';
-        }
-      }
-      return null;
-    }
-  }
+      const s = toStr(value);
+      if (!s || s.length < 8) return null;
+      const ok =
+        /[A-Z]/.test(s) && /[a-z]/.test(s) && /\d/.test(s) && /[!@#$%^&*(),.?":{}|<>]/.test(s);
+      return ok
+        ? null
+        : 'Password must contain uppercase, lowercase, number, and special character';
+    },
+  },
 } as const;
+
+// Expose the helper so consumers can use it in custom validators.
+export { toStr as safeStringValue };
 
 export default useFormValidation;

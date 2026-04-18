@@ -2,7 +2,7 @@ import React, { memo } from 'react'
 import { Bed, Bath, Square, MapPin } from 'lucide-react'
 import { Badge } from '../../ui/badge'
 import { cn } from '../../../lib/utils'
-import type { NormalizedProperty } from '../../../types/property'
+import type { NormalizedProperty } from '@shared/types/property'
 
 export interface PropertyFeaturesProps {
   property: NormalizedProperty

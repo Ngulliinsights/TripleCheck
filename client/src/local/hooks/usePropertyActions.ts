@@ -1,48 +1,69 @@
+import { useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from './use-toast' // or your preferred toast library
+import { toast } from './use-toast'
 
-import { PropertyApi } from '../../property/services/property-api'
+const API_BASE = '/api/properties';
 
 /**
- * @deprecated This hook is deprecated in favor of useSafeQuery with mutation configurations
- * Please migrate to useSafeQuery with custom mutation endpoints for better error handling.
- * Migration guide: Use useSafeQuery with POST/PUT methods for property actions
+ * @deprecated This hook is deprecated in favour of useSafeQuery with mutation configurations.
+ * Please migrate to useSafeQuery with POST/PUT methods for better error handling.
  */
 export const usePropertyActions = () => {
   const queryClient = useQueryClient();
-  
-  // Add deprecation warning in development
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.warn(
-      "[DEPRECATED] usePropertyActions is deprecated. Please migrate to useSafeQuery with mutation configurations for better error handling and performance."
-    );
-  }
+
+  // Run the deprecation warning once on mount, not on every render.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[DEPRECATED] usePropertyActions is deprecated. ' +
+        'Please migrate to useSafeQuery with mutation configurations for better error handling and performance.'
+      );
+    }
+  }, []);
 
   const addToFavoritesMutation = useMutation({
-    mutationFn: PropertyApi.addToFavorites,
+    mutationFn: async (propertyId: string): Promise<void> => {
+      const response = await fetch(`${API_BASE}/${propertyId}/favorite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to add to favorites: ${response.status}`);
+      }
+    },
     onSuccess: () => {
-      toast.success('Property added to favorites');
+      toast({ title: 'Property added to favourites', variant: 'default' });
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
     },
     onError: () => {
-      toast.error('Failed to add to favorites');
+      toast({ title: 'Failed to add to favourites', variant: 'destructive' });
     },
   });
 
   const sharePropertyMutation = useMutation({
-    mutationFn: ({ propertyId, method }: { propertyId: string; method: 'email' | 'sms' | 'link' }) =>
-      PropertyApi.shareProperty(propertyId, method),
-    onSuccess: (shareUrl, { method }) => {
+    mutationFn: async ({ propertyId, method }: { propertyId: string; method: 'email' | 'sms' | 'link' }): Promise<string> => {
+      const response = await fetch(`${API_BASE}/${propertyId}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method }),
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to share property: ${response.status}`);
+      }
+      const data = await response.json();
+      return data.shareUrl ?? '';
+    },
+    onSuccess: (shareUrl: string, { method }) => {
       if (method === 'link') {
         navigator.clipboard.writeText(shareUrl);
-        toast.success('Share link copied to clipboard');
+        toast({ title: 'Share link copied to clipboard', variant: 'default' });
       } else {
-        toast.success('Property shared successfully');
+        toast({ title: 'Property shared successfully', variant: 'default' });
       }
     },
     onError: () => {
-      toast.error('Failed to share property');
+      toast({ title: 'Failed to share property', variant: 'destructive' });
     },
   });
 

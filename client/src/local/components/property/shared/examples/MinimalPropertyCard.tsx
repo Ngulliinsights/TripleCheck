@@ -1,7 +1,7 @@
 import React, { memo } from "react"
 import { Card, CardContent } from "../../../ui/card"
 import { cn } from "../../../../lib/utils"
-import type { NormalizedProperty } from "../../../../types/property"
+import type { NormalizedProperty } from '@shared/types/property'
 import {
   useImageGallery,
   usePropertyCardActions,

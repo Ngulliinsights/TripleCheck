@@ -14,7 +14,7 @@ import type {
   LandFilters,
   BasePropertyFilters,
   NormalizedProperty,
-} from '../types/property'
+} from '@shared/types/property'
 // Mock properties functionality moved to property module
 import {
   residentialPropertyAdapter,

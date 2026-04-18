@@ -1,4 +1,4 @@
-import { NormalizedProperty, PropertyOwner } from '../types/property'
+import { NormalizedProperty, PropertyOwner } from '@shared/types/property'
 
 /**
  * Normalizes property data to ensure consistent structure

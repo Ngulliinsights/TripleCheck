@@ -8,7 +8,7 @@
 import { huggingFaceClient } from '../huggingface-api-client'
 import { logger as loggingService } from '../../../../server/infrastructure/monitoring/logger'
 import { BaseError, ErrorDomain, ErrorSeverity } from '../../error-handling/errors/base-error'
-import { Property } from '../../types/property'
+import { Property } from '@shared/types/property'
 import { User } from '../../types/contracts/user-contracts'
 
 // Fraud detection result interfaces

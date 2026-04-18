@@ -11,7 +11,7 @@ import { usePerformanceMonitor } from "../../hooks/useComponentPerformance"
 import { cn } from "../../lib/utils"
 import type { DocumentType, ImageProcessingError } from "../../types/images"
 import { ImageProcessingError as ImageProcessingErrorClass } from "../../types/images"
-import type { NormalizedProperty } from "../../types/property"
+import type { NormalizedProperty } from '@shared/types/property'
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Card, CardContent } from "../ui/card"

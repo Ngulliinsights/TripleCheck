@@ -1,7 +1,7 @@
 import { Building2, Home, TreePine, Store } from "lucide-react"
 import React, { useCallback } from "react"
 
-import type { BasePropertyFilters } from "../../../types/property"
+import type { BasePropertyFilters } from '@shared/types/property'
 import { Button } from "../../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card"
 import { Label } from "../../ui/label"
