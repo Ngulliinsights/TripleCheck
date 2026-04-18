@@ -59,23 +59,28 @@ export const GlobalPerformanceTestPanel: React.FC<GlobalPerformanceTestPanelProp
     // Race condition tester removed - file doesn't exist
     // const testResults = raceConditionTester.runAllTests();
     
-    const results = {
+    const results: {
+      raceConditions: boolean;
+      infiniteLoops: boolean;
+      excessiveRenders: boolean;
+      performanceScore: 'excellent' | 'good' | 'poor' | 'critical';
+    } = {
       raceConditions: false, // Disabled
       infiniteLoops: false, // Disabled
       excessiveRenders: false, // Disabled
-      performanceScore: 'excellent' as const
+      performanceScore: 'excellent'
     };
 
     // Adjust score based on global issues
-    const totalApiCalls = Object.values(stats).reduce((sum: number, stat: any) => sum + stat.totalApiCalls, 0);
-    const avgCallInterval = Object.values(stats).reduce((sum: number, stat: any) => sum + stat.averageTimeBetweenCalls, 0) / Object.keys(stats).length;
+    const totalApiCalls = Object.values(stats).reduce((sum: number, stat: any) => sum + (stat.totalApiCalls || 0), 0);
+    const avgCallInterval = Object.keys(stats).length > 0 ? Object.values(stats).reduce((sum: number, stat: any) => sum + (stat.averageTimeBetweenCalls || 0), 0) / Object.keys(stats).length : 0;
 
     if (results.infiniteLoops || globalIssues.length > 5) {
-      results.performanceScore = 'poor' as const;
+      results.performanceScore = 'critical';
     } else if (results.raceConditions || results.excessiveRenders || globalIssues.length > 2) {
-      results.performanceScore = 'poor' as const;
-    } else if (avgCallInterval < 300 && totalApiCalls > 10) {
-      results.performanceScore = 'excellent' as const;
+      results.performanceScore = 'poor';
+    } else if (avgCallInterval > 0 && avgCallInterval < 300 && totalApiCalls > 10) {
+      results.performanceScore = 'poor';
     }
 
     setTestResults(results);
@@ -209,7 +214,7 @@ export const GlobalPerformanceTestPanel: React.FC<GlobalPerformanceTestPanelProp
                 </div>
                 <div className="bg-gray-50 p-2 rounded text-center">
                   <div className="text-lg font-bold text-purple-600">
-                    {Object.values(allStats).reduce((sum: number, stat: any) => sum + stat.totalRenders, 0)}
+                    {Object.values(allStats).reduce((sum: number, stat: any) => sum + (stat.renderCount || 0), 0)}
                   </div>
                   <div className="text-xs text-gray-600">Total Renders</div>
                 </div>
@@ -252,7 +257,7 @@ export const GlobalPerformanceTestPanel: React.FC<GlobalPerformanceTestPanelProp
                       <span className="text-gray-600">API:</span> {stats.totalApiCalls}
                     </div>
                     <div>
-                      <span className="text-gray-600">Renders:</span> {stats.totalRenders}
+                      <span className="text-gray-600">Renders:</span> {stats.renderCount}
                     </div>
                     <div>
                       <span className="text-gray-600">Avg:</span> {Math.round(stats.averageTimeBetweenCalls)}ms

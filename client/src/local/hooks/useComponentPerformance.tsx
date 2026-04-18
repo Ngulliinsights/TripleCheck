@@ -32,12 +32,15 @@ interface ComponentPerformanceReturn {
   reset: () => void;
 }
 
-interface PerformanceStats {
+export interface PerformanceStats {
   componentName: string;
   renderCount: number;
   totalRenderTime: number;
   averageRenderTime: number;
   lastRenderTime: number;
+  totalApiCalls: number;
+  recentApiCalls: number;
+  averageTimeBetweenCalls: number;
 }
 
 // ------------------------------------------------------------------
@@ -78,6 +81,12 @@ export const useComponentPerformance = (
   const totalRenderTime = useRef<number>(0);
   const lastRenderTime = useRef<number>(0);
 
+  // API tracking
+  const apiCallCount = useRef(0);
+  const recentApiCalls = useRef(0);
+  const lastApiCallTime = useRef(0);
+  const totalApiInterval = useRef(0);
+
   // Start timing at the beginning of render
   if (enabled && trackRenders && window?.performance) {
     renderStartTime.current = window.performance.now();
@@ -115,14 +124,31 @@ export const useComponentPerformance = (
     (data: unknown) => {
       if (!enabled) return;
 
+      const now = Date.now();
+      apiCallCount.current += 1;
+      recentApiCalls.current += 1;
+
+      if (lastApiCallTime.current > 0) {
+        totalApiInterval.current += (now - lastApiCallTime.current);
+      }
+      lastApiCallTime.current = now;
+
       // eslint-disable-next-line no-console
       console.debug(`📡 API call tracked for ${componentName}:`, {
         timestamp: new Date().toISOString(),
+        count: apiCallCount.current,
         data:
           typeof data === "object" ?
             `${JSON.stringify(data).slice(0, 100)}...`
           : data,
       });
+
+      // Reset recent count after 10 seconds of inactivity
+      setTimeout(() => {
+        if (Date.now() - lastApiCallTime.current >= 10000) {
+          recentApiCalls.current = 0;
+        }
+      }, 10000);
     },
     [enabled, componentName]
   );
@@ -149,7 +175,7 @@ export const useComponentPerformance = (
   }, [enabled, componentName, logMetrics]);
 
   // Get current stats
-  const getStats = useCallback(() => {
+  const getStats = useCallback((): PerformanceStats => {
     return {
       componentName,
       renderCount: renderCount.current,
@@ -159,6 +185,12 @@ export const useComponentPerformance = (
           totalRenderTime.current / renderCount.current
         : 0,
       lastRenderTime: lastRenderTime.current,
+      totalApiCalls: apiCallCount.current,
+      recentApiCalls: recentApiCalls.current,
+      averageTimeBetweenCalls:
+        apiCallCount.current > 1 ?
+          totalApiInterval.current / (apiCallCount.current - 1)
+        : 0,
     };
   }, [componentName]);
 
@@ -167,6 +199,10 @@ export const useComponentPerformance = (
     renderCount.current = 0;
     totalRenderTime.current = 0;
     lastRenderTime.current = window?.performance ? window.performance.now() : 0;
+    apiCallCount.current = 0;
+    recentApiCalls.current = 0;
+    lastApiCallTime.current = 0;
+    totalApiInterval.current = 0;
   }, []);
 
   // Auto-track renders if enabled

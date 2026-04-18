@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 // Extend Window so TypeScript stops complaining about gtag
 declare global {
   interface Window {
-    gtag?: (...args: unknown[]) => void;
+    gtag?: (...args: any[]) => void;
   }
 }
 

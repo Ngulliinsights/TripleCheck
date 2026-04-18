@@ -32,11 +32,7 @@ declare global {
   interface Window {
     performance: Performance;
     console: Console;
-    gtag?: (
-      command: string,
-      eventName: string,
-      parameters: Record<string, unknown>
-    ) => void;
+    gtag?: (...args: any[]) => void;
   }
 }
 

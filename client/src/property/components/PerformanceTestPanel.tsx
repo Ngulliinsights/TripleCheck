@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Badge } from '../../local/components/ui/badge'
 import { Button } from '../../local/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
+import { useComponentPerformance, type PerformanceStats } from '../../local/hooks'
 import { PerformanceMonitoringService } from '../../local/services/performance-monitoring-service'
 // import { raceConditionTester } from '../utils/raceConditionTest' // File doesn't exist
 
@@ -12,10 +13,14 @@ interface PerformanceTestPanelProps {
 }
 
 export const PerformanceTestPanel: React.FC<PerformanceTestPanelProps> = ({ className }) => {
-  const performanceMonitor = usePerformanceMonitor('PerformanceTestPanel');
-  const [stats, setStats] = useState({
+  const performanceMonitor = useComponentPerformance('PerformanceTestPanel');
+  const [stats, setStats] = useState<PerformanceStats>({
+    componentName: 'PerformanceTestPanel',
+    renderCount: 0,
+    totalRenderTime: 0,
+    averageRenderTime: 0,
+    lastRenderTime: 0,
     totalApiCalls: 0,
-    totalRenders: 0,
     recentApiCalls: 0,
     averageTimeBetweenCalls: 0
   });
@@ -45,24 +50,31 @@ export const PerformanceTestPanel: React.FC<PerformanceTestPanelProps> = ({ clas
     return () => clearInterval(interval);
   }, [performanceMonitor]);
 
-  const analyzePerformance = (currentStats: typeof stats) => {
+  const analyzePerformance = (currentStats: PerformanceStats) => {
     // Race condition tester removed - file doesn't exist
     // const testResults = raceConditionTester.runAllTests();
     
-    const results = {
+    const results: {
+      raceConditions: boolean;
+      infiniteLoops: boolean;
+      excessiveRenders: boolean;
+      performanceScore: 'excellent' | 'good' | 'poor' | 'critical';
+    } = {
       raceConditions: false, // Disabled
       infiniteLoops: false, // Disabled
       excessiveRenders: false, // Disabled
-      performanceScore: 'excellent' as const
+      performanceScore: 'excellent'
     };
 
     // Adjust score based on severity
     if (results.infiniteLoops) {
-      results.performanceScore = 'poor' as const;
+      results.performanceScore = 'critical';
     } else if (results.raceConditions || results.excessiveRenders) {
-      results.performanceScore = 'poor' as const;
-    } else if (currentStats.averageTimeBetweenCalls < 300 && currentStats.totalApiCalls > 5) {
-      results.performanceScore = 'excellent' as const;
+      results.performanceScore = 'poor';
+    } else if (currentStats.averageTimeBetweenCalls > 0 && currentStats.averageTimeBetweenCalls < 300 && currentStats.totalApiCalls > 5) {
+      results.performanceScore = 'poor'; // Too many rapid calls
+    } else if (currentStats.averageRenderTime > 32) {
+      results.performanceScore = 'poor';
     }
 
     setTestResults(results);
@@ -150,7 +162,7 @@ export const PerformanceTestPanel: React.FC<PerformanceTestPanelProps> = ({ clas
           </div>
           <div className="bg-gray-50 p-3 rounded-lg">
             <div className="text-sm text-gray-600">Total Renders</div>
-            <div className="text-2xl font-bold text-green-600">{stats.totalRenders}</div>
+            <div className="text-2xl font-bold text-green-600">{stats.renderCount}</div>
           </div>
           <div className="bg-gray-50 p-3 rounded-lg">
             <div className="text-sm text-gray-600">Recent API Calls</div>

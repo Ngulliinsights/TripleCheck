@@ -31,4 +31,5 @@ export interface SearchFilters {
 }
 
 // Re-export Property types
-export type { Property, PropertyFeatures } from './property'
+export type { Property } from './contracts/property-contracts'
+export type { PropertyFeatures } from './compare'

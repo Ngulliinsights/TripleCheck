@@ -1,5 +1,6 @@
 // Unified API response types for consistent frontend-backend communication
-import { Property, PropertyFeatures } from './property'
+import { Property } from './contracts/property-contracts'
+import { PropertyFeatures } from './compare'
 
 // Re-export Property types for external consumers
 export type { Property, PropertyFeatures }
