@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager'
 import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect'
@@ -36,13 +36,13 @@ interface UseGeolocationReturn {
 }
 
 /**
- * Enhanced geolocation hook with distance calculations and property proximity features
- * Essential for location-based property search and mapping functionality
+ * Enhanced geolocation hook with distance calculations and property proximity features.
+ * Essential for location-based property search and mapping functionality.
  */
 export function useGeolocation({
   enableHighAccuracy = true,
-  timeout = 10000,
-  maximumAge = 300000, // 5 minutes
+  timeout = 10_000,
+  maximumAge = 300_000, // 5 minutes
   watch = false,
   onSuccess,
   onError,
@@ -50,89 +50,104 @@ export function useGeolocation({
   const [position, setPosition] = useState<GeolocationPosition | null>(null);
   const [error, setError] = useState<GeolocationPositionError | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
   const watchIdRef = useRef<number | null>(null);
-  const supported = 'geolocation' in navigator;
+  const supported = typeof navigator !== 'undefined' && 'geolocation' in navigator;
 
-  const options: PositionOptions = {
-    enableHighAccuracy,
-    timeout,
-    maximumAge,
-  };
+  // Keep callbacks fresh without destabilizing downstream memos
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  useSafeEffect(() => { onSuccessRef.current = onSuccess; }, [onSuccess]);
+  useSafeEffect(() => { onErrorRef.current = onError; }, [onError]);
 
-  // Convert native position to our format
-  const convertPosition = useCallback((nativePosition: globalThis.GeolocationPosition): GeolocationPosition => {
-    const { coords, timestamp } = nativePosition;
-    return {
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      accuracy: coords.accuracy,
-      altitude: coords.altitude ?? 0,
-      altitudeAccuracy: coords.altitudeAccuracy ?? 0,
-      ...(coords.heading !== null && { heading: coords.heading }),
-      ...(coords.speed !== null && { speed: coords.speed }),
-      timestamp,
-    };
-  }, []);
+  // Memoize the PositionOptions object so it is stable across renders
+  const options = useMemo<PositionOptions>(
+    () => ({ enableHighAccuracy, timeout, maximumAge }),
+    [enableHighAccuracy, timeout, maximumAge]
+  );
 
-  // Success handler
-  const handleSuccess = useCallback((nativePosition: globalThis.GeolocationPosition) => {
-    const convertedPosition = convertPosition(nativePosition);
-    setPosition(convertedPosition);
-    setError(null);
-    setLoading(false);
-    onSuccess?.(convertedPosition);
-  }, [convertPosition, onSuccess]);
+  const convertPosition = useCallback(
+    (native: globalThis.GeolocationPosition): GeolocationPosition => {
+      const { coords, timestamp } = native;
+      return {
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        accuracy: coords.accuracy,
+        altitude: coords.altitude ?? undefined,
+        altitudeAccuracy: coords.altitudeAccuracy ?? undefined,
+        ...(coords.heading != null && { heading: coords.heading }),
+        ...(coords.speed != null && { speed: coords.speed }),
+        timestamp,
+      };
+    },
+    []
+  );
 
-  // Error handler
+  const handleSuccess = useCallback(
+    (native: globalThis.GeolocationPosition) => {
+      const converted = convertPosition(native);
+      setPosition(converted);
+      setError(null);
+      setLoading(false);
+      onSuccessRef.current?.(converted);
+    },
+    [convertPosition]
+  );
+
   const handleError = useCallback((err: GeolocationPositionError) => {
     setError(err);
     setLoading(false);
-    onError?.(err);
-  }, [onError]);
+    onErrorRef.current?.(err);
+  }, []);
 
-  // Get current position
-  const getCurrentPosition = useCallback((): Promise<GeolocationPosition> => {
-    return new Promise((resolve, reject) => {
-      if (!supported) {
-        const error = {
-          code: 0,
-          message: 'Geolocation is not supported',
-          PERMISSION_DENIED: 1,
-          POSITION_UNAVAILABLE: 2,
-          TIMEOUT: 3,
-        } as GeolocationPositionError;
-        reject(error);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      navigator.geolocation.getCurrentPosition(
-        (nativePosition) => {
-          const convertedPosition = convertPosition(nativePosition);
-          setPosition(convertedPosition);
-          setLoading(false);
-          onSuccess?.(convertedPosition);
-          resolve(convertedPosition);
-        },
-        (err) => {
-          setError(err);
-          setLoading(false);
-          onError?.(err);
-          reject(err);
-        },
-        options
-      );
-    });
-  }, [supported, convertPosition, onSuccess, onError, options]);
-
-  // Watch position
-  const watchPosition = useCallback(() => {
-    if (!supported || watchIdRef.current !== null) {
-      return;
+  const clearWatch = useCallback(() => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      setLoading(false);
     }
+  }, []);
+
+  const getCurrentPosition = useCallback(
+    (): Promise<GeolocationPosition> =>
+      new Promise((resolve, reject) => {
+        if (!supported) {
+          reject(
+            Object.assign(new Error('Geolocation is not supported'), {
+              code: 0,
+              PERMISSION_DENIED: 1,
+              POSITION_UNAVAILABLE: 2,
+              TIMEOUT: 3,
+            }) as unknown as GeolocationPositionError
+          );
+          return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        navigator.geolocation.getCurrentPosition(
+          native => {
+            const converted = convertPosition(native);
+            setPosition(converted);
+            setLoading(false);
+            onSuccessRef.current?.(converted);
+            resolve(converted);
+          },
+          err => {
+            setError(err);
+            setLoading(false);
+            onErrorRef.current?.(err);
+            reject(err);
+          },
+          options
+        );
+      }),
+    [supported, convertPosition, options]
+  );
+
+  const watchPosition = useCallback(() => {
+    if (!supported || watchIdRef.current !== null) return;
 
     setLoading(true);
     setError(null);
@@ -144,59 +159,44 @@ export function useGeolocation({
     );
   }, [supported, handleSuccess, handleError, options]);
 
-  // Clear watch
-  const clearWatch = useCallback(() => {
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-      setLoading(false);
-    }
-  }, []);
+  // Calculate distance between two points using the Haversine formula
+  const calculateDistance = useCallback(
+    (lat2: number, lon2: number): number | null => {
+      if (!position) return null;
 
-  // Calculate distance between two points using Haversine formula
-  const calculateDistance = useCallback((lat2: number, lon2: number): number | null => {
-    if (!position) return null;
+      const { latitude: lat1, longitude: lon1 } = position;
+      const R = 6_371; // Earth's radius in km
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
-    const { latitude: lat1, longitude: lon1 } = position;
-    
-    const R = 6371; // Earth's radius in kilometers
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    
-    const a = 
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-    
-    return Math.round(distance * 100) / 100; // Round to 2 decimal places
-  }, [position]);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) ** 2;
 
-  // Check if a location is within a certain radius
-  const isNearby = useCallback((lat2: number, lon2: number, radiusKm: number): boolean | null => {
-    const distance = calculateDistance(lat2, lon2);
-    return distance !== null ? distance <= radiusKm : null;
-  }, [calculateDistance]);
+      const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return Math.round(distance * 100) / 100;
+    },
+    [position]
+  );
+
+  const isNearby = useCallback(
+    (lat2: number, lon2: number, radiusKm: number): boolean | null => {
+      const distance = calculateDistance(lat2, lon2);
+      return distance !== null ? distance <= radiusKm : null;
+    },
+    [calculateDistance]
+  );
 
   // Auto-start watching if enabled
   useSafeEffect(() => {
-    if (watch && supported) {
-      watchPosition();
-    }
-
-    return () => {
-      clearWatch();
-    };
+    if (watch && supported) watchPosition();
+    return clearWatch;
   }, [watch, supported, watchPosition, clearWatch]);
 
   // Cleanup on unmount
-  useSafeEffect(() => {
-    return () => {
-      clearWatch();
-    };
-  }, [clearWatch]);
+  useSafeEffect(() => clearWatch, [clearWatch]);
 
   return {
     position,
@@ -211,107 +211,129 @@ export function useGeolocation({
   };
 }
 
+// ---------------------------------------------------------------------------
+
 /**
- * Property location hook with distance calculations
+ * Property location hook — extends useGeolocation with property-relative helpers.
  */
-export function usePropertyLocation(propertyLocation?: { latitude: number; longitude: number }) {
+export function usePropertyLocation(
+  propertyLocation?: { latitude: number; longitude: number }
+) {
   const geolocation = useGeolocation({
     enableHighAccuracy: true,
-    timeout: 15000,
-    maximumAge: 600000, // 10 minutes for property searches
+    timeout: 15_000,
+    maximumAge: 600_000, // 10 minutes for property searches
   });
 
-  const distanceToProperty = propertyLocation && geolocation.position
-    ? geolocation.calculateDistance(propertyLocation.latitude, propertyLocation.longitude)
-    : null;
-
-  const isPropertyNearby = (radiusKm: number = 5) => {
-    return propertyLocation && geolocation.position
-      ? geolocation.isNearby(propertyLocation.latitude, propertyLocation.longitude, radiusKm)
+  const distanceToProperty =
+    propertyLocation && geolocation.position
+      ? geolocation.calculateDistance(
+          propertyLocation.latitude,
+          propertyLocation.longitude
+        )
       : null;
-  };
 
-  return {
-    ...geolocation,
-    distanceToProperty,
-    isPropertyNearby,
-  };
+  const isPropertyNearby = useCallback(
+    (radiusKm = 5) =>
+      propertyLocation && geolocation.position
+        ? geolocation.isNearby(
+            propertyLocation.latitude,
+            propertyLocation.longitude,
+            radiusKm
+          )
+        : null,
+    [propertyLocation, geolocation]
+  );
+
+  return { ...geolocation, distanceToProperty, isPropertyNearby };
 }
 
+// ---------------------------------------------------------------------------
+
 /**
- * Location-based property search hook
+ * Location-based property search hook.
  */
 export function useLocationBasedSearch() {
-  const [searchRadius, setSearchRadius] = useState(10); // Default 10km radius
-  const [nearbyProperties, setNearbyProperties] = useState<any[]>([]);
+  const [searchRadius, setSearchRadius] = useState(10); // km
+  const [nearbyProperties, setNearbyProperties] = useState<Array<{
+    latitude: number;
+    longitude: number;
+    distance?: number | null;
+    [key: string]: unknown;
+  }>>([]);
   const [loading, setLoading] = useState(false);
   const cleanupManager = useEnhancedCleanupManager();
 
   const geolocation = useGeolocation({
     enableHighAccuracy: true,
-    timeout: 10000,
+    timeout: 10_000,
   });
 
-  const searchNearbyProperties = useCallback(async (radius: number = searchRadius) => {
-    if (!geolocation.position) {
-      await geolocation.getCurrentPosition();
-      return;
-    }
+  const searchNearbyProperties = useCallback(
+    async (radius = searchRadius) => {
+      if (!geolocation.position) {
+        await geolocation.getCurrentPosition();
+        return;
+      }
 
-    setLoading(true);
-    
-    const controller = new AbortController();
-    cleanupManager.addAbortController(controller, 'nearby-search');
+      setLoading(true);
 
-    try {
-      const { latitude, longitude } = geolocation.position;
-      const token = localStorage.getItem('authToken');
-      
-      const response = await fetch(
-        `/api/properties/nearby?lat=${latitude}&lon=${longitude}&radius=${radius}`,
-        {
-          headers: {
-            'Authorization': token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal,
+      const controller = new AbortController();
+      cleanupManager.addAbortController(controller, 'nearby-search');
+
+      try {
+        const { latitude, longitude } = geolocation.position;
+        const token =
+          typeof localStorage !== 'undefined'
+            ? localStorage.getItem('authToken')
+            : null;
+
+        const response = await fetch(
+          `/api/properties/nearby?lat=${latitude}&lon=${longitude}&radius=${radius}`,
+          {
+            headers: {
+              ...(token && { Authorization: `Bearer ${token}` }),
+              'Content-Type': 'application/json',
+            },
+            signal: controller.signal,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to search nearby properties: ${response.statusText}`
+          );
         }
-      );
 
-      if (!response.ok) {
-        throw new Error(`Failed to search nearby properties: ${response.statusText}`);
+        const data = await response.json() as { properties?: Array<{ latitude: number; longitude: number }> };
+
+        const propertiesWithDistance = (data.properties ?? [])
+          .map((p: { latitude: number; longitude: number }) => ({
+            ...p,
+            distance: geolocation.calculateDistance(p.latitude, p.longitude),
+          }))
+          .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+
+        setNearbyProperties(propertiesWithDistance);
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.error('Error searching nearby properties:', err);
+        setNearbyProperties([]);
+      } finally {
+        setLoading(false);
+        cleanupManager.removeCleanup('nearby-search');
       }
+    },
+    [geolocation, searchRadius, cleanupManager]
+  );
 
-      const data = await response.json();
-      
-      // Add distance to each property
-      const propertiesWithDistance = data.properties.map((property: any) => ({
-        ...property,
-        distance: geolocation.calculateDistance(property.latitude, property.longitude),
-      }));
-
-      // Sort by distance
-      propertiesWithDistance.sort((a: any, b: any) => (a.distance || 0) - (b.distance || 0));
-
-      setNearbyProperties(propertiesWithDistance);
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        return; // Request was cancelled
-      }
-      console.error('Error searching nearby properties:', error);
-      setNearbyProperties([]);
-    } finally {
-      setLoading(false);
-      cleanupManager.removeCleanup('nearby-search');
-    }
-  }, [geolocation, searchRadius, cleanupManager]);
-
-  const updateSearchRadius = useCallback((radius: number) => {
-    setSearchRadius(radius);
-    if (geolocation.position) {
-      searchNearbyProperties(radius);
-    }
-  }, [geolocation.position, searchNearbyProperties]);
+  const updateSearchRadius = useCallback(
+    (radius: number) => {
+      setSearchRadius(radius);
+      if (geolocation.position) searchNearbyProperties(radius);
+    },
+    [geolocation.position, searchNearbyProperties]
+  );
 
   return {
     position: geolocation.position,
@@ -326,112 +348,91 @@ export function useLocationBasedSearch() {
   };
 }
 
+// ---------------------------------------------------------------------------
+
 /**
- * Address geocoding hook
+ * Address geocoding hook.
  */
 export function useGeocoding() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cleanupManager = useEnhancedCleanupManager();
 
-  const geocodeAddress = useCallback(async (address: string): Promise<GeolocationPosition | null> => {
-    setLoading(true);
-    setError(null);
+  const geocodeAddress = useCallback(
+    async (address: string): Promise<GeolocationPosition | null> => {
+      setLoading(true);
+      setError(null);
 
-    const controller = new AbortController();
-    cleanupManager.addAbortController(controller, 'geocode-request');
+      const controller = new AbortController();
+      cleanupManager.addAbortController(controller, 'geocode-request');
 
-    try {
-      // Using a geocoding service (you'd replace this with your preferred service)
-      const response = await fetch(
-        `/api/geocode?address=${encodeURIComponent(address)}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal,
+      try {
+        const response = await fetch(
+          `/api/geocode?address=${encodeURIComponent(address)}`,
+          {
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Geocoding failed: ${response.statusText}`);
         }
-      );
 
-      if (!response.ok) {
-        throw new Error(`Geocoding failed: ${response.statusText}`);
-      }
+        const data = await response.json();
 
-      const data = await response.json();
-      
-      if (data.results && data.results.length > 0) {
-        const result = data.results[0];
-        return {
-          latitude: result.geometry.location.lat,
-          longitude: result.geometry.location.lng,
-          accuracy: 100, // Estimated accuracy for geocoded addresses
-          timestamp: Date.now(),
-        };
-      }
-
-      return null;
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        return null; // Request was cancelled
-      }
-      const errorMessage = err instanceof Error ? err.message : 'Geocoding failed';
-      setError(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-      cleanupManager.removeCleanup('geocode-request');
-    }
-  }, [cleanupManager]);
-
-  const reverseGeocode = useCallback(async (
-    latitude: number, 
-    longitude: number
-  ): Promise<string | null> => {
-    setLoading(true);
-    setError(null);
-
-    const controller = new AbortController();
-    cleanupManager.addAbortController(controller, 'reverse-geocode-request');
-
-    try {
-      const response = await fetch(
-        `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal,
+        if (data.results?.length > 0) {
+          const { lat, lng } = data.results[0].geometry.location;
+          return { latitude: lat, longitude: lng, accuracy: 100, timestamp: Date.now() };
         }
-      );
 
-      if (!response.ok) {
-        throw new Error(`Reverse geocoding failed: ${response.statusText}`);
+        return null;
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return null;
+        setError(err instanceof Error ? err.message : 'Geocoding failed');
+        return null;
+      } finally {
+        setLoading(false);
+        cleanupManager.removeCleanup('geocode-request');
       }
+    },
+    [cleanupManager]
+  );
 
-      const data = await response.json();
-      
-      if (data.results && data.results.length > 0) {
-        return data.results[0].formatted_address;
+  const reverseGeocode = useCallback(
+    async (latitude: number, longitude: number): Promise<string | null> => {
+      setLoading(true);
+      setError(null);
+
+      const controller = new AbortController();
+      cleanupManager.addAbortController(controller, 'reverse-geocode-request');
+
+      try {
+        const response = await fetch(
+          `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
+          {
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Reverse geocoding failed: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.results?.[0]?.formatted_address ?? null;
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return null;
+        setError(err instanceof Error ? err.message : 'Reverse geocoding failed');
+        return null;
+      } finally {
+        setLoading(false);
+        cleanupManager.removeCleanup('reverse-geocode-request');
       }
+    },
+    [cleanupManager]
+  );
 
-      return null;
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        return null; // Request was cancelled
-      }
-      const errorMessage = err instanceof Error ? err.message : 'Reverse geocoding failed';
-      setError(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-      cleanupManager.removeCleanup('reverse-geocode-request');
-    }
-  }, [cleanupManager]);
-
-  return {
-    loading,
-    error,
-    geocodeAddress,
-    reverseGeocode,
-  };
+  return { loading, error, geocodeAddress, reverseGeocode };
 }

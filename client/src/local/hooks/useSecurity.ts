@@ -1,404 +1,260 @@
 /**
  * Security Hooks
- * React hooks for security features and validation
+ * Form validation, authentication, rate limiting, input sanitization, and audit monitoring.
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { ValidationError } from '../error-handling/errors/validation-error'
 import { ZodSchema } from 'zod'
+
+import { ValidationError }  from '../error-handling/errors/validation-error'
 import { authTokenService } from '../services/AuthTokenService'
 import { rateLimitService, RateLimitConfig, RateLimitStatus } from '../services/RateLimitService'
-import { auditLogService } from '../services/AuditLogService'
+import { auditLogService }  from '../services/AuditLogService'
 
-// Types for security hooks
+// ---------------------------------------------------------------------------
+// Sanitization helpers (inline to avoid server-only imports)
+// ---------------------------------------------------------------------------
+
+const sanitizers = {
+  html: (s: string) => s.replace(/<[^>]*>/g, ''),
+  sql:  (s: string) => s.replace(/['";\\]/g, ''),
+  user: (s: string) => s.trim().replace(/[<>]/g, ''),
+} as const;
+
+// ---------------------------------------------------------------------------
+// useSecureValidation
+// ---------------------------------------------------------------------------
+
 interface ValidationResult<T> {
   success: boolean;
-  data?: T;
-  error?: ValidationError;
+  data?:   T;
+  error?:  ValidationError;
 }
 
-// Simple sanitization functions
-const sanitizeHtml = (input: string): string => {
-  return input.replace(/<[^>]*>/g, '');
-};
-
-const sanitizeSql = (input: string): string => {
-  return input.replace(/['";\\]/g, '');
-};
-
-const sanitizeUserInput = (input: string): string => {
-  return input.trim().replace(/[<>]/g, '');
-};
-
-/**
- * Hook for form validation with security features
- */
-export const useSecureValidation = <T>(schema: ZodSchema<T>) => {
-  const [errors, setErrors] = useState<Record<string, string>>({});
+export function useSecureValidation<T>(schema: ZodSchema<T>) {
+  const [errors,      setErrors]      = useState<Record<string, string>>({});
   const [isValidating, setIsValidating] = useState(false);
 
   const validate = useCallback(async (data: unknown): Promise<ValidationResult<T>> => {
     setIsValidating(true);
-    
     try {
-      // Log validation attempt
       auditLogService.logUserAction('form_validation', {
-        fields: Object.keys(data as Record<string, unknown>)
+        fields: Object.keys(data as Record<string, unknown>),
       });
-
       const result = schema.parse(data) as T;
-      setErrors({});  // Clear errors on success
+      setErrors({});
       return { success: true, data: result };
-
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        const errorMap = error.fieldErrors ? 
-          Object.entries(error.fieldErrors).reduce((acc: Record<string, string>, [field, messages]) => {
-            acc[field] = messages[0] || 'Validation error';
-            return acc;
-          }, {}) : {};
-        
-        setErrors(errorMap);
-
-        // Log validation failure
-        auditLogService.logSecurityEvent('validation_failed', {
-          errors: errorMap,
-          fieldCount: Object.keys(data as Record<string, unknown>).length
-        }, 'low');
-
-        return { success: false, error };
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        const map = err.fieldErrors
+          ? Object.entries(err.fieldErrors).reduce<Record<string, string>>(
+              (acc, [field, msgs]) => { acc[field] = msgs[0] ?? 'Validation error'; return acc; },
+              {},
+            )
+          : {};
+        setErrors(map);
+        auditLogService.logSecurityEvent('validation_failed', { errors: map }, 'low');
+        return { success: false, error: err };
       }
-      throw error;
+      throw err;
     } finally {
       setIsValidating(false);
     }
   }, [schema]);
 
-  const clearErrors = useCallback(() => {
-    setErrors({});
-  }, []);
+  const clearErrors    = useCallback(() => setErrors({}), []);
+  const setFieldError  = useCallback(
+    (field: string, msg: string) => setErrors((prev) => ({ ...prev, [field]: msg })),
+    [],
+  );
 
-  const setFieldError = useCallback((field: string, error: string) => {
-    setErrors(prev => ({ ...prev, [field]: error }));
-  }, []);
+  return { errors, isValidating, validate, clearErrors, setFieldError, hasErrors: Object.keys(errors).length > 0 };
+}
 
-  return {
-    errors,
-    isValidating,
-    validate,
-    clearErrors,
-    setFieldError,
-    hasErrors: Object.keys(errors).length > 0
-  };
-};
+// ---------------------------------------------------------------------------
+// useAuthLegacy  (use useAuth from '@/auth/hooks' for new code)
+// ---------------------------------------------------------------------------
 
-/**
- * Hook for authentication state management
- * @deprecated Use useAuth from '@/auth/hooks' instead
- */
-export const useAuthLegacy = () => {
+/** @deprecated Prefer useAuth from '@/auth/hooks' */
+export function useAuthLegacy() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user,            setUser]            = useState<unknown>(null);
+  const [isLoading,       setIsLoading]       = useState(true);
 
   useEffect(() => {
-    const token = authTokenService.getAccessToken();
-    const payload = authTokenService.getTokenPayload();
-    
-    setIsAuthenticated(!!token);
-    setUser(payload);
+    setIsAuthenticated(!!authTokenService.getAccessToken());
+    setUser(authTokenService.getTokenPayload());
     setIsLoading(false);
 
-    // Subscribe to token changes
-    const callbackId = 'auth_hook';
-    authTokenService.onTokenChange(callbackId, (newToken) => {
-      const newPayload = newToken ? authTokenService.getTokenPayload() : null;
-      setIsAuthenticated(!!newToken);
-      setUser(newPayload);
+    const id = 'auth_hook';
+    authTokenService.onTokenChange(id, (token) => {
+      setIsAuthenticated(!!token);
+      setUser(token ? authTokenService.getTokenPayload() : null);
     });
-
-    return () => {
-      authTokenService.offTokenChange(callbackId);
-    };
+    return () => authTokenService.offTokenChange(id);
   }, []);
 
   const login = useCallback(async (credentials: { email: string; password: string }) => {
-    try {
-      auditLogService.logAuthentication('login_attempt', true, {
-        email: credentials.email
-      });
-
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials)
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const tokenPair = await response.json();
-      authTokenService.setTokens(tokenPair);
-
-      auditLogService.logAuthentication('login_success', true, {
-        email: credentials.email
-      });
-
-      return true;
-    } catch (error) {
-      auditLogService.logAuthentication('login_failed', false, {
-        email: credentials.email,
-        error: (error as Error).message
-      });
-      throw error;
+    auditLogService.logAuthentication('login_attempt', true, { email: credentials.email });
+    const res = await fetch('/api/auth/login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(credentials),
+    });
+    if (!res.ok) {
+      auditLogService.logAuthentication('login_failed', false, { email: credentials.email });
+      throw new Error('Login failed');
     }
+    authTokenService.setTokens(await res.json());
+    auditLogService.logAuthentication('login_success', true, { email: credentials.email });
+    return true;
   }, []);
 
   const logout = useCallback(() => {
-    auditLogService.logAuthentication('logout', true, {
-      userId: user?.userId
-    });
-    
+    auditLogService.logAuthentication('logout', true, { userId: (user as Record<string, unknown>)?.['userId'] });
     authTokenService.clearTokens();
   }, [user]);
 
-  const hasPermission = useCallback((permission: string): boolean => {
-    return authTokenService.hasPermission(permission);
-  }, []);
+  const hasPermission = useCallback((p: string) => authTokenService.hasPermission(p), []);
+  const hasRole       = useCallback((r: string) => authTokenService.hasRole(r),       []);
 
-  const hasRole = useCallback((role: string): boolean => {
-    return authTokenService.hasRole(role);
-  }, []);
+  return { isAuthenticated, user, isLoading, login, logout, hasPermission, hasRole };
+}
 
-  return {
-    isAuthenticated,
-    user,
-    isLoading,
-    login,
-    logout,
-    hasPermission,
-    hasRole
-  };
-};
+// ---------------------------------------------------------------------------
+// useRateLimit
+// ---------------------------------------------------------------------------
 
-/**
- * Hook for rate limiting
- */
-export const useRateLimit = (endpoint: string, config?: Partial<RateLimitConfig>) => {
-  const [status, setStatus] = useState<RateLimitStatus | null>(null);
+export function useRateLimit(endpoint: string, config?: Partial<RateLimitConfig>) {
+  const [status,    setStatus]    = useState<RateLimitStatus | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
 
-  const checkRateLimit = useCallback((): RateLimitStatus => {
-    const currentStatus = rateLimitService.checkRateLimit(endpoint, config);
-    setStatus(currentStatus);
-    setIsBlocked(!currentStatus.allowed);
-
-    if (!currentStatus.allowed) {
-      auditLogService.logSecurityEvent('rate_limit_exceeded', {
-        endpoint,
-        remaining: currentStatus.remaining,
-        retryAfter: currentStatus.retryAfter
-      }, 'medium');
-    }
-
-    return currentStatus;
+  const check = useCallback((): RateLimitStatus => {
+    const s = rateLimitService.checkRateLimit(endpoint, config);
+    setStatus(s);
+    setIsBlocked(!s.allowed);
+    if (!s.allowed)
+      auditLogService.logSecurityEvent('rate_limit_exceeded', { endpoint, retryAfter: s.retryAfter }, 'medium');
+    return s;
   }, [endpoint, config]);
 
-  const executeWithRateLimit = useCallback(async <T>(
-    operation: () => Promise<T>
-  ): Promise<T> => {
-    const rateLimitStatus = checkRateLimit();
-    
-    if (!rateLimitStatus.allowed) {
-      throw new Error(`Rate limit exceeded. Try again in ${rateLimitStatus.retryAfter} seconds.`);
-    }
-
+  const executeWithRateLimit = useCallback(async <T>(op: () => Promise<T>): Promise<T> => {
+    const s = check();
+    if (!s.allowed) throw new Error(`Rate limit exceeded. Retry in ${s.retryAfter}s.`);
     try {
-      const result = await operation();
+      const result = await op();
       rateLimitService.recordRequest(endpoint);
       return result;
-    } catch (error) {
-      auditLogService.logError(error as Error, 'rate_limited_operation', {
-        endpoint
-      });
-      throw error;
+    } catch (err) {
+      auditLogService.logError(err as Error, 'rate_limited_operation', { endpoint });
+      throw err;
     }
-  }, [endpoint, checkRateLimit]);
+  }, [endpoint, check]);
 
-  useEffect(() => {
-    checkRateLimit();
-  }, [checkRateLimit]);
+  useEffect(() => { check(); }, [check]);
 
-  return {
-    status,
-    isBlocked,
-    checkRateLimit,
-    executeWithRateLimit
-  };
-};
+  return { status, isBlocked, checkRateLimit: check, executeWithRateLimit };
+}
 
-/**
- * Hook for secure API requests
- */
-export const useSecureApi = () => {
+// ---------------------------------------------------------------------------
+// useSecureApi
+// ---------------------------------------------------------------------------
+
+export function useSecureApi() {
   const makeSecureRequest = useCallback(async (
-    url: string,
-    options: RequestInit = {},
-    rateLimitConfig?: Partial<RateLimitConfig>
+    url:               string,
+    options:           RequestInit = {},
+    rateLimitConfig?:  Partial<RateLimitConfig>,
   ) => {
-    // Check rate limit
-    const rateLimitStatus = rateLimitService.checkRateLimit(url, rateLimitConfig);
-    if (!rateLimitStatus.allowed) {
-      const error = new Error(`Rate limit exceeded for ${url}`);
-      auditLogService.logSecurityEvent('rate_limit_violation', {
-        url,
-        retryAfter: rateLimitStatus.retryAfter
-      }, 'medium');
-      throw error;
+    const s = rateLimitService.checkRateLimit(url, rateLimitConfig);
+    if (!s.allowed) {
+      auditLogService.logSecurityEvent('rate_limit_violation', { url, retryAfter: s.retryAfter }, 'medium');
+      throw new Error(`Rate limit exceeded for ${url}`);
     }
 
-    // Add authentication headers
     const authHeaders = authTokenService.getAuthHeader();
-    const headers = {
+    const csrfToken   = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...authHeaders,
-      ...options.headers
+      ...(options.headers as Record<string, string>),
     };
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
-    // Add CSRF protection
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    if (csrfToken) {
-      (headers as Record<string, string>)['X-CSRF-Token'] = csrfToken;
-    }
-
-    const startTime = Date.now();
-    
+    const t0 = Date.now();
     try {
-      const response = await fetch(url, {
-        ...options,
-        headers
-      });
-
-      const responseTime = Date.now() - startTime;
-      
-      // Log API request
-      auditLogService.logApiRequest(url, options.method || 'GET', response.ok, {
-        statusCode: response.status,
-        responseTime
-      });
-
-      // Record successful request for rate limiting
+      const res = await fetch(url, { ...options, headers });
+      const ms  = Date.now() - t0;
+      auditLogService.logApiRequest(url, options.method ?? 'GET', res.ok, { statusCode: res.status, responseTime: ms });
       rateLimitService.recordRequest(url);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return response;
-    } catch (error) {
-      auditLogService.logError(error as Error, 'secure_api_request', {
-        url,
-        method: options.method || 'GET'
-      });
-      throw error;
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      return res;
+    } catch (err) {
+      auditLogService.logError(err as Error, 'secure_api_request', { url, method: options.method ?? 'GET' });
+      throw err;
     }
   }, []);
 
   return { makeSecureRequest };
-};
+}
 
-/**
- * Hook for input sanitization
- */
-export const useInputSanitization = () => {
-  const sanitizeInput = useCallback((input: string, type: 'html' | 'sql' | 'user' = 'user'): string => {
-    auditLogService.logUserAction('input_sanitization', {
-      type,
-      inputLength: input.length
-    });
+// ---------------------------------------------------------------------------
+// useInputSanitization
+// ---------------------------------------------------------------------------
 
-    switch (type) {
-      case 'html':
-        return sanitizeHtml(input);
-      case 'sql':
-        return sanitizeSql(input);
-      case 'user':
-      default:
-        return sanitizeUserInput(input);
-    }
+export function useInputSanitization() {
+  const sanitizeInput = useCallback((
+    input: string,
+    type:  keyof typeof sanitizers = 'user',
+  ): string => {
+    auditLogService.logUserAction('input_sanitization', { type, inputLength: input.length });
+    return sanitizers[type](input);
   }, []);
 
-  const sanitizeObject = useCallback((obj: Record<string, any>): Record<string, any> => {
-    const sanitized: Record<string, any> = {};
-    
-    for (const [key, value] of Object.entries(obj)) {
-      if (typeof value === 'string') {
-        sanitized[key] = sanitizeInput(value);
-      } else if (typeof value === 'object' && value !== null) {
-        sanitized[key] = sanitizeObject(value);
-      } else {
-        sanitized[key] = value;
+  const sanitizeObject = useCallback(
+    (obj: Record<string, unknown>): Record<string, unknown> => {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(obj)) {
+        out[k] = typeof v === 'string'
+          ? sanitizeInput(v)
+          : typeof v === 'object' && v !== null
+          ? sanitizeObject(v as Record<string, unknown>)
+          : v;
       }
-    }
-    
-    return sanitized;
-  }, [sanitizeInput]);
+      return out;
+    },
+    [sanitizeInput],
+  );
 
-  return {
-    sanitizeInput,
-    sanitizeObject
-  };
-};
+  return { sanitizeInput, sanitizeObject };
+}
 
-/**
- * Hook for security monitoring
- */
-export const useSecurityMonitoring = () => {
-  const [securityEvents, setSecurityEvents] = useState<any[]>([]);
-  const [isMonitoring, setIsMonitoring] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout>();
+// ---------------------------------------------------------------------------
+// useSecurityMonitoring
+// ---------------------------------------------------------------------------
+
+export function useSecurityMonitoring() {
+  const [securityEvents, setSecurityEvents] = useState<unknown[]>([]);
+  const [isMonitoring,   setIsMonitoring]   = useState(false);
+  const intervalRef                         = useRef<ReturnType<typeof setInterval>>();
 
   const startMonitoring = useCallback(() => {
     if (isMonitoring) return;
-
+    const update = () => setSecurityEvents(auditLogService.getSecuritySummary().recentEvents);
+    update();
+    intervalRef.current = setInterval(update, 30_000);
     setIsMonitoring(true);
-    
-    const updateEvents = () => {
-      const summary = auditLogService.getSecuritySummary();
-      setSecurityEvents(summary.recentEvents);
-    };
-
-    updateEvents();
-    intervalRef.current = setInterval(updateEvents, 30000); // Update every 30 seconds
   }, [isMonitoring]);
 
   const stopMonitoring = useCallback(() => {
-    if (!isMonitoring) return;
-
+    clearInterval(intervalRef.current);
     setIsMonitoring(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-  }, [isMonitoring]);
-
-  const getSecuritySummary = useCallback(() => {
-    return auditLogService.getSecuritySummary();
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
+  const getSecuritySummary = useCallback(() => auditLogService.getSecuritySummary(), []);
 
-  return {
-    securityEvents,
-    isMonitoring,
-    startMonitoring,
-    stopMonitoring,
-    getSecuritySummary
-  };
-};
+  useEffect(() => () => clearInterval(intervalRef.current), []);
+
+  return { securityEvents, isMonitoring, startMonitoring, stopMonitoring, getSecuritySummary };
+}

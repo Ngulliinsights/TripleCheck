@@ -1,76 +1,60 @@
+/**
+ * Navigation Spacing Hooks
+ *
+ * Utilities for components that need to account for the fixed navigation
+ * bar's dynamic height as the user scrolls.
+ */
+
 import { useEffect, useState } from 'react'
 
-/**
- * Hook for managing navigation-aware spacing
- * 
- * This hook provides utilities for components that need to account for
- * the fixed navigation bar's dynamic height changes during scroll.
- */
+const NAV_SCROLLED_HEIGHT  = 72;
+const NAV_DEFAULT_HEIGHT   = 88;
+const SCROLL_THRESHOLD     = 20;
+
 export function useNavigationSpacing() {
-  const [navHeight, setNavHeight] = useState(88); // Default height
+  const [navHeight,  setNavHeight]  = useState(NAV_DEFAULT_HEIGHT);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const updateNavHeight = () => {
-      const scrollTop = window.scrollY;
-      const scrolled = scrollTop > 20;
-      const height = scrolled ? 72 : 88; // Matches Navigation component logic
-      
+    const update = () => {
+      const scrolled = window.scrollY > SCROLL_THRESHOLD;
+      const height   = scrolled ? NAV_SCROLLED_HEIGHT : NAV_DEFAULT_HEIGHT;
       setIsScrolled(scrolled);
       setNavHeight(height);
-      
-      // Update CSS custom property
       document.documentElement.style.setProperty('--nav-height', `${height}px`);
     };
 
-    // Initial setup
-    updateNavHeight();
+    update();
 
-    // Listen for scroll events
     let ticking = false;
-    const handleScroll = () => {
+    const onScroll = () => {
       if (!ticking) {
-        requestAnimationFrame(() => {
-          updateNavHeight();
-          ticking = false;
-        });
+        requestAnimationFrame(() => { update(); ticking = false; });
         ticking = true;
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   return {
     navHeight,
     isScrolled,
-    // Utility functions for common spacing needs
-    getTopSpacing: (additionalSpacing = 0) => navHeight + additionalSpacing,
-    getScrollMargin: (additionalMargin = 16) => navHeight + additionalMargin,
-    // CSS class names for common patterns
-    navAwareSpacing: 'nav-aware-spacing',
-    scrollMarginNav: 'scroll-margin-nav',
+    getTopSpacing:    (extra = 0)  => navHeight + extra,
+    getScrollMargin:  (extra = 16) => navHeight + extra,
+    navAwareSpacing:  'nav-aware-spacing',
+    scrollMarginNav:  'scroll-margin-nav',
   };
 }
 
-/**
- * Hook specifically for page components that need top padding
- */
+/** Convenience hook for page-level containers that need top padding. */
 export function usePageSpacing() {
   const { navHeight, isScrolled } = useNavigationSpacing();
-  
   return {
     navHeight,
     isScrolled,
-    // Dynamic padding-top style for page containers
-    pageStyle: {
-      paddingTop: `${navHeight}px`,
-    },
-    // Class name for pages that prefer CSS approach
+    pageStyle:     { paddingTop: `${navHeight}px` },
     pageClassName: 'nav-aware-spacing',
   };
 }

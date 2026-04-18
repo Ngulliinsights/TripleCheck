@@ -1,0 +1,20 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "overscan",
+    "overscanCount",
+    "mpesa",
+    "MPESA",
+    "Mpesa",
+    "Pesa"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    ".git",
+    "dist",
+    "build",
+    "coverage",
+    ".next"
+  ]
+}

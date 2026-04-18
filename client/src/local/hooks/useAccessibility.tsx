@@ -1,259 +1,173 @@
+// ============================================================
+// FILE: useAccessibility.tsx
+// ============================================================
 /**
- * Accessibility Hook for Enhanced User Experience
- * 
- * This is the consolidated accessibility hook that replaces the basic useAccessibility.ts
- * 
- * This hook provides comprehensive accessibility features including:
- * - Keyboard navigation management
- * - Focus management
- * - Screen reader announcements
- * - Reduced motion preferences
- * - High contrast mode detection
- * - Enhanced keyboard navigation helpers
- * - Skip link component
+ * Accessibility Hook
+ *
+ * Provides keyboard navigation, focus management,
+ * screen-reader announcements, and user-preference detection.
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import React from 'react'
 
 interface AccessibilityPreferences {
   prefersReducedMotion: boolean;
-  prefersHighContrast: boolean;
-  prefersLargeText: boolean;
-  keyboardNavigation: boolean;
+  prefersHighContrast:  boolean;
+  prefersLargeText:     boolean;
+  keyboardNavigation:   boolean;
 }
 
 interface FocusManagement {
-  trapFocus: (container: HTMLElement) => () => void;
-  restoreFocus: (element: HTMLElement | null) => void;
-  announceLiveRegion: (message: string, priority?: 'polite' | 'assertive') => void;
+  trapFocus:           (container: HTMLElement) => () => void;
+  restoreFocus:        (element: HTMLElement | null) => void;
+  announceLiveRegion:  (message: string, priority?: 'polite' | 'assertive') => void;
 }
 
 export function useAccessibility(): AccessibilityPreferences & FocusManagement {
   const [preferences, setPreferences] = useState<AccessibilityPreferences>({
     prefersReducedMotion: false,
-    prefersHighContrast: false,
-    prefersLargeText: false,
-    keyboardNavigation: false
+    prefersHighContrast:  false,
+    prefersLargeText:     false,
+    keyboardNavigation:   false,
   });
 
-  const liveRegionRef = useRef<HTMLDivElement | null>(null);
-  const lastFocusedElementRef = useRef<HTMLElement | null>(null);
+  const liveRegionRef        = useRef<HTMLDivElement | null>(null);
+  const savedFocusRef        = useRef<HTMLElement | null>(null);
 
-  // Detect user preferences
+  // Detect system preferences
   useEffect(() => {
-    const updatePreferences = () => {
-      setPreferences({
-        prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-        prefersHighContrast: window.matchMedia('(prefers-contrast: high)').matches,
-        prefersLargeText: window.matchMedia('(min-resolution: 2dppx)').matches,
-        keyboardNavigation: false // Will be updated on keyboard use
-      });
-    };
-
-    updatePreferences();
-
-    // Listen for preference changes
-    const mediaQueries = [
+    const mqs = [
       window.matchMedia('(prefers-reduced-motion: reduce)'),
       window.matchMedia('(prefers-contrast: high)'),
-      window.matchMedia('(min-resolution: 2dppx)')
+      window.matchMedia('(min-resolution: 2dppx)'),
     ];
 
-    mediaQueries.forEach(mq => mq.addEventListener('change', updatePreferences));
+    const update = () =>
+      setPreferences((prev) => ({
+        ...prev,
+        prefersReducedMotion: mqs[0]!.matches,
+        prefersHighContrast:  mqs[1]!.matches,
+        prefersLargeText:     mqs[2]!.matches,
+      }));
 
-    return () => {
-      mediaQueries.forEach(mq => mq.removeEventListener('change', updatePreferences));
-    };
+    update();
+    mqs.forEach((mq) => mq.addEventListener('change', update));
+    return () => mqs.forEach((mq) => mq.removeEventListener('change', update));
   }, []);
 
-  // Detect keyboard navigation
+  // Keyboard vs. pointer navigation detection
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Tab') {
-        setPreferences(prev => ({ ...prev, keyboardNavigation: true }));
-      }
+    const onKey   = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') setPreferences((p) => ({ ...p, keyboardNavigation: true }));
     };
+    const onMouse = () => setPreferences((p) => ({ ...p, keyboardNavigation: false }));
 
-    const handleMouseDown = () => {
-      setPreferences(prev => ({ ...prev, keyboardNavigation: false }));
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('mousedown', handleMouseDown);
-
+    document.addEventListener('keydown',    onKey);
+    document.addEventListener('mousedown',  onMouse);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown',   onKey);
+      document.removeEventListener('mousedown', onMouse);
     };
   }, []);
 
-  // Create live region for screen reader announcements
+  // Create visually-hidden ARIA live region
   useEffect(() => {
-    if (!liveRegionRef.current) {
-      const liveRegion = document.createElement('div');
-      liveRegion.setAttribute('aria-live', 'polite');
-      liveRegion.setAttribute('aria-atomic', 'true');
-      liveRegion.className = 'sr-only';
-      liveRegion.style.cssText = `
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-      `;
-      document.body.appendChild(liveRegion);
-      liveRegionRef.current = liveRegion;
-    }
+    const region = document.createElement('div');
+    Object.assign(region, { 'aria-live': 'polite', 'aria-atomic': 'true' });
+    region.setAttribute('aria-live', 'polite');
+    region.setAttribute('aria-atomic', 'true');
+    region.style.cssText =
+      'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;';
+    document.body.appendChild(region);
+    liveRegionRef.current = region;
 
     return () => {
-      if (liveRegionRef.current) {
-        document.body.removeChild(liveRegionRef.current);
-        liveRegionRef.current = null;
-      }
+      document.body.removeChild(region);
+      liveRegionRef.current = null;
     };
   }, []);
 
-  // Focus trap implementation
-  const trapFocus = useCallback((container: HTMLElement) => {
-    const focusableElements = container.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-    const handleTabKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-
-      if (e.shiftKey) {
-        if (document.activeElement === firstElement) {
-          lastElement.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === lastElement) {
-          firstElement.focus();
-          e.preventDefault();
-        }
-      }
-    };
-
-    const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        restoreFocus(lastFocusedElementRef.current);
-      }
-    };
-
-    // Store the currently focused element
-    lastFocusedElementRef.current = document.activeElement as HTMLElement;
-
-    // Focus the first element
-    if (firstElement) {
-      firstElement.focus();
-    }
-
-    container.addEventListener('keydown', handleTabKey);
-    container.addEventListener('keydown', handleEscapeKey);
-
-    return () => {
-      container.removeEventListener('keydown', handleTabKey);
-      container.removeEventListener('keydown', handleEscapeKey);
-    };
-  }, []);
-
-  // Focus restoration
   const restoreFocus = useCallback((element: HTMLElement | null) => {
-    if (element && element.focus) {
-      element.focus();
-    }
+    element?.focus();
   }, []);
 
-  // Live region announcements
-  const announceLiveRegion = useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
-    if (liveRegionRef.current) {
-      liveRegionRef.current.setAttribute('aria-live', priority);
-      liveRegionRef.current.textContent = message;
-      
-      // Clear the message after announcement
-      setTimeout(() => {
-        if (liveRegionRef.current) {
-          liveRegionRef.current.textContent = '';
+  const trapFocus = useCallback((container: HTMLElement) => {
+    const focusable = container.querySelectorAll<HTMLElement>(
+      'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])',
+    );
+    const first = focusable[0];
+    const last  = focusable[focusable.length - 1];
+
+    savedFocusRef.current = document.activeElement as HTMLElement;
+    first?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === first) {
+          last?.focus(); e.preventDefault();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first?.focus(); e.preventDefault();
         }
-      }, 1000);
-    }
-  }, []);
+      } else if (e.key === 'Escape') {
+        restoreFocus(savedFocusRef.current);
+      }
+    };
 
-  return {
-    ...preferences,
-    trapFocus,
-    restoreFocus,
-    announceLiveRegion
-  };
+    container.addEventListener('keydown', onKeyDown);
+    return () => container.removeEventListener('keydown', onKeyDown);
+  }, [restoreFocus]);
+
+  const announceLiveRegion = useCallback(
+    (message: string, priority: 'polite' | 'assertive' = 'polite') => {
+      const region = liveRegionRef.current;
+      if (!region) return;
+      region.setAttribute('aria-live', priority);
+      region.textContent = message;
+      setTimeout(() => { if (liveRegionRef.current) liveRegionRef.current.textContent = ''; }, 1_000);
+    },
+    [],
+  );
+
+  return { ...preferences, trapFocus, restoreFocus, announceLiveRegion };
 }
 
-// Keyboard navigation helper hook
+/** Attach global keyboard shortcuts to a component. */
 export function useKeyboardNavigation(
-  onEnter?: () => void,
-  onEscape?: () => void,
-  onArrowKeys?: (direction: 'up' | 'down' | 'left' | 'right') => void
+  onEnter?:    () => void,
+  onEscape?:   () => void,
+  onArrowKeys?: (direction: 'up' | 'down' | 'left' | 'right') => void,
 ) {
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handler = (e: KeyboardEvent) => {
       switch (e.key) {
         case 'Enter':
         case ' ':
-          if (onEnter) {
-            e.preventDefault();
-            onEnter();
-          }
-          break;
+          if (onEnter)     { e.preventDefault(); onEnter(); }     break;
         case 'Escape':
-          if (onEscape) {
-            e.preventDefault();
-            onEscape();
-          }
-          break;
+          if (onEscape)    { e.preventDefault(); onEscape(); }    break;
         case 'ArrowUp':
-          if (onArrowKeys) {
-            e.preventDefault();
-            onArrowKeys('up');
-          }
-          break;
+          if (onArrowKeys) { e.preventDefault(); onArrowKeys('up'); }    break;
         case 'ArrowDown':
-          if (onArrowKeys) {
-            e.preventDefault();
-            onArrowKeys('down');
-          }
-          break;
+          if (onArrowKeys) { e.preventDefault(); onArrowKeys('down'); }  break;
         case 'ArrowLeft':
-          if (onArrowKeys) {
-            e.preventDefault();
-            onArrowKeys('left');
-          }
-          break;
+          if (onArrowKeys) { e.preventDefault(); onArrowKeys('left'); }  break;
         case 'ArrowRight':
-          if (onArrowKeys) {
-            e.preventDefault();
-            onArrowKeys('right');
-          }
-          break;
+          if (onArrowKeys) { e.preventDefault(); onArrowKeys('right'); } break;
       }
     };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, [onEnter, onEscape, onArrowKeys]);
 }
 
-// Skip link component for keyboard navigation
+/** Skip-link component for keyboard users. */
 export function SkipLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <a
       href={href}
-      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-teal-600 focus:text-white focus:rounded-md focus:shadow-lg"
+      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50
+                 focus:px-4 focus:py-2 focus:bg-teal-600 focus:text-white focus:rounded-md focus:shadow-lg"
     >
       {children}
     </a>

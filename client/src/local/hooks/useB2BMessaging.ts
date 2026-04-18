@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 
+// Extend Window so TypeScript stops complaining about gtag
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
 interface UserMetrics {
   verificationsThisMonth: number;
   averagePropertyValue: number;
@@ -16,6 +23,25 @@ interface B2BMessagingState {
   userMetrics: UserMetrics;
 }
 
+const BANNER_DISMISSAL_KEY = 'b2b-banner-dismissed';
+const BANNER_COOLDOWN_DAYS = 7;
+
+function safeLSGet(key: string): string | null {
+  try {
+    return typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeLSSet(key: string, value: string): void {
+  try {
+    if (typeof window !== 'undefined') localStorage.setItem(key, value);
+  } catch {
+    // Silently ignore quota / private-mode errors
+  }
+}
+
 export function useB2BMessaging() {
   const [state, setState] = useState<B2BMessagingState>({
     showBanner: false,
@@ -26,68 +52,66 @@ export function useB2BMessaging() {
       verificationsThisMonth: 0,
       averagePropertyValue: 0,
       businessIndicators: [],
-      totalVerifications: 0
-    }
+      totalVerifications: 0,
+    },
   });
 
-  // Check if user has dismissed banner recently
-  const isBannerDismissed = useCallback(() => {
-    if (typeof window === 'undefined') return false;
-    
-    const dismissed = localStorage.getItem('b2b-banner-dismissed');
-    if (!dismissed) return false;
-    
-    const dismissedTime = parseInt(dismissed);
-    const daysSinceDismissal = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
-    
-    // Show again after 7 days
-    return daysSinceDismissal < 7;
+  const isBannerDismissed = useCallback((): boolean => {
+    const raw = safeLSGet(BANNER_DISMISSAL_KEY);
+    if (!raw) return false;
+    const daysSince =
+      (Date.now() - parseInt(raw, 10)) / (1_000 * 60 * 60 * 24);
+    return daysSince < BANNER_COOLDOWN_DAYS;
   }, []);
 
-  // Analyze user behavior to determine B2B messaging strategy
+  // Track B2B interactions
+  const trackB2BInteraction = useCallback(
+    (action: string, context?: Record<string, unknown>) => {
+      try {
+        window.gtag?.('event', 'b2b_interaction', {
+          event_category: 'B2B',
+          event_label: action,
+          custom_parameters: context,
+        });
+      } catch (err) {
+        console.warn('Failed to track B2B interaction:', err);
+      }
+    },
+    []
+  );
+
+  // Analyze user behavior and derive messaging strategy
   const analyzeUserBehavior = useCallback(async () => {
     try {
-      // In a real app, this would fetch from your analytics API
-      // For now, we'll simulate based on localStorage or session data
-      
-      const mockMetrics: UserMetrics = {
+      // TODO: replace with real analytics API call
+      const metrics: UserMetrics = {
         verificationsThisMonth: Math.floor(Math.random() * 20) + 1,
-        averagePropertyValue: Math.floor(Math.random() * 10000000) + 1000000,
+        averagePropertyValue: Math.floor(Math.random() * 10_000_000) + 1_000_000,
         businessIndicators: [],
-        totalVerifications: Math.floor(Math.random() * 100) + 1
+        totalVerifications: Math.floor(Math.random() * 100) + 1,
       };
 
-      // Determine business indicators
-      if (mockMetrics.verificationsThisMonth > 10) {
-        mockMetrics.businessIndicators.push('high_usage');
-      }
-      if (mockMetrics.averagePropertyValue > 5000000) {
-        mockMetrics.businessIndicators.push('high_value');
-      }
-      if (mockMetrics.totalVerifications > 50) {
-        mockMetrics.businessIndicators.push('power_user');
-      }
+      if (metrics.verificationsThisMonth > 10)
+        metrics.businessIndicators.push('high_usage');
+      if (metrics.averagePropertyValue > 5_000_000)
+        metrics.businessIndicators.push('high_value');
+      if (metrics.totalVerifications > 50)
+        metrics.businessIndicators.push('power_user');
 
-      // Determine messaging strategy
       const showBanner = !isBannerDismissed();
       let showLeadCapture = false;
-      let bannerVariant: 'default' | 'compact' | 'prominent' = 'default';
-      let leadCaptureTrigger: 'high_usage' | 'high_value' | 'business_hours' | 'manual' = 'manual';
+      let bannerVariant: B2BMessagingState['bannerVariant'] = 'default';
+      let leadCaptureTrigger: B2BMessagingState['leadCaptureTrigger'] = 'manual';
 
-      // High usage users get prominent messaging
-      if (mockMetrics.verificationsThisMonth > 15) {
+      if (metrics.verificationsThisMonth > 15) {
         bannerVariant = 'prominent';
         showLeadCapture = true;
         leadCaptureTrigger = 'high_usage';
-      }
-      // High value users get targeted messaging
-      else if (mockMetrics.averagePropertyValue > 8000000) {
+      } else if (metrics.averagePropertyValue > 8_000_000) {
         bannerVariant = 'default';
         showLeadCapture = true;
         leadCaptureTrigger = 'high_value';
-      }
-      // Business hours users get subtle messaging
-      else {
+      } else {
         const hour = new Date().getHours();
         if (hour >= 9 && hour <= 17) {
           bannerVariant = 'compact';
@@ -95,74 +119,45 @@ export function useB2BMessaging() {
         }
       }
 
-      setState({
-        showBanner,
-        showLeadCapture,
-        bannerVariant,
-        leadCaptureTrigger,
-        userMetrics: mockMetrics
-      });
-
-    } catch (error) {
-      console.warn('Failed to analyze user behavior:', error);
-      // Fallback to basic messaging
+      setState({ showBanner, showLeadCapture, bannerVariant, leadCaptureTrigger, userMetrics: metrics });
+    } catch (err) {
+      console.warn('Failed to analyze user behavior:', err);
       setState(prev => ({
         ...prev,
         showBanner: !isBannerDismissed(),
-        bannerVariant: 'compact'
+        bannerVariant: 'compact',
       }));
     }
   }, [isBannerDismissed]);
 
-  // Track B2B interactions
-  const trackB2BInteraction = useCallback((action: string, context?: Record<string, any>) => {
-    try {
-      // Google Analytics tracking
-      if (window?.gtag) {
-        window.gtag('event', 'b2b_interaction', {
-          event_category: 'B2B',
-          event_label: action,
-          custom_parameters: context
-        });
-      }
-
-      // Your internal analytics
-      // await fetch('/api/analytics/b2b-interaction', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ action, context, timestamp: Date.now() })
-      // });
-
-    } catch (error) {
-      console.warn('Failed to track B2B interaction:', error);
-    }
-  }, []);
-
-  // Initialize on mount
   useEffect(() => {
     analyzeUserBehavior();
   }, [analyzeUserBehavior]);
 
-  // Update messaging based on user actions
-  const updateMessaging = useCallback((updates: Partial<B2BMessagingState>) => {
-    setState(prev => ({ ...prev, ...updates }));
-  }, []);
+  const updateMessaging = useCallback(
+    (updates: Partial<B2BMessagingState>) =>
+      setState(prev => ({ ...prev, ...updates })),
+    []
+  );
 
-  // Hide banner (user dismissed)
   const hideBanner = useCallback(() => {
+    safeLSSet(BANNER_DISMISSAL_KEY, String(Date.now()));
     setState(prev => ({ ...prev, showBanner: false }));
     trackB2BInteraction('banner_dismissed');
   }, [trackB2BInteraction]);
 
-  // Hide lead capture
   const hideLeadCapture = useCallback(() => {
     setState(prev => ({ ...prev, showLeadCapture: false }));
     trackB2BInteraction('lead_capture_dismissed');
   }, [trackB2BInteraction]);
 
-  // Show lead capture manually
-  const showLeadCapture = useCallback(() => {
-    setState(prev => ({ ...prev, showLeadCapture: true, leadCaptureTrigger: 'manual' }));
+  /** Manually trigger the lead-capture form. Renamed from `showLeadCapture` to avoid collision with state field. */
+  const openLeadCapture = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      showLeadCapture: true,
+      leadCaptureTrigger: 'manual',
+    }));
     trackB2BInteraction('lead_capture_manual_trigger');
   }, [trackB2BInteraction]);
 
@@ -171,8 +166,8 @@ export function useB2BMessaging() {
     updateMessaging,
     hideBanner,
     hideLeadCapture,
-    showLeadCapture,
+    openLeadCapture,
     trackB2BInteraction,
-    analyzeUserBehavior
+    analyzeUserBehavior,
   };
 }

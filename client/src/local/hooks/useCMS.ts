@@ -20,71 +20,91 @@ export interface BlogPost {
   featured?: boolean;
   category: string;
   readTime: string;
+  /** Deterministic placeholder until the real API returns view counts. */
   viewCount?: number;
   externalUrl?: string;
 }
 
-// Transform BLOG_POSTS data to match BlogPost interface
-const transformBlogPost = (post: any): BlogPost => ({
-  id: post.id,
-  title: post.title,
-  excerpt: post.excerpt,
-  content: `<div class="prose prose-lg">
-    <p>${post.excerpt}</p>
-    <h2>Introduction</h2>
-    <p>In this comprehensive guide, we'll explore the key aspects that every real estate professional and investor should understand about ${post.category.toLowerCase()}.</p>
-    <h2>Key Insights</h2>
-    <p>The real estate market continues to evolve with new technologies and changing consumer behaviors. Understanding these trends is crucial for making informed decisions in today's competitive landscape.</p>
-    <blockquote>
-      <p>"Understanding market trends and leveraging technology are essential for success in today's real estate landscape."</p>
-    </blockquote>
-    <h2>Best Practices</h2>
-    <ul>
-      <li>Always verify property documentation thoroughly</li>
-      <li>Use technology to streamline verification processes</li>
-      <li>Stay updated with market regulations and compliance requirements</li>
-      <li>Build strong relationships with trusted professionals</li>
-    </ul>
-    <h2>Looking Forward</h2>
-    <p>As we move forward, staying informed about market trends and leveraging technology will be key to success in the real estate industry. TripleCheck remains committed to providing the tools and insights you need.</p>
-  </div>`,
-  author: {
-    name: post.author,
-    bio: 'Expert in real estate verification and fraud prevention'
-  },
-  publishedAt: post.date,
-  image: {
-    webp: post.image.webp,
-    fallback: post.image.jpg
-  },
-  tags: [post.category, 'Real Estate', 'Verification'],
-  featured: BLOG_POSTS.indexOf(post) < 2, // First 2 posts are featured
-  category: post.category,
-  readTime: post.readTime,
-  viewCount: Math.floor(Math.random() * 2000) + 500 // Random view count for demo
-});
+/**
+ * Deterministic hash — avoids SSR / client hydration mismatches that
+ * `Math.random()` would cause when viewCount is rendered on the server.
+ */
+function hashId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (Math.imul(31, h) + id.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
 
+function transformBlogPost(post: Record<string, unknown>, index: number): BlogPost {
+  // Type-safe extraction of properties with assertions
+  const getId = (val: unknown): string => typeof val === 'string' ? val : '';
+  const getStr = (val: unknown): string => typeof val === 'string' ? val : '';
+  const getImg = (val: unknown): { webp: string; fallback: string } => 
+    (val && typeof val === 'object' && 'webp' in val && 'jpg' in val) 
+      ? { webp: val.webp as string, fallback: val.jpg as string }
+      : { webp: '', fallback: '' };
+  
+  return {
+    id: getId(post.id),
+    title: getStr(post.title),
+    excerpt: getStr(post.excerpt),
+    content: `<div class="prose prose-lg">
+      <p>${getStr(post.excerpt)}</p>
+      <h2>Introduction</h2>
+      <p>In this guide we explore key aspects every real estate professional should understand about ${getStr(post.category).toLowerCase()}.</p>
+      <h2>Key Insights</h2>
+      <p>The real estate market continues to evolve with new technologies and changing consumer behaviors. Understanding these trends is crucial for making informed decisions in today's competitive landscape.</p>
+      <blockquote>
+        <p>"Understanding market trends and leveraging technology are essential for success in today's real estate landscape."</p>
+      </blockquote>
+      <h2>Best Practices</h2>
+      <ul>
+        <li>Always verify property documentation thoroughly</li>
+        <li>Use technology to streamline verification processes</li>
+        <li>Stay updated with market regulations and compliance requirements</li>
+        <li>Build strong relationships with trusted professionals</li>
+      </ul>
+      <h2>Looking Forward</h2>
+      <p>Staying informed about market trends and leveraging technology will be key to success in the real estate industry. TripleCheck remains committed to providing the tools and insights you need.</p>
+    </div>`,
+    author: {
+      name: getStr(post.author),
+      bio: 'Expert in real estate verification and fraud prevention',
+    },
+    publishedAt: getStr(post.date),
+    image: getImg(post.image),
+    tags: [getStr(post.category), 'Real Estate', 'Verification'],
+    featured: index < 2, // First two posts are featured
+    category: getStr(post.category),
+    readTime: getStr(post.readTime),
+    // Deterministic stand-in — replace with real API data when available
+    viewCount: (hashId(getId(post.id)) % 1_500) + 500,
+  };
+}
+
+// Module-level constant — computed once, stable between renders
 const mockPosts: BlogPost[] = BLOG_POSTS.map(transformBlogPost);
 
-export function useRecentPosts(limit: number = 5) {
+// Shared sort helper
+const byDateDesc = (a: BlogPost, b: BlogPost) =>
+  new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+
+// ---------------------------------------------------------------------------
+
+export function useRecentPosts(limit = 5) {
   return useQuery({
     queryKey: ['recent-posts', limit],
     queryFn: async () => {
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Sort posts by publishedAt date (most recent first) and return limited posts
-      const sortedPosts = [...mockPosts].sort((a, b) => 
-        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-      );
-      
-      return sortedPosts.slice(0, limit);
+      return [...mockPosts].sort(byDateDesc).slice(0, limit);
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes - shorter for home page freshness
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
-    refetchOnMount: true, // Always refetch on component mount
-    refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
+    staleTime: 2 * 60 * 1_000,
+    gcTime: 10 * 60 * 1_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 5 * 60 * 1_000,
   });
 }
 
@@ -92,18 +112,14 @@ export function useBlogPost(id: string) {
   return useQuery({
     queryKey: ['blog-post', id],
     queryFn: async () => {
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Find post by id
       const post = mockPosts.find(p => p.id === id);
-      if (!post) {
-        throw new Error('Post not found');
-      }
+      if (!post) throw new Error(`Post not found: ${id}`);
       return post;
     },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    enabled: Boolean(id), // skip if id is empty / undefined
+    staleTime: 5 * 60 * 1_000,
+    gcTime: 10 * 60 * 1_000,
   });
 }
 
@@ -111,19 +127,12 @@ export function useBlogPosts() {
   return useQuery({
     queryKey: ['blog-posts'],
     queryFn: async () => {
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Sort posts by publishedAt date (most recent first)
-      return [...mockPosts].sort((a, b) => 
-        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-      );
+      return [...mockPosts].sort(byDateDesc);
     },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1_000,
+    gcTime: 10 * 60 * 1_000,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
 }
-
-// BlogPost interface is already exported above

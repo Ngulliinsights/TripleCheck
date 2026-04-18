@@ -1,60 +1,75 @@
-import { useCallback, useRef, useState, useMemo } from 'react'
+/**
+ * Enhanced WebSocket Hook
+ *
+ * Features: automatic reconnection, exponential back-off, heartbeat,
+ * message queuing, failover endpoints, and connection metrics.
+ *
+ * Domain-specific hooks (messaging, property updates, notifications)
+ * are included at the bottom of this file.
+ */
+
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager'
 import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect'
 
-interface WebSocketMessage {
-  type: string;
-  payload: any;
-  timestamp: number;
-  id?: string;
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface WebSocketMessage {
+  type:       string;
+  payload:    unknown;
+  timestamp:  number;
+  id?:        string;
 }
 
-interface UseWebSocketOptions {
-  url: string;
-  protocols?: string | string[];
-  onOpen?: (event: Event) => void;
-  onClose?: (event: CloseEvent) => void;
-  onError?: (event: Event) => void;
-  onMessage?: (message: WebSocketMessage) => void;
-  shouldReconnect?: boolean;
-  reconnectAttempts?: number;
-  reconnectInterval?: number;
-  heartbeatInterval?: number;
-  heartbeatMessage?: any;
-  binaryType?: BinaryType;
+export interface UseWebSocketOptions {
+  url:                 string;
+  protocols?:          string | string[];
+  onOpen?:             (event: Event) => void;
+  onClose?:            (event: CloseEvent) => void;
+  onError?:            (event: Event) => void;
+  onMessage?:          (message: WebSocketMessage) => void;
+  shouldReconnect?:    boolean;
+  reconnectAttempts?:  number;
+  reconnectInterval?:  number;
+  heartbeatInterval?:  number;
+  heartbeatMessage?:   unknown;
+  binaryType?:         BinaryType;
 }
 
-interface UseWebSocketReturn {
-  socket: WebSocket | null;
-  connectionStatus: 'Connecting' | 'Open' | 'Closing' | 'Closed';
-  lastMessage: WebSocketMessage | null;
-  sendMessage: (message: any) => void;
-  sendJsonMessage: (object: any) => void;
-  disconnect: () => void;
-  reconnect: () => void;
-  isConnected: boolean;
-  connectionAttempts: number;
-  // Enterprise features
-  healthCheck: () => void;
-  messageReplay: (lastN?: number) => any[];
-  connectionPool: WebSocket[];
-  failoverEndpoints: string[];
-  connectionMetrics: {
-    totalConnections: number;
-    totalMessages: number;
-    totalErrors: number;
-    avgLatency: number;
-    uptime: number;
-  };
-  clearMessageQueue: () => void;
-  getQueueSize: () => number;
+export interface ConnectionMetrics {
+  totalConnections: number;
+  totalMessages:    number;
+  totalErrors:      number;
+  avgLatency:       number;
+  uptime:           number;
 }
 
-/**
- * Enhanced WebSocket hook with automatic reconnection, heartbeat, and message queuing
- * Critical for real-time messaging, property updates, and live notifications
- */
+export interface UseWebSocketReturn {
+  socket:              WebSocket | null;
+  connectionStatus:    'Connecting' | 'Open' | 'Closing' | 'Closed';
+  lastMessage:         WebSocketMessage | null;
+  sendMessage:         (message: unknown, persistent?: boolean) => void;
+  sendJsonMessage:     (object: unknown, persistent?: boolean) => void;
+  disconnect:          () => void;
+  reconnect:           () => void;
+  isConnected:         boolean;
+  connectionAttempts:  number;
+  healthCheck:         () => void;
+  messageReplay:       (lastN?: number) => unknown[];
+  connectionPool:      WebSocket[];
+  failoverEndpoints:   string[];
+  connectionMetrics:   ConnectionMetrics;
+  clearMessageQueue:   () => void;
+  getQueueSize:        () => number;
+}
+
+// ---------------------------------------------------------------------------
+// useWebSocket
+// ---------------------------------------------------------------------------
+
 export function useWebSocket({
   url,
   protocols,
@@ -62,392 +77,282 @@ export function useWebSocket({
   onClose,
   onError,
   onMessage,
-  shouldReconnect = true,
-  reconnectAttempts = 5,
-  reconnectInterval = 3000,
-  heartbeatInterval = 30000,
-  heartbeatMessage = { type: 'ping' },
-  binaryType = 'blob',
+  shouldReconnect    = true,
+  reconnectAttempts  = 5,
+  reconnectInterval  = 3_000,
+  heartbeatInterval  = 30_000,
+  heartbeatMessage   = { type: 'ping' },
+  binaryType         = 'blob',
 }: UseWebSocketOptions): UseWebSocketReturn {
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<'Connecting' | 'Open' | 'Closing' | 'Closed'>('Closed');
-  const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
+  const [socket,             setSocket]             = useState<WebSocket | null>(null);
+  const [connectionStatus,   setConnectionStatus]   = useState<UseWebSocketReturn['connectionStatus']>('Closed');
+  const [lastMessage,        setLastMessage]        = useState<WebSocketMessage | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
-
-  const messageQueueRef = useRef<any[]>([]);
-  const shouldReconnectRef = useRef(shouldReconnect);
-  const urlRef = useRef(url);
-  const cleanupManager = useEnhancedCleanupManager();
-
-  // Enterprise connection pool
-  const connectionPool = useRef<WebSocket[]>([]);
-  
-  // Enterprise metrics
-  const metrics = useRef({
+  // Expose metrics that need to trigger re-renders as state
+  const [metrics, setMetrics] = useState<ConnectionMetrics>({
     totalConnections: 0,
-    totalMessages: 0,
-    totalErrors: 0,
-    latencies: [] as number[],
-    connectionStartTime: Date.now(),
-    lastPingTime: 0,
+    totalMessages:    0,
+    totalErrors:      0,
+    avgLatency:       0,
+    uptime:           0,
   });
 
-  // Enterprise message queue with persistence
+  const messageQueueRef       = useRef<unknown[]>([]);
+  const shouldReconnectRef    = useRef(shouldReconnect);
+  const connectionStartRef    = useRef(Date.now());
+  const lastPingTimeRef       = useRef(0);
+  const latenciesRef          = useRef<number[]>([]);
+  const connectionPoolRef     = useRef<WebSocket[]>([]);
+  const cleanupManager        = useEnhancedCleanupManager();
+
+  // Persistent message queue with automatic cap and retry accounting
   const persistentQueue = useMemo(() => {
-    const queue = new Map<string, { message: any; timestamp: number; attempts: number }>();
+    const map = new Map<string, { message: unknown; timestamp: number; attempts: number }>();
+    const MAX = 1_000;
     return {
-      add: (id: string, message: any) => {
-        queue.set(id, { message, timestamp: Date.now(), attempts: 0 });
-        // Limit queue size to prevent memory leaks
-        if (queue.size > 1000) {
-          const oldestKey = Array.from(queue.keys())[0];
-          if (oldestKey) {
-            queue.delete(oldestKey);
-          }
-        }
+      add: (id: string, message: unknown) => {
+        map.set(id, { message, timestamp: Date.now(), attempts: 0 });
+        if (map.size > MAX) map.delete(map.keys().next().value!);
       },
-      remove: (id: string) => queue.delete(id),
-      clear: () => queue.clear(),
-      size: () => queue.size,
-      getAll: () => Array.from(queue.entries()),
-      incrementAttempts: (id: string) => {
-        const item = queue.get(id);
-        if (item) {
-          item.attempts++;
-          if (item.attempts > 3) {
-            queue.delete(id); // Remove after 3 failed attempts
-          }
-        }
+      remove:           (id: string)  => map.delete(id),
+      clear:            ()            => map.clear(),
+      size:             ()            => map.size,
+      getAll:           ()            => Array.from(map.entries()),
+      incrementAttempts:(id: string)  => {
+        const item = map.get(id);
+        if (item && ++item.attempts > 3) map.delete(id);
       },
     };
   }, []);
 
-  // Enterprise failover endpoints
   const failoverEndpoints = useMemo(() => {
     if (!url) return [];
-    
-    const baseUrl = url.replace(/^(ws|wss):\/\//, '');
-    const protocol = url.startsWith('wss:') ? 'wss' : 'ws';
-    
-    return [
-      url, // Primary endpoint
-      `${protocol}://backup-1.${baseUrl}`,
-      `${protocol}://backup-2.${baseUrl}`,
-      `${protocol}://fallback.${baseUrl}`,
-    ];
+    const proto = url.startsWith('wss:') ? 'wss' : 'ws';
+    const base  = url.replace(/^wss?:\/\//, '');
+    return [url, `${proto}://backup-1.${base}`, `${proto}://backup-2.${base}`];
   }, [url]);
 
-  // Update refs when props change
-  useSafeEffect(() => {
-    shouldReconnectRef.current = shouldReconnect;
-    urlRef.current = url;
-  }, [shouldReconnect, url]);
+  // Keep shouldReconnect ref in sync
+  useSafeEffect(() => { shouldReconnectRef.current = shouldReconnect; }, [shouldReconnect]);
 
-  // Enterprise health monitoring
+  const bumpErrors = useCallback(() => {
+    setMetrics((m) => ({ ...m, totalErrors: m.totalErrors + 1 }));
+  }, []);
+
+  const bumpMessages = useCallback(() => {
+    setMetrics((m) => ({ ...m, totalMessages: m.totalMessages + 1 }));
+  }, []);
+
+  const recordLatency = useCallback((ms: number) => {
+    latenciesRef.current.push(ms);
+    if (latenciesRef.current.length > 100)
+      latenciesRef.current = latenciesRef.current.slice(-50);
+    const avg = latenciesRef.current.reduce((a, b) => a + b, 0) / latenciesRef.current.length;
+    setMetrics((m) => ({ ...m, avgLatency: avg }));
+  }, []);
+
   const healthCheck = useCallback(() => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      metrics.current.lastPingTime = Date.now();
-      const healthMessage = {
-        ...heartbeatMessage,
-        timestamp: Date.now(),
-        health: true,
-        connectionId: socket.url,
-      };
-      socket.send(JSON.stringify(healthMessage));
-    }
+    if (socket?.readyState !== WebSocket.OPEN) return;
+    lastPingTimeRef.current = Date.now();
+    socket.send(JSON.stringify({
+      ...(heartbeatMessage as object),
+      timestamp:    Date.now(),
+      health:       true,
+      connectionId: socket.url,
+    }));
   }, [socket, heartbeatMessage]);
 
-  // Heartbeat function with health monitoring
-  const sendHeartbeat = useCallback(() => {
-    healthCheck();
-  }, [healthCheck]);
+  const sendQueuedMessages = useCallback((ws: WebSocket) => {
+    messageQueueRef.current.forEach((msg) => {
+      ws.send(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      bumpMessages();
+    });
+    messageQueueRef.current = [];
 
-  // Start heartbeat
-  const startHeartbeat = useCallback(() => {
-    if (heartbeatInterval > 0) {
-      cleanupManager.addInterval(sendHeartbeat, heartbeatInterval, 'websocket-heartbeat');
-    }
-  }, [sendHeartbeat, heartbeatInterval, cleanupManager]);
-
-  // Stop heartbeat
-  const stopHeartbeat = useCallback(() => {
-    cleanupManager.removeCleanup('websocket-heartbeat');
-  }, [cleanupManager]);
-
-  // Enhanced message queue processing with retry logic
-  const sendQueuedMessages = useCallback(() => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      // Send regular queue
-      if (messageQueueRef.current.length > 0) {
-        messageQueueRef.current.forEach(message => {
-          socket.send(message);
-          metrics.current.totalMessages++;
-        });
-        messageQueueRef.current = [];
+    persistentQueue.getAll().forEach(([id, item]) => {
+      try {
+        ws.send(typeof item.message === 'string' ? item.message as string : JSON.stringify(item.message));
+        bumpMessages();
+        persistentQueue.remove(id);
+      } catch {
+        persistentQueue.incrementAttempts(id);
+        bumpErrors();
       }
+    });
+  }, [persistentQueue, bumpMessages, bumpErrors]);
 
-      // Send persistent queue with retry logic
-      const queuedItems = persistentQueue.getAll();
-      queuedItems.forEach(([id, item]) => {
-        try {
-          socket.send(typeof item.message === 'string' ? item.message : JSON.stringify(item.message));
-          metrics.current.totalMessages++;
-          persistentQueue.remove(id);
-        } catch (error) {
-          persistentQueue.incrementAttempts(id);
-          metrics.current.totalErrors++;
-        }
-      });
-    }
-  }, [socket, persistentQueue]);
+  // Connect — forward-declared with useRef to allow self-referencing inside the callback
+  const connectRef = useRef<(endpointIndex?: number) => void>(() => undefined);
 
-  // Enhanced connect function with failover
-  const connect = useCallback((endpointIndex: number = 0) => {
+  connectRef.current = (endpointIndex = 0) => {
     if (endpointIndex >= failoverEndpoints.length) {
-      console.error('All WebSocket endpoints failed');
+      console.error('[WS] All endpoints exhausted');
       setConnectionStatus('Closed');
       return;
     }
 
+    const endpoint = failoverEndpoints[endpointIndex];
+    if (!endpoint) return;
+
     try {
       setConnectionStatus('Connecting');
-      metrics.current.totalConnections++;
-      
-      const currentUrl = failoverEndpoints[endpointIndex];
-      if (!currentUrl) {
-        throw new Error('No valid endpoint available');
-      }
-      const ws = new WebSocket(currentUrl, protocols);
+      setMetrics((m) => ({ ...m, totalConnections: m.totalConnections + 1 }));
+
+      const ws = new WebSocket(endpoint, protocols);
       ws.binaryType = binaryType;
 
-      // Add to connection pool
-      connectionPool.current.push(ws);
-      if (connectionPool.current.length > 5) {
-        // Clean up old connections
-        const oldWs = connectionPool.current.shift();
-        if (oldWs && oldWs.readyState === WebSocket.OPEN) {
-          oldWs.close();
-        }
+      // Cap pool size at 5
+      connectionPoolRef.current.push(ws);
+      if (connectionPoolRef.current.length > 5) {
+        const old = connectionPoolRef.current.shift();
+        if (old?.readyState === WebSocket.OPEN) old.close();
       }
 
       ws.onopen = (event) => {
         setSocket(ws);
         setConnectionStatus('Open');
         setConnectionAttempts(0);
-        metrics.current.connectionStartTime = Date.now();
-        startHeartbeat();
-        sendQueuedMessages();
+        connectionStartRef.current = Date.now();
+        setMetrics((m) => ({ ...m, uptime: 0 }));
+
+        if (heartbeatInterval > 0)
+          cleanupManager.addInterval(() => healthCheck(), heartbeatInterval, 'ws-heartbeat');
+
+        sendQueuedMessages(ws);
         onOpen?.(event);
       };
 
       ws.onclose = (event) => {
         setSocket(null);
         setConnectionStatus('Closed');
-        stopHeartbeat();
+        cleanupManager.removeCleanup('ws-heartbeat');
         onClose?.(event);
 
-        // Try failover endpoints first, then reconnect
-        if (shouldReconnectRef.current && !event.wasClean) {
-          if (endpointIndex < failoverEndpoints.length - 1) {
-            // Try next endpoint immediately
-            connect(endpointIndex + 1);
-          } else if (connectionAttempts < reconnectAttempts) {
-            // All endpoints failed, use exponential backoff
-            setConnectionAttempts(prev => prev + 1);
-            const backoff = Math.min(reconnectInterval * Math.pow(1.5, connectionAttempts), 60000);
-            cleanupManager.addTimeout(() => {
-              connect(0); // Start from primary endpoint again
-            }, backoff, 'websocket-reconnect');
-          }
+        if (!shouldReconnectRef.current || event.wasClean) return;
+
+        // Try next failover endpoint first
+        if (endpointIndex < failoverEndpoints.length - 1) {
+          connectRef.current(endpointIndex + 1);
+          return;
         }
+
+        // All endpoints failed — exponential back-off from primary
+        setConnectionAttempts((prev) => {
+          if (prev >= reconnectAttempts) return prev;
+          const backoff = Math.min(reconnectInterval * 1.5 ** prev, 60_000);
+          cleanupManager.addTimeout(() => connectRef.current(0), backoff, 'ws-reconnect');
+          return prev + 1;
+        });
       };
 
       ws.onerror = (event) => {
         setConnectionStatus('Closed');
-        stopHeartbeat();
-        metrics.current.totalErrors++;
+        cleanupManager.removeCleanup('ws-heartbeat');
+        bumpErrors();
         onError?.(event);
       };
 
       ws.onmessage = (event) => {
         try {
-          // Calculate latency if this is a pong response
-          const data = JSON.parse(event.data);
-          if (data.type === 'pong' && metrics.current.lastPingTime > 0) {
-            const latency = Date.now() - metrics.current.lastPingTime;
-            metrics.current.latencies.push(latency);
-            if (metrics.current.latencies.length > 100) {
-              metrics.current.latencies = metrics.current.latencies.slice(-50);
-            }
-          }
+          const data = JSON.parse(event.data as string) as Record<string, unknown>;
 
-          const message: WebSocketMessage = {
-            type: data.type || 'message',
-            payload: data.payload || data,
+          if (data['type'] === 'pong' && lastPingTimeRef.current > 0)
+            recordLatency(Date.now() - lastPingTimeRef.current);
+
+          const msg: WebSocketMessage = {
+            type:      String(data['type'] ?? 'message'),
+            payload:   data['payload'] ?? data,
             timestamp: Date.now(),
-            id: data.id,
+            id:        data['id'] as string | undefined,
           };
-          
-          setLastMessage(message);
-          onMessage?.(message);
-        } catch (error) {
-          // Handle non-JSON messages
-          const message: WebSocketMessage = {
-            type: 'raw',
-            payload: event.data,
-            timestamp: Date.now(),
-          };
-          
-          setLastMessage(message);
-          onMessage?.(message);
+          setLastMessage(msg);
+          onMessage?.(msg);
+        } catch {
+          const msg: WebSocketMessage = { type: 'raw', payload: event.data, timestamp: Date.now() };
+          setLastMessage(msg);
+          onMessage?.(msg);
         }
       };
 
       setSocket(ws);
-    } catch (error) {
-      setConnectionStatus('Closed');
-      metrics.current.totalErrors++;
-      console.error('WebSocket connection failed:', error);
-      
-      // Try next endpoint on connection error
-      if (endpointIndex < failoverEndpoints.length - 1) {
-        setTimeout(() => connect(endpointIndex + 1), 1000);
-      }
+    } catch (err) {
+      bumpErrors();
+      console.error('[WS] Connection error:', err);
+      if (endpointIndex < failoverEndpoints.length - 1)
+        setTimeout(() => connectRef.current(endpointIndex + 1), 1_000);
     }
-  }, [
-    failoverEndpoints,
-    protocols,
-    binaryType,
-    onOpen,
-    onClose,
-    onError,
-    onMessage,
-    startHeartbeat,
-    stopHeartbeat,
-    sendQueuedMessages,
-    connectionAttempts,
-    reconnectAttempts,
-    reconnectInterval,
-    cleanupManager,
-  ]);
+  };
 
-  // Enhanced send message function with persistence
-  const sendMessage = useCallback((message: any, persistent: boolean = false) => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      try {
-        socket.send(message);
-        metrics.current.totalMessages++;
-      } catch (error) {
-        metrics.current.totalErrors++;
-        if (persistent) {
-          const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          persistentQueue.add(messageId, message);
-        } else {
-          messageQueueRef.current.push(message);
-        }
-      }
+  const connect = useCallback((idx = 0) => connectRef.current(idx), []);
+
+  const sendMessage = useCallback((message: unknown, persistent = false) => {
+    const raw = typeof message === 'string' ? message : JSON.stringify(message);
+    if (socket?.readyState === WebSocket.OPEN) {
+      try { socket.send(raw); bumpMessages(); }
+      catch { bumpErrors(); queueMessage(message, persistent); }
     } else {
-      // Queue message for later sending
-      if (persistent) {
-        const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        persistentQueue.add(messageId, message);
+      queueMessage(message, persistent);
+    }
+
+    function queueMessage(msg: unknown, persist: boolean) {
+      if (persist) {
+        persistentQueue.add(`msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`, msg);
       } else {
-        messageQueueRef.current.push(message);
+        messageQueueRef.current.push(msg);
       }
     }
-  }, [socket, persistentQueue]);
+  }, [socket, persistentQueue, bumpMessages, bumpErrors]);
 
-  // Enhanced send JSON message function
-  const sendJsonMessage = useCallback((object: any, persistent: boolean = false) => {
-    sendMessage(JSON.stringify(object), persistent);
-  }, [sendMessage]);
+  const sendJsonMessage = useCallback(
+    (object: unknown, persistent = false) => sendMessage(object, persistent),
+    [sendMessage],
+  );
 
-  // Disconnect function
   const disconnect = useCallback(() => {
     shouldReconnectRef.current = false;
-    
-    cleanupManager.removeCleanup('websocket-reconnect');
-    
-    stopHeartbeat();
-    
-    if (socket) {
-      setConnectionStatus('Closing');
-      socket.close(1000, 'Manual disconnect');
-    }
-  }, [socket, stopHeartbeat, cleanupManager]);
+    cleanupManager.removeCleanup('ws-reconnect');
+    cleanupManager.removeCleanup('ws-heartbeat');
+    if (socket) { setConnectionStatus('Closing'); socket.close(1000, 'Manual disconnect'); }
+  }, [socket, cleanupManager]);
 
-  // Enhanced reconnect function
-  const enhancedReconnect = useCallback(() => {
+  const reconnect = useCallback(() => {
     disconnect();
     shouldReconnectRef.current = true;
     setConnectionAttempts(0);
     setTimeout(() => connect(0), 100);
   }, [disconnect, connect]);
 
-  // Enterprise message replay
-  const messageReplay = useCallback((lastN: number = 100) => {
-    return persistentQueue.getAll()
-      .slice(-lastN)
-      .map(([_, item]) => item.message);
-  }, [persistentQueue]);
-
-  // Enterprise utility functions
+  const messageReplay  = useCallback((lastN = 100) =>
+    persistentQueue.getAll().slice(-lastN).map(([, item]) => item.message), [persistentQueue]);
   const clearMessageQueue = useCallback(() => {
     messageQueueRef.current = [];
     persistentQueue.clear();
   }, [persistentQueue]);
+  const getQueueSize = useCallback(() =>
+    messageQueueRef.current.length + persistentQueue.size(), [persistentQueue]);
 
-  const getQueueSize = useCallback(() => {
-    return messageQueueRef.current.length + persistentQueue.size();
-  }, [persistentQueue]);
+  // Track uptime while connected
+  useSafeEffect(() => {
+    if (connectionStatus !== 'Open') return;
+    const id = setInterval(() => {
+      setMetrics((m) => ({ ...m, uptime: Date.now() - connectionStartRef.current }));
+    }, 1_000);
+    return () => clearInterval(id);
+  }, [connectionStatus]);
 
-  // Calculate connection metrics
-  const connectionMetrics = useMemo(() => {
-    const avgLatency = metrics.current.latencies.length > 0 
-      ? metrics.current.latencies.reduce((a, b) => a + b, 0) / metrics.current.latencies.length 
-      : 0;
-    
-    const uptime = connectionStatus === 'Open' 
-      ? Date.now() - metrics.current.connectionStartTime 
-      : 0;
-
-    return {
-      totalConnections: metrics.current.totalConnections,
-      totalMessages: metrics.current.totalMessages,
-      totalErrors: metrics.current.totalErrors,
-      avgLatency,
-      uptime,
-    };
-  }, [connectionStatus, metrics.current]);
-
-  // Initial connection
+  // Initial connection + full cleanup on unmount
   useSafeEffect(() => {
     connect(0);
-    
     return () => {
       shouldReconnectRef.current = false;
       cleanupManager.runAllCleanup();
-      
-      // Clean up all connections in pool
-      connectionPool.current.forEach(ws => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.close();
-        }
+      connectionPoolRef.current.forEach((ws) => {
+        if (ws.readyState === WebSocket.OPEN) ws.close();
       });
-      connectionPool.current = [];
-      
-      if (socket) {
-        socket.close();
-      }
+      connectionPoolRef.current = [];
+      socket?.close();
     };
-  }, []);
-
-  // Cleanup on unmount
-  useSafeEffect(() => {
-    return () => {
-      cleanupManager.runAllCleanup();
-    };
-  }, [cleanupManager]);
+  }, []); // eslint-disable-line
 
   return {
     socket,
@@ -456,241 +361,117 @@ export function useWebSocket({
     sendMessage,
     sendJsonMessage,
     disconnect,
-    reconnect: enhancedReconnect,
-    isConnected: connectionStatus === 'Open',
+    reconnect,
+    isConnected:       connectionStatus === 'Open',
     connectionAttempts,
-    // Enterprise features
     healthCheck,
     messageReplay,
-    connectionPool: connectionPool.current,
+    connectionPool:    connectionPoolRef.current,
     failoverEndpoints,
-    connectionMetrics,
+    connectionMetrics: metrics,
     clearMessageQueue,
     getQueueSize,
   };
 }
 
-/**
- * Real-time messaging WebSocket hook
- */
+// ---------------------------------------------------------------------------
+// Domain-specific hooks
+// ---------------------------------------------------------------------------
+
+const WS_BASE = process.env.REACT_APP_WS_URL ?? 'ws://localhost:8080';
+
 export function useMessagingWebSocket(userId: string) {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [messages,     setMessages]     = useState<unknown[]>([]);
+  const [typingUsers,  setTypingUsers]  = useState<Set<string>>(new Set());
 
   const { sendJsonMessage, lastMessage, isConnected, ...rest } = useWebSocket({
-    url: `${process.env.REACT_APP_WS_URL || 'ws://localhost:8080'}/ws/messages`,
-    onOpen: () => {
-      // Authenticate the connection
-      sendJsonMessage({
-        type: 'auth',
-        payload: {
-          userId,
-          token: localStorage.getItem('authToken'),
-        },
-      });
-    },
+    url: `${WS_BASE}/ws/messages`,
+    onOpen: () => sendJsonMessage({ type: 'auth', payload: { userId, token: localStorage.getItem('authToken') } }),
     onMessage: (message) => {
       switch (message.type) {
-        case 'message':
-          setMessages(prev => [message.payload, ...prev]);
-          break;
-        case 'typing_start':
-          setTypingUsers(prev => {
-            const newSet = new Set(prev);
-            newSet.add(message.payload.userId);
-            return newSet;
-          });
-          break;
-        case 'typing_stop':
-          setTypingUsers(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(message.payload.userId);
-            return newSet;
-          });
-          break;
-        case 'message_read':
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id === message.payload.messageId 
-                ? { ...msg, isRead: true }
-                : msg
-            )
-          );
-          break;
+        case 'message':      setMessages((prev) => [message.payload, ...prev]); break;
+        case 'typing_start': setTypingUsers((prev) => new Set(prev).add((message.payload as Record<string, string>)['userId'])); break;
+        case 'typing_stop':  setTypingUsers((prev) => { const s = new Set(prev); s.delete((message.payload as Record<string, string>)['userId']); return s; }); break;
+        case 'message_read': setMessages((prev) => prev.map((m: unknown) => {
+          const msg = m as Record<string, unknown>;
+          return msg['id'] === (message.payload as Record<string, string>)['messageId'] ? { ...msg, isRead: true } : m;
+        })); break;
       }
     },
   });
 
-  const sendMessage = useCallback((recipientId: string, content: string, threadId?: string) => {
-    sendJsonMessage({
-      type: 'send_message',
-      payload: {
-        recipientId,
-        content,
-        threadId,
-        timestamp: Date.now(),
-      },
-    });
-  }, [sendJsonMessage]);
+  const sendMessage  = useCallback((recipientId: string, content: string, threadId?: string) =>
+    sendJsonMessage({ type: 'send_message', payload: { recipientId, content, threadId, timestamp: Date.now() } }),
+  [sendJsonMessage]);
+  const startTyping  = useCallback((recipientId: string) =>
+    sendJsonMessage({ type: 'typing_start', payload: { recipientId } }), [sendJsonMessage]);
+  const stopTyping   = useCallback((recipientId: string) =>
+    sendJsonMessage({ type: 'typing_stop',  payload: { recipientId } }), [sendJsonMessage]);
+  const markAsRead   = useCallback((messageId: string) =>
+    sendJsonMessage({ type: 'mark_read',    payload: { messageId }  }), [sendJsonMessage]);
 
-  const startTyping = useCallback((recipientId: string) => {
-    sendJsonMessage({
-      type: 'typing_start',
-      payload: { recipientId },
-    });
-  }, [sendJsonMessage]);
-
-  const stopTyping = useCallback((recipientId: string) => {
-    sendJsonMessage({
-      type: 'typing_stop',
-      payload: { recipientId },
-    });
-  }, [sendJsonMessage]);
-
-  const markAsRead = useCallback((messageId: string) => {
-    sendJsonMessage({
-      type: 'mark_read',
-      payload: { messageId },
-    });
-  }, [sendJsonMessage]);
-
-  return {
-    ...rest,
-    sendJsonMessage,
-    lastMessage,
-    isConnected,
-    messages,
-    typingUsers: Array.from(typingUsers),
-    sendMessage,
-    startTyping,
-    stopTyping,
-    markAsRead,
-  };
+  return { ...rest, sendJsonMessage, lastMessage, isConnected, messages,
+    typingUsers: Array.from(typingUsers), sendMessage, startTyping, stopTyping, markAsRead };
 }
 
-/**
- * Property updates WebSocket hook
- */
 export function usePropertyUpdatesWebSocket() {
-  const [propertyUpdates, setPropertyUpdates] = useState<any[]>([]);
-  const [newListings, setNewListings] = useState<any[]>([]);
+  const [propertyUpdates, setPropertyUpdates] = useState<unknown[]>([]);
+  const [newListings,     setNewListings]     = useState<unknown[]>([]);
 
   const { sendJsonMessage, isConnected, ...rest } = useWebSocket({
-    url: `${process.env.REACT_APP_WS_URL || 'ws://localhost:8080'}/ws/properties`,
-    onOpen: () => {
-      sendJsonMessage({
-        type: 'subscribe',
-        payload: {
-          token: localStorage.getItem('authToken'),
-        },
-      });
-    },
+    url: `${WS_BASE}/ws/properties`,
+    onOpen:    () => sendJsonMessage({ type: 'subscribe', payload: { token: localStorage.getItem('authToken') } }),
     onMessage: (message) => {
       switch (message.type) {
         case 'property_updated':
-          setPropertyUpdates(prev => [message.payload, ...prev.slice(0, 49)]); // Keep last 50
-          break;
-        case 'new_listing':
-          setNewListings(prev => [message.payload, ...prev.slice(0, 19)]); // Keep last 20
-          break;
-        case 'property_sold':
-          // Handle property sold notifications
-          break;
         case 'price_change':
-          setPropertyUpdates(prev => [
-            { ...message.payload, type: 'price_change' },
-            ...prev.slice(0, 49)
-          ]);
-          break;
+          setPropertyUpdates((prev) => [message.payload, ...prev.slice(0, 49)]); break;
+        case 'new_listing':
+          setNewListings((prev) => [message.payload, ...prev.slice(0, 19)]); break;
       }
     },
   });
 
-  const subscribeToProperty = useCallback((propertyId: string) => {
-    sendJsonMessage({
-      type: 'subscribe_property',
-      payload: { propertyId },
-    });
-  }, [sendJsonMessage]);
+  const subscribeToProperty   = useCallback((propertyId: string) =>
+    sendJsonMessage({ type: 'subscribe_property',   payload: { propertyId } }), [sendJsonMessage]);
+  const unsubscribeFromProperty = useCallback((propertyId: string) =>
+    sendJsonMessage({ type: 'unsubscribe_property', payload: { propertyId } }), [sendJsonMessage]);
 
-  const unsubscribeFromProperty = useCallback((propertyId: string) => {
-    sendJsonMessage({
-      type: 'unsubscribe_property',
-      payload: { propertyId },
-    });
-  }, [sendJsonMessage]);
-
-  return {
-    ...rest,
-    isConnected,
-    propertyUpdates,
-    newListings,
-    subscribeToProperty,
-    unsubscribeFromProperty,
-  };
+  return { ...rest, isConnected, propertyUpdates, newListings, subscribeToProperty, unsubscribeFromProperty };
 }
 
-/**
- * Notifications WebSocket hook
- */
 export function useNotificationsWebSocket(userId: string) {
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<unknown[]>([]);
+  const [unreadCount,   setUnreadCount]   = useState(0);
 
   const { sendJsonMessage, isConnected, ...rest } = useWebSocket({
-    url: `${process.env.REACT_APP_WS_URL || 'ws://localhost:8080'}/ws/notifications`,
-    onOpen: () => {
-      sendJsonMessage({
-        type: 'auth',
-        payload: {
-          userId,
-          token: localStorage.getItem('authToken'),
-        },
-      });
-    },
+    url: `${WS_BASE}/ws/notifications`,
+    onOpen:    () => sendJsonMessage({ type: 'auth', payload: { userId, token: localStorage.getItem('authToken') } }),
     onMessage: (message) => {
       switch (message.type) {
         case 'notification':
-          setNotifications(prev => [message.payload, ...prev]);
-          setUnreadCount(prev => prev + 1);
+          setNotifications((prev) => [message.payload, ...prev]);
+          setUnreadCount((c) => c + 1);
           break;
         case 'notification_read':
-          setNotifications(prev =>
-            prev.map(notif =>
-              notif.id === message.payload.notificationId
-                ? { ...notif, isRead: true }
-                : notif
-            )
-          );
-          setUnreadCount(prev => Math.max(0, prev - 1));
+          setNotifications((prev) => prev.map((n: unknown) => {
+            const notification = n as Record<string, unknown>;
+            return notification['id'] === (message.payload as Record<string, string>)['notificationId']
+              ? { ...notification, isRead: true } : n;
+          }));
+          setUnreadCount((c) => Math.max(0, c - 1));
           break;
         case 'unread_count':
-          setUnreadCount(message.payload.count);
+          setUnreadCount((message.payload as Record<string, number>)['count']);
           break;
       }
     },
   });
 
-  const markAsRead = useCallback((notificationId: string) => {
-    sendJsonMessage({
-      type: 'mark_read',
-      payload: { notificationId },
-    });
-  }, [sendJsonMessage]);
+  const markAsRead    = useCallback((notificationId: string) =>
+    sendJsonMessage({ type: 'mark_read',     payload: { notificationId } }), [sendJsonMessage]);
+  const markAllAsRead = useCallback(() =>
+    sendJsonMessage({ type: 'mark_all_read', payload: {} }), [sendJsonMessage]);
 
-  const markAllAsRead = useCallback(() => {
-    sendJsonMessage({
-      type: 'mark_all_read',
-      payload: {},
-    });
-  }, [sendJsonMessage]);
-
-  return {
-    ...rest,
-    isConnected,
-    notifications,
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
-  };
+  return { ...rest, isConnected, notifications, unreadCount, markAsRead, markAllAsRead };
 }

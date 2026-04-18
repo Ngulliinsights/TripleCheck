@@ -1,177 +1,159 @@
-import { useQuery, UseQueryOptions } from '@tanstack/react-query'
+/**
+ * Polling Hook
+ *
+ * Enhanced polling with adaptive intervals, error back-off,
+ * window-blur / offline pausing, and lifecycle management.
+ * Acts as the primary real-time fallback when WebSocket is unavailable.
+ */
+
 import { useCallback, useRef, useState } from 'react'
+import { useQuery, UseQueryOptions } from '@tanstack/react-query'
 
 import { useEnhancedCleanupManager } from '../../infrastructure/hooks/useCleanupManager'
 import { useSafeEffect } from '../../infrastructure/hooks/useSafeEffect'
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface AdaptiveInterval {
+  min:              number;
+  max:              number;
+  errorMultiplier:  number;
+  successDivider:   number;
+}
+
 interface UsePollingOptions<TData, TError = Error> {
-  queryKey: unknown[];
-  queryFn: () => Promise<TData>;
-  interval: number;
-  enabled?: boolean;
-  immediate?: boolean; // Execute immediately on mount
-  onSuccess?: (data: TData) => void;
-  onError?: (error: TError) => void;
-  retryOnError?: boolean;
-  maxRetries?: number;
-  backoffMultiplier?: number;
+  queryKey:          unknown[];
+  queryFn:           () => Promise<TData>;
+  interval:          number;
+  enabled?:          boolean;
+  /** Execute immediately on mount. @default true */
+  immediate?:        boolean;
+  onSuccess?:        (data: TData) => void;
+  onError?:          (error: TError) => void;
+  retryOnError?:     boolean;
+  maxRetries?:       number;
   pauseOnWindowBlur?: boolean;
-  pauseOnOffline?: boolean;
-  adaptiveInterval?: {
-    min: number;
-    max: number;
-    errorMultiplier: number;
-    successDivider: number;
-  };
+  pauseOnOffline?:   boolean;
+  adaptiveInterval?: AdaptiveInterval;
 }
 
 interface UsePollingReturn<TData, TError = Error> {
-  data: TData | undefined;
-  error: TError | null;
-  isLoading: boolean;
-  isPolling: boolean;
-  start: () => void;
-  stop: () => void;
-  restart: () => void;
-  forceRefetch: () => Promise<TData | undefined>;
+  data:            TData | undefined;
+  error:           TError | null;
+  isLoading:       boolean;
+  isPolling:       boolean;
+  start:           () => void;
+  stop:            () => void;
+  restart:         () => void;
+  forceRefetch:    () => Promise<TData | undefined>;
   currentInterval: number;
-  errorCount: number;
+  errorCount:      number;
 }
 
-/**
- * Enhanced polling hook with adaptive intervals, error handling, and lifecycle management
- * Essential fallback for real-time features when WebSocket is unavailable
- */
-export function usePolling<TData = any, TError = Error>({
+// ---------------------------------------------------------------------------
+// Core hook
+// ---------------------------------------------------------------------------
+
+export function usePolling<TData = unknown, TError = Error>({
   queryKey,
   queryFn,
   interval,
-  enabled = true,
-  immediate = true,
+  enabled            = true,
+  immediate          = true,
   onSuccess,
   onError,
-  retryOnError = true,
-  maxRetries = 3,
-  backoffMultiplier = 1.5,
-  pauseOnWindowBlur = true,
-  pauseOnOffline = true,
+  retryOnError       = true,
+  maxRetries         = 3,
+  pauseOnWindowBlur  = true,
+  pauseOnOffline     = true,
   adaptiveInterval,
 }: UsePollingOptions<TData, TError>): UsePollingReturn<TData, TError> {
-  const [isPolling, setIsPolling] = useState(enabled);
+  const [isPolling,       setIsPolling]       = useState(enabled);
   const [currentInterval, setCurrentInterval] = useState(interval);
-  const [errorCount, setErrorCount] = useState(0);
-  
-  const isWindowFocusedRef = useRef(true);
-  const isOnlineRef = useRef(navigator.onLine);
-  const cleanupManager = useEnhancedCleanupManager();
+  const [errorCount,      setErrorCount]      = useState(0);
 
-  // React Query for data fetching
+  const isWindowFocused = useRef(true);
+  const isOnline        = useRef(navigator.onLine);
+  const cleanupManager  = useEnhancedCleanupManager();
+
   const query = useQuery({
     queryKey,
     queryFn,
-    enabled: false, // We'll trigger manually
-    retry: false, // Handle retries ourselves
+    enabled:             false,
+    retry:               false,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchOnReconnect:  false,
   } as UseQueryOptions<TData, TError>);
 
   // Adaptive interval calculation
-  const calculateNextInterval = useCallback((wasError: boolean) => {
+  const nextInterval = useCallback((wasError: boolean): number => {
     if (!adaptiveInterval) return interval;
+    setCurrentInterval((prev) => {
+      const next = wasError
+        ? Math.min(prev * adaptiveInterval.errorMultiplier, adaptiveInterval.max)
+        : Math.max(prev / adaptiveInterval.successDivider,  adaptiveInterval.min);
+      return next;
+    });
+    // Return stable snapshot; actual state update is async but that's fine here
+    return interval;
+  }, [adaptiveInterval, interval]);
 
-    let nextInterval = currentInterval;
-
-    if (wasError) {
-      nextInterval = Math.min(
-        nextInterval * adaptiveInterval.errorMultiplier,
-        adaptiveInterval.max
-      );
-    } else {
-      nextInterval = Math.max(
-        nextInterval / adaptiveInterval.successDivider,
-        adaptiveInterval.min
-      );
-    }
-
-    setCurrentInterval(nextInterval);
-    return nextInterval;
-  }, [currentInterval, interval, adaptiveInterval]);
-
-  // Execute query with error handling
-  const executeQuery = useCallback(async (): Promise<void> => {
+  const executeQuery = useCallback(async () => {
     try {
-      const data = await query.refetch();
-      
-      if (data.data) {
+      const result = await query.refetch();
+      if (result.data !== undefined) {
         setErrorCount(0);
-        onSuccess?.(data.data);
-        calculateNextInterval(false);
+        onSuccess?.(result.data);
+        nextInterval(false);
       }
-    } catch (error) {
-      const err = error as TError;
-      setErrorCount(prev => prev + 1);
-      onError?.(err);
-      calculateNextInterval(true);
-      
-      // Stop polling if max retries exceeded and retryOnError is false
-      if (!retryOnError && errorCount >= maxRetries) {
-        setIsPolling(false);
-      }
-      
-      throw err;
+    } catch (err) {
+      const error = err as TError;
+      setErrorCount((n) => {
+        const next = n + 1;
+        if (!retryOnError && next >= maxRetries) setIsPolling(false);
+        return next;
+      });
+      onError?.(error);
+      nextInterval(true);
+      throw error;
     }
-  }, [query, onSuccess, onError, calculateNextInterval, retryOnError, errorCount, maxRetries]);
+  }, [query, onSuccess, onError, nextInterval, retryOnError, maxRetries]);
 
-  // Start polling
   const start = useCallback(() => {
     cleanupManager.removeCleanup('polling-interval');
-
     setIsPolling(true);
     setErrorCount(0);
 
-    // Execute immediately if requested
-    if (immediate) {
-      executeQuery().catch(() => {
-        // Error already handled in executeQuery
-      });
-    }
+    if (immediate) executeQuery().catch(() => undefined);
 
-    // Set up interval
-    const scheduleNext = () => {
+    const schedule = () => {
       cleanupManager.addTimeout(() => {
-        // Check if we should pause
-        const shouldPause = 
-          (pauseOnWindowBlur && !isWindowFocusedRef.current) ||
-          (pauseOnOffline && !isOnlineRef.current);
+        const paused =
+          (pauseOnWindowBlur && !isWindowFocused.current) ||
+          (pauseOnOffline    && !isOnline.current);
 
-        if (!shouldPause && isPolling) {
-          executeQuery()
-            .then(() => scheduleNext())
-            .catch(() => scheduleNext()); // Continue polling even on error
-        } else {
-          scheduleNext(); // Keep checking conditions
-        }
+        executeQuery()
+          .catch(() => undefined)
+          .finally(() => {
+            if (!paused) schedule();
+            else         setTimeout(schedule, currentInterval);
+          });
       }, currentInterval, 'polling-interval');
     };
 
-    scheduleNext();
+    schedule();
   }, [
-    immediate,
-    executeQuery,
-    currentInterval,
-    pauseOnWindowBlur,
-    pauseOnOffline,
-    isPolling,
-    cleanupManager,
+    immediate, executeQuery, currentInterval,
+    pauseOnWindowBlur, pauseOnOffline, cleanupManager,
   ]);
 
-  // Stop polling
   const stop = useCallback(() => {
     setIsPolling(false);
     cleanupManager.removeCleanup('polling-interval');
   }, [cleanupManager]);
 
-  // Restart polling
   const restart = useCallback(() => {
     stop();
     setCurrentInterval(interval);
@@ -179,71 +161,33 @@ export function usePolling<TData = any, TError = Error>({
     setTimeout(start, 100);
   }, [stop, start, interval]);
 
-  // Force refetch
-  const forceRefetch = useCallback(async (): Promise<TData | undefined> => {
-    try {
-      const data = await query.refetch();
-      return data.data;
-    } catch (error) {
-      return undefined;
-    }
+  const forceRefetch = useCallback(async () => {
+    try { return (await query.refetch()).data; } catch { return undefined; }
   }, [query]);
 
-  // Window focus/blur handling
+  // Window focus / blur
   useSafeEffect(() => {
     if (!pauseOnWindowBlur) return;
-
-    const handleFocus = () => {
-      isWindowFocusedRef.current = true;
-      if (enabled && !isPolling) {
-        start();
-      }
-    };
-
-    const handleBlur = () => {
-      isWindowFocusedRef.current = false;
-    };
-
-    cleanupManager.addEventListener(window, 'focus', handleFocus, undefined, 'window-focus');
-    cleanupManager.addEventListener(window, 'blur', handleBlur, undefined, 'window-blur');
+    const onFocus = () => { isWindowFocused.current = true;  if (enabled && !isPolling) start(); };
+    const onBlur  = () => { isWindowFocused.current = false; };
+    cleanupManager.addEventListener(window, 'focus', onFocus, undefined, 'window-focus');
+    cleanupManager.addEventListener(window, 'blur',  onBlur,  undefined, 'window-blur');
   }, [pauseOnWindowBlur, enabled, isPolling, start, cleanupManager]);
 
-  // Online/offline handling
+  // Online / offline
   useSafeEffect(() => {
     if (!pauseOnOffline) return;
-
-    const handleOnline = () => {
-      isOnlineRef.current = true;
-      if (enabled && !isPolling) {
-        start();
-      }
-    };
-
-    const handleOffline = () => {
-      isOnlineRef.current = false;
-    };
-
-    cleanupManager.addEventListener(window, 'online', handleOnline, undefined, 'window-online');
-    cleanupManager.addEventListener(window, 'offline', handleOffline, undefined, 'window-offline');
+    const onOnline  = () => { isOnline.current = true;  if (enabled && !isPolling) start(); };
+    const onOffline = () => { isOnline.current = false; };
+    cleanupManager.addEventListener(window, 'online',  onOnline,  undefined, 'window-online');
+    cleanupManager.addEventListener(window, 'offline', onOffline, undefined, 'window-offline');
   }, [pauseOnOffline, enabled, isPolling, start, cleanupManager]);
 
-  // Start/stop based on enabled prop
+  // Start / stop based on enabled prop
   useSafeEffect(() => {
-    if (enabled) {
-      start();
-    } else {
-      stop();
-    }
-
+    if (enabled) start(); else stop();
     return stop;
-  }, [enabled, start, stop]);
-
-  // Cleanup on unmount
-  useSafeEffect(() => {
-    return () => {
-      cleanupManager.runAllCleanup();
-    };
-  }, [cleanupManager]);
+  }, [enabled]); // eslint-disable-line
 
   return {
     data: query.data,
@@ -259,158 +203,76 @@ export function usePolling<TData = any, TError = Error>({
   };
 }
 
-/**
- * Property updates polling hook
- */
-export function usePropertyUpdatesPolling(enabled: boolean = true) {
-  return usePolling({
-    queryKey: ['properties', 'updates', 'polling'],
-    queryFn: async () => {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/properties/updates', {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json',
-        },
-      });
+// ---------------------------------------------------------------------------
+// Domain-specific polling hooks
+// ---------------------------------------------------------------------------
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch property updates: ${response.statusText}`);
-      }
-
-      return response.json();
+function authFetch(url: string) {
+  return fetch(url, {
+    headers: {
+      Authorization:  `Bearer ${localStorage.getItem('authToken') ?? ''}`,
+      'Content-Type': 'application/json',
     },
-    interval: 30000, // 30 seconds
-    enabled,
-    adaptiveInterval: {
-      min: 15000, // 15 seconds minimum
-      max: 120000, // 2 minutes maximum
-      errorMultiplier: 2,
-      successDivider: 1.2,
-    },
+  }).then((r) => {
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    return r.json();
   });
 }
 
-/**
- * Message polling hook (fallback for WebSocket)
- */
-export function useMessagePolling(threadId: string, enabled: boolean = true) {
+export function usePropertyUpdatesPolling(enabled = true) {
   return usePolling({
-    queryKey: ['messages', 'polling', threadId],
-    queryFn: async () => {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/messages/${threadId}/recent`, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch messages: ${response.statusText}`);
-      }
-
-      return response.json();
-    },
-    interval: 5000, // 5 seconds
+    queryKey:         ['properties', 'updates', 'polling'],
+    queryFn:          () => authFetch('/api/properties/updates'),
+    interval:         30_000,
     enabled,
-    immediate: false, // Don't fetch immediately, let the main query handle initial load
-    adaptiveInterval: {
-      min: 2000, // 2 seconds minimum for active conversations
-      max: 30000, // 30 seconds maximum for inactive conversations
-      errorMultiplier: 2,
-      successDivider: 1.1,
-    },
+    adaptiveInterval: { min: 15_000, max: 120_000, errorMultiplier: 2, successDivider: 1.2 },
   });
 }
 
-/**
- * Notifications polling hook
- */
-export function useNotificationsPolling(userId: string, enabled: boolean = true) {
+export function useMessagePolling(threadId: string, enabled = true) {
   return usePolling({
-    queryKey: ['notifications', 'polling', userId],
-    queryFn: async () => {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/notifications/unread', {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch notifications: ${response.statusText}`);
-      }
-
-      return response.json();
-    },
-    interval: 60000, // 1 minute
+    queryKey:         ['messages', 'polling', threadId],
+    queryFn:          () => authFetch(`/api/messages/${threadId}/recent`),
+    interval:         5_000,
     enabled,
-    adaptiveInterval: {
-      min: 30000, // 30 seconds minimum
-      max: 300000, // 5 minutes maximum
-      errorMultiplier: 1.5,
-      successDivider: 1.1,
-    },
+    immediate:        false,
+    adaptiveInterval: { min: 2_000, max: 30_000, errorMultiplier: 2, successDivider: 1.1 },
   });
 }
 
-/**
- * Trust score polling hook
- */
-export function useTrustScorePolling(userId: string, enabled: boolean = true) {
+export function useNotificationsPolling(userId: string, enabled = true) {
   return usePolling({
-    queryKey: ['trust', 'score', 'polling', userId],
-    queryFn: async () => {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/trust/score/${userId}`, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch trust score: ${response.statusText}`);
-      }
-
-      return response.json();
-    },
-    interval: 300000, // 5 minutes
+    queryKey:         ['notifications', 'polling', userId],
+    queryFn:          () => authFetch('/api/notifications/unread'),
+    interval:         60_000,
     enabled,
-    pauseOnWindowBlur: false, // Trust scores can update in background
-    adaptiveInterval: {
-      min: 120000, // 2 minutes minimum
-      max: 1800000, // 30 minutes maximum
-      errorMultiplier: 2,
-      successDivider: 1.2,
-    },
+    adaptiveInterval: { min: 30_000, max: 300_000, errorMultiplier: 1.5, successDivider: 1.1 },
   });
 }
 
-/**
- * System health polling hook
- */
-export function useSystemHealthPolling(enabled: boolean = true) {
+export function useTrustScorePolling(userId: string, enabled = true) {
   return usePolling({
-    queryKey: ['system', 'health', 'polling'],
-    queryFn: async () => {
-      const response = await fetch('/api/health');
-      
-      if (!response.ok) {
-        throw new Error(`Health check failed: ${response.statusText}`);
-      }
-
-      return response.json();
-    },
-    interval: 120000, // 2 minutes
+    queryKey:          ['trust', 'score', 'polling', userId],
+    queryFn:           () => authFetch(`/api/trust/score/${userId}`),
+    interval:          300_000,
     enabled,
-    retryOnError: true,
-    maxRetries: 5,
     pauseOnWindowBlur: false,
-    onError: (error) => {
-      console.warn('System health check failed:', error);
-    },
+    adaptiveInterval:  { min: 120_000, max: 1_800_000, errorMultiplier: 2, successDivider: 1.2 },
+  });
+}
+
+export function useSystemHealthPolling(enabled = true) {
+  return usePolling({
+    queryKey:          ['system', 'health', 'polling'],
+    queryFn:           () => fetch('/api/health').then((r) => {
+      if (!r.ok) throw new Error(`Health check ${r.status}`);
+      return r.json();
+    }),
+    interval:          120_000,
+    enabled,
+    retryOnError:      true,
+    maxRetries:        5,
+    pauseOnWindowBlur: false,
+    onError:           (err) => console.warn('[Health poll]', err),
   });
 }

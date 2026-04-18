@@ -1,6 +1,6 @@
 /**
  * Error Recovery Hook
- * Provides error handling and recovery mechanisms for components
+ * Provides error handling and recovery mechanisms for components.
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react'
@@ -29,7 +29,7 @@ export const useErrorRecovery = (options: ErrorRecoveryOptions = {}) => {
     exponentialBackoff = true,
     onError,
     onSuccess,
-    onMaxRetriesReached
+    onMaxRetriesReached,
   } = options;
 
   const [state, setState] = useState<ErrorRecoveryState>({
@@ -37,143 +37,164 @@ export const useErrorRecovery = (options: ErrorRecoveryOptions = {}) => {
     isRetrying: false,
     retryCount: 0,
     canRetry: true,
-    lastAttempt: null
+    lastAttempt: null,
   });
 
-  const retryTimeoutRef = useRef<NodeJS.Timeout>();
+  // Refs to avoid stale closures in callbacks
+  const retryCountRef = useRef(0);
+  const isRetryingRef = useRef(false);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const calculateDelay = useCallback((attempt: number) => {
-    if (!exponentialBackoff) return retryDelay;
-    return Math.min(retryDelay * Math.pow(2, attempt), 30000); // Max 30 seconds
-  }, [retryDelay, exponentialBackoff]);
+  // Keep option callbacks fresh without breaking memoization
+  const onErrorRef = useRef(onError);
+  const onSuccessRef = useRef(onSuccess);
+  const onMaxRetriesReachedRef = useRef(onMaxRetriesReached);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+  useEffect(() => { onSuccessRef.current = onSuccess; }, [onSuccess]);
+  useEffect(() => { onMaxRetriesReachedRef.current = onMaxRetriesReached; }, [onMaxRetriesReached]);
 
-  const handleError = useCallback((error: Error) => {
-    const newRetryCount = state.retryCount + 1;
-    const canRetry = newRetryCount < maxRetries;
+  const calculateDelay = useCallback(
+    (attempt: number) =>
+      exponentialBackoff
+        ? Math.min(retryDelay * Math.pow(2, attempt), 30_000)
+        : retryDelay,
+    [retryDelay, exponentialBackoff]
+  );
 
-    setState(prev => ({
-      ...prev,
-      error,
-      retryCount: newRetryCount,
-      canRetry,
-      lastAttempt: new Date()
-    }));
+  const handleError = useCallback(
+    (error: Error) => {
+      // Read from ref — not state — to avoid stale closure
+      retryCountRef.current += 1;
+      const newCount = retryCountRef.current;
+      const canRetry = newCount < maxRetries;
 
-    onError?.(error, newRetryCount);
-
-    if (!canRetry) {
-      onMaxRetriesReached?.(error);
-    }
-  }, [state.retryCount, maxRetries, onError, onMaxRetriesReached]);
-
-  const retry = useCallback(async (operation: () => Promise<any>) => {
-    if (!state.canRetry || state.isRetrying) {
-      return;
-    }
-
-    setState(prev => ({ ...prev, isRetrying: true }));
-
-    try {
-      const delay = calculateDelay(state.retryCount);
-      
-      await new Promise(resolve => {
-        retryTimeoutRef.current = setTimeout(resolve, delay);
-      });
-
-      const result = await operation();
-      
       setState({
-        error: null,
+        error,
         isRetrying: false,
-        retryCount: 0,
-        canRetry: true,
-        lastAttempt: new Date()
+        retryCount: newCount,
+        canRetry,
+        lastAttempt: new Date(),
       });
 
-      onSuccess?.();
-      return result;
-    } catch (error) {
-      setState(prev => ({ ...prev, isRetrying: false }));
-      handleError(error as Error);
-      throw error;
-    }
-  }, [state.canRetry, state.isRetrying, state.retryCount, calculateDelay, handleError, onSuccess]);
+      onErrorRef.current?.(error, newCount);
+      if (!canRetry) onMaxRetriesReachedRef.current?.(error);
+    },
+    [maxRetries]
+  );
+
+  const retry = useCallback(
+    async (operation: () => Promise<unknown>) => {
+      if (retryCountRef.current >= maxRetries || isRetryingRef.current) return;
+
+      isRetryingRef.current = true;
+      setState(prev => ({ ...prev, isRetrying: true }));
+
+      try {
+        await new Promise<void>(resolve => {
+          retryTimeoutRef.current = setTimeout(
+            resolve,
+            calculateDelay(retryCountRef.current)
+          );
+        });
+
+        const result = await operation();
+
+        retryCountRef.current = 0;
+        isRetryingRef.current = false;
+        setState({
+          error: null,
+          isRetrying: false,
+          retryCount: 0,
+          canRetry: true,
+          lastAttempt: new Date(),
+        });
+
+        onSuccessRef.current?.();
+        return result;
+      } catch (err) {
+        isRetryingRef.current = false;
+        setState(prev => ({ ...prev, isRetrying: false }));
+        handleError(err as Error);
+        throw err;
+      }
+    },
+    [maxRetries, calculateDelay, handleError]
+  );
 
   const reset = useCallback(() => {
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-    }
-
+    clearTimeout(retryTimeoutRef.current);
+    retryCountRef.current = 0;
+    isRetryingRef.current = false;
     setState({
       error: null,
       isRetrying: false,
       retryCount: 0,
       canRetry: true,
-      lastAttempt: null
+      lastAttempt: null,
     });
   }, []);
 
-  const executeWithRetry = useCallback(async (operation: () => Promise<any>) => {
-    try {
-      const result = await operation();
-      
-      if (state.error) {
-        reset(); // Clear any previous errors on success
+  const executeWithRetry = useCallback(
+    async (operation: () => Promise<unknown>) => {
+      try {
+        const result = await operation();
+        // Clear stale errors on a fresh success
+        if (retryCountRef.current > 0) reset();
+        return result;
+      } catch (err) {
+        handleError(err as Error);
+        throw err;
       }
-      
-      return result;
-    } catch (error) {
-      handleError(error as Error);
-      throw error;
-    }
-  }, [state.error, reset, handleError]);
+    },
+    [reset, handleError]
+  );
 
-  // Cleanup timeout on unmount
   useEffect(() => {
-    return () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-      }
-    };
+    return () => clearTimeout(retryTimeoutRef.current);
   }, []);
 
-  return {
-    ...state,
-    handleError,
-    retry,
-    reset,
-    executeWithRetry
-  };
+  return { ...state, handleError, retry, reset, executeWithRetry };
 };
 
+// ---------------------------------------------------------------------------
+
 /**
- * Hook for network error handling with offline detection
+ * Network error handling with offline detection.
  */
 export const useNetworkErrorRecovery = () => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [connectionQuality, setConnectionQuality] = useState<'good' | 'poor' | 'offline'>('good');
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+  const [connectionQuality, setConnectionQuality] = useState<
+    'good' | 'poor' | 'offline'
+  >('good');
 
   const errorRecovery = useErrorRecovery({
     maxRetries: 5,
-    retryDelay: 2000,
+    retryDelay: 2_000,
     exponentialBackoff: true,
-    onError: (error, attempt) => {
-      // Adjust retry strategy based on network conditions
-      if (!isOnline) {
+    onError: (error) => {
+      if (!navigator.onLine) {
         setConnectionQuality('offline');
-      } else if (error.message.includes('timeout') || error.message.includes('network')) {
+      } else if (
+        error.message.includes('timeout') ||
+        error.message.includes('network')
+      ) {
         setConnectionQuality('poor');
       }
-    }
+    },
   });
+
+  // Stable refs so the event listener effect never needs to re-run
+  const resetRef = useRef(errorRecovery.reset);
+  useEffect(() => { resetRef.current = errorRecovery.reset; }, [errorRecovery.reset]);
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       setConnectionQuality('good');
-      errorRecovery.reset();
+      resetRef.current();
     };
-
     const handleOffline = () => {
       setIsOnline(false);
       setConnectionQuality('offline');
@@ -181,123 +202,124 @@ export const useNetworkErrorRecovery = () => {
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [errorRecovery]);
+  }, []); // stable — refs used internally
 
-  const executeNetworkOperation = useCallback(async (operation: () => Promise<any>) => {
-    if (!isOnline) {
-      throw new Error('No internet connection. Please check your network and try again.');
-    }
+  const executeNetworkOperation = useCallback(
+    async (operation: () => Promise<unknown>) => {
+      if (!navigator.onLine) {
+        throw new Error(
+          'No internet connection. Please check your network and try again.'
+        );
+      }
+      return errorRecovery.executeWithRetry(operation);
+    },
+    [errorRecovery]
+  );
 
-    return errorRecovery.executeWithRetry(operation);
-  }, [isOnline, errorRecovery]);
-
-  return {
-    ...errorRecovery,
-    isOnline,
-    connectionQuality,
-    executeNetworkOperation
-  };
+  return { ...errorRecovery, isOnline, connectionQuality, executeNetworkOperation };
 };
 
+// ---------------------------------------------------------------------------
+
 /**
- * Hook for API error handling with specific error types
+ * API error handling with HTTP status-aware retry logic.
  */
 export const useApiErrorRecovery = () => {
   const errorRecovery = useErrorRecovery({
     maxRetries: 3,
-    retryDelay: 1000,
-    exponentialBackoff: true
+    retryDelay: 1_000,
+    exponentialBackoff: true,
   });
 
-  const handleApiError = useCallback((error: any) => {
-    let errorMessage = 'An unexpected error occurred';
-    let shouldRetry = true;
+  const handleApiError = useCallback(
+    (error: unknown) => {
+      let message = 'An unexpected error occurred';
+      let shouldRetry = true;
 
-    if (error.response) {
-      const status = error.response.status;
+      // Type guard for axios-like errors
+      const isAxiosError = (e: unknown): e is { response?: { status: number } } => 
+        e !== null && typeof e === 'object' && 'response' in e;
       
-      switch (status) {
-        case 400:
-          errorMessage = 'Invalid request. Please check your input and try again.';
-          shouldRetry = false;
-          break;
-        case 401:
-          errorMessage = 'Authentication required. Please log in and try again.';
-          shouldRetry = false;
-          // Redirect to login
-          window.location.href = '/login';
-          break;
-        case 403:
-          errorMessage = 'You do not have permission to perform this action.';
-          shouldRetry = false;
-          break;
-        case 404:
-          errorMessage = 'The requested resource was not found.';
-          shouldRetry = false;
-          break;
-        case 429:
-          errorMessage = 'Too many requests. Please wait a moment and try again.';
-          shouldRetry = true;
-          break;
-        case 500:
-          errorMessage = 'Server error. Please try again later.';
-          shouldRetry = true;
-          break;
-        case 502:
-        case 503:
-        case 504:
-          errorMessage = 'Service temporarily unavailable. Please try again later.';
-          shouldRetry = true;
-          break;
-        default:
-          errorMessage = `Request failed with status ${status}`;
-          shouldRetry = status >= 500;
+      const isNetworkError = (e: unknown): e is { request?: unknown } =>
+        e !== null && typeof e === 'object' && 'request' in e;
+
+      if (isAxiosError(error)) {
+        const { status } = error.response ?? {};
+        switch (status) {
+          case 400:
+            message = 'Invalid request. Please check your input and try again.';
+            shouldRetry = false;
+            break;
+          case 401:
+            message = 'Authentication required. Please log in and try again.';
+            shouldRetry = false;
+            window.location.href = '/login';
+            break;
+          case 403:
+            message = 'You do not have permission to perform this action.';
+            shouldRetry = false;
+            break;
+          case 404:
+            message = 'The requested resource was not found.';
+            shouldRetry = false;
+            break;
+          case 429:
+            message = 'Too many requests. Please wait a moment and try again.';
+            shouldRetry = true;
+            break;
+          case 500:
+            message = 'Server error. Please try again later.';
+            shouldRetry = true;
+            break;
+          case 502:
+          case 503:
+          case 504:
+            message = 'Service temporarily unavailable. Please try again later.';
+            shouldRetry = true;
+            break;
+          default:
+            message = `Request failed with status ${status}`;
+            shouldRetry = status ? status >= 500 : true;
+        }
+      } else if (isNetworkError(error)) {
+        message = 'Network error. Please check your connection and try again.';
+      } else if (error instanceof Error) {
+        message = error.message;
+        shouldRetry = false;
       }
-    } else if (error.request) {
-      errorMessage = 'Network error. Please check your connection and try again.';
-      shouldRetry = true;
-    } else {
-      errorMessage = error.message || 'An unexpected error occurred';
-      shouldRetry = false;
-    }
 
-    const enhancedError = new Error(errorMessage);
-    (enhancedError as any).shouldRetry = shouldRetry;
-    (enhancedError as any).originalError = error;
+      const enhanced = Object.assign(new Error(message), {
+        shouldRetry,
+        originalError: error,
+      });
 
-    if (shouldRetry) {
-      errorRecovery.handleError(enhancedError);
-    } else {
-      errorRecovery.handleError(enhancedError);
-      // Don't allow retries for client errors
-      return { ...errorRecovery, canRetry: false };
-    }
+      errorRecovery.handleError(enhanced);
+    },
+    [errorRecovery]
+  );
 
-    return errorRecovery;
-  }, [errorRecovery]);
+  const executeApiCall = useCallback(
+    async (apiCall: () => Promise<unknown>) => {
+      try {
+        return await errorRecovery.executeWithRetry(apiCall);
+      } catch (err) {
+        handleApiError(err);
+      }
+    },
+    [errorRecovery, handleApiError]
+  );
 
-  const executeApiCall = useCallback(async (apiCall: () => Promise<any>) => {
-    try {
-      return await errorRecovery.executeWithRetry(apiCall);
-    } catch (error) {
-      return handleApiError(error);
-    }
-  }, [errorRecovery, handleApiError]);
-
-  return {
-    ...errorRecovery,
-    handleApiError,
-    executeApiCall
-  };
+  return { ...errorRecovery, handleApiError, executeApiCall };
 };
 
+// ---------------------------------------------------------------------------
+
 /**
- * Hook for form submission error handling
+ * Form submission error handling with per-field validation errors.
  */
 export const useFormErrorRecovery = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -305,29 +327,9 @@ export const useFormErrorRecovery = () => {
 
   const errorRecovery = useErrorRecovery({
     maxRetries: 2,
-    retryDelay: 1000,
-    exponentialBackoff: false
+    retryDelay: 1_000,
+    exponentialBackoff: false,
   });
-
-  const handleFormError = useCallback((error: any) => {
-    setSubmitError(null);
-    setFieldErrors({});
-
-    if (error.response?.data?.errors) {
-      // Handle validation errors
-      const errors = error.response.data.errors;
-      if (typeof errors === 'object') {
-        setFieldErrors(errors);
-      } else {
-        setSubmitError('Please correct the errors and try again.');
-      }
-    } else if (error.response?.data?.message) {
-      setSubmitError(error.response.data.message);
-    } else {
-      setSubmitError(error.message || 'Failed to submit form. Please try again.');
-      errorRecovery.handleError(error);
-    }
-  }, [errorRecovery]);
 
   const clearErrors = useCallback(() => {
     setFieldErrors({});
@@ -335,16 +337,50 @@ export const useFormErrorRecovery = () => {
     errorRecovery.reset();
   }, [errorRecovery]);
 
-  const submitForm = useCallback(async (submitFunction: () => Promise<any>) => {
-    clearErrors();
-    
-    try {
-      return await errorRecovery.executeWithRetry(submitFunction);
-    } catch (error) {
-      handleFormError(error);
-      throw error;
-    }
-  }, [errorRecovery, clearErrors, handleFormError]);
+  const handleFormError = useCallback(
+    (error: unknown) => {
+      setSubmitError(null);
+      setFieldErrors({});
+
+      // Type guard for API response errors
+      const isApiError = (e: unknown): e is { response?: { data?: { errors?: unknown; message?: unknown } } } =>
+        e !== null && typeof e === 'object' && 'response' in e;
+
+      if (isApiError(error) && error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        if (typeof errors === 'object' && !Array.isArray(errors)) {
+          setFieldErrors(errors as Record<string, string>);
+        } else {
+          setSubmitError('Please correct the errors and try again.');
+        }
+      } else if (isApiError(error) && error.response?.data?.message) {
+        setSubmitError(error.response.data.message as string);
+      } else {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to submit form. Please try again.';
+        setSubmitError(message);
+        errorRecovery.handleError(
+          error instanceof Error ? error : new Error(message)
+        );
+      }
+    },
+    [errorRecovery]
+  );
+
+  const submitForm = useCallback(
+    async (submitFunction: () => Promise<unknown>) => {
+      clearErrors();
+      try {
+        return await errorRecovery.executeWithRetry(submitFunction);
+      } catch (err) {
+        handleFormError(err);
+        throw err;
+      }
+    },
+    [errorRecovery, clearErrors, handleFormError]
+  );
 
   return {
     ...errorRecovery,
@@ -352,6 +388,6 @@ export const useFormErrorRecovery = () => {
     submitError,
     handleFormError,
     clearErrors,
-    submitForm
+    submitForm,
   };
 };

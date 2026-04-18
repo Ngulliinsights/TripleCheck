@@ -1,7 +1,7 @@
 /**
  * Unified Error Handling Hook for Compare Components
- * 
- * Provides consistent error handling across all comparison functionality
+ *
+ * Provides consistent error handling across all comparison functionality.
  */
 
 import { useState, useCallback } from 'react'
@@ -15,36 +15,34 @@ export interface CompareError {
 
 export interface UseCompareErrorReturn {
   error: CompareError | null;
-  setError: (error: CompareError) => void;
+  /** Manually set a fully-formed CompareError (use `handleError` for raw unknowns). */
+  setCompareError: (error: CompareError) => void;
   clearError: () => void;
+  /** Accepts any thrown value and normalizes it into a CompareError. */
   handleError: (error: unknown, context?: string) => void;
 }
 
 export function useCompareError(): UseCompareErrorReturn {
   const [error, setError] = useState<CompareError | null>(null);
 
-  const clearError = useCallback(() => {
-    setError(null);
+  const clearError = useCallback(() => setError(null), []);
+
+  const setCompareError = useCallback((err: CompareError) => {
+    setError(err);
   }, []);
 
-  const handleError = useCallback((error: unknown, context?: string) => {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    
+  const handleError = useCallback((raw: unknown, context?: string) => {
+    const message = raw instanceof Error ? raw.message : String(raw);
+
     setError({
-      message: errorMessage,
+      message,
       context,
       timestamp: new Date(),
-      originalError: error,
+      originalError: raw,
     });
 
-    // Log error for debugging
-    console.error(`Compare Error${context ? ` (${context})` : ''}:`, error);
+    console.error(`Compare Error${context ? ` (${context})` : ''}:`, raw);
   }, []);
 
-  return {
-    error,
-    setError,
-    clearError,
-    handleError,
-  };
+  return { error, setCompareError, clearError, handleError };
 }
