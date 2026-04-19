@@ -1,5 +1,6 @@
 ﻿// Property domain specific types
 export * from '@shared/types/property'
+export * from './property-contracts'
 
 export interface PropertyDocument {
   id: string;

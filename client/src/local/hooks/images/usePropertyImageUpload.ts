@@ -7,11 +7,11 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 
-import { getImageServiceOrchestrator, type DefaultImageServiceOrchestrator } from '../../services/images/ImageServiceOrchestrator'
-import { PropertyImageUploadService } from '../../services/images/PropertyImageUploadService'
+import { getImageServiceOrchestrator, type DefaultImageServiceOrchestrator } from '../../../property/services/images/ImageServiceOrchestrator'
+import { PropertyImageUploadService } from '../../../property/services/images/PropertyImageUploadService'
 // Legacy import for backward compatibility
-// import { PropertyImageUploadCoordinator } from '../../services/images/PropertyImageUploadCoordinator' // File doesn't exist
-import { PropertyImageWorkflowManager } from '../../services/images/PropertyImageWorkflowManager'
+// import { PropertyImageUploadCoordinator } from '../../../property/services/images/PropertyImageUploadCoordinator' // File doesn't exist
+import { PropertyImageWorkflowManager } from '../../../property/services/images/PropertyImageWorkflowManager'
 import type {
   UploadSession,
   UploadProgress,

@@ -22,3 +22,23 @@ export { default as PropertyCardShowcase } from './PropertyCardShowcase'
 export { PropertyListingWizard } from './PropertyListingWizard'
 export { PropertyReviews } from './PropertyReviews'
 export { PropertyTestComponent } from './PropertyTestComponent'
+
+// Consolidated from local domain
+export { PropertyCard } from './PropertyCard'
+export { PropertyListingPage } from './PropertyListingPage'
+export { PropertyDataGrid } from './PropertyDataGrid'
+export { PropertySkeletonGrid } from './PropertySkeletonGrid'
+export { PropertyArchitectureComparison } from './PropertyArchitectureComparison'
+export { PhotoManagementButton } from './PhotoManagementButton'
+
+// Shared components for property domain
+export { PropertyImageSection } from './shared/PropertyImageSection'
+export { PropertyFeatures } from './shared/PropertyFeatures'
+export { QuickActionsOverlay } from './shared/QuickActionsOverlay'
+
+// Filters
+export { BasePropertyFilters } from './filters/BasePropertyFilters'
+export { AllPropertiesFilters } from './filters/AllPropertiesFilters'
+export { ResidentialFilters } from './filters/ResidentialFilters'
+export { CommercialFilters } from './filters/CommercialFilters'
+export { LandFilters } from './filters/LandFilters'

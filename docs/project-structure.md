@@ -1,6 +1,6 @@
 # Project Structure
 
-**Generated:** 4/18/2026, 11:23:53 PM
+**Generated:** 4/19/2026, 10:36:22 AM
 **Max Depth:** 7 levels
 
 ```
@@ -42,7 +42,6 @@
 │   │   │   ├── services/
 │   │   │   │   └── auth-api.ts
 │   │   │   ├── types/
-│   │   │   │   └── auth.types.ts
 │   │   │   └── index.ts
 │   │   ├── communication/
 │   │   │   ├── components/
@@ -70,7 +69,6 @@
 │   │   │   └── external-dependencies.ts
 │   │   ├── infrastructure/
 │   │   │   ├── ai/
-│   │   │   │   └── AIModelManager.tsx
 │   │   │   ├── api/
 │   │   │   │   ├── data-validation.ts
 │   │   │   │   ├── queryClient.ts
@@ -96,7 +94,6 @@
 │   │   │   │   └── query-cache.ts
 │   │   │   ├── hooks/
 │   │   │   │   ├── examples/
-│   │   │   │   │   └── race-condition-prevention.tsx
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── README.md
 │   │   │   │   ├── useCleanupManager.ts
@@ -110,13 +107,11 @@
 │   │   │   │   ├── core-web-vitals.ts
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── operation-tracker.ts
-│   │   │   │   ├── PerformanceMonitoringProvider.tsx
 │   │   │   │   ├── query-monitor.ts
 │   │   │   │   ├── resource-hints.ts
 │   │   │   │   ├── system-health.ts
 │   │   │   │   └── usePerformanceMonitoring.ts
 │   │   │   ├── payments/
-│   │   │   │   └── PaymentSystemInterface.tsx
 │   │   │   ├── realtime/
 │   │   │   │   └── websocket-client.ts
 │   │   │   ├── service-worker/
@@ -210,15 +205,13 @@
 │   │   │   │   │   ├── ImageGallery.tsx
 │   │   │   │   │   ├── ImageShowcase.tsx
 │   │   │   │   │   ├── index.ts
-│   │   │   │   │   ├── PropertyImageVault.tsx
-│   │   │   │   │   └── REDUNDANCY_ANALYSIS.md
+│   │   │   │   │   └── PropertyImageVault.tsx
 │   │   │   │   ├── monitoring/
 │   │   │   │   │   └── ApiClientDashboard.tsx
 │   │   │   │   ├── navigation/
 │   │   │   │   │   ├── BreadcrumbNavigation.tsx
 │   │   │   │   │   ├── ContextualSidebar.tsx
 │   │   │   │   │   ├── index.ts
-│   │   │   │   │   ├── MOBILE_NAV_VISIBILITY_IMPROVEMENTS.md
 │   │   │   │   │   ├── MobileNav.tsx
 │   │   │   │   │   ├── Navigation.tsx
 │   │   │   │   │   ├── NavigationErrorBoundary.tsx
@@ -376,9 +369,7 @@
 │   │   │   │   │   ├── deprecation.ts
 │   │   │   │   │   ├── init.ts
 │   │   │   │   │   └── migration.ts
-│   │   │   │   ├── CONSOLIDATION_LOG.md
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── QUALITY_STANDARDS.md
 │   │   │   │   ├── use-mobile.tsx
 │   │   │   │   ├── use-toast.ts
 │   │   │   │   ├── useAccessibility.tsx
@@ -505,10 +496,8 @@
 │   │   │   │   ├── FormService.ts
 │   │   │   │   ├── HealthCheckService.ts
 │   │   │   │   ├── huggingface-api-client.ts
-│   │   │   │   ├── huggingface-mock-client.ts
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── mock-ai-data.ts
-│   │   │   │   ├── mock-huggingface-client.ts
 │   │   │   │   ├── performance-monitoring-service.ts
 │   │   │   │   ├── PerformanceService.ts
 │   │   │   │   ├── RateLimitService.ts
@@ -536,7 +525,6 @@
 │   │   │   │   │   └── unified.ts
 │   │   │   │   ├── api-contracts.ts
 │   │   │   │   ├── api.ts
-│   │   │   │   ├── api.types.ts
 │   │   │   │   ├── compare.ts
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── search.ts
@@ -568,7 +556,8 @@
 │   │   │       └── feature-engineering.ts
 │   │   ├── monitoring/
 │   │   │   ├── components/
-│   │   │   │   └── HealthDashboard.tsx
+│   │   │   │   ├── HealthDashboard.tsx
+│   │   │   │   └── PerformanceMonitoringProvider.tsx
 │   │   │   ├── pages/
 │   │   │   │   └── MonitoringPage.tsx
 │   │   │   └── index.ts
@@ -609,11 +598,8 @@
 │   │   │   │   └── PropertyContext.tsx
 │   │   │   ├── hooks/
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── useConsolidatedPropertySearch.ts
 │   │   │   │   ├── useLandProperty.ts
-│   │   │   │   ├── useProperty.ts
-│   │   │   │   ├── usePropertySearch.ts
-│   │   │   │   └── useUnifiedProperty.ts
+│   │   │   │   └── useProperty.ts
 │   │   │   ├── pages/
 │   │   │   │   ├── CommercialProperties.tsx
 │   │   │   │   ├── index.ts
@@ -628,8 +614,7 @@
 │   │   │   │   ├── PropertyOptimize.tsx
 │   │   │   │   ├── PropertyPhotos.tsx
 │   │   │   │   ├── PropertyVerification.tsx
-│   │   │   │   ├── PropertyWizard.tsx
-│   │   │   │   └── sedPkWkqG
+│   │   │   │   └── PropertyWizard.tsx
 │   │   │   ├── services/
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── mock-land-data.ts
@@ -641,6 +626,9 @@
 │   │   │   │   ├── LandSections.tsx
 │   │   │   │   ├── PropertyGallery.tsx
 │   │   │   │   └── utils.ts
+│   │   │   ├── styles/
+│   │   │   │   ├── comparison.constants.ts
+│   │   │   │   └── index.ts
 │   │   │   ├── tests/
 │   │   │   │   └── performanceTest.ts
 │   │   │   ├── types/
@@ -745,12 +733,9 @@
 │   │   ├── README.md
 │   │   └── vite-env.d.ts
 │   ├── index.html
-│   ├── postcss.config.js
-│   ├── tsc_errors.txt
 │   ├── tsconfig.json
 │   ├── tsconfig.node.json
-│   ├── vite.config.js
-│   └── vite.config.ts
+│   └── vite.config.js
 ├── docs/
 │   ├── adr/
 │   │   ├── 001-cache-consolidation.md
@@ -773,6 +758,8 @@
 │   │   ├── 018-logging-architecture.md
 │   │   ├── project-structure.md
 │   │   └── README.md
+│   ├── analysis/
+│   │   └── images-redundancy-analysis.md
 │   ├── dcs/
 │   │   ├── CONSOLIDATION_COMPLETE.md
 │   │   ├── migration.log.md
@@ -781,10 +768,19 @@
 │   │   ├── PORTFOLIO_DESCRIPTION.md
 │   │   ├── triplecheck_development_framework.md
 │   │   └── triplecheck_evaluation.md
+│   ├── planning/
+│   │   ├── communication-consolidation-plan.md
+│   │   ├── fraud-detection-test-consolidation-plan.md
+│   │   ├── hooks-consolidation-log.md
+│   │   └── mobile-nav-improvements.md
+│   ├── project-history/
+│   │   └── task-completion-report.md
 │   ├── standards/
+│   │   ├── hooks-quality-standards.md
 │   │   └── NAMING_CONVENTIONS.md
 │   ├── LOGGING_GUIDE.md
 │   ├── project-structure.md
+│   ├── PROPERTY_DOMAIN_MAP.md
 │   ├── QUICK_REFERENCE.md
 │   └── README.md
 ├── scripts/
@@ -883,12 +879,7 @@
 │   ├── communication/
 │   │   ├── communication-business.service.ts
 │   │   ├── communication.controller.ts
-│   │   ├── CONSOLIDATION_PLAN.md
 │   │   ├── index.ts
-│   │   ├── messages.controller.ts
-│   │   ├── messaging.controller.ts
-│   │   ├── messaging.service.ts
-│   │   ├── notification-business.service.ts
 │   │   ├── notification.service.ts
 │   │   ├── notifications.controller.ts
 │   │   └── websocket.service.ts
@@ -928,7 +919,6 @@
 │   │   │   ├── DataIntegrationService.ts
 │   │   │   └── ExternalAPIService.ts
 │   │   ├── tests/
-│   │   │   ├── CONSOLIDATION_PLAN.md
 │   │   │   ├── global-setup.ts
 │   │   │   ├── global-teardown.ts
 │   │   │   ├── results-processor.js
@@ -977,7 +967,6 @@
 │   │   │   │   ├── core/
 │   │   │   │   │   ├── checkpoint-manager.ts
 │   │   │   │   │   ├── data-validator.ts
-│   │   │   │   │   ├── KenyanDataGenerator.ts
 │   │   │   │   │   └── UnifiedDataGenerator.ts
 │   │   │   │   ├── examples/
 │   │   │   │   │   └── demo-generation-example.ts
@@ -1083,6 +1072,7 @@
 │   │   │   │   ├── postgresql-replica.conf
 │   │   │   │   ├── ReplicationManager.ts
 │   │   │   │   └── setup-ha.ts
+│   │   │   ├── reporting/
 │   │   │   ├── schemas/
 │   │   │   │   ├── analytics/
 │   │   │   │   │   └── index.ts
@@ -1118,7 +1108,6 @@
 │   │   │   │   ├── run-performance-certification.ts
 │   │   │   │   ├── run-production-readiness-assessment.ts
 │   │   │   │   ├── run-security-validation.ts
-│   │   │   │   ├── sedozOfN9
 │   │   │   │   ├── seed-data.ts
 │   │   │   │   ├── setup-database.ts
 │   │   │   │   ├── status.ts
@@ -1163,7 +1152,6 @@
 │   │   │   │   │   └── user-generator.py
 │   │   │   │   ├── database-seeder.ts
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── kenyan-data-generator.ts
 │   │   │   │   ├── land-verification-seed.ts
 │   │   │   │   ├── land-verification-system.ts
 │   │   │   │   ├── land-verification.ts
@@ -1179,7 +1167,6 @@
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── generators/
 │   │   │   │   │   ├── index.ts
-│   │   │   │   │   ├── kenyan-data-generator.ts
 │   │   │   │   │   ├── README.md
 │   │   │   │   │   └── unified-generator.ts
 │   │   │   │   ├── migration-tools/
@@ -1211,8 +1198,6 @@
 │   │   │   ├── scripts-evaluation.md
 │   │   │   └── service.ts
 │   │   ├── deduplication/
-│   │   │   ├── examples/
-│   │   │   │   └── usage-example.ts
 │   │   │   ├── index.ts
 │   │   │   └── RequestDeduplicator.ts
 │   │   ├── email/
@@ -1222,7 +1207,6 @@
 │   │   ├── events/
 │   │   │   └── EventBus.ts
 │   │   ├── external-api/
-│   │   │   └── RateLimitedApiWrapper.ts
 │   │   ├── http/
 │   │   │   └── resilient-client.ts
 │   │   ├── monitoring/
@@ -1234,31 +1218,20 @@
 │   │   │   ├── MonitoringDashboard.ts
 │   │   │   ├── ObservabilitySystem.ts
 │   │   │   ├── PerformanceMonitor.ts
-│   │   │   ├── PerformanceOptimizer.ts
 │   │   │   ├── PrometheusMetrics.ts
 │   │   │   └── QueryPerformanceMonitor.ts
 │   │   ├── observability/
 │   │   │   └── telemetry.ts
-│   │   ├── optimization/
-│   │   │   ├── BundleOptimizer.ts
-│   │   │   └── PerformanceOptimizer.ts
 │   │   ├── rate-limiting/
-│   │   │   ├── examples/
-│   │   │   │   └── usage-example.ts
 │   │   │   ├── ApiCallTracker.ts
 │   │   │   ├── ApiRateLimiter.ts
 │   │   │   ├── CircuitBreaker.ts
 │   │   │   └── index.ts
 │   │   ├── storage/
-│   │   │   ├── file-storage.service.ts
-│   │   │   ├── logger.ts
-│   │   │   ├── SecureFileUploadService.ts
 │   │   │   └── storage.ts
 │   │   ├── testing/
 │   │   │   └── TestFramework.ts
 │   │   ├── versioning/
-│   │   │   ├── examples/
-│   │   │   │   └── client-examples.ts
 │   │   │   ├── ApiDocumentation.ts
 │   │   │   ├── ApiVersioning.ts
 │   │   │   ├── ApiVersioningMiddleware.ts
@@ -1286,9 +1259,6 @@
 │   │   │   └── LandVerificationErrors.ts
 │   │   ├── health/
 │   │   │   └── HealthCheckService.ts
-│   │   ├── middleware/
-│   │   │   ├── auth.middleware.ts
-│   │   │   └── validation.middleware.ts
 │   │   ├── monitoring/
 │   │   │   ├── AlertingService.ts
 │   │   │   └── MetricsService.ts
@@ -1309,6 +1279,7 @@
 │   │   │   └── SecurityIntegration.ts
 │   │   ├── utils/
 │   │   │   └── gps-calculations.ts
+│   │   ├── AuditLogger.ts
 │   │   ├── CommunityIntelligenceService.ts
 │   │   ├── DocumentIntegration.ts
 │   │   ├── ExpertCoordinationService.ts
@@ -1334,8 +1305,6 @@
 │   │   ├── README-centralized-error-handler.md
 │   │   ├── UnifiedSecurityMiddleware.ts
 │   │   └── validation.middleware.ts
-│   ├── ml/
-│   │   └── README.md
 │   ├── ml-core/
 │   │   ├── deployment/
 │   │   │   └── production-deployment-guide.md
@@ -1411,10 +1380,8 @@
 │   │   ├── verification.controller.test.ts
 │   │   └── verification.controller.ts
 │   ├── types/
-│   │   ├── api.types.ts
 │   │   ├── auth-constants.ts
 │   │   ├── auth-errors.ts
-│   │   ├── auth.types.ts
 │   │   ├── fraud.types.ts
 │   │   ├── index.ts
 │   │   ├── property.types.ts
@@ -1439,6 +1406,7 @@
 │   ├── types/
 │   │   ├── api-contracts.ts
 │   │   ├── api.types.ts
+│   │   ├── auth.types.ts
 │   │   ├── index.ts
 │   │   ├── messaging.ts
 │   │   └── property.ts
@@ -1451,6 +1419,10 @@
 │   │   │   └── test-helpers.ts
 │   │   └── README.md
 │   ├── manual/
+│   │   ├── components/
+│   │   │   ├── AIModelManager.tsx
+│   │   │   ├── PaymentSystemInterface.tsx
+│   │   │   ├── race-condition-prevention.tsx
 │   │   ├── property-hooks-test.tsx
 │   │   ├── test-new-pages.tsx
 │   │   └── test-safe-hooks.tsx
@@ -1480,12 +1452,15 @@
 ├── types/
 │   ├── css.d.ts
 │   └── PropertyCardShowcase.css.d.ts
+├── CLEANUP_REPORT.md
+├── CSS_CLEANUP_REPORT.md
 ├── generate-structure.mjs
+├── NEXT_PHASES_PLAN.md
 ├── package-lock.json
 ├── package.json
+├── PHASE_12_COMPLETION_REPORT.md
 ├── postcss.config.js
 ├── tailwind.config.js
-├── TASK_COMPLETION_REPORT.md
 ├── tsconfig.check.json
 ├── tsconfig.json
 ├── tsconfig.server.json

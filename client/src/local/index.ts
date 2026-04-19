@@ -56,21 +56,16 @@ export { useSafePropertiesQuery, useSafeQuery } from './hooks/useSafeQuery'
 export * from './hooks/useFilterState'
 export * from './hooks/usePagination'
 
-// Property Components
-export { PropertyCard, AdaptivePropertyCard } from './components/property'
-export { PropertySkeletonGrid, PropertySkeleton } from './components/property'
-export { PropertyListingPage } from './components/property'
-export { PropertyImageSection, QuickActionsOverlay } from './components/property/shared'
-export { PropertyFeaturesComponent } from './components/property/shared'
-export { PropertyDataGrid } from './components/property/PropertyDataGrid'
-export { PropertyDetailsSkeleton } from './components/property/PropertySkeletonGrid'
-export { ResidentialFilters, ResidentialFiltersComponent } from './components/property/filters/ResidentialFilters'
-export { BasePropertyFiltersComponent as BasePropertyFilters } from './components/property/filters/BasePropertyFilters'
-export { PhotoManagementButton, EnhancedPhotoManagementButton } from './components/property/PhotoManagementButton'
+// Property Components - moved to property domain
+// Import from property domain instead
+export { PropertyCard } from '../property/components/PropertyCard'
+export { PropertyListingPage } from '../property/components/PropertyListingPage'
+export { PropertyImageSection, QuickActionsOverlay } from '../property/components/shared'
+export { PropertyDataGrid } from '../property/components/PropertyDataGrid'
+export { PropertySkeletonGrid } from '../property/components/PropertySkeletonGrid'
 
-// Property Utilities
-export * from './utils/property-mapper'
-export { normalizeProperty } from './utils/property-mapper'
+// Property Utilities - moved to property domain
+// Property adapters and mappers should be imported from property domain
 
 
 // Shared Pages

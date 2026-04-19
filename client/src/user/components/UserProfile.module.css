@@ -1,0 +1,19 @@
+/* User Profile Component Styles */
+
+.trustScoreBar {
+  height: 0.5rem;
+  background-color: rgb(59, 130, 246); /* bg-blue-600 */
+  border-radius: 9999px;
+  transition-property: width;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 500ms;
+  /* width is set via inline style variable or utility */
+}
+
+.trustScoreBarContainer {
+  width: 100%;
+  background-color: rgb(243, 244, 246); /* bg-gray-100 */
+  border-radius: 9999px;
+  height: 0.5rem;
+  overflow: hidden;
+}

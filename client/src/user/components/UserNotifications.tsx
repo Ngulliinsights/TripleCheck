@@ -1,194 +1,303 @@
-import { Bell, Check, X, AlertCircle, Info, CheckCircle } from "lucide-react"
-import React, { useState, useCallback, useRef } from "react"
+import { Bell, Check, X, AlertCircle, Info, CheckCircle, CheckCheck } from "lucide-react"
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react"
 
 import { EnterpriseVirtualizedList } from "../../local/components"
 import { Badge } from "../../local/components/ui/badge"
 import { Button } from "../../local/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../local/components/ui/card"
 import { useNotificationListVirtualization } from "../../local/hooks/useMemoryOptimization"
+import { formatDate } from "../../local/utils/date-utils"
 
-// Use the BaseEntity interface that matches the virtualization hook
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface BaseEntity {
-  id: string | number;
-  [key: string]: unknown;
+  id: string | number
+  [key: string]: unknown
 }
 
 interface Notification extends BaseEntity {
-  type: 'info' | 'success' | 'warning' | 'error';
-  title: string;
-  message: string;
-  createdAt: string;
-  isRead: boolean;
+  type: "info" | "success" | "warning" | "error"
+  title: string
+  message: string
+  createdAt: string
+  isRead: boolean
 }
 
 interface UserNotificationsProps {
-  readonly notifications?: Notification[];
-  readonly onMarkAsRead?: (id: string) => void;
-  readonly onMarkAllAsRead?: () => void;
-  readonly onDismiss?: (id: string) => void;
+  readonly notifications?: Notification[]
+  readonly onMarkAsRead?: (id: string) => void
+  readonly onMarkAllAsRead?: () => void
+  readonly onDismiss?: (id: string) => void
 }
 
-const getNotificationIcon = (type: Notification['type']) => {
-  switch (type) {
-    case 'success':
-      return CheckCircle;
-    case 'warning':
-      return AlertCircle;
-    case 'error':
-      return X;
-    default:
-      return Info;
-  }
-};
+// ─── Pure helpers (module-level to avoid re-creation on render) ───────────────
 
-const getNotificationColor = (type: Notification['type']) => {
-  switch (type) {
-    case 'success':
-      return 'text-green-600';
-    case 'warning':
-      return 'text-yellow-600';
-    case 'error':
-      return 'text-red-600';
-    default:
-      return 'text-blue-600';
-  }
-};
+const ICON_MAP = {
+  success: CheckCircle,
+  warning: AlertCircle,
+  error: X,
+  info: Info,
+} as const satisfies Record<Notification["type"], React.ElementType>
 
-// Virtualized Notifications List Component
-const VirtualizedNotificationsList: React.FC<{
-  notifications: Notification[];
-  onMarkAsRead: (id: string) => void;
-}> = ({ notifications, onMarkAsRead }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState(400);
+const COLOR_MAP = {
+  success: "text-green-600",
+  warning: "text-yellow-500",
+  error: "text-red-600",
+  info: "text-blue-600",
+} as const satisfies Record<Notification["type"], string>
 
-  React.useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const availableHeight = window.innerHeight - rect.top - 100;
-        setContainerHeight(Math.max(300, Math.min(500, availableHeight)));
-      }
-    };
+const BG_MAP = {
+  success: "bg-green-50 border-green-100",
+  warning: "bg-yellow-50 border-yellow-100",
+  error: "bg-red-50 border-red-100",
+  info: "bg-blue-50 border-blue-100",
+} as const satisfies Record<Notification["type"], string>
 
-    updateHeight();
-    window.addEventListener('resize', updateHeight);
-    return () => window.removeEventListener('resize', updateHeight);
-  }, []);
+// ─── Notification item ────────────────────────────────────────────────────────
 
-  const listProps = useNotificationListVirtualization(
-    notifications as readonly BaseEntity[],
-    containerHeight,
-    90 // notification item height
-  );
+interface NotificationItemProps {
+  notification: Notification
+  onMarkAsRead: (id: string) => void
+  onDismiss: (id: string) => void
+}
 
-  const renderNotificationItem = useCallback((item: BaseEntity, _index: number, style: React.CSSProperties) => {
-    const notification = item as Notification;
-    const Icon = getNotificationIcon(notification.type);
-    const iconColor = getNotificationColor(notification.type);
-    
+const NotificationItem = React.memo(
+  ({ notification, onMarkAsRead, onDismiss }: NotificationItemProps) => {
+    const Icon = ICON_MAP[notification.type]
+    const iconColor = COLOR_MAP[notification.type]
+    const bgClass = notification.isRead
+      ? "bg-muted/30 border-transparent"
+      : BG_MAP[notification.type]
+    const id = String(notification.id)
+
     return (
-      <div className="notification-item p-1" style={style}>
-        <div
-          className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-            notification.isRead ? 'bg-muted/30' : 'bg-background border-primary/20'
-          }`}
-        >
-          <Icon className={`h-5 w-5 mt-0.5 ${iconColor}`} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1">
-                <h4 className="font-medium text-sm">{notification.title}</h4>
-                <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                <span className="text-xs text-muted-foreground">{notification.createdAt}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                {!notification.isRead && (
+      <div
+        className={`flex items-start gap-3 p-3 rounded-lg border transition-colors duration-150 ${bgClass}`}
+      >
+        {/* Type icon */}
+        <Icon className={`h-4.5 w-4.5 mt-0.5 shrink-0 ${iconColor}`} aria-hidden />
+
+        {/* Body */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h4
+                className={`text-sm font-medium truncate ${
+                  notification.isRead ? "text-muted-foreground" : "text-foreground"
+                }`}
+              >
+                {notification.title}
+              </h4>
+              <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
+                {notification.message}
+              </p>
+              <time
+                dateTime={notification.createdAt}
+                className="text-xs text-muted-foreground/70 mt-1 block"
+              >
+                {formatDate(notification.createdAt)}
+              </time>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-1 shrink-0">
+              {!notification.isRead && (
+                <>
+                  {/* Unread dot */}
+                  <span
+                    className="w-2 h-2 rounded-full bg-blue-500 shrink-0"
+                    aria-label="Unread"
+                    role="status"
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onMarkAsRead(String(notification.id))}
-                    className="h-8 w-8 p-0"
+                    className="h-7 w-7 p-0 hover:bg-background/80"
+                    onClick={() => onMarkAsRead(id)}
+                    title="Mark as read"
+                    aria-label={`Mark "${notification.title}" as read`}
                   >
-                    <Check className="h-4 w-4" />
+                    <Check className="h-3.5 w-3.5" />
                   </Button>
-                )}
-                <div className={`w-2 h-2 rounded-full bg-primary ${notification.isRead ? 'notification-read-indicator' : 'notification-unread-indicator'}`} />
-              </div>
+                </>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 hover:bg-background/80 hover:text-red-500"
+                onClick={() => onDismiss(id)}
+                title="Dismiss notification"
+                aria-label={`Dismiss "${notification.title}"`}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         </div>
       </div>
-    );
-  }, [onMarkAsRead]);
+    )
+  }
+)
+
+NotificationItem.displayName = "NotificationItem"
+
+// ─── Virtualized list ─────────────────────────────────────────────────────────
+
+const ITEM_HEIGHT = 90
+
+interface VirtualizedNotificationsListProps {
+  notifications: Notification[]
+  onMarkAsRead: (id: string) => void
+  onDismiss: (id: string) => void
+}
+
+const VirtualizedNotificationsList: React.FC<VirtualizedNotificationsListProps> = ({
+  notifications,
+  onMarkAsRead,
+  onDismiss,
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerHeight, setContainerHeight] = useState(400)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const observer = new ResizeObserver(() => {
+      const rect = el.getBoundingClientRect()
+      const available = window.innerHeight - rect.top - 100
+      setContainerHeight(Math.max(300, Math.min(500, available)))
+    })
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const listProps = useNotificationListVirtualization(
+    notifications as unknown as readonly BaseEntity[],
+    containerHeight,
+    ITEM_HEIGHT
+  )
+
+  const renderItem = useCallback(
+    (item: BaseEntity, _index: number, style: React.CSSProperties) => (
+      <div style={style} className="px-0.5 py-1">
+        <NotificationItem
+          notification={item as Notification}
+          onMarkAsRead={onMarkAsRead}
+          onDismiss={onDismiss}
+        />
+      </div>
+    ),
+    [onMarkAsRead, onDismiss]
+  )
 
   return (
     <div ref={containerRef} className="w-full">
-      <EnterpriseVirtualizedList
-        {...listProps}
-        renderItem={renderNotificationItem}
-      />
+      <EnterpriseVirtualizedList {...listProps} renderItem={renderItem} />
     </div>
-  );
-};
+  )
+}
 
-export function UserNotifications({ 
-  notifications = [], 
-  onMarkAsRead, 
-  onMarkAllAsRead, 
-  onDismiss: _onDismiss 
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export function UserNotifications({
+  notifications: propNotifications = [],
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onDismiss,
 }: UserNotificationsProps) {
-  const [localNotifications, setLocalNotifications] = useState(notifications);
-  
-  const unreadCount = Array.isArray(localNotifications) ? localNotifications.filter(n => n && !n.isRead).length : 0;
+  /**
+   * Local state mirrors the prop so optimistic UI updates (mark-read, dismiss)
+   * are reflected immediately without waiting for the parent to re-render.
+   * When the prop reference changes (e.g. a server refresh), local state syncs.
+   */
+  const [notifications, setNotifications] = useState<Notification[]>(propNotifications)
 
-  const handleMarkAsRead = (id: string) => {
-    setLocalNotifications(prev => 
-      Array.isArray(prev) ? prev.map(n => n && n.id === id ? { ...n, isRead: true } : n) : []
-    );
-    onMarkAsRead?.(id);
-  };
+  useEffect(() => {
+    setNotifications(propNotifications)
+  }, [propNotifications])
 
-  const handleMarkAllAsRead = () => {
-    setLocalNotifications(prev => 
-      Array.isArray(prev) ? prev.map(n => n ? { ...n, isRead: true } : n) : []
-    );
-    onMarkAllAsRead?.();
-  };
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.isRead).length,
+    [notifications]
+  )
 
+  const handleMarkAsRead = useCallback(
+    (id: string) => {
+      setNotifications((prev) =>
+        prev.map((n) => (String(n.id) === id ? { ...n, isRead: true } : n))
+      )
+      onMarkAsRead?.(id)
+    },
+    [onMarkAsRead]
+  )
 
+  const handleMarkAllAsRead = useCallback(() => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+    onMarkAllAsRead?.()
+  }, [onMarkAllAsRead])
+
+  const handleDismiss = useCallback(
+    (id: string) => {
+      setNotifications((prev) => prev.filter((n) => String(n.id) !== id))
+      onDismiss?.(id)
+    },
+    [onDismiss]
+  )
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="flex items-center gap-2">
-          <Bell className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <Bell className="h-5 w-5" aria-hidden />
           Notifications
           {unreadCount > 0 && (
-            <Badge variant="destructive" className="ml-2">
+            <Badge variant="destructive" className="ml-1 tabular-nums">
               {unreadCount}
             </Badge>
           )}
         </CardTitle>
+
         {unreadCount > 0 && (
-          <Button variant="outline" size="sm" onClick={handleMarkAllAsRead}>
-            Mark All Read
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleMarkAllAsRead}
+            className="gap-1.5"
+          >
+            <CheckCheck className="h-3.5 w-3.5" />
+            Mark all read
           </Button>
         )}
       </CardHeader>
+
       <CardContent>
-        {localNotifications.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No notifications</p>
-          </div>
+        {notifications.length === 0 ? (
+          <EmptyState />
         ) : (
-          <VirtualizedNotificationsList 
-            notifications={localNotifications}
+          <VirtualizedNotificationsList
+            notifications={notifications}
             onMarkAsRead={handleMarkAsRead}
+            onDismiss={handleDismiss}
           />
         )}
       </CardContent>
     </Card>
-  );
+  )
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+function EmptyState() {
+  return (
+    <div
+      className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3"
+      role="status"
+      aria-label="No notifications"
+    >
+      <Bell className="h-10 w-10 opacity-30" aria-hidden />
+      <p className="text-sm">You're all caught up</p>
+    </div>
+  )
 }

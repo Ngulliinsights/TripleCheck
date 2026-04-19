@@ -35,7 +35,7 @@ import {
 import {
   PropertyImageSection,
   PropertyFeatures,
-} from "../../local/components/property/shared"
+} from "./shared"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

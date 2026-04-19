@@ -171,7 +171,6 @@
 .enhanced-backdrop-blur {
   -webkit-backdrop-filter: blur(var(--nav-blur-strength)) saturate(var(--nav-saturation));
   backdrop-filter: blur(var(--nav-blur-strength)) saturate(var(--nav-saturation));
-  -webkit-backdrop-filter: blur(var(--nav-blur-strength)) saturate(var(--nav-saturation));
 }
 
 /* Glassmorphism utility classes - Performance Optimized */
@@ -179,7 +178,6 @@
   background: hsl(var(--background) / 0.08);
   -webkit-backdrop-filter: blur(8px) saturate(150%);
   backdrop-filter: blur(8px) saturate(150%);
-  -webkit-backdrop-filter: blur(8px) saturate(150%);
   border: 1px solid hsl(var(--border) / 0.15);
 }
 
@@ -187,7 +185,6 @@
   background: hsl(var(--background) / 0.12);
   -webkit-backdrop-filter: blur(12px) saturate(150%);
   backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
   border: 1px solid hsl(var(--border) / 0.2);
 }
 
@@ -195,7 +192,6 @@
   background: hsl(var(--background) / 0.16);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
   border: 1px solid hsl(var(--border) / 0.25);
 }
 
@@ -230,8 +226,8 @@
   .glass-medium,
   .glass-strong,
   .enhanced-backdrop-blur {
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     background: hsl(var(--background) / 0.95);
   }
 }
@@ -242,14 +238,14 @@
   .glass-medium,
   .glass-strong {
     background: hsl(var(--background));
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     border: 2px solid hsl(var(--border));
   }
 
   .enhanced-backdrop-blur {
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
@@ -315,7 +311,6 @@
     background: white !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
     border: 1px solid #ccc !important;
   }
 

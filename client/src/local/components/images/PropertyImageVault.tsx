@@ -13,39 +13,13 @@ import type {
   UploadProgress,
   DocumentType,
   WorkflowStatus,
-  PropertyImageMetadata,
-  DocumentAuthResult,
   ImageStatus,
   ApprovalStatus,
-  ScanResult,
-  ComplianceResult,
-  ProcessingStep,
 } from "../../types/images"
 import { ImageProcessingError } from "../../types/images"
 import { ImageUtils } from "../../utils/images/unified-utils"
 
 // Define missing types to resolve TypeScript errors
-interface SessionCreationMetadata {
-  fileName: string;
-  fileSize: number;
-  contentType: string;
-  documentType?: DocumentType;
-  landVerificationId?: string;
-}
-
-interface ChunkUploadMetadata {
-  totalChunks: number;
-  chunkIndex: number;
-  fileName: string;
-}
-
-interface AuditEventMetadata {
-  userId?: string;
-  sessionId?: string;
-  imageId?: string;
-  timestamp: Date;
-  metadata?: Record<string, unknown>;
-}
 
 // Enhanced type definitions for better type safety
 interface ExtendedPropertyImage extends PropertyImage {
@@ -55,14 +29,14 @@ interface ExtendedPropertyImage extends PropertyImage {
   regulatoryFlags?: string[];
 }
 
-// Secure random number generator for demo purposes
-const secureRandom = (): number => {
+// Secure random number generator for demo purposes - kept as utility for potential future enhancements
+const _secureRandom = (): number => {
   // In production, you would use crypto.getRandomValues() for true randomness
   const timestamp = Date.now();
   return (timestamp % 1000) / 1000;
 };
 
-// Type guards for better type safety - now properly typed
+// Type guards for better type safety
 const hasSessionId = (image: PropertyImage): image is ExtendedPropertyImage => {
   return (
     "sessionId" in image &&
@@ -86,198 +60,9 @@ const hasDocumentAuthResult = (
   );
 };
 
-// Optimized mock services moved to module level to prevent recreation
-const createOptimizedMockApiClient = () => ({
-  createUploadSession: async (metadata: SessionCreationMetadata) => {
-    // Reduced timeout for better development experience
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    return {
-      sessionId: `mock-session-${Date.now()}`,
-      uploadUrl: "/mock-upload",
-    };
-  },
-  uploadChunk: async (
-    _sessionId: string,
-    _chunk: { data: Blob; index: number; size: number },
-    _metadata?: ChunkUploadMetadata
-  ): Promise<void> => {
-    // Optimized random delay for more consistent performance
-    await new Promise((resolve) =>
-      setTimeout(resolve, 50 + Math.floor(secureRandom() * 100))
-    );
-    // Return void as expected by the interface
-  },
-  completeUpload: async (_sessionId: string): Promise<void> => {
-    await new Promise((resolve) => setTimeout(resolve, 25));
-  },
-  abortUpload: async (_sessionId: string): Promise<void> => {
-    await new Promise((resolve) => setTimeout(resolve, 25));
-  },
-  getUploadStatus: async (_sessionId: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 25));
-    return { progress: 0.5, status: "uploading" };
-  },
-  initiateUpload: async (_file: File) => {
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    return {
-      sessionId: `mock-session-${Date.now()}`,
-      uploadUrl: "/mock-upload",
-      chunkSize: 1024 * 1024,
-    };
-  },
-});
 
-const createOptimizedMockServices = () => {
-  const storageService = {
-    getFileReference: async (imageId: string) =>
-      `mock-storage-url/${imageId}.jpg`,
-    updateImageMetadata: async (
-      _imageId: string,
-      _metadata: Partial<PropertyImage>
-    ) => {
-      // Mock implementation - no-op for demo
-    },
-    optimizeImage: async (fileReference: string, _quality: number) =>
-      `${fileReference}-optimized.jpg`,
-    generateThumbnails: async (fileReference: string, sizes: number[]) =>
-      sizes.map((s) => `${fileReference}-thumb-${s}.jpg`),
-  };
 
-  // Document authentication service for PropertyImageValidationService (takes File)
-  const documentAuthServiceForValidation = {
-    authenticateDocument: async (
-      file: File,
-      documentType: DocumentType
-    ): Promise<DocumentAuthResult> => {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      const randomValue = secureRandom();
-      const isAuthentic = randomValue > 0.2; // 80% chance of being authentic
-
-      return {
-        isAuthentic,
-        confidence: secureRandom(),
-        documentType: documentType as DocumentType,
-        anomalies:
-          isAuthentic ? [] : ["signature_mismatch", "tampered_metadata"],
-        verificationMethod: "mock",
-      };
-    },
-  };
-
-  // Document authentication service for PropertyImageWorkflowManager (takes fileReference string)
-  const documentAuthServiceForWorkflow = {
-    authenticateDocument: async (
-      fileReference: string,
-      documentType: DocumentType
-    ): Promise<DocumentAuthResult> => {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      const randomValue = secureRandom();
-      const isAuthentic = randomValue > 0.2; // 80% chance of being authentic
-
-      return {
-        isAuthentic,
-        confidence: secureRandom(),
-        documentType: documentType as DocumentType,
-        anomalies:
-          isAuthentic ? [] : ["signature_mismatch", "tampered_metadata"],
-        verificationMethod: "mock",
-      };
-    },
-  };
-
-  const fraudDetectionService = {
-    analyzeImage: async (
-      _fileReference: string,
-      _metadata: PropertyImageMetadata
-    ) => {
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      return secureRandom(); // Return a random fraud score
-    },
-    analyzeFraudRisk: async (_file: File, _metadata: PropertyImageMetadata) => {
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      return secureRandom(); // Return a random fraud risk score
-    },
-  };
-
-  const landVerificationService = {
-    linkImageToVerification: async (
-      _imageId: string,
-      _landVerificationId: string,
-      _metadata: PropertyImageMetadata
-    ) => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      // Mock implementation - no-op for demo
-    },
-  };
-
-  const notificationService = {
-    notifyWorkflowComplete: async (
-      _imageId: string,
-      _status: "success" | "failed",
-      _metadata?: Record<string, unknown>
-    ) => {
-      // Mock implementation - no-op for demo
-    },
-    notifyStepComplete: async (
-      _imageId: string,
-      _step: ProcessingStep,
-      _success: boolean,
-      _metadata?: Record<string, unknown>
-    ) => {
-      // Mock implementation - no-op for demo
-    },
-  };
-
-  const auditService = {
-    logUploadEvent: async (
-      _event: string,
-      _metadata: AuditEventMetadata
-    ) => {
-      // Mock implementation - no-op for demo
-    },
-    logValidationEvent: async (
-      _event: string,
-      _metadata: AuditEventMetadata
-    ) => {
-      // Mock implementation - no-op for demo
-    },
-    logWorkflowEvent: async (
-      _event: string,
-      _metadata: Record<string, unknown>
-    ) => {
-      // Mock implementation - no-op for demo
-    },
-  };
-
-  const geoLocationService = {
-    validateLocation: async (
-      latitude: number,
-      longitude: number,
-      _expectedRegion?: string
-    ) => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      // Simulate validation for Kenya - using a secure random alternative for demo
-      const inKenya =
-        latitude >= -4.678 &&
-        latitude <= 5.019 &&
-        longitude >= 33.908 &&
-        longitude <= 41.899;
-      return inKenya && secureRandom() > 0.1; // 90% chance of being valid if in Kenya
-    },
-  };
-
-  return {
-    storageService,
-    documentAuthServiceForValidation,
-    documentAuthServiceForWorkflow,
-    fraudDetectionService,
-    landVerificationService,
-    notificationService,
-    auditService,
-    geoLocationService,
-  };
-};
-
+// Mock services for demonstration - kept as reference for future expansion
 // Get the orchestrator instance - it handles all service coordination
 const orchestrator = getImageServiceOrchestrator();
 
@@ -296,7 +81,6 @@ interface PropertyImageVaultProps {
   maxFileSize?: number;
   acceptedFormats?: string[];
   maxFiles?: number;
-  allowReorder?: boolean;
   allowAnnotation?: boolean;
   allowPrimaryFlag?: boolean;
   onChange?: (images: PropertyImage[]) => void;
@@ -390,6 +174,13 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
   enableAuditLogging = true,
   showWorkflowProgress = true,
   allowedDocumentTypes,
+  maxFileSize,
+  acceptedFormats,
+  maxFiles,
+  allowAnnotation = false,
+  allowPrimaryFlag = false,
+  onChange,
+  onError,
 }) => {
   // Enhanced hook configuration with proper null checking and fixed landVerificationId issue
   const hookOptions = useMemo(() => {
@@ -397,29 +188,22 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
       defaultDocumentType: defaultDocumentType as DocumentType,
       maxConcurrentUploads,
       enableAuditLogging,
-    };
-
-    // Only add landVerificationId if it's defined to avoid TypeScript strict mode issues
-    if (landVerificationId) {
-      return {
-        ...baseOptions,
-        landVerificationId,
-        // Only spread defined callback props to avoid undefined issues
-        ...(onUploadComplete && { onUploadComplete }),
-        ...(onUploadError && { onUploadError }),
-        ...(onProgressUpdate && { onProgressUpdate }),
-        ...(onWorkflowUpdate && { onWorkflowUpdate }),
-      };
-    }
-
-    return {
-      ...baseOptions,
       // Only spread defined callback props to avoid undefined issues
       ...(onUploadComplete && { onUploadComplete }),
       ...(onUploadError && { onUploadError }),
       ...(onProgressUpdate && { onProgressUpdate }),
       ...(onWorkflowUpdate && { onWorkflowUpdate }),
     };
+
+    // Add landVerificationId if it's defined
+    if (landVerificationId) {
+      return {
+        ...baseOptions,
+        landVerificationId,
+      };
+    }
+
+    return baseOptions;
   }, [
     landVerificationId,
     defaultDocumentType,
@@ -448,18 +232,78 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
   const [currentDocumentType, setCurrentDocumentType] = useState<DocumentType>(
     defaultDocumentType as DocumentType
   );
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [primaryImageId, setPrimaryImageId] = useState<string | null>(null);
+
+  // Effect: Call onChange callback when images change
+  React.useEffect(() => {
+    if (onChange) {
+      onChange(images);
+    }
+  }, [images, onChange]);
+
+
+
+  // Handle setting primary image
+  const handleSetPrimary = useCallback((imageId: string) => {
+    if (allowPrimaryFlag) {
+      setPrimaryImageId(imageId);
+    }
+  }, [allowPrimaryFlag]);
 
   const handleFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       if (event.target.files) {
         setSelectedFiles(event.target.files);
+        setValidationErrors({});
       }
     },
     []
   );
 
+  // Validate files before upload
+  const validateFiles = useCallback((files: FileList): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Check max files
+    if (maxFiles && files.length > maxFiles) {
+      const errorMsg = `Maximum ${maxFiles} files allowed. You selected ${files.length}.`;
+      errors.maxFiles = errorMsg;
+      onError?.(errorMsg);
+    }
+
+    // Validate each file
+    Array.from(files).forEach((file, index) => {
+      const fileKey = `file-${index}`;
+
+      // Check file size
+      if (maxFileSize && file.size > maxFileSize) {
+        const maxSizeMB = (maxFileSize / (1024 * 1024)).toFixed(2);
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        const errorMsg = `${file.name} is ${fileSizeMB}MB but max is ${maxSizeMB}MB`;
+        errors[fileKey] = errorMsg;
+        onError?.(errorMsg);
+      }
+
+      // Check accepted formats
+      if (acceptedFormats && !acceptedFormats.includes(file.type)) {
+        const errorMsg = `${file.name} format is not accepted. Accepted: ${acceptedFormats.join(", ")}`;
+        errors[fileKey] = errorMsg;
+        onError?.(errorMsg);
+      }
+    });
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [maxFiles, maxFileSize, acceptedFormats, onError]);
+
   const handleUploadClick = useCallback(async () => {
     if (selectedFiles && selectedFiles.length > 0) {
+      // Validate files first
+      if (!validateFiles(selectedFiles)) {
+        return;
+      }
+
       try {
         // Use array destructuring as suggested by ESLint
         const [firstFile] = Array.from(selectedFiles);
@@ -469,6 +313,7 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
           await uploadFiles(Array.from(selectedFiles), currentDocumentType);
         }
         setSelectedFiles(null); // Clear selected files after upload initiation
+        setValidationErrors({});
       } catch (error) {
         // Improved error logging with structured data - using warn instead of log for console
         const errorMessage =
@@ -478,10 +323,11 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
           error: errorMessage,
           fileCount: selectedFiles.length,
         });
+        onError?.(errorMessage);
         // Error handling is managed by the hook's onUploadError callback
       }
     }
-  }, [selectedFiles, uploadFile, uploadFiles, currentDocumentType]);
+  }, [selectedFiles, uploadFile, uploadFiles, currentDocumentType, validateFiles, onError]);
 
   // Optimized document type options with memoization
   const documentTypeOptions = useMemo(() => {
@@ -543,7 +389,7 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
           key={image.id}
           className="border rounded-lg shadow-sm p-4 mb-4 bg-white flex flex-col md:flex-row items-start space-x-4"
         >
-          <div className="flex-shrink-0 w-24 h-24 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+          <div className="shrink-0 w-24 h-24 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
             {image.preview ?
               <img
                 src={image.preview}
@@ -555,7 +401,7 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
               </div>
             }
           </div>
-          <div className="flex-grow">
+          <div className="grow">
             <h3
               className="text-lg font-semibold text-gray-900 truncate"
               title={image.file.name}
@@ -783,7 +629,7 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
             </div>
 
             {/* Optimized action buttons */}
-            <div className="mt-4 flex space-x-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               {image.status === "uploading" && hasSessionId(image) && (
                 <button
                   type="button"
@@ -823,6 +669,27 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
                   Retry
                 </button>
               )}
+              {allowPrimaryFlag && image.status === "uploaded" && (
+                <button
+                  type="button"
+                  onClick={() => handleSetPrimary(image.id)}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    primaryImageId === image.id
+                      ? "bg-green-200 text-green-800 hover:bg-green-300"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {primaryImageId === image.id ? "★ Primary" : "☆ Set as Primary"}
+                </button>
+              )}
+              {allowAnnotation && image.status === "uploaded" && (
+                <button
+                  type="button"
+                  className="px-3 py-1 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-md hover:bg-indigo-200 transition-colors"
+                >
+                  📝 Annotate
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -835,6 +702,10 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
       retryUpload,
       showWorkflowProgress,
       workflowStats,
+      handleSetPrimary,
+      allowPrimaryFlag,
+      allowAnnotation,
+      primaryImageId,
     ]
   );
 
@@ -900,6 +771,20 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
       {renderUploadStats}
       {renderWorkflowStats}
 
+      {/* Validation Errors Display */}
+      {Object.keys(validationErrors).length > 0 && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <h3 className="text-sm font-semibold text-red-800 mb-2">
+            ⚠️ Validation Errors
+          </h3>
+          <ul className="text-sm text-red-700 space-y-1">
+            {Object.entries(validationErrors).map(([key, error]) => (
+              <li key={key}>• {error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           Upload New Images
@@ -937,15 +822,47 @@ const PropertyImageVault: React.FC<PropertyImageVaultProps> = ({
           </button>
         </div>
         {selectedFiles && selectedFiles.length > 0 && (
-          <p className="mt-3 text-sm text-gray-600">
-            Selected {selectedFiles.length} file(s) for upload as{" "}
-            {ImageUtils.formatDocumentType(
-              currentDocumentType as Parameters<
-                typeof ImageUtils.formatDocumentType
+          <div className="mt-3 space-y-2">
+            <p className="text-sm text-gray-600">
+              Selected {selectedFiles.length} file(s) for upload as{" "}
+              {ImageUtils.formatDocumentType(
+                currentDocumentType as Parameters<
+                  typeof ImageUtils.formatDocumentType
               >[0]
+              )}
+              .
+            </p>
+            {/* Display file constraints */}
+            {(maxFileSize || maxFiles || acceptedFormats) && (
+              <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                {maxFileSize && (
+                  <p>📏 Max file size: {(maxFileSize / (1024 * 1024)).toFixed(1)}MB</p>
+                )}
+                {maxFiles && (
+                  <p>📂 Maximum files: {maxFiles}</p>
+                )}
+                {acceptedFormats && (
+                  <p>📄 Accepted formats: {acceptedFormats.join(", ")}</p>
+                )}
+              </div>
             )}
-            .
-          </p>
+          </div>
+        )}
+        
+        {/* Display constraints hint when no files selected */}
+        {(!selectedFiles || selectedFiles.length === 0) && (maxFileSize || maxFiles || acceptedFormats) && (
+          <div className="mt-3 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+            <p className="font-semibold text-gray-600 mb-1">Upload Requirements:</p>
+            {maxFileSize && (
+              <p>📏 Max file size: {(maxFileSize / (1024 * 1024)).toFixed(1)}MB</p>
+            )}
+            {maxFiles && (
+              <p>📂 Maximum files: {maxFiles}</p>
+            )}
+            {acceptedFormats && (
+              <p>📄 Accepted formats: {acceptedFormats.join(", ")}</p>
+            )}
+          </div>
         )}
       </div>
 

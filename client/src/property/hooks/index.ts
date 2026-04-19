@@ -7,10 +7,16 @@
  * property hooks to improve import organization.
  * 
  * Usage:
- * import { ComponentName } from '@property/hooks'
+ * import { useProperty, usePropertyCardState } from '@property/hooks'
  */
 
-// Standard exports
+// Master unified hooks
+export * from './useProperty'
 export * from './usePropertySearch'
 export * from './useLandProperty'
-export * from './useProperty'
+
+// Property card and comparison hooks (property feature domain)
+export * from './usePropertyCardActions'
+export * from './usePropertyCardState'
+export * from './usePropertyCompareActions'
+export * from './usePropertyFormatting'

@@ -1,384 +1,513 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, useCallback } from 'react'
+/**
+ * Fraud Detection — data layer
+ *
+ * Architecture
+ * ────────────
+ * • Query hooks are top-level exports — composable anywhere without violating
+ *   the Rules of Hooks.
+ * • useFraudDetection owns mutations only. Components compose it with the
+ *   query hooks they need.
+ * • Explicit generics are placed on mutationFn signatures (not on useMutation
+ *   itself) to avoid the <Type> vs comparison-operator ambiguity in .ts files.
+ * • TanStack Query v4 API: isLoading (not isPending), useMutation({mutationFn}).
+ */
+
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseQueryOptions,
+} from "@tanstack/react-query"
+import { useCallback } from "react"
 
 import { apiClient } from "../../local/services/unified-api-client"
 
-export interface FraudAlert {
-  id: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  category: string;
-  subcategories: string[];
-  confidence: number;
-  propertyId?: string;
-  transactionId?: string;
-  networkId?: string;
-  participants: ParticipantInfo[];
-  evidence: Evidence[];
-  riskFactors: RiskFactor[];
-  jurisdiction: string[];
-  estimatedLoss?: number;
-  timeframe: {
-    detectedAt: Date;
-    incidentStart?: Date;
-    incidentEnd?: Date;
-  };
-  investigationPriority: number;
-  relatedAlerts: string[];
-  status: 'active' | 'investigating' | 'resolved' | 'dismissed';
-  assignedTo?: string;
-  notes?: string;
-}
+// ─── Domain types ──────────────────────────────────────────────────────────────
+
+export type AlertSeverity   = "critical" | "high" | "medium" | "low"
+export type AlertStatus     = "active" | "investigating" | "resolved" | "dismissed"
+export type ParticipantType = "individual" | "entity" | "professional" | "institution"
+export type VerificationStatus = "verified" | "pending" | "failed" | "synthetic"
+export type EvidenceType    = "document" | "transaction" | "communication" | "behavioral" | "network"
+export type RiskLevel       = "low" | "medium" | "high"
+export type ReportPriority  = "low" | "medium" | "high" | "urgent"
+export type SystemHealthStatus = "operational" | "degraded" | "down"
 
 export interface ParticipantInfo {
-  id: string;
-  type: 'individual' | 'entity' | 'professional' | 'institution';
-  name: string;
-  role: string;
-  riskScore: number;
-  previousIncidents: number;
-  verificationStatus: 'verified' | 'pending' | 'failed' | 'synthetic';
-  jurisdictions: string[];
-  networkConnections: number;
+  id: string
+  type: ParticipantType
+  name: string
+  role: string
+  riskScore: number
+  previousIncidents: number
+  verificationStatus: VerificationStatus
+  jurisdictions: string[]
+  networkConnections: number
 }
 
 export interface Evidence {
-  id: string;
-  type: 'document' | 'transaction' | 'communication' | 'behavioral' | 'network';
-  source: string;
-  description: string;
-  confidence: number;
-  timestamp: Date;
-  hash: string;
-  metadata: Record<string, any>;
+  id: string
+  type: EvidenceType
+  source: string
+  description: string
+  confidence: number
+  timestamp: Date
+  hash: string
+  metadata: Record<string, unknown>
 }
 
 export interface RiskFactor {
-  category: string;
-  description: string;
-  weight: number;
-  evidence: string[];
+  category: string
+  description: string
+  weight: number
+  evidence: string[]
+}
+
+export interface FraudAlert {
+  id: string
+  severity: AlertSeverity
+  category: string
+  subcategories: string[]
+  confidence: number
+  propertyId?: string
+  transactionId?: string
+  networkId?: string
+  participants: ParticipantInfo[]
+  evidence: Evidence[]
+  riskFactors: RiskFactor[]
+  jurisdiction: string[]
+  estimatedLoss?: number
+  timeframe: {
+    detectedAt: Date
+    incidentStart?: Date
+    incidentEnd?: Date
+  }
+  investigationPriority: number
+  relatedAlerts: string[]
+  status: AlertStatus
+  assignedTo?: string
+  notes?: string
+}
+
+export interface TransactionDocument {
+  id: string
+  type: string
+  url: string
+  metadata?: Record<string, unknown>
 }
 
 export interface TransactionData {
-  id: string;
-  amount: number;
-  propertyId: string;
-  userId: string;
-  paymentMethod: string;
-  timestamp: string;
-  participants?: ParticipantInfo[];
-  documents?: any[];
-  metadata?: Record<string, any>;
+  id: string
+  amount: number
+  propertyId: string
+  userId: string
+  paymentMethod: string
+  timestamp: string
+  participants?: ParticipantInfo[]
+  documents?: TransactionDocument[]
+  metadata?: Record<string, unknown>
+}
+
+export interface RecentActivityItem {
+  id: string
+  type: string
+  description: string
+  timestamp: Date
+  severity?: AlertSeverity
 }
 
 export interface FraudDashboardData {
-  totalAlerts: number;
-  criticalAlerts: number;
-  transactionsAnalyzed: number;
-  lossesPrevented: number;
-  alertsChange: number;
-  analysisRate: number;
-  detectionRate: number;
-  falsePositiveRate: number;
-  avgResponseTime: number;
-  categoryBreakdown: Record<string, number>;
-  recentActivity: any[];
+  totalAlerts: number
+  criticalAlerts: number
+  transactionsAnalyzed: number
+  lossesPrevented: number
+  alertsChange: number
+  analysisRate: number
+  detectionRate: number
+  falsePositiveRate: number
+  avgResponseTime: number
+  categoryBreakdown: Record<string, number>
+  recentActivity: RecentActivityItem[]
 }
 
 export interface SystemStatus {
-  status: 'operational' | 'degraded' | 'down';
-  uptime: number;
-  lastProcessed: Date;
-  mlModelsStatus: Record<string, string>;
-  dataIntegrationStatus: string;
-  processingQueue: number;
-}
-
-export interface NetworkAnalysis {
-  networkId: string;
-  participants: ParticipantInfo[];
-  connections: NetworkConnection[];
-  riskScore: number;
-  suspiciousPatterns: string[];
-  timeframe: {
-    start: Date;
-    end: Date;
-  };
+  status: SystemHealthStatus
+  uptime: number
+  lastProcessed: Date
+  mlModelsStatus: Record<string, string>
+  dataIntegrationStatus: string
+  processingQueue: number
 }
 
 export interface NetworkConnection {
-  from: string;
-  to: string;
-  type: string;
-  strength: number;
-  frequency: number;
-  riskLevel: 'low' | 'medium' | 'high';
+  from: string
+  to: string
+  type: string
+  strength: number
+  frequency: number
+  riskLevel: RiskLevel
+}
+
+export interface NetworkAnalysis {
+  networkId: string
+  participants: ParticipantInfo[]
+  connections: NetworkConnection[]
+  riskScore: number
+  suspiciousPatterns: string[]
+  timeframe: { start: Date; end: Date }
+}
+
+export interface FeatureImportanceItem {
+  feature: string
+  importance: number
 }
 
 export interface MLAnalytics {
   modelPerformance: {
-    accuracy: number;
-    precision: number;
-    recall: number;
-    f1Score: number;
-  };
-  featureImportance: Array<{
-    feature: string;
-    importance: number;
-  }>;
-  predictionDistribution: Record<string, number>;
-  modelVersions: Record<string, string>;
+    accuracy: number
+    precision: number
+    recall: number
+    f1Score: number
+  }
+  featureImportance: FeatureImportanceItem[]
+  predictionDistribution: Record<string, number>
+  modelVersions: Record<string, string>
   trainingMetrics: {
-    lastTraining: Date;
-    datasetSize: number;
-    trainingAccuracy: number;
-  };
+    lastTraining: Date
+    datasetSize: number
+    trainingAccuracy: number
+  }
 }
 
+export interface FraudReport {
+  id: string
+  alertIds: string[]
+  title: string
+  description: string
+  priority: ReportPriority
+  status: string
+  createdAt: Date
+}
+
+// ─── Filter / payload shapes ───────────────────────────────────────────────────
+
+export interface AlertFilters {
+  severity?: AlertSeverity
+  category?: string
+  status?: AlertStatus
+  search?: string
+  limit?: number
+  offset?: number
+}
+
+export interface ReportFilters {
+  status?: string
+  priority?: ReportPriority
+  limit?: number
+}
+
+export interface CreateReportPayload {
+  alertIds: string[]
+  title: string
+  description: string
+  priority: ReportPriority
+}
+
+// Internal mutation variable shape — avoids generic-on-useMutation ambiguity
+interface UpdateAlertVariables {
+  alertId: string
+  updates: Partial<FraudAlert>
+}
+
+// ─── Query key factory ─────────────────────────────────────────────────────────
+
+export const fraudKeys = {
+  all: ["fraud-detection"] as const,
+  dashboard: (userId?: string, timeRange?: string) =>
+    [...fraudKeys.all, "dashboard", userId, timeRange] as const,
+  alerts: (filters?: AlertFilters) =>
+    [...fraudKeys.all, "alerts", filters] as const,
+  alert: (id: string) =>
+    [...fraudKeys.all, "alert", id] as const,
+  systemStatus: () =>
+    [...fraudKeys.all, "system-status"] as const,
+  networkAnalysis: (opts?: { userId?: string; propertyId?: string; timeRange?: string }) =>
+    [...fraudKeys.all, "network-analysis", opts] as const,
+  mlAnalytics: (timeRange?: string) =>
+    [...fraudKeys.all, "ml-analytics", timeRange] as const,
+  reports: (filters?: ReportFilters) =>
+    [...fraudKeys.all, "reports", filters] as const,
+} as const
+
+// ─── Utility ──────────────────────────────────────────────────────────────────
+
+function buildParams(
+  entries: Record<string, string | number | undefined | null>
+): string {
+  const p = new URLSearchParams()
+  for (const [k, v] of Object.entries(entries)) {
+    if (v != null) p.append(k, String(v))
+  }
+  const s = p.toString()
+  return s ? `?${s}` : ""
+}
+
+// ─── Query hooks (top-level — composable anywhere) ────────────────────────────
+
+export function useFraudDashboard(
+  userId?: string,
+  timeRange?: string,
+  options?: Partial<UseQueryOptions<FraudDashboardData>>
+) {
+  return useQuery<FraudDashboardData>({
+    queryKey: fraudKeys.dashboard(userId, timeRange),
+    queryFn: async () => {
+      const qs = buildParams({ userId, timeRange })
+      const res = await apiClient.get<FraudDashboardData>(
+        `/api/fraud-detection/dashboard${qs}`
+      )
+      return res.data
+    },
+    refetchInterval: 30_000,
+    ...options,
+  })
+}
+
+export function useFraudAlerts(
+  filters?: AlertFilters,
+  options?: Partial<UseQueryOptions<FraudAlert[]>>
+) {
+  return useQuery<FraudAlert[]>({
+    queryKey: fraudKeys.alerts(filters),
+    queryFn: async () => {
+      const qs = buildParams({
+        severity: filters?.severity,
+        category: filters?.category,
+        status:   filters?.status,
+        search:   filters?.search,
+        limit:    filters?.limit,
+        offset:   filters?.offset,
+      })
+      const res = await apiClient.get<FraudAlert[]>(
+        `/api/fraud-detection/alerts${qs}`
+      )
+      return res.data
+    },
+    refetchInterval: 15_000,
+    ...options,
+  })
+}
+
+export function useFraudAlert(
+  alertId: string,
+  options?: Partial<UseQueryOptions<FraudAlert>>
+) {
+  return useQuery<FraudAlert>({
+    queryKey: fraudKeys.alert(alertId),
+    queryFn: async () => {
+      const res = await apiClient.get<FraudAlert>(
+        `/api/fraud-detection/alerts/${alertId}`
+      )
+      return res.data
+    },
+    enabled: Boolean(alertId),
+    ...options,
+  })
+}
+
+export function useSystemStatus(
+  options?: Partial<UseQueryOptions<SystemStatus>>
+) {
+  return useQuery<SystemStatus>({
+    queryKey: fraudKeys.systemStatus(),
+    queryFn: async () => {
+      const res = await apiClient.get<SystemStatus>(
+        "/api/fraud-detection/system/status"
+      )
+      return res.data
+    },
+    refetchInterval: 60_000,
+    ...options,
+  })
+}
+
+export function useNetworkAnalysis(
+  opts?: { userId?: string; propertyId?: string; timeRange?: string },
+  options?: Partial<UseQueryOptions<NetworkAnalysis[]>>
+) {
+  return useQuery<NetworkAnalysis[]>({
+    queryKey: fraudKeys.networkAnalysis(opts),
+    queryFn: async () => {
+      const qs = buildParams({
+        userId:     opts?.userId,
+        propertyId: opts?.propertyId,
+        timeRange:  opts?.timeRange,
+      })
+      const res = await apiClient.get<NetworkAnalysis[]>(
+        `/api/fraud-detection/network-analysis${qs}`
+      )
+      return res.data
+    },
+    ...options,
+  })
+}
+
+export function useMLAnalytics(
+  timeRange?: string,
+  options?: Partial<UseQueryOptions<MLAnalytics>>
+) {
+  return useQuery<MLAnalytics>({
+    queryKey: fraudKeys.mlAnalytics(timeRange),
+    queryFn: async () => {
+      const qs = buildParams({ timeRange })
+      const res = await apiClient.get<MLAnalytics>(
+        `/api/fraud-detection/ml-analytics${qs}`
+      )
+      return res.data
+    },
+    ...options,
+  })
+}
+
+export function useFraudReports(
+  filters?: ReportFilters,
+  options?: Partial<UseQueryOptions<FraudReport[]>>
+) {
+  return useQuery<FraudReport[]>({
+    queryKey: fraudKeys.reports(filters),
+    queryFn: async () => {
+      const qs = buildParams({
+        status:   filters?.status,
+        priority: filters?.priority,
+        limit:    filters?.limit,
+      })
+      const res = await apiClient.get<FraudReport[]>(
+        `/api/fraud-detection/reports${qs}`
+      )
+      return res.data
+    },
+    ...options,
+  })
+}
+
+// ─── Mutation hook ────────────────────────────────────────────────────────────
+
 export function useFraudDetection() {
-  const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const qc = useQueryClient()
 
-  // Process transaction for fraud analysis
+  // ── Process transaction ────────────────────────────────────────────────────
+  // Types on mutationFn — NOT on useMutation<...> — to avoid the
+  // less-than operator ambiguity that breaks the parser in .ts files.
+
   const processTransactionMutation = useMutation({
-    mutationFn: async (transactionData: TransactionData): Promise<FraudAlert[]> => {
-      const response = await apiClient.post<FraudAlert[]>('/api/fraud-detection/analyze', transactionData);
-      return response.data;
+    mutationFn: async (payload: TransactionData): Promise<FraudAlert[]> => {
+      const res = await apiClient.post<FraudAlert[]>(
+        "/api/fraud-detection/analyze",
+        payload
+      )
+      return res.data
     },
-    onSuccess: (alerts) => {
-      queryClient.invalidateQueries({ queryKey: ['fraud-detection', 'dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['fraud-detection', 'alerts'] });
-      
-      // Cache individual alerts
-      alerts.forEach(alert => {
-        queryClient.setQueryData(['fraud-detection', 'alert', alert.id], alert);
-      });
+    onSuccess: (alerts: FraudAlert[]) => {
+      qc.invalidateQueries({ queryKey: fraudKeys.dashboard() })
+      qc.invalidateQueries({ queryKey: fraudKeys.alerts() })
+      for (const alert of alerts) {
+        qc.setQueryData(fraudKeys.alert(alert.id), alert)
+      }
     },
-  });
+  })
 
-  // Update alert status
+  // ── Update alert ───────────────────────────────────────────────────────────
+
   const updateAlertMutation = useMutation({
-    mutationFn: async ({ alertId, updates }: { alertId: string; updates: Partial<FraudAlert> }): Promise<FraudAlert> => {
-      const response = await apiClient.patch<FraudAlert>(`/api/fraud-detection/alerts/${alertId}`, updates);
-      return response.data;
+    mutationFn: async (vars: UpdateAlertVariables): Promise<FraudAlert> => {
+      const res = await apiClient.patch<FraudAlert>(
+        `/api/fraud-detection/alerts/${vars.alertId}`,
+        vars.updates
+      )
+      return res.data
     },
-    onSuccess: (alert) => {
-      queryClient.setQueryData(['fraud-detection', 'alert', alert.id], alert);
-      queryClient.invalidateQueries({ queryKey: ['fraud-detection', 'alerts'] });
-      queryClient.invalidateQueries({ queryKey: ['fraud-detection', 'dashboard'] });
+    onSuccess: (alert: FraudAlert) => {
+      qc.setQueryData(fraudKeys.alert(alert.id), alert)
+      qc.invalidateQueries({ queryKey: fraudKeys.alerts() })
+      qc.invalidateQueries({ queryKey: fraudKeys.dashboard() })
     },
-  });
+  })
 
-  // Create fraud report
+  // ── Create report ──────────────────────────────────────────────────────────
+
   const createReportMutation = useMutation({
-    mutationFn: async (reportData: {
-      alertIds: string[];
-      title: string;
-      description: string;
-      priority: 'low' | 'medium' | 'high' | 'urgent';
-    }) => {
-      const response = await apiClient.post<any>('/api/fraud-detection/reports', reportData);
-      return response.data;
+    mutationFn: async (payload: CreateReportPayload): Promise<FraudReport> => {
+      const res = await apiClient.post<FraudReport>(
+        "/api/fraud-detection/reports",
+        payload
+      )
+      return res.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fraud-detection', 'reports'] });
+      qc.invalidateQueries({ queryKey: fraudKeys.reports() })
     },
-  });
+  })
 
-  // Get fraud dashboard data
-  const useFraudDashboard = (userId?: string, options?: { timeRange?: string }) => {
-    return useQuery({
-      queryKey: ['fraud-detection', 'dashboard', userId, options?.timeRange],
-      queryFn: async (): Promise<FraudDashboardData> => {
-        const params = new URLSearchParams();
-        if (userId) params.append('userId', userId);
-        if (options?.timeRange) params.append('timeRange', options.timeRange);
-        
-        const response = await apiClient.get<FraudDashboardData>(`/api/fraud-detection/dashboard?${params}`);
-        return response.data;
-      },
-      refetchInterval: 30000, // Refresh every 30 seconds
-    });
-  };
+  // ── Public API ─────────────────────────────────────────────────────────────
 
-  // Get fraud alerts
-  const useFraudAlerts = (filters?: {
-    severity?: string;
-    category?: string;
-    status?: string;
-    search?: string;
-    limit?: number;
-    offset?: number;
-  }) => {
-    return useQuery({
-      queryKey: ['fraud-detection', 'alerts', filters],
-      queryFn: async (): Promise<FraudAlert[]> => {
-        const params = new URLSearchParams();
-        if (filters?.severity) params.append('severity', filters.severity);
-        if (filters?.category) params.append('category', filters.category);
-        if (filters?.status) params.append('status', filters.status);
-        if (filters?.search) params.append('search', filters.search);
-        if (filters?.limit) params.append('limit', filters.limit.toString());
-        if (filters?.offset) params.append('offset', filters.offset.toString());
-        
-        const response = await apiClient.get<FraudAlert[]>(`/api/fraud-detection/alerts?${params}`);
-        return response.data;
-      },
-      refetchInterval: 15000, // Refresh every 15 seconds for alerts
-    });
-  };
+  const processTransaction = useCallback(
+    (payload: TransactionData): Promise<FraudAlert[]> =>
+      processTransactionMutation.mutateAsync(payload),
+    [processTransactionMutation]
+  )
 
-  // Get specific fraud alert
-  const useFraudAlert = (alertId: string) => {
-    return useQuery({
-      queryKey: ['fraud-detection', 'alert', alertId],
-      queryFn: async (): Promise<FraudAlert> => {
-        const response = await apiClient.get<FraudAlert>(`/api/fraud-detection/alerts/${alertId}`);
-        return response.data;
-      },
-      enabled: !!alertId,
-    });
-  };
+  const updateAlert = useCallback(
+    (alertId: string, updates: Partial<FraudAlert>): Promise<FraudAlert> =>
+      updateAlertMutation.mutateAsync({ alertId, updates }),
+    [updateAlertMutation]
+  )
 
-  // Get system status
-  const useSystemStatus = () => {
-    return useQuery({
-      queryKey: ['fraud-detection', 'system-status'],
-      queryFn: async (): Promise<SystemStatus> => {
-        const response = await apiClient.get<SystemStatus>('/api/fraud-detection/system/status');
-        return response.data;
-      },
-      refetchInterval: 60000, // Refresh every minute
-    });
-  };
+  const createReport = useCallback(
+    (payload: CreateReportPayload): Promise<FraudReport> =>
+      createReportMutation.mutateAsync(payload),
+    [createReportMutation]
+  )
 
-  // Get network analysis
-  const useNetworkAnalysis = (options?: {
-    userId?: string;
-    propertyId?: string;
-    timeRange?: string;
-  }) => {
-    return useQuery({
-      queryKey: ['fraud-detection', 'network-analysis', options],
-      queryFn: async (): Promise<NetworkAnalysis[]> => {
-        const params = new URLSearchParams();
-        if (options?.userId) params.append('userId', options.userId);
-        if (options?.propertyId) params.append('propertyId', options.propertyId);
-        if (options?.timeRange) params.append('timeRange', options.timeRange);
-        
-        const response = await apiClient.get<NetworkAnalysis[]>(`/api/fraud-detection/network-analysis?${params}`);
-        return response.data;
-      },
-    });
-  };
+  // ── Bulk helpers (bypass wrapper to avoid redundant re-renders) ────────────
 
-  // Get ML analytics
-  const useMLAnalytics = (options?: { timeRange?: string }) => {
-    return useQuery({
-      queryKey: ['fraud-detection', 'ml-analytics', options?.timeRange],
-      queryFn: async (): Promise<MLAnalytics> => {
-        const params = new URLSearchParams();
-        if (options?.timeRange) params.append('timeRange', options.timeRange);
-        
-        const response = await apiClient.get<MLAnalytics>(`/api/fraud-detection/ml-analytics?${params}`);
-        return response.data;
-      },
-    });
-  };
+  const dismissAlerts = useCallback(
+    (alertIds: string[]): Promise<FraudAlert[]> =>
+      Promise.all(
+        alertIds.map((id) =>
+          updateAlertMutation.mutateAsync({ alertId: id, updates: { status: "dismissed" } })
+        )
+      ),
+    [updateAlertMutation]
+  )
 
-  // Get fraud reports
-  const useFraudReports = (filters?: {
-    status?: string;
-    priority?: string;
-    limit?: number;
-  }) => {
-    return useQuery({
-      queryKey: ['fraud-detection', 'reports', filters],
-      queryFn: async () => {
-        const params = new URLSearchParams();
-        if (filters?.status) params.append('status', filters.status);
-        if (filters?.priority) params.append('priority', filters.priority);
-        if (filters?.limit) params.append('limit', filters.limit.toString());
-        
-        const response = await apiClient.get<any[]>(`/api/fraud-detection/reports?${params}`);
-        return response.data;
-      },
-    });
-  };
+  const escalateAlerts = useCallback(
+    (alertIds: string[]): Promise<FraudAlert[]> =>
+      Promise.all(
+        alertIds.map((id) =>
+          updateAlertMutation.mutateAsync({
+            alertId: id,
+            updates: { status: "investigating", investigationPriority: 100 },
+          })
+        )
+      ),
+    [updateAlertMutation]
+  )
 
-  // Wrapper functions for mutations
-  const processTransaction = useCallback(async (transactionData: TransactionData): Promise<FraudAlert[]> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      return await processTransactionMutation.mutateAsync(transactionData);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to process transaction');
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [processTransactionMutation]);
-
-  const updateAlert = useCallback(async (alertId: string, updates: Partial<FraudAlert>): Promise<FraudAlert> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      return await updateAlertMutation.mutateAsync({ alertId, updates });
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to update alert');
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [updateAlertMutation]);
-
-  const createReport = useCallback(async (reportData: {
-    alertIds: string[];
-    title: string;
-    description: string;
-    priority: 'low' | 'medium' | 'high' | 'urgent';
-  }) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      return await createReportMutation.mutateAsync(reportData);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to create report');
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [createReportMutation]);
-
-  // Bulk operations
-  const dismissAlerts = useCallback(async (alertIds: string[]) => {
-    const promises = alertIds.map(id => updateAlert(id, { status: 'dismissed' }));
-    return Promise.all(promises);
-  }, [updateAlert]);
-
-  const escalateAlerts = useCallback(async (alertIds: string[]) => {
-    const promises = alertIds.map(id => updateAlert(id, { 
-      status: 'investigating',
-      investigationPriority: 100 
-    }));
-    return Promise.all(promises);
-  }, [updateAlert]);
-
-  const assignAlerts = useCallback(async (alertIds: string[], assignee: string) => {
-    const promises = alertIds.map(id => updateAlert(id, { 
-      status: 'investigating',
-      assignedTo: assignee 
-    }));
-    return Promise.all(promises);
-  }, [updateAlert]);
+  const assignAlerts = useCallback(
+    (alertIds: string[], assignee: string): Promise<FraudAlert[]> =>
+      Promise.all(
+        alertIds.map((id) =>
+          updateAlertMutation.mutateAsync({
+            alertId: id,
+            updates: { status: "investigating", assignedTo: assignee },
+          })
+        )
+      ),
+    [updateAlertMutation]
+  )
 
   return {
-    // Mutation functions
+    // Mutations
     processTransaction,
     updateAlert,
     createReport,
@@ -386,27 +515,23 @@ export function useFraudDetection() {
     escalateAlerts,
     assignAlerts,
 
-    // Query hooks
-    useFraudDashboard,
-    useFraudAlerts,
-    useFraudAlert,
-    useSystemStatus,
-    useNetworkAnalysis,
-    useMLAnalytics,
-    useFraudReports,
-
-    // State
-    isLoading: isLoading || 
-               processTransactionMutation.isPending || 
-               updateAlertMutation.isPending || 
-               createReportMutation.isPending,
-    error,
-
-    // Mutation states
-    isProcessing: processTransactionMutation.isPending,
-    isUpdating: updateAlertMutation.isPending,
+    // Granular loading flags (v5: isPending, not isLoading)
+    isProcessing:    processTransactionMutation.isPending,
+    isUpdating:      updateAlertMutation.isPending,
     isCreatingReport: createReportMutation.isPending,
-  };
+
+    // Combined convenience flag
+    isLoading:
+      processTransactionMutation.isPending ||
+      updateAlertMutation.isPending ||
+      createReportMutation.isPending,
+
+    // Last error across any mutation
+    error:
+      processTransactionMutation.error ??
+      updateAlertMutation.error ??
+      createReportMutation.error,
+  }
 }
 
-export default useFraudDetection;
+export default useFraudDetection

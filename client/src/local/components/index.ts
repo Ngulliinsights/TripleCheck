@@ -30,5 +30,5 @@ export {
   useTeamGridVirtualization,
 } from "../hooks/useMemoryOptimization"
 
-// Export property components and utilities
-export * from "./property"
+// Property components moved to property domain - import from property/components instead
+// export * from "./property"

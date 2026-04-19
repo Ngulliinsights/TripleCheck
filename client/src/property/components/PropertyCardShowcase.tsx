@@ -9,7 +9,7 @@ import React, {
 } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { PropertyCard } from "../../local/components/property"
+import { PropertyCard } from "./PropertyCard"
 import { Badge } from "../../local/components/ui/badge"
 import { normalizeLandProperty } from "../utils/normalizeLandProperty"
 import { cn } from "../../local/lib/utils"

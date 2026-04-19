@@ -1,6 +1,6 @@
 import React from "react"
 
-import { commercialConfig } from "../../local/config/propertyTypes"
+import { commercialConfig } from "../config/propertyTypes"
 import { PropertyListingRoute } from "../shared/PropertyListingRoute"
 
 export default function CommercialProperties(): React.ReactElement {

@@ -12,7 +12,6 @@ import { Checkbox } from '../../local/components/ui/checkbox'
 import {
   Form,
   FormControl,
-  FormField,
   FormItem,
   FormLabel,
   FormMessage,
@@ -60,7 +59,6 @@ export function LoginForm({
   onSuccess,
   redirectTo,
   showSocialLogin = true,
-  enableTwoFactor = true,
   enableBiometric = true,
   className = '',
 }: LoginFormProps) {
@@ -118,7 +116,7 @@ export function LoginForm({
 
       const result = await loginMutation.mutateAsync(credentials)
       
-      if (result.data.user) {
+      if (result?.data?.user) {
         // Store remember me preference
         if (data.rememberMe) {
           localStorage.setItem('rememberMe', 'true')
@@ -187,7 +185,7 @@ export function LoginForm({
 
       const result = await verificationResponse.json()
       
-      if (result.data.user) {
+      if (result?.data?.user) {
         onSuccess?.(result.data.user)
         if (redirectTo) {
           window.location.href = redirectTo
@@ -354,9 +352,9 @@ export function LoginForm({
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 shrink-0" />
                       ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 shrink-0" />
                       )}
                     </Button>
                   </div>
@@ -383,7 +381,7 @@ export function LoginForm({
                     />
                     {passwordStrength.feedback.warning && (
                       <div className="flex items-start gap-2 text-xs text-amber-600">
-                        <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                        <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
                         <span>{passwordStrength.feedback.warning}</span>
                       </div>
                     )}
@@ -391,7 +389,7 @@ export function LoginForm({
                       <div className="space-y-1">
                         {passwordStrength.feedback.suggestions.map((suggestion, index) => (
                           <div key={index} className="flex items-start gap-2 text-xs text-blue-600">
-                            <CheckCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                            <CheckCircle className="h-3 w-3 mt-0.5 shrink-0" />
                             <span>{suggestion}</span>
                           </div>
                         ))}
@@ -417,9 +415,9 @@ export function LoginForm({
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel className="text-sm font-medium text-gray-700 cursor-pointer">
+                  <label className="text-sm font-medium text-gray-700 cursor-pointer">
                     Remember me on this device
-                  </FormLabel>
+                  </label>
                 </div>
               </FormItem>
             )}

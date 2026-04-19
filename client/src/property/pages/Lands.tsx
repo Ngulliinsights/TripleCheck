@@ -1,6 +1,6 @@
 import React from "react"
 
-import { landConfig } from "../../local/config/propertyTypes"
+import { landConfig } from "../config/propertyTypes"
 import { PropertyListingRoute } from "../shared/PropertyListingRoute"
 
 export default function Lands(): React.ReactElement {

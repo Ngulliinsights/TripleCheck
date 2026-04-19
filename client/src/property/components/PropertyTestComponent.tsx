@@ -4,7 +4,8 @@ import React from 'react'
 import { Button } from '../../local/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../local/components/ui/card'
 import { useProperty } from '../hooks/useProperty'
-import { usePropertySearch } from '../hooks/usePropertySearch'
+// TODO: Implement usePropertySearch hook
+// import { usePropertySearch } from '../hooks/usePropertySearch'
 
 /**
  * Test component to verify that infinite API calls are resolved
@@ -17,6 +18,8 @@ export function PropertyTestComponent() {
   const { usePropertyDetail, useProperties } = useProperty();
   
   // Test the property search hook with debouncing
+  // TODO: Implement usePropertySearch
+  /*
   const {
     searchParams,
     properties: searchResults,
@@ -25,6 +28,15 @@ export function PropertyTestComponent() {
     clearSearch,
     hasActiveFilters
   } = usePropertySearch();
+  */
+
+  // Stubs for now
+  const searchParams = { query: '', location: '' };
+  const searchResults: any[] = [];
+  const searchLoading = false;
+  const updateSearch = () => {};
+  const clearSearch = () => {};
+  const hasActiveFilters = false;
 
   // Test individual property fetch
   const {

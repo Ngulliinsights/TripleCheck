@@ -1,36 +1,134 @@
-import { Settings, Bell, Shield, Eye, Lock, Trash2, Save } from "lucide-react"
-import { useState } from "react"
+import { Settings, Bell, Shield, Eye, Lock, Trash2, Save, AlertTriangle } from "lucide-react"
+import { useState, useCallback, useId } from "react"
 
 import { Button } from "../../local/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "../../local/components/ui/card"
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../local/components/ui/card"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../local/components/ui/dialog"
 import { Input } from "../../local/components/ui/input"
 import { Label } from "../../local/components/ui/label"
 import { Separator } from "../../local/components/ui/separator"
 import { Switch } from "../../local/components/ui/switch"
+import { useToast } from "../../local/hooks/use-toast"
+import { useUpdateUserPreferences } from "../hooks/useUser"
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface NotificationSettings {
-  emailNotifications: boolean;
-  smsNotifications: boolean;
-  pushNotifications: boolean;
-  verificationUpdates: boolean;
-  marketingEmails: boolean;
-  securityAlerts: boolean;
+  emailNotifications: boolean
+  smsNotifications: boolean
+  pushNotifications: boolean
+  verificationUpdates: boolean
+  marketingEmails: boolean
+  securityAlerts: boolean
 }
 
 interface PrivacySettings {
-  profileVisibility: "public" | "private" | "contacts";
-  showEmail: boolean;
-  showPhone: boolean;
-  showLocation: boolean;
-  allowDataCollection: boolean;
+  profileVisibility: "public" | "private" | "contacts"
+  showEmail: boolean
+  showPhone: boolean
+  showLocation: boolean
+  allowDataCollection: boolean
 }
 
-export default function UserSettings() {
+interface PasswordForm {
+  current: string
+  next: string
+  confirm: string
+}
+
+interface PasswordValidation {
+  match: boolean
+  minLength: boolean
+  hasNumber: boolean
+  hasSpecial: boolean
+}
+
+interface UserSettingsProps {
+  readonly userId: string
+}
+
+// ─── Password validation ──────────────────────────────────────────────────────
+
+const MIN_PASSWORD_LENGTH = 8
+
+function validatePassword(form: PasswordForm): PasswordValidation {
+  return {
+    match: form.next === form.confirm,
+    minLength: form.next.length >= MIN_PASSWORD_LENGTH,
+    hasNumber: /\d/.test(form.next),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(form.next),
+  }
+}
+
+function isPasswordFormValid(form: PasswordForm, v: PasswordValidation): boolean {
+  return !!form.current && !!form.next && !!form.confirm && Object.values(v).every(Boolean)
+}
+
+const PASSWORD_RULES: Array<{ key: keyof PasswordValidation; label: string }> = [
+  { key: "minLength", label: `At least ${MIN_PASSWORD_LENGTH} characters` },
+  { key: "hasNumber", label: "Contains a number" },
+  { key: "hasSpecial", label: "Contains a special character" },
+  { key: "match", label: "Passwords match" },
+]
+
+// ─── Layout primitives ────────────────────────────────────────────────────────
+
+interface SettingRowProps {
+  id: string
+  label: string
+  description: string
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+  disabled?: boolean
+}
+
+function SettingRow({ id, label, description, checked, onCheckedChange, disabled }: SettingRowProps) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="space-y-0.5 flex-1 min-w-0">
+        <Label htmlFor={id} className="text-sm font-medium cursor-pointer">
+          {label}
+        </Label>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Switch
+        id={id}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        disabled={disabled}
+        aria-label={label}
+      />
+    </div>
+  )
+}
+
+interface SectionTitleProps {
+  icon: React.ReactNode
+  title: string
+}
+
+function SectionTitle({ icon, title }: SectionTitleProps) {
+  return (
+    <CardTitle className="flex items-center gap-2 text-base font-semibold">
+      <span className="text-muted-foreground" aria-hidden>{icon}</span>
+      {title}
+    </CardTitle>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function UserSettings({ userId }: UserSettingsProps) {
+  const { toast } = useToast()
+  const updatePreferences = useUpdateUserPreferences()
+
   const [notifications, setNotifications] = useState<NotificationSettings>({
     emailNotifications: true,
     smsNotifications: false,
@@ -38,7 +136,7 @@ export default function UserSettings() {
     verificationUpdates: true,
     marketingEmails: false,
     securityAlerts: true,
-  });
+  })
 
   const [privacy, setPrivacy] = useState<PrivacySettings>({
     profileVisibility: "public",
@@ -46,370 +144,373 @@ export default function UserSettings() {
     showPhone: false,
     showLocation: true,
     allowDataCollection: true,
-  });
+  })
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwords, setPasswords] = useState<PasswordForm>({
+    current: "",
+    next: "",
+    confirm: "",
+  })
 
-  const handleNotificationChange = (key: keyof NotificationSettings) => {
-    setNotifications((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
+  const [isSaving, setIsSaving] = useState(false)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deletePassword, setDeletePassword] = useState("")
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
-  const handlePrivacyChange = (
-    key: keyof PrivacySettings,
-    value: boolean | string
-  ) => {
-    setPrivacy((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+  const passwordValidation = validatePassword(passwords)
+  const passwordFormValid = isPasswordFormValid(passwords, passwordValidation)
+  const showPasswordRules = passwords.next.length > 0
 
-  const handlePasswordChange = () => {
-    if (newPassword !== confirmPassword) {
-      window.alert("Passwords do not match");
-      return;
+  // Stable unique ID prefix for ARIA associations
+  const uid = useId()
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
+  const handleNotificationChange = useCallback(
+    (key: keyof NotificationSettings) => (checked: boolean) => {
+      setNotifications((prev) => ({ ...prev, [key]: checked }))
+    },
+    []
+  )
+
+  const handlePrivacyToggle = useCallback(
+    (key: keyof Omit<PrivacySettings, "profileVisibility">) =>
+      (checked: boolean) => {
+        setPrivacy((prev) => ({ ...prev, [key]: checked }))
+      },
+    []
+  )
+
+  const handleVisibilityChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setPrivacy((prev) => ({
+        ...prev,
+        profileVisibility: e.target.value as PrivacySettings["profileVisibility"],
+      }))
+    },
+    []
+  )
+
+  const handlePasswordField = useCallback(
+    (field: keyof PasswordForm) =>
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPasswords((prev) => ({ ...prev, [field]: e.target.value }))
+      },
+    []
+  )
+
+  const handleSaveAll = useCallback(async () => {
+    setIsSaving(true)
+    try {
+      await updatePreferences.mutateAsync({
+        userId,
+        preferences: {
+          notifications: {
+            email: notifications.emailNotifications,
+            sms: notifications.smsNotifications,
+            push: notifications.pushNotifications,
+          },
+          privacy: {
+            showProfile: privacy.profileVisibility === "public",
+            showContactInfo: privacy.showEmail || privacy.showPhone,
+          },
+        },
+      })
+      toast({ title: "Settings saved", description: "Your preferences have been updated." })
+    } catch (err) {
+      toast({
+        title: "Failed to save settings",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
     }
-    // Handle password change logic
-    window.alert("Password updated successfully");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  };
+  }, [userId, notifications, privacy, updatePreferences, toast])
 
-  const handleDeleteAccount = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete your account? This action cannot be undone."
-      )
-    ) {
-      // Handle account deletion logic
-      window.alert(
-        "Account deletion initiated. You will receive a confirmation email."
-      );
+  const handlePasswordChange = useCallback(async () => {
+    if (!passwordFormValid) return
+    setIsChangingPassword(true)
+    try {
+      const res = await fetch("/api/users/me/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwords.current,
+          newPassword: passwords.next,
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { message?: string }
+        throw new Error(body.message ?? "Password update failed")
+      }
+      toast({ title: "Password updated", description: "Your password has been changed." })
+      setPasswords({ current: "", next: "", confirm: "" })
+    } catch (err) {
+      toast({
+        title: "Password update failed",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsChangingPassword(false)
     }
-  };
+  }, [passwords, passwordFormValid, toast])
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (!deletePassword) return
+    setIsDeletingAccount(true)
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: deletePassword }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { message?: string }
+        throw new Error(body.message ?? "Account deletion failed")
+      }
+      toast({
+        title: "Account deletion initiated",
+        description: "You will receive a confirmation email shortly.",
+      })
+      setShowDeleteDialog(false)
+    } catch (err) {
+      toast({
+        title: "Deletion failed",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeletingAccount(false)
+      setDeletePassword("")
+    }
+  }, [userId, deletePassword, toast])
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10 py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="flex justify-center mb-6">
-              <div className="p-4 bg-primary/10 rounded-full">
-                <Settings className="w-12 h-12 text-primary" />
-              </div>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Account Settings
-            </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed">
-              Configure your account preferences, privacy settings, and security
-              options.
-            </p>
+      {/* Page header */}
+      <div className="bg-linear-to-br from-primary/10 via-secondary/5 to-accent/10 py-16">
+        <div className="container mx-auto px-4 text-center">
+          <div className="inline-flex items-center justify-center p-4 bg-primary/10 rounded-full mb-6">
+            <Settings className="w-10 h-10 text-primary" aria-hidden />
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+            Account Settings
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            Manage your notification preferences, privacy settings, and account security.
+          </p>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 navbar-offset pb-8">
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Notification Settings */}
+      <div className="container mx-auto px-4 py-10">
+        <div className="max-w-3xl mx-auto space-y-6">
+
+          {/* ── Notifications ── */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5" />
-                Notification Preferences
-              </CardTitle>
+            <CardHeader className="pb-3">
+              <SectionTitle icon={<Bell className="w-4 h-4" />} title="Notification Preferences" />
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="email-notifications">
-                        Email Notifications
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive updates via email
-                      </p>
-                    </div>
-                    <Switch
-                      id="email-notifications"
-                      checked={notifications.emailNotifications}
-                      onCheckedChange={() =>
-                        handleNotificationChange("emailNotifications")
-                      }
-                    />
-                  </div>
+            <CardContent className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
+              <SettingRow
+                id={`${uid}-email`}
+                label="Email Notifications"
+                description="Receive updates via email"
+                checked={notifications.emailNotifications}
+                onCheckedChange={handleNotificationChange("emailNotifications")}
+              />
+              <SettingRow
+                id={`${uid}-verification`}
+                label="Verification Updates"
+                description="Property verification status changes"
+                checked={notifications.verificationUpdates}
+                onCheckedChange={handleNotificationChange("verificationUpdates")}
+              />
+              <SettingRow
+                id={`${uid}-sms`}
+                label="SMS Notifications"
+                description="Receive updates via SMS"
+                checked={notifications.smsNotifications}
+                onCheckedChange={handleNotificationChange("smsNotifications")}
+              />
+              <SettingRow
+                id={`${uid}-marketing`}
+                label="Marketing Emails"
+                description="Product updates and offers"
+                checked={notifications.marketingEmails}
+                onCheckedChange={handleNotificationChange("marketingEmails")}
+              />
+              <SettingRow
+                id={`${uid}-push`}
+                label="Push Notifications"
+                description="Browser push notifications"
+                checked={notifications.pushNotifications}
+                onCheckedChange={handleNotificationChange("pushNotifications")}
+              />
+              <SettingRow
+                id={`${uid}-security`}
+                label="Security Alerts"
+                description="Account security notifications"
+                checked={notifications.securityAlerts}
+                onCheckedChange={handleNotificationChange("securityAlerts")}
+                // Security alerts should never be silently disabled
+                disabled={false}
+              />
+            </CardContent>
+          </Card>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="sms-notifications">
-                        SMS Notifications
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receive updates via SMS
-                      </p>
-                    </div>
-                    <Switch
-                      id="sms-notifications"
-                      checked={notifications.smsNotifications}
-                      onCheckedChange={() =>
-                        handleNotificationChange("smsNotifications")
-                      }
-                    />
-                  </div>
+          {/* ── Privacy ── */}
+          <Card>
+            <CardHeader className="pb-3">
+              <SectionTitle icon={<Eye className="w-4 h-4" />} title="Privacy Settings" />
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor={`${uid}-visibility`} className="text-sm font-medium">
+                  Profile Visibility
+                </Label>
+                <select
+                  id={`${uid}-visibility`}
+                  value={privacy.profileVisibility}
+                  onChange={handleVisibilityChange}
+                  className="w-full mt-1 h-9 px-3 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  title="Profile visibility options"
+                >
+                  <option value="public">Public — anyone can view your profile</option>
+                  <option value="contacts">Contacts — only your contacts can view</option>
+                  <option value="private">Private — only you can view your profile</option>
+                </select>
+              </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="push-notifications">
-                        Push Notifications
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Browser push notifications
-                      </p>
-                    </div>
-                    <Switch
-                      id="push-notifications"
-                      checked={notifications.pushNotifications}
-                      onCheckedChange={() =>
-                        handleNotificationChange("pushNotifications")
-                      }
-                    />
-                  </div>
-                </div>
+              <Separator />
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="verification-updates">
-                        Verification Updates
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Property verification status
-                      </p>
-                    </div>
-                    <Switch
-                      id="verification-updates"
-                      checked={notifications.verificationUpdates}
-                      onCheckedChange={() =>
-                        handleNotificationChange("verificationUpdates")
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="marketing-emails">Marketing Emails</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Product updates and offers
-                      </p>
-                    </div>
-                    <Switch
-                      id="marketing-emails"
-                      checked={notifications.marketingEmails}
-                      onCheckedChange={() =>
-                        handleNotificationChange("marketingEmails")
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="security-alerts">Security Alerts</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Account security notifications
-                      </p>
-                    </div>
-                    <Switch
-                      id="security-alerts"
-                      checked={notifications.securityAlerts}
-                      onCheckedChange={() =>
-                        handleNotificationChange("securityAlerts")
-                      }
-                    />
-                  </div>
-                </div>
+              <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
+                <SettingRow
+                  id={`${uid}-show-email`}
+                  label="Show Email Address"
+                  description="Display your email on your profile"
+                  checked={privacy.showEmail}
+                  onCheckedChange={handlePrivacyToggle("showEmail")}
+                />
+                <SettingRow
+                  id={`${uid}-show-location`}
+                  label="Show Location"
+                  description="Display your location on your profile"
+                  checked={privacy.showLocation}
+                  onCheckedChange={handlePrivacyToggle("showLocation")}
+                />
+                <SettingRow
+                  id={`${uid}-show-phone`}
+                  label="Show Phone Number"
+                  description="Display your phone on your profile"
+                  checked={privacy.showPhone}
+                  onCheckedChange={handlePrivacyToggle("showPhone")}
+                />
+                <SettingRow
+                  id={`${uid}-data`}
+                  label="Allow Analytics"
+                  description="Help us improve via anonymized usage data"
+                  checked={privacy.allowDataCollection}
+                  onCheckedChange={handlePrivacyToggle("allowDataCollection")}
+                />
               </div>
             </CardContent>
           </Card>
 
-          {/* Privacy Settings */}
+          {/* ── Security ── */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="w-5 h-5" />
-                Privacy Settings
-              </CardTitle>
+            <CardHeader className="pb-3">
+              <SectionTitle icon={<Shield className="w-4 h-4" />} title="Security" />
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Password change */}
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="profile-visibility">Profile Visibility</Label>
-                  <select
-                    id="profile-visibility"
-                    value={privacy.profileVisibility}
-                    onChange={(e) =>
-                      handlePrivacyChange("profileVisibility", e.target.value)
-                    }
-                    className="w-full mt-1 p-2 border border-input rounded-md bg-background"
-                    aria-label="Profile visibility setting"
+                <h4 className="text-sm font-medium text-foreground">Change Password</h4>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`${uid}-cur-pw`} className="text-xs">Current Password</Label>
+                    <Input
+                      id={`${uid}-cur-pw`}
+                      type="password"
+                      value={passwords.current}
+                      onChange={handlePasswordField("current")}
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`${uid}-new-pw`} className="text-xs">New Password</Label>
+                    <Input
+                      id={`${uid}-new-pw`}
+                      type="password"
+                      value={passwords.next}
+                      onChange={handlePasswordField("next")}
+                      placeholder="••••••••"
+                      autoComplete="new-password"
+                      aria-describedby={showPasswordRules ? `${uid}-pw-rules` : undefined}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`${uid}-conf-pw`} className="text-xs">Confirm Password</Label>
+                    <Input
+                      id={`${uid}-conf-pw`}
+                      type="password"
+                      value={passwords.confirm}
+                      onChange={handlePasswordField("confirm")}
+                      placeholder="••••••••"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </div>
+
+                {/* Live password rules */}
+                {showPasswordRules && (
+                  <ul
+                    id={`${uid}-pw-rules`}
+                    className="space-y-1"
+                    aria-label="Password requirements"
                   >
-                    <option value="public">
-                      Public - Anyone can see your profile
-                    </option>
-                    <option value="private">
-                      Private - Only you can see your profile
-                    </option>
-                    <option value="contacts">
-                      Contacts - Only your contacts can see your profile
-                    </option>
-                  </select>
-                </div>
+                    {PASSWORD_RULES.map(({ key, label }) => (
+                      <li
+                        key={key}
+                        className={`flex items-center gap-1.5 text-xs transition-colors ${
+                          passwordValidation[key]
+                            ? "text-green-600"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        <span aria-hidden className="text-[10px]">
+                          {passwordValidation[key] ? "✓" : "○"}
+                        </span>
+                        {label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
-                <Separator />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="show-email">Show Email Address</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Display email on profile
-                        </p>
-                      </div>
-                      <Switch
-                        id="show-email"
-                        checked={privacy.showEmail}
-                        onCheckedChange={(checked) =>
-                          handlePrivacyChange("showEmail", checked)
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="show-phone">Show Phone Number</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Display phone on profile
-                        </p>
-                      </div>
-                      <Switch
-                        id="show-phone"
-                        checked={privacy.showPhone}
-                        onCheckedChange={(checked) =>
-                          handlePrivacyChange("showPhone", checked)
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="show-location">Show Location</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Display location on profile
-                        </p>
-                      </div>
-                      <Switch
-                        id="show-location"
-                        checked={privacy.showLocation}
-                        onCheckedChange={(checked) =>
-                          handlePrivacyChange("showLocation", checked)
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="data-collection">
-                          Allow Data Collection
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          For analytics and improvements
-                        </p>
-                      </div>
-                      <Switch
-                        id="data-collection"
-                        checked={privacy.allowDataCollection}
-                        onCheckedChange={(checked) =>
-                          handlePrivacyChange("allowDataCollection", checked)
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Security Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Security Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h4 className="font-medium">Change Password</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="current-password">Current Password</Label>
-                    <Input
-                      id="current-password"
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Enter current password"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
-                    />
-                  </div>
-                </div>
                 <Button
                   onClick={handlePasswordChange}
-                  className="w-full md:w-auto"
+                  disabled={!passwordFormValid || isChangingPassword}
+                  className="w-full sm:w-auto"
                 >
                   <Lock className="w-4 h-4 mr-2" />
-                  Update Password
+                  {isChangingPassword ? "Updating…" : "Update Password"}
                 </Button>
               </div>
 
               <Separator />
 
-              <div className="space-y-4">
-                <h4 className="font-medium">Two-Factor Authentication</h4>
-                <p className="text-sm text-muted-foreground">
-                  Add an extra layer of security to your account by enabling
-                  two-factor authentication.
+              {/* 2FA */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-foreground">Two-Factor Authentication</h4>
+                <p className="text-xs text-muted-foreground">
+                  Add an extra layer of security by requiring a verification code on sign-in.
                 </p>
-                <Button variant="outline">
+                <Button variant="outline" size="sm">
                   <Shield className="w-4 h-4 mr-2" />
                   Enable 2FA
                 </Button>
@@ -417,40 +518,50 @@ export default function UserSettings() {
             </CardContent>
           </Card>
 
-          {/* Save Settings */}
+          {/* ── Save bar ── */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-5">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h4 className="font-medium">Save Changes</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Don{`'`}t forget to save your settings before leaving this
-                    page.
+                  <p className="text-sm font-medium">Save Changes</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Notification and privacy preferences are saved together.
                   </p>
                 </div>
-                <Button>
+                <Button
+                  onClick={handleSaveAll}
+                  disabled={isSaving}
+                  className="shrink-0"
+                >
                   <Save className="w-4 h-4 mr-2" />
-                  Save All Settings
+                  {isSaving ? "Saving…" : "Save Settings"}
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Danger Zone */}
-          <Card className="border-destructive/20">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          {/* ── Danger zone ── */}
+          <Card className="border-destructive/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-destructive flex items-center gap-2 text-base">
+                <AlertTriangle className="w-4 h-4" aria-hidden />
+                Danger Zone
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h4 className="font-medium">Delete Account</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Permanently delete your account and all associated data.
-                    This action cannot be undone.
+                  <p className="text-sm font-medium">Delete Account</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Permanently removes your account and all associated data. This cannot be undone.
                   </p>
                 </div>
-                <Button variant="destructive" onClick={handleDeleteAccount}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete Account
                 </Button>
@@ -459,6 +570,56 @@ export default function UserSettings() {
           </Card>
         </div>
       </div>
+
+      {/* ── Delete confirmation dialog ── */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" aria-hidden />
+              Delete your account?
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete your account and all associated data.
+              This action <strong>cannot be undone</strong>. Enter your password to confirm.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-1.5 py-2">
+            <Label htmlFor={`${uid}-del-pw`} className="text-sm">
+              Your password
+            </Label>
+            <Input
+              id={`${uid}-del-pw`}
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Enter your password to confirm"
+              autoComplete="current-password"
+            />
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false)
+                setDeletePassword("")
+              }}
+              disabled={isDeletingAccount}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={!deletePassword || isDeletingAccount}
+            >
+              {isDeletingAccount ? "Deleting…" : "Delete My Account"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
-  );
+  )
 }

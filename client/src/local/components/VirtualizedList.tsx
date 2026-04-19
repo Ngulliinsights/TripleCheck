@@ -8,6 +8,7 @@ import React, {
   memo,
   useEffect,
 } from "react"
+// @ts-expect-error - declaration file not available for react-window.cjs
 import {
   VariableSizeList,
   FixedSizeList,
@@ -49,7 +50,8 @@ const CSS_CLASSES = {
 /*                               Shared Types                                 */
 /* -------------------------------------------------------------------------- */
 
-export type VirtualisedRenderFn<ItemType> = ( // cspell:disable-line
+// cspell: disable-next-line
+export type VirtualisedRenderFn<ItemType> = (
   item: ItemType,
   index: number,
   style: React.CSSProperties
@@ -61,7 +63,8 @@ export type ScrollAlignment = "auto" | "smart" | "center" | "start" | "end";
 /*                        Enterprise List Props & Handle                      */
 /* -------------------------------------------------------------------------- */
 
-export interface EnterpriseVirtualizedListProps<ItemType> { // cspell:disable-line
+// cspell: disable-next-line
+export interface EnterpriseVirtualizedListProps<ItemType> {
   items: readonly ItemType[];
   itemHeight: number | ((index: number) => number);
   estimatedItemHeight?: number;
@@ -69,7 +72,8 @@ export interface EnterpriseVirtualizedListProps<ItemType> { // cspell:disable-li
   containerWidth?: number | string;
   renderItem: VirtualisedRenderFn<ItemType>;
   keyExtractor: (item: ItemType, index: number) => React.Key;
-  overscanCount?: number; // cspell:disable-line
+  // cspell: disable-next-line
+  overscanCount?: number;
   onScroll?: (scrollTop: number) => void;
   onEndReached?: () => void;
   onEndReachedThreshold?: number;
@@ -87,6 +91,7 @@ export interface EnterpriseVirtualizedListProps<ItemType> { // cspell:disable-li
     | React.MutableRefObject<HTMLDivElement | null>;
   itemData?: Record<string, unknown>;
   debounceMs?: number;
+  // cspell: disable-next-line
 }
 
 export interface EnterpriseVirtualizedListHandle {
@@ -103,6 +108,7 @@ export interface EnterpriseVirtualizedListHandle {
 
 interface MemoizedRowData<ItemType> {
   items: readonly ItemType[];
+  // cspell: disable-next-line
   renderItem: VirtualisedRenderFn<ItemType>;
   itemData?: Record<string, unknown> | undefined;
 }
@@ -236,7 +242,8 @@ function EnterpriseVirtualizedListInner<ItemType>(
     containerWidth = "100%",
     renderItem,
     keyExtractor,
-    overscanCount = 5, // cspell:disable-line
+    // cspell: disable-next-line
+    overscanCount = 5,
     onScroll,
     onEndReached,
     onEndReachedThreshold = 0.8,
@@ -450,6 +457,7 @@ function EnterpriseVirtualizedListInner<ItemType>(
       itemCount: items.length,
       itemKey,
       itemData: memoizedItemData as MemoizedRowData<unknown>,
+      // cspell: disable-next-line
       overscanCount,
       onScroll: handleScroll,
       className: innerClassName,
@@ -462,6 +470,7 @@ function EnterpriseVirtualizedListInner<ItemType>(
       items.length,
       itemKey,
       memoizedItemData,
+      // cspell: disable-next-line
       overscanCount,
       handleScroll,
       innerClassName,
@@ -550,7 +559,8 @@ export interface GridVirtualizedListProps<ItemType> {
   ) => ReactNode;
   keyExtractor: (item: ItemType, index: number) => React.Key;
   gap?: number;
-  overscanCount?: number; // cspell:disable-line
+  // cspell: disable-next-line
+  overscanCount?: number;
   onScroll?: (scrollTop: number) => void;
   onEndReached?: () => void;
   onEndReachedThreshold?: number;
@@ -607,7 +617,8 @@ function GridVirtualizedListInner<ItemType>(
     renderItem,
     keyExtractor,
     gap = 16,
-    overscanCount = 1, // cspell:disable-line
+    // cspell: disable-next-line
+    overscanCount = 1,
     onScroll,
     onEndReached,
     onEndReachedThreshold = 0.8,
@@ -653,6 +664,8 @@ function GridVirtualizedListInner<ItemType>(
   );
 
   // Helper function to render individual grid items with better type safety
+  // Note: inline styles are necessary for virtualization positioning and sizing
+  /* stylelint-disable-next-line */
   const renderGridItem = useCallback(
     (
       itemIndex: number,
@@ -666,6 +679,7 @@ function GridVirtualizedListInner<ItemType>(
         return (
           <div
             key={`empty-${itemIndex}`}
+            // stylelint-disable-next-line
             style={createItemStyleWithVars()}
             className={emptyItemClasses}
             data-testid={`grid-empty-item-${itemIndex}`}
@@ -679,6 +693,7 @@ function GridVirtualizedListInner<ItemType>(
         return (
           <div
             key={`empty-${itemIndex}`}
+            // stylelint-disable-next-line
             style={createItemStyleWithVars()}
             className={emptyItemClasses}
             data-testid={`grid-empty-item-${itemIndex}`}
@@ -692,6 +707,7 @@ function GridVirtualizedListInner<ItemType>(
         return (
           <div
             key={keyExtractor(item, itemIndex)}
+            // stylelint-disable-next-line
             style={itemStyleWithVars}
             className={wrapperItemClasses}
             data-testid={`grid-item-${itemIndex}`}
@@ -710,6 +726,7 @@ function GridVirtualizedListInner<ItemType>(
         return (
           <div
             key={`error-${itemIndex}`}
+            // stylelint-disable-next-line
             style={createItemStyleWithVars()}
             className={errorItemClasses}
             data-testid={`grid-error-item-${itemIndex}`}
@@ -723,6 +740,8 @@ function GridVirtualizedListInner<ItemType>(
   );
 
   // Memoized row renderer for better performance with consistent return type
+  // Note: inline styles are necessary for virtualization positioning
+  /* stylelint-disable-next-line */
   const renderRow = useCallback(
     ({
       index: rowIndex,
@@ -764,11 +783,13 @@ function GridVirtualizedListInner<ItemType>(
 
       return (
         <div
+          // stylelint-disable-next-line
           style={rowStyleWithVars}
           className={CSS_CLASSES.GRID_ROW_CONTAINER}
           data-testid={`grid-row-${rowIndex}`}
         >
           <div
+            // stylelint-disable-next-line
             style={gridRowStyleWithVars}
             className={`${CSS_CLASSES.GRID_ROW} ${CSS_CLASSES.DYNAMIC_GAP}`}
           >

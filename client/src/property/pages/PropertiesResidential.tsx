@@ -1,6 +1,6 @@
 import React from "react"
 
-import { residentialConfig } from "../../local/config/propertyTypes"
+import { residentialConfig } from "../config/propertyTypes"
 import { PropertyListingRoute } from "../shared/PropertyListingRoute"
 
 export default function PropertiesResidential(): React.ReactElement {

@@ -2,8 +2,8 @@ import React, { useState, useCallback } from "react"
 
 import { CompareBar } from "../../property/components/CompareBar"
 import { CompareModal } from "../../property/components/CompareModal"
-import { PropertyListingPage } from "../components/property/PropertyListingPage"
-import { allPropertiesConfig } from "../config/propertyTypes"
+import { PropertyListingPage } from "../../property/components/PropertyListingPage"
+import { allPropertiesConfig } from "../../property/config/propertyTypes"
 
 /**
  * Modern Properties page using the enhanced property listing architecture
