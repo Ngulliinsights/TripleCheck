@@ -28,6 +28,7 @@ export * from "./unified-api-client"
 export * from './audit-trail-service'
 export * from './security-monitoring-service'
 export * from './performance-monitoring-service'
+export * from './AlertingService'
 
 // ============================================================================
 // SERVICE INSTANCE EXPORTS - Singleton References

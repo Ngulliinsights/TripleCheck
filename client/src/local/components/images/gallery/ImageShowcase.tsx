@@ -14,12 +14,12 @@ import React, {
   useMemo,
 } from 'react'
 
-import { Lightbox } from './gallery/Lightbox'
-import { ImageEngine } from './gallery/ImageEngine'
-import type { GalleryImage } from './gallery/types'
+import { Lightbox } from './Lightbox'
+import { ImageEngine } from './ImageEngine'
+import type { GalleryImage } from './types'
 
-import { Button } from '../ui/button'
-import { Card, CardContent } from '../ui/card'
+import { Button } from '../../ui/button'
+import { Card, CardContent } from '../../ui/card'
 import { cn } from '@/local/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────

@@ -23,7 +23,7 @@ import {
 // Unified import — formatDate lives in date-utils, formatPrice in formatters
 import { formatDate } from "../../local/utils/date-utils"
 import { formatPrice } from "../../local/utils/formatters"
-import { EnhancedImageShowcase } from "../../local/components/images/ImageShowcase"
+import { EnhancedImageShowcase } from "../../local/components/images/gallery/ImageShowcase"
 import { useProperty } from "../hooks/useProperty"
 import { PropertyErrorState, PropertyLoadingState } from "../components/shared/components"
 import {

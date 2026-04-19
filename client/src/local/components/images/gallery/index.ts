@@ -16,6 +16,7 @@ export * from "./BatchOperationsToolbar";
 export * from "./Lightbox";
 export * from "./SimpleGallery";
 export * from "./AdvancedGallery";
+export * from "./ImageShowcase";
 
 // Re-export main component
 export { default as ImageGallery } from "./ImageGallery";

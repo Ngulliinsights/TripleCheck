@@ -23,7 +23,7 @@ import { normalizeProperty } from "../utils/property-mapper"
 import { EnhancedPhotoManagementButton } from "../components/PhotoManagementButton"
 import { Badge } from "../../local/components/ui/badge"
 import { Button } from "../../local/components/ui/button"
-import { EnhancedImageShowcase } from "../../local/components/images/ImageShowcase"
+import { EnhancedImageShowcase } from "../../local/components/images/gallery/ImageShowcase"
 import {
   Card,
   CardContent,

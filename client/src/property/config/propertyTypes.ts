@@ -20,7 +20,7 @@ import {
   commercialPropertyAdapter,
   landPropertyAdapter,
 } from '../utils/propertyAdapters'
-import { fetchMockProperties } from '../../local/utils/mockPropertyApi'
+import { fetchMockProperties } from '../../local/test-utils/mockPropertyApi'
 
 // ---------------------------------------------------------------------------
 // Dev logger

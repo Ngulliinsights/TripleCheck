@@ -49,6 +49,13 @@ export {
   TestDataManager
 } from './E2ETestUtils'
 
+// Test helpers with race condition protection
+export {
+  createMockFetch,
+  createSafeFetch,
+  MockAuthProvider
+} from './test-helpers'
+
 // Types
 export type {
   E2ETestConfig,
