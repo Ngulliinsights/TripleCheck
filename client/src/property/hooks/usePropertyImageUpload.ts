@@ -7,20 +7,18 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 
-import { getImageServiceOrchestrator, type DefaultImageServiceOrchestrator } from '../../../property/services/images/ImageServiceOrchestrator'
-import { PropertyImageUploadService } from '../../../property/services/images/PropertyImageUploadService'
-// Legacy import for backward compatibility
-// import { PropertyImageUploadCoordinator } from '../../../property/services/images/PropertyImageUploadCoordinator' // File doesn't exist
-import { PropertyImageWorkflowManager } from '../../../property/services/images/PropertyImageWorkflowManager'
+import { getImageServiceOrchestrator, type DefaultImageServiceOrchestrator } from '../services/images/ImageServiceOrchestrator'
+import { PropertyImageUploadService } from '../services/images/PropertyImageUploadService'
+import { PropertyImageWorkflowManager } from '../services/images/PropertyImageWorkflowManager'
 import type {
   UploadSession,
   UploadProgress,
   PropertyImage,
   DocumentType,
   WorkflowStatus,
-} from '../../types/images'
-import { ImageProcessingError } from '../../types/images'
-import { ImageUtils } from '../../utils/images/unified-utils'
+} from '../../local/types/images'
+import { ImageProcessingError } from '../../local/types/images'
+import { ImageUtils } from '../../local/utils/images/unified-utils'
 
 export interface UsePropertyImageUploadOptions {
   onUploadComplete?: (imageId: string, documentType?: DocumentType) => void;

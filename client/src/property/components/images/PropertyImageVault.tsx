@@ -6,7 +6,7 @@
 
 import React, { useState, useCallback, useMemo, memo } from "react"
 
-import { usePropertyImageUpload } from "../../hooks/images/usePropertyImageUpload"
+import { usePropertyImageUpload } from "../../hooks/usePropertyImageUpload"
 import { getImageServiceOrchestrator } from "../../services/images/ImageServiceOrchestrator"
 import type {
   PropertyImage,
@@ -15,9 +15,9 @@ import type {
   WorkflowStatus,
   ImageStatus,
   ApprovalStatus,
-} from "../../types/images"
-import { ImageProcessingError } from "../../types/images"
-import { ImageUtils } from "../../utils/images/unified-utils"
+} from "../../../local/types/images"
+import { ImageProcessingError } from "../../../local/types/images"
+import { ImageUtils } from "../../../local/utils/images/unified-utils"
 
 // Define missing types to resolve TypeScript errors
 

@@ -3,7 +3,7 @@
  * Manages sample property images for the ListProperty component
  */
 
-export interface PropertyImage {
+export interface GalleryPreviewImage {
   id: string;
   url: string;
   alt: string;
@@ -13,7 +13,7 @@ export interface PropertyImage {
 }
 
 // Commercial property images
-export const COMMERCIAL_IMAGES: PropertyImage[] = [
+export const COMMERCIAL_IMAGES: GalleryPreviewImage[] = [
   {
     id: 'comm-1',
     url: '/assets/Commercial/ash-lab-ka4HDVIti78-unsplash.jpg',
@@ -101,7 +101,7 @@ export const COMMERCIAL_IMAGES: PropertyImage[] = [
 ];
 
 // Residential property images
-export const RESIDENTIAL_IMAGES: PropertyImage[] = [
+export const RESIDENTIAL_IMAGES: GalleryPreviewImage[] = [
   {
     id: 'res-1',
     url: '/assets/Residential/alejandra-cifre-gonzalez-ylyn5r4vxcA-unsplash.jpg',
@@ -224,7 +224,7 @@ export const ALL_PROPERTY_IMAGES = [...COMMERCIAL_IMAGES, ...RESIDENTIAL_IMAGES]
 /**
  * Get images based on property type
  */
-export function getImagesByPropertyType(propertyType: string): PropertyImage[] {
+export function getImagesByPropertyType(propertyType: string): GalleryPreviewImage[] {
   const isCommercial = propertyType === 'commercial';
   
   if (isCommercial) {
@@ -238,7 +238,7 @@ export function getImagesByPropertyType(propertyType: string): PropertyImage[] {
 /**
  * Get random images for a property type
  */
-export function getRandomImages(propertyType: string, count: number = 3): PropertyImage[] {
+export function getRandomImages(propertyType: string, count: number = 3): GalleryPreviewImage[] {
   const availableImages = getImagesByPropertyType(propertyType);
   const shuffled = [...availableImages].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
@@ -247,7 +247,7 @@ export function getRandomImages(propertyType: string, count: number = 3): Proper
 /**
  * Get a single random image for a property type
  */
-export function getRandomImage(propertyType: string): PropertyImage {
+export function getRandomImage(propertyType: string): GalleryPreviewImage {
   const images = getImagesByPropertyType(propertyType);
   const randomImage = images[Math.floor(Math.random() * images.length)];
   return randomImage || images[0] || { id: 'default', url: '/images/default-property.jpg', alt: 'Default property image', category: 'residential' as const };
@@ -256,6 +256,6 @@ export function getRandomImage(propertyType: string): PropertyImage {
 /**
  * Convert PropertyImage array to URL strings for API
  */
-export function imagesToUrls(images: PropertyImage[]): string[] {
+export function imagesToUrls(images: GalleryPreviewImage[]): string[] {
   return images.map(img => img.url);
 }

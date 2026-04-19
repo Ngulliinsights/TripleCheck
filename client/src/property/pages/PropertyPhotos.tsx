@@ -1,12 +1,12 @@
-﻿import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Camera, Image as ImageIcon, AlertTriangle, Zap } from "lucide-react"
 import { useState, useCallback } from "react"
 
 import {
-  PropertyImageVault,
   ImageGallery,
   IMAGE_COMPONENT_PRESETS,
 } from "../../local/components/images"
+import { PropertyImageVault } from "../components/images"
 import type { BaseImage } from "../../local/components/images"
 import { Badge } from "../../local/components/ui/badge"
 import { Button } from "../../local/components/ui/button"

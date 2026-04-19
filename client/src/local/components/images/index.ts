@@ -6,7 +6,6 @@
 // Component exports
 export { default as ImageGallery } from './ImageGallery'
 export { default as PropertyImageGallery } from './ImageGallery' // Alias for backward compatibility
-export { default as PropertyImageVault } from './PropertyImageVault'
 
 // Unified utilities and services
 export { ImageUtils } from '../../utils/images/unified-utils'
@@ -80,10 +79,4 @@ export const IMAGE_COMPONENT_PRESETS = {
 } as const;
 
 // Service exports
-// export { PropertyImageUploadCoordinator } from '../../services/images/PropertyImageUploadCoordinator' // File doesn't exist
-export { PropertyImageValidationService } from '../../services/images/PropertyImageValidationService'
-export { PropertyImageWorkflowManager } from '../../services/images/PropertyImageWorkflowManager'
 export { ImageMetadataService } from '../../services/images/ImageMetadataService'
-
-// Hook exports
-export { usePropertyImageUpload } from '../../hooks/images/usePropertyImageUpload'

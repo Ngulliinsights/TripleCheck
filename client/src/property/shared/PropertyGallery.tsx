@@ -42,6 +42,11 @@ interface PropertyImageGalleryProps {
   counterIcon?: React.ReactNode
 }
 
+/**
+ * @deprecated Use ImageGallery or AdvancedGallery from `local/components/images/gallery` instead.
+ * This component is maintained for backward compatibility with older pages but will be removed
+ * in a future architectural update to consolidate image viewing infrastructure.
+ */
 export const PropertyImageGallery: React.FC<PropertyImageGalleryProps> = ({
   images,
   emptyIcon = "📷",
@@ -236,6 +241,9 @@ interface CarouselShellProps {
   children: React.ReactNode
 }
 
+/**
+ * @deprecated Use generic carousel components provided by the shared gallery suite.
+ */
 export const CarouselShell: React.FC<CarouselShellProps> = ({
   title,
   subtitle,
@@ -348,6 +356,9 @@ interface UseCarouselReturn {
   setIsAutoPlaying: React.Dispatch<React.SetStateAction<boolean>>
 }
 
+/**
+ * @deprecated Please use built-in state tools within AdvancedGallery.
+ */
 export function useCarousel({
   totalItems,
   itemsPerSlide = 3,

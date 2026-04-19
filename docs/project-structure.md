@@ -1,6 +1,6 @@
 # Project Structure
 
-**Generated:** 4/19/2026, 10:36:22 AM
+**Generated:** 4/19/2026, 12:04:16 PM
 **Max Depth:** 7 levels
 
 ```
@@ -217,29 +217,6 @@
 │   │   │   │   │   ├── NavigationErrorBoundary.tsx
 │   │   │   │   │   ├── NavigationSearch.tsx
 │   │   │   │   │   └── SafeNavigation.tsx
-│   │   │   │   ├── property/
-│   │   │   │   │   ├── filters/
-│   │   │   │   │   │   ├── AllPropertiesFilters.tsx
-│   │   │   │   │   │   ├── BasePropertyFilters.tsx
-│   │   │   │   │   │   ├── CommercialFilters.tsx
-│   │   │   │   │   │   ├── index.ts
-│   │   │   │   │   │   ├── LandFilters.tsx
-│   │   │   │   │   │   └── ResidentialFilters.tsx
-│   │   │   │   │   ├── shared/
-│   │   │   │   │   │   ├── examples/
-│   │   │   │   │   │   │   ├── index.ts
-│   │   │   │   │   │   │   └── MinimalPropertyCard.tsx
-│   │   │   │   │   │   ├── index.ts
-│   │   │   │   │   │   ├── PropertyFeatures.tsx
-│   │   │   │   │   │   ├── PropertyImageSection.tsx
-│   │   │   │   │   │   └── QuickActionsOverlay.tsx
-│   │   │   │   │   ├── index.ts
-│   │   │   │   │   ├── PhotoManagementButton.tsx
-│   │   │   │   │   ├── PropertyArchitectureComparison.tsx
-│   │   │   │   │   ├── PropertyCard.tsx
-│   │   │   │   │   ├── PropertyDataGrid.tsx
-│   │   │   │   │   ├── PropertyListingPage.tsx
-│   │   │   │   │   └── PropertySkeletonGrid.tsx
 │   │   │   │   ├── skeletons/
 │   │   │   │   │   └── PropertyDetailsSkeleton.tsx
 │   │   │   │   ├── ui/
@@ -326,7 +303,6 @@
 │   │   │   │   ├── image-components.config.ts
 │   │   │   │   ├── image-system.config.ts
 │   │   │   │   ├── images.ts
-│   │   │   │   ├── propertyTypes.ts
 │   │   │   │   └── user-journeys.ts
 │   │   │   ├── contexts/
 │   │   │   │   └── ThemeContext.tsx
@@ -396,11 +372,6 @@
 │   │   │   │   ├── usePaymentGuidance.ts
 │   │   │   │   ├── usePerformanceOptimization.ts
 │   │   │   │   ├── usePolling.ts
-│   │   │   │   ├── usePropertyActions.ts
-│   │   │   │   ├── usePropertyCardActions.ts
-│   │   │   │   ├── usePropertyCardState.ts
-│   │   │   │   ├── usePropertyCompareActions.ts
-│   │   │   │   ├── usePropertyFormatting.ts
 │   │   │   │   ├── useSafeQuery.ts
 │   │   │   │   ├── useSecurity.ts
 │   │   │   │   └── useWebSocket.ts
@@ -518,7 +489,6 @@
 │   │   │   │   └── TestUtils.tsx
 │   │   │   ├── types/
 │   │   │   │   ├── contracts/
-│   │   │   │   │   ├── property-contracts.ts
 │   │   │   │   │   └── user-contracts.ts
 │   │   │   │   ├── images/
 │   │   │   │   │   ├── index.ts
@@ -543,8 +513,6 @@
 │   │   │   │   ├── logger.ts
 │   │   │   │   ├── mockPropertyApi.ts
 │   │   │   │   ├── navigation.ts
-│   │   │   │   ├── property-mapper.ts
-│   │   │   │   ├── propertyAdapters.ts
 │   │   │   │   ├── safe-navigation.ts
 │   │   │   │   ├── test-helpers.tsx
 │   │   │   │   └── toast-utils.ts
@@ -563,6 +531,23 @@
 │   │   │   └── index.ts
 │   │   ├── property/
 │   │   │   ├── components/
+│   │   │   │   ├── filters/
+│   │   │   │   │   ├── AllPropertiesFilters.tsx
+│   │   │   │   │   ├── BasePropertyFilters.tsx
+│   │   │   │   │   ├── CommercialFilters.tsx
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── LandFilters.tsx
+│   │   │   │   │   └── ResidentialFilters.tsx
+│   │   │   │   ├── images/
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── shared/
+│   │   │   │   │   ├── examples/
+│   │   │   │   │   │   ├── index.ts
+│   │   │   │   │   │   └── MinimalPropertyCard.tsx
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── PropertyFeatures.tsx
+│   │   │   │   │   ├── PropertyImageSection.tsx
+│   │   │   │   │   └── QuickActionsOverlay.tsx
 │   │   │   │   ├── wizard/
 │   │   │   │   │   ├── examples/
 │   │   │   │   │   │   └── WizardExamples.tsx
@@ -585,13 +570,22 @@
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── LandCard.tsx
 │   │   │   │   ├── PerformanceTestPanel.tsx
+│   │   │   │   ├── PhotoManagementButton.tsx
+│   │   │   │   ├── PropertyArchitectureComparison.tsx
+│   │   │   │   ├── PropertyCard.tsx
 │   │   │   │   ├── PropertyCardShowcase.module.css
 │   │   │   │   ├── PropertyCardShowcase.module.css.d.ts
 │   │   │   │   ├── PropertyCardShowcase.tsx
+│   │   │   │   ├── PropertyDataGrid.tsx
+│   │   │   │   ├── PropertyListingPage.tsx
 │   │   │   │   ├── PropertyListingWizard.tsx
 │   │   │   │   ├── PropertyMap.tsx
 │   │   │   │   ├── PropertyReviews.tsx
+│   │   │   │   ├── PropertySkeletonGrid.tsx
 │   │   │   │   └── PropertyTestComponent.tsx
+│   │   │   ├── config/
+│   │   │   │   ├── index.ts
+│   │   │   │   └── propertyTypes.ts
 │   │   │   ├── contexts/
 │   │   │   │   ├── ARCHITECTURE.md
 │   │   │   │   ├── index.ts
@@ -599,7 +593,11 @@
 │   │   │   ├── hooks/
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── useLandProperty.ts
-│   │   │   │   └── useProperty.ts
+│   │   │   │   ├── useProperty.ts
+│   │   │   │   ├── usePropertyCardActions.ts
+│   │   │   │   ├── usePropertyCardState.ts
+│   │   │   │   ├── usePropertyCompareActions.ts
+│   │   │   │   └── usePropertyFormatting.ts
 │   │   │   ├── pages/
 │   │   │   │   ├── CommercialProperties.tsx
 │   │   │   │   ├── index.ts
@@ -616,6 +614,13 @@
 │   │   │   │   ├── PropertyVerification.tsx
 │   │   │   │   └── PropertyWizard.tsx
 │   │   │   ├── services/
+│   │   │   │   ├── images/
+│   │   │   │   │   ├── ImageServiceOrchestrator.ts
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── PropertyImageUploadService.ts
+│   │   │   │   │   ├── PropertyImageValidationService.ts
+│   │   │   │   │   └── PropertyImageWorkflowManager.ts
+│   │   │   │   ├── images 2&1 && cp dProjectsDAfricanPropertyTrustclientsrclocalservicesimagesImageServiceOrchestrator.ts dProjectsDAfricanPropertyTrustclientsrcpropertyservicesimages
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── mock-land-data.ts
 │   │   │   │   ├── property-api.ts
@@ -633,12 +638,18 @@
 │   │   │   │   └── performanceTest.ts
 │   │   │   ├── types/
 │   │   │   │   ├── index.ts
+│   │   │   │   ├── property-contracts.ts
 │   │   │   │   └── property.types.ts
 │   │   │   ├── utils/
+│   │   │   │   ├── index.ts
 │   │   │   │   ├── normalizeLandProperty.ts
 │   │   │   │   ├── normalizeProperty.ts
+│   │   │   │   ├── property-mapper.ts
+│   │   │   │   ├── propertyAdapters.ts
 │   │   │   │   └── propertyImages.ts
-│   │   │   └── index.ts
+│   │   │   ├── config && cp dProjectsDAfricanPropertyTrustclientsrclocaltypescontractsproperty-contracts.ts dProjectsDAfricanPropertyTrustclientsrcpropertytypes
+│   │   │   ├── index.ts
+│   │   │   └── utils && cp dProjectsDAfricanPropertyTrustclientsrclocalutilsproperty-mapper.ts dProjectsDAfricanPropertyTrustclientsrcpropertyutils
 │   │   ├── search/
 │   │   │   ├── components/
 │   │   │   │   ├── ConsolidatedSearch.tsx
@@ -708,6 +719,7 @@
 │   │   │   ├── components/
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── UserNotifications.tsx
+│   │   │   │   ├── UserProfile.module.css
 │   │   │   │   └── UserProfile.tsx
 │   │   │   ├── hooks/
 │   │   │   │   ├── index.ts
