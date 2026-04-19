@@ -10,7 +10,7 @@ import {
   generateCorrelationId,
   ErrorCategory,
   ErrorSeverity
-} from "../../../src/local/error-handling";
+} from "./error-handling";
 import { logger } from "../../infrastructure/monitoring/logger";
 
 import { auditLogger, AuditSeverity } from "../AuditLogger";

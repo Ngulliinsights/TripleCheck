@@ -7,9 +7,9 @@ import {
   ExternalServiceError, 
   ErrorCode, 
   HttpStatusCode 
-} from '../../../../src/local/error-handling';
+} from './error-handling';
 import { logger } from '../../../infrastructure/monitoring/logger';
-import { auditLogger, AuditSeverity } from '../../AuditLogger';
+import { auditLogger, AuditSeverity } from '../../../infrastructure/audit/audit-logger';
 import { errorHandlingService } from '../ErrorHandlingService';
 import { fallbackManager } from '../FallbackManager';
 import { retryPolicyManager } from '../RetryPolicyManager';
@@ -160,7 +160,7 @@ export class GovernmentApiService {
       criticalityLevel: 'high' as const
     };
 
-    const result = await errorHandler.executeWithErrorHandling(
+    const result = await errorHandlingService.executeWithErrorHandling(
       () => this.performRegistrySearch(titleNumber),
       context,
       degradationContext
@@ -181,9 +181,9 @@ export class GovernmentApiService {
         details: {
           titleNumber,
           handlingStrategy: result.handlingStrategy,
-          warnings: result.warnings
-        },
-        metadata: { correlationId: result.correlationId }
+          warnings: result.warnings,
+          correlationId: result.correlationId
+        }
       });
 
       return result.data!;
@@ -229,7 +229,7 @@ export class GovernmentApiService {
       criticalityLevel: 'medium' as const
     };
 
-    const result = await errorHandler.executeWithErrorHandling(
+    const result = await errorHandlingService.executeWithErrorHandling(
       () => this.performCourtRecordsSearch(propertyId, ownerNames),
       context,
       degradationContext
@@ -473,7 +473,7 @@ export class GovernmentApiService {
    */
   createErrorHandledWrappers() {
     return {
-      searchLandRegistry: errorHandler.createErrorHandledFunction(
+      searchLandRegistry: errorHandlingService.createErrorHandledFunction(
         (titleNumber: string) => this.performRegistrySearch(titleNumber),
         { service: 'government-registry', operation: 'search_land_registry' },
         (titleNumber: string) => ({
@@ -485,7 +485,7 @@ export class GovernmentApiService {
         })
       ),
 
-      searchCourtRecords: errorHandler.createErrorHandledFunction(
+      searchCourtRecords: errorHandlingService.createErrorHandledFunction(
         (propertyId: string, ownerNames: string[]) => 
           this.performCourtRecordsSearch(propertyId, ownerNames),
         { service: 'court-records', operation: 'search_court_records' },

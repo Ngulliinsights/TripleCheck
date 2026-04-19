@@ -1,4 +1,4 @@
-import { AUTH_ERROR_MESSAGES } from '@core/error-handling/base-error';
+import { AUTH_ERROR_MESSAGES } from '@local/error-handling/base-error';
 
 // App-specific authentication error messages extending core error messages
 export const APP_AUTH_ERRORS = {
