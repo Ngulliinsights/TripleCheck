@@ -1,9 +1,40 @@
 import { NormalizedProperty, PropertyOwner } from '@shared/types/property'
+import type { LandProperty } from '../components/PropertyCardShowcase'
+
+/**
+ * Normalizes land-specific property data
+ */
+export function normalizeLandProperty(land: LandProperty): NormalizedProperty {
+  const normalizedLocation = typeof land.location === 'string' 
+    ? land.location 
+    : land.location.address;
+
+  return {
+    id: String(land.id),
+    title: land.title,
+    description: land.description,
+    price: Number(land.price) || 0,
+    location: normalizedLocation,
+    images: land.images || [],
+    verified: land.verificationStatus === 'verified',
+    type: 'residential',
+    category: 'land',
+    features: land.features || {},
+    createdAt: land.dateAdded ? new Date(land.dateAdded).toISOString() : new Date().toISOString(),
+    status: (land as any).status || 'available',
+  };
+}
 
 /**
  * Normalizes property data to ensure consistent structure
  */
-export const normalizeProperty = (property: unknown, category: 'residential' | 'commercial' | 'land' = 'residential'): NormalizedProperty => {
+export const normalizeProperty = (property: any, category: 'residential' | 'commercial' | 'land' = 'residential'): NormalizedProperty => {
+  // If it's a land property shape, use the dedicated logic
+  if (property.location !== undefined && property.verificationStatus !== undefined && !property.category) {
+    if (typeof property.location !== 'string' || property.verificationStatus === 'verified') {
+       return normalizeLandProperty(property as LandProperty);
+    }
+  }
   const prop = property as Record<string, any>;
   const result: NormalizedProperty = {
     id: String(prop.id),

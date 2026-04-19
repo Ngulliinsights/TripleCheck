@@ -13,7 +13,7 @@ import type {
   DocumentType,
   ImageServiceConfig,
 } from '../types/images'
-import { ImageUtils } from '../../local/utils/images/unified-utils'
+import { ImageUtils } from '../../../local/utils/images/unified-utils'
 
 // ---------------------------------------------------------------------------
 // Public interfaces

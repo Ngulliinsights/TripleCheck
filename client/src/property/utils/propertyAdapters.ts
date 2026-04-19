@@ -4,100 +4,116 @@ import type {
   ResidentialProperty,
   CommercialProperty,
   LandProperty,
-  PropertyAdapter
+  PropertyAdapter,
 } from '@shared/types/property'
 
-/**
- * Utility functions to convert legacy Property objects to normalized format
- * These adapters ensure complete type safety and exact compatibility with exactOptionalPropertyTypes
- * 
- * Key architectural principles:
- * - Never assign undefined to optional properties - either include them with valid values or omit entirely
- * - Use conditional object construction with explicit type control
- * - Separate required and optional property construction completely
- * - Clean input validation with definitive true/false decisions
- */
+// ─── Value coercion helpers ────────────────────────────────────────────────────
 
-// Helper function to normalize location with enhanced type safety
 function normalizeLocation(location: string | { address: string }): string {
   return typeof location === 'string' ? location : location.address;
 }
 
-// Helper function to normalize price with better error handling
 function normalizePrice(price: string | number): number {
   if (typeof price === 'number') return price;
   const parsed = parseFloat(price.replace(/[^0-9.-]/g, ''));
   return isNaN(parsed) ? 0 : parsed;
 }
 
-// Helper function to normalize images with fallback handling
 function normalizeImages(property: Property): string[] {
-  return property.images || property.imageUrls || [];
+  return property.images ?? property.imageUrls ?? [];
 }
 
-// Helper function to determine property category with improved logic
+function normalizeVerificationStatus(
+  status: unknown
+): 'verified' | 'pending' | 'unverified' | 'flagged' {
+  switch (status) {
+    case 'verified':
+    case 'pending':
+    case 'unverified':
+    case 'flagged':
+      return status;
+    case 'draft':
+      return 'pending';
+    default:
+      return 'pending';
+  }
+}
+
+// ─── Optional-field extraction helpers ────────────────────────────────────────
+// Returns undefined when the value should be omitted entirely (null / undefined / '').
+// Never assigns undefined to a property — safe with exactOptionalPropertyTypes.
+
+function toNumber(value: unknown): number | undefined {
+  if (value == null || value === '') return undefined;
+  const n = Number(value);
+  return isNaN(n) ? undefined : n;
+}
+
+function toBoolean(value: unknown): boolean | undefined {
+  return value == null ? undefined : Boolean(value);
+}
+
+function toString(value: unknown): string | undefined {
+  return value == null || value === '' ? undefined : String(value);
+}
+
+/**
+ * Returns a shallow copy of `obj` with all undefined / null / '' values removed.
+ * Omitting a key entirely is the only correctway to handle optional properties
+ * under exactOptionalPropertyTypes — setting them to `undefined` is a type error.
+ */
+function pickDefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined && v !== null && v !== '')
+  ) as Partial<T>;
+}
+
+/**
+ * Pulls through any feature keys not in `handledKeys`, stripping nullish values.
+ * Keeps adapters open to arbitrary extra data without repeating the filter logic.
+ */
+function passAdditionalFeatures(
+  features: Record<string, unknown> | undefined,
+  handledKeys: ReadonlySet<string>
+): Record<string, unknown> {
+  if (!features) return {};
+  return pickDefined(
+    Object.fromEntries(Object.entries(features).filter(([k]) => !handledKeys.has(k)))
+  );
+}
+
+// ─── Category detection ────────────────────────────────────────────────────────
+
 function determineCategory(property: Property): 'residential' | 'commercial' | 'land' {
-  const type = (property.type || property.propertyType || '').toLowerCase();
+  const type = (property.type ?? property.propertyType ?? '').toLowerCase();
   const title = property.title.toLowerCase();
   const description = property.description.toLowerCase();
 
-  // Check for land indicators with more comprehensive patterns
-  if (type.includes('land') ||
+  if (
+    type.includes('land') ||
     title.includes('land') ||
     title.includes('acre') ||
     title.includes('plot') ||
-    description.includes('land')) {
+    description.includes('land')
+  ) {
     return 'land';
   }
 
-  // Check for commercial indicators with expanded patterns
-  const commercialTypes = ['office', 'retail', 'warehouse', 'industrial', 'commercial', 'shop', 'store'];
-  if (commercialTypes.some(ct => type.includes(ct)) ||
-    title.includes('office') ||
-    title.includes('commercial') ||
-    title.includes('retail') ||
-    title.includes('business')) {
+  const commercialKeywords = ['office', 'retail', 'warehouse', 'industrial', 'commercial', 'shop', 'store'];
+  if (
+    commercialKeywords.some(kw => type.includes(kw)) ||
+    ['office', 'commercial', 'retail', 'business'].some(kw => title.includes(kw))
+  ) {
     return 'commercial';
   }
 
-  // Default to residential
   return 'residential';
 }
 
-// Enhanced helper to safely extract valid values - returns undefined only when we should omit the property
-function extractValidNumber(value: unknown): number | undefined {
-  if (value === null || value === undefined || value === '') return undefined;
-  const num = Number(value);
-  return isNaN(num) ? undefined : num;
-}
+// ─── Base adapter ──────────────────────────────────────────────────────────────
 
-function extractValidBoolean(value: unknown): boolean | undefined {
-  if (value === null || value === undefined) return undefined;
-  return Boolean(value);
-}
-
-function extractValidString(value: unknown): string | undefined {
-  if (value === null || value === undefined || value === '') return undefined;
-  return String(value);
-}
-
-// Helper to normalize verification status with strict type control
-function normalizeVerificationStatus(status: unknown): 'verified' | 'pending' | 'unverified' | 'flagged' {
-  if (status === 'verified' || status === 'pending' || status === 'unverified' || status === 'flagged') {
-    return status;
-  }
-  // Handle the draft -> pending conversion case
-  if (status === 'draft') {
-    return 'pending';
-  }
-  // Default to pending for any other case
-  return 'pending';
-}
-
-// Base adapter for converting Property to NormalizedProperty
 export const basePropertyAdapter: PropertyAdapter<Property> = (property: Property): NormalizedProperty => {
-  // Build the core required properties with strict type control
-  const coreProperties = {
+  const required: NormalizedProperty = {
     id: String(property.id),
     title: property.title,
     description: property.description,
@@ -105,365 +121,251 @@ export const basePropertyAdapter: PropertyAdapter<Property> = (property: Propert
     location: normalizeLocation(property.location),
     images: normalizeImages(property),
     verified: property.verificationStatus === 'verified',
-    type: property.type || property.propertyType || 'unknown',
+    type: property.type ?? property.propertyType ?? 'unknown',
     category: determineCategory(property),
-    features: property.features || {},
-    createdAt: property.createdAt ? new Date(property.createdAt).toISOString() : new Date().toISOString(),
-    updatedAt: property.updatedAt ? new Date(property.updatedAt).toISOString() : new Date().toISOString(),
-    status: (property.status as 'available' | 'under-offer' | 'sold' | 'rented' | 'pending') || 'available',
-    rating: property.aiVerificationResults?.overallScore || 0,
+    features: property.features ?? {},
+    createdAt: property.createdAt
+      ? new Date(property.createdAt).toISOString()
+      : new Date().toISOString(),
+    updatedAt: property.updatedAt
+      ? new Date(property.updatedAt).toISOString()
+      : new Date().toISOString(),
+    status: (property.status as NormalizedProperty['status']) ?? 'available',
+    rating: property.aiVerificationResults?.overallScore ?? 0,
     verificationStatus: normalizeVerificationStatus(property.verificationStatus),
   };
 
-  // Start with the core properties as our result
-  let result: NormalizedProperty = coreProperties;
+  const optionals = pickDefined({
+    views: toNumber(property.viewCount),
+    trustScore: toNumber(property.trustScore),
+    coordinates: property.coordinates ?? undefined,
+    owner: property.owner
+      ? {
+          id: property.owner.id,
+          name:
+            `${property.owner.firstName ?? ''} ${property.owner.lastName ?? ''}`.trim() ||
+            property.owner.username,
+          email: property.owner.email,
+          trustScore: property.owner.trustScore,
+          isVerifiedAgent: property.owner.isVerifiedAgent,
+        }
+      : undefined,
+  });
 
-  // Conditionally add optional properties only when they have definite values
-  const views = extractValidNumber(property.viewCount);
-  if (views !== undefined) {
-    result = { ...result, views };
-  }
-
-  const trustScore = extractValidNumber(property.trustScore);
-  if (trustScore !== undefined) {
-    result = { ...result, trustScore };
-  }
-
-  if (property.owner) {
-    result = { 
-      ...result, 
-      owner: {
-        id: property.owner.id,
-        name: `${property.owner.firstName || ''} ${property.owner.lastName || ''}`.trim() || property.owner.username,
-        email: property.owner.email,
-        trustScore: property.owner.trustScore,
-        isVerifiedAgent: property.owner.isVerifiedAgent,
-      }
-    };
-  }
-
-  if (property.coordinates) {
-    result = { ...result, coordinates: property.coordinates };
-  }
-
-  return result;
+  return { ...required, ...optionals };
 };
 
-// Residential property adapter with bulletproof optional property handling
+// ─── Residential adapter ───────────────────────────────────────────────────────
+
+const RESIDENTIAL_HANDLED = new Set([
+  'bedrooms', 'bathrooms', 'squareFeet', 'amenities', 'furnished', 'petFriendly',
+  'parkingSpaces', 'yearBuilt', 'balcony', 'garden',
+]);
+
 export const residentialPropertyAdapter: PropertyAdapter<Property> = (property: Property): ResidentialProperty => {
   const base = basePropertyAdapter(property);
+  const f = property.features ?? {};
 
-  // Create the core required features with no undefined values
-  const coreFeatures = {
-    bedrooms: Number(property.bedrooms || property.features?.bedrooms) || 0,
-    bathrooms: Number(property.bathrooms || property.features?.bathrooms) || 0,
-    squareFeet: Number(property.size || property.features?.squareFeet) || 0,
-    amenities: property.amenities || property.features?.amenities || [],
-    furnished: Boolean(property.features?.furnished),
-    petFriendly: Boolean(property.features?.petFriendly),
+  const coreFeatures: ResidentialProperty['features'] = {
+    bedrooms: Number(property.bedrooms ?? f.bedrooms) || 0,
+    bathrooms: Number(property.bathrooms ?? f.bathrooms) || 0,
+    squareFeet: Number(property.size ?? f.squareFeet) || 0,
+    amenities: property.amenities ?? f.amenities ?? [],
+    furnished: Boolean(f.furnished),
+    petFriendly: Boolean(f.petFriendly),
   };
-
-  // Start with existing features (cleaned) plus our core features
-  let combinedFeatures: ResidentialProperty['features'] = {
-    ...coreFeatures
-  };
-
-  // Conditionally add optional features only when they have valid values
-  const parkingSpaces = extractValidNumber(property.features?.parkingSpaces);
-  if (parkingSpaces !== undefined) {
-    combinedFeatures = { ...combinedFeatures, parkingSpaces };
-  }
-
-  const yearBuilt = extractValidNumber(property.features?.yearBuilt);
-  if (yearBuilt !== undefined) {
-    combinedFeatures = { ...combinedFeatures, yearBuilt };
-  }
-
-  const balcony = extractValidBoolean(property.features?.balcony);
-  if (balcony !== undefined) {
-    combinedFeatures = { ...combinedFeatures, balcony };
-  }
-
-  const garden = extractValidBoolean(property.features?.garden);
-  if (garden !== undefined) {
-    combinedFeatures = { ...combinedFeatures, garden };
-  }
-
-  // Add any additional properties from the original features that aren't explicitly handled
-  // but filter out undefined values to maintain exactOptionalPropertyTypes compliance
-  const additionalFeatures = Object.fromEntries(
-    Object.entries(property.features || {}).filter(([key, value]) => 
-      !['bedrooms', 'bathrooms', 'squareFeet', 'amenities', 'furnished', 'petFriendly', 
-        'parkingSpaces', 'yearBuilt', 'balcony', 'garden'].includes(key) && 
-      value !== undefined && value !== null && value !== ''
-    )
-  );
-
-  combinedFeatures = { ...combinedFeatures, ...additionalFeatures };
 
   return {
     ...base,
     category: 'residential',
-    type: (property.type as ResidentialProperty['type']) || 'apartment',
-    features: combinedFeatures,
+    type: (property.type as ResidentialProperty['type']) ?? 'apartment',
+    features: {
+      ...coreFeatures,
+      ...pickDefined({
+        parkingSpaces: toNumber(f.parkingSpaces),
+        yearBuilt: toNumber(f.yearBuilt),
+        balcony: toBoolean(f.balcony),
+        garden: toBoolean(f.garden),
+      }),
+      ...passAdditionalFeatures(f, RESIDENTIAL_HANDLED),
+    },
   };
 };
 
-// Commercial property adapter with comprehensive optional property management
+// ─── Commercial adapter ────────────────────────────────────────────────────────
+
+const COMMERCIAL_HANDLED = new Set([
+  'size', 'yearBuilt', 'occupancyRate', 'roi', 'parkingSpaces',
+  'floors', 'elevators', 'airConditioning', 'security', 'loadingDock',
+]);
+
 export const commercialPropertyAdapter: PropertyAdapter<Property> = (property: Property): CommercialProperty => {
   const base = basePropertyAdapter(property);
+  const f = property.features ?? {};
 
-  // Build the required features with definitive values
-  const coreFeatures = {
-    size: Number(property.size || property.area || property.features?.squareFeet) || 0,
-    yearBuilt: Number(property.features?.yearBuilt) || new Date().getFullYear(),
+  const coreFeatures: CommercialProperty['features'] = {
+    size: Number(property.size ?? property.area ?? f.squareFeet) || 0,
+    yearBuilt: Number(f.yearBuilt) || new Date().getFullYear(),
   };
-
-  // Start with core features
-  let combinedFeatures: CommercialProperty['features'] = {
-    ...coreFeatures
-  };
-
-  // Conditionally add each optional feature only when valid
-  const occupancyRate = extractValidNumber(property.features?.occupancyRate);
-  if (occupancyRate !== undefined) {
-    combinedFeatures = { ...combinedFeatures, occupancyRate };
-  }
-
-  const roi = extractValidNumber(property.features?.roi);
-  if (roi !== undefined) {
-    combinedFeatures = { ...combinedFeatures, roi };
-  }
-
-  const parkingSpaces = extractValidNumber(property.features?.parkingSpaces);
-  if (parkingSpaces !== undefined) {
-    combinedFeatures = { ...combinedFeatures, parkingSpaces };
-  }
-
-  const floors = extractValidNumber(property.features?.floors);
-  if (floors !== undefined) {
-    combinedFeatures = { ...combinedFeatures, floors };
-  }
-
-  const elevators = extractValidNumber(property.features?.elevators);
-  if (elevators !== undefined) {
-    combinedFeatures = { ...combinedFeatures, elevators };
-  }
-
-  const airConditioning = extractValidBoolean(property.features?.airConditioning);
-  if (airConditioning !== undefined) {
-    combinedFeatures = { ...combinedFeatures, airConditioning };
-  }
-
-  const security = extractValidBoolean(property.features?.security);
-  if (security !== undefined) {
-    combinedFeatures = { ...combinedFeatures, security };
-  }
-
-  const loadingDock = extractValidBoolean(property.features?.loadingDock);
-  if (loadingDock !== undefined) {
-    combinedFeatures = { ...combinedFeatures, loadingDock };
-  }
-
-  // Include additional features while filtering out undefined values
-  const additionalFeatures = Object.fromEntries(
-    Object.entries(property.features || {}).filter(([key, value]) => 
-      !['size', 'yearBuilt', 'occupancyRate', 'roi', 'parkingSpaces', 'floors', 
-        'elevators', 'airConditioning', 'security', 'loadingDock'].includes(key) && 
-      value !== undefined && value !== null && value !== ''
-    )
-  );
-
-  combinedFeatures = { ...combinedFeatures, ...additionalFeatures };
 
   return {
     ...base,
     category: 'commercial',
-    type: (property.type as CommercialProperty['type']) || 'office',
-    features: combinedFeatures,
+    type: (property.type as CommercialProperty['type']) ?? 'office',
+    features: {
+      ...coreFeatures,
+      ...pickDefined({
+        occupancyRate: toNumber(f.occupancyRate),
+        roi: toNumber(f.roi),
+        parkingSpaces: toNumber(f.parkingSpaces),
+        floors: toNumber(f.floors),
+        elevators: toNumber(f.elevators),
+        airConditioning: toBoolean(f.airConditioning),
+        security: toBoolean(f.security),
+        loadingDock: toBoolean(f.loadingDock),
+      }),
+      ...passAdditionalFeatures(f, COMMERCIAL_HANDLED),
+    },
   };
 };
 
-// Land property adapter with meticulous optional property handling
+// ─── Land adapter ──────────────────────────────────────────────────────────────
+
+const LAND_HANDLED = new Set([
+  'size', 'titleDeedStatus', 'soilType', 'zoning', 'developmentPotential',
+  'topography', 'drainage', 'waterAccess', 'roadAccess', 'electricityAccess',
+]);
+
+function resolveLandType(property: Property): LandProperty['type'] {
+  const zoning = typeof property.features?.zoning === 'string'
+    ? property.features.zoning.toLowerCase()
+    : undefined;
+
+  switch (zoning) {
+    case 'commercial': return 'commercial';
+    case 'industrial': return 'industrial';
+    case 'agricultural':
+    case 'farming': return 'agricultural';
+  }
+
+  const propType = property.type?.toLowerCase();
+  if (propType === 'commercial' || propType === 'industrial' || propType === 'agricultural') {
+    return propType as LandProperty['type'];
+  }
+
+  return 'residential';
+}
+
 export const landPropertyAdapter: PropertyAdapter<Property> = (property: Property): LandProperty => {
   const base = basePropertyAdapter(property);
+  const f = property.features ?? {};
 
-  // Build required features with guaranteed values
-  const coreFeatures = {
-    size: String(property.features?.size || `${property.size || property.area || 0} sqm`),
-    titleDeedStatus: (property.features?.titleDeedStatus as 'pending' | 'available' | 'missing') || 'available',
+  const coreFeatures: LandProperty['features'] = {
+    size: String(f.size ?? `${property.size ?? property.area ?? 0} sqm`),
+    titleDeedStatus:
+      (f.titleDeedStatus as LandProperty['features']['titleDeedStatus']) ?? 'available',
   };
-
-  // Start with core features
-  let combinedFeatures: LandProperty['features'] = {
-    ...coreFeatures
-  };
-
-  // Conditionally add optional string properties
-  const soilType = extractValidString(property.features?.soilType);
-  if (soilType !== undefined) {
-    combinedFeatures = { ...combinedFeatures, soilType };
-  }
-
-  const zoning = extractValidString(property.features?.zoning);
-  if (zoning !== undefined) {
-    combinedFeatures = { ...combinedFeatures, zoning };
-  }
-
-  const developmentPotential = extractValidString(property.features?.developmentPotential);
-  if (developmentPotential !== undefined) {
-    combinedFeatures = { ...combinedFeatures, developmentPotential };
-  }
-
-  const topography = extractValidString(property.features?.topography);
-  if (topography !== undefined) {
-    combinedFeatures = { ...combinedFeatures, topography };
-  }
-
-  const drainage = extractValidString(property.features?.drainage);
-  if (drainage !== undefined) {
-    combinedFeatures = { ...combinedFeatures, drainage };
-  }
-
-  // Conditionally add optional boolean properties
-  const waterAccess = extractValidBoolean(property.features?.waterAccess);
-  if (waterAccess !== undefined) {
-    combinedFeatures = { ...combinedFeatures, waterAccess };
-  }
-
-  const roadAccess = extractValidBoolean(property.features?.roadAccess);
-  if (roadAccess !== undefined) {
-    combinedFeatures = { ...combinedFeatures, roadAccess };
-  }
-
-  const electricityAccess = extractValidBoolean(property.features?.electricityAccess);
-  if (electricityAccess !== undefined) {
-    combinedFeatures = { ...combinedFeatures, electricityAccess };
-  }
-
-  // Include additional features while maintaining type safety
-  const additionalFeatures = Object.fromEntries(
-    Object.entries(property.features || {}).filter(([key, value]) => 
-      !['size', 'titleDeedStatus', 'soilType', 'zoning', 'developmentPotential', 
-        'topography', 'drainage', 'waterAccess', 'roadAccess', 'electricityAccess'].includes(key) && 
-      value !== undefined && value !== null && value !== ''
-    )
-  );
-
-  combinedFeatures = { ...combinedFeatures, ...additionalFeatures };
-
-  // Determine land type from zoning or property type
-  const landType = (() => {
-    const zoning = property.features?.zoning?.toLowerCase();
-    if (zoning === 'commercial') return 'commercial';
-    if (zoning === 'industrial') return 'industrial';
-    if (zoning === 'agricultural' || zoning === 'farming') return 'agricultural';
-    
-    // Fallback to property type if available
-    const propType = property.type?.toLowerCase();
-    if (propType === 'commercial' || propType === 'industrial' || propType === 'agricultural') {
-      return propType as LandProperty['type'];
-    }
-    
-    // Default to residential
-    return 'residential';
-  })();
 
   return {
     ...base,
     category: 'land',
-    type: landType,
-    features: combinedFeatures,
+    type: resolveLandType(property),
+    features: {
+      ...coreFeatures,
+      ...pickDefined({
+        soilType: toString(f.soilType),
+        zoning: toString(f.zoning),
+        developmentPotential: toString(f.developmentPotential),
+        topography: toString(f.topography),
+        drainage: toString(f.drainage),
+        waterAccess: toBoolean(f.waterAccess),
+        roadAccess: toBoolean(f.roadAccess),
+        electricityAccess: toBoolean(f.electricityAccess),
+      }),
+      ...passAdditionalFeatures(f, LAND_HANDLED),
+    },
   };
 };
 
-// Adaptive adapter that intelligently chooses the right adapter based on property category
-export const adaptivePropertyAdapter: PropertyAdapter<Property> = (property: Property): NormalizedProperty => {
-  const category = determineCategory(property);
+// ─── Adaptive & batch adapters ─────────────────────────────────────────────────
 
-  switch (category) {
-    case 'residential':
-      return residentialPropertyAdapter(property);
-    case 'commercial':
-      return commercialPropertyAdapter(property);
-    case 'land':
-      return landPropertyAdapter(property);
-    default:
-      return basePropertyAdapter(property);
+export const adaptivePropertyAdapter: PropertyAdapter<Property> = (property: Property): NormalizedProperty => {
+  switch (determineCategory(property)) {
+    case 'residential': return residentialPropertyAdapter(property);
+    case 'commercial':  return commercialPropertyAdapter(property);
+    case 'land':        return landPropertyAdapter(property);
   }
 };
 
-// Enhanced batch adapter with comprehensive error handling
 export function adaptProperties<T>(
   properties: Property[],
   adapter: PropertyAdapter<Property> = adaptivePropertyAdapter
 ): T[] {
   return properties
-    .filter(property => property && typeof property === 'object') // Filter out invalid properties
+    .filter((p): p is Property => p != null && typeof p === 'object')
     .map(adapter) as T[];
 }
 
-// Type guard functions for property categories with enhanced validation
+// ─── Type guards ───────────────────────────────────────────────────────────────
+
 export function isResidentialProperty(property: NormalizedProperty): property is ResidentialProperty {
-  return property.category === 'residential' && 
-         typeof property.features.bedrooms === 'number' && 
-         typeof property.features.bathrooms === 'number';
+  return (
+    property.category === 'residential' &&
+    typeof property.features.bedrooms === 'number' &&
+    typeof property.features.bathrooms === 'number'
+  );
 }
 
 export function isCommercialProperty(property: NormalizedProperty): property is CommercialProperty {
-  return property.category === 'commercial' && 
-         typeof property.features.size === 'number' && 
-         typeof property.features.yearBuilt === 'number';
+  return (
+    property.category === 'commercial' &&
+    typeof property.features.size === 'number' &&
+    typeof property.features.yearBuilt === 'number'
+  );
 }
 
 export function isLandProperty(property: NormalizedProperty): property is LandProperty {
-  return property.category === 'land' && 
-         typeof property.features.size === 'string';
+  return property.category === 'land' && typeof property.features.size === 'string';
 }
 
-// Enhanced validation function with comprehensive type checking
+// ─── Runtime validation ────────────────────────────────────────────────────────
+
+const VALID_VERIFICATION_STATUSES = new Set(['verified', 'pending', 'unverified', 'flagged']);
+const VALID_CATEGORIES = new Set(['residential', 'commercial', 'land']);
+
 export function validateNormalizedProperty(property: unknown): property is NormalizedProperty {
-  if (typeof property !== 'object' || property === null) {
+  if (typeof property !== 'object' || property === null) return false;
+
+  const p = property as Record<string, unknown>;
+
+  if (
+    typeof p.id !== 'string' ||
+    typeof p.title !== 'string' ||
+    typeof p.description !== 'string' ||
+    typeof p.price !== 'number' ||
+    typeof p.location !== 'string' ||
+    !Array.isArray(p.images) ||
+    typeof p.verified !== 'boolean' ||
+    typeof p.type !== 'string' ||
+    !VALID_CATEGORIES.has(p.category as string) ||
+    typeof p.features !== 'object' || p.features === null ||
+    typeof p.createdAt !== 'string'
+  ) {
     return false;
   }
 
-  const prop = property as Record<string, unknown>;
+  if (!(p.images as unknown[]).every(img => typeof img === 'string')) return false;
 
-  // Check required fields with precise type validation
-  const hasRequiredFields = (
-    typeof prop.id === 'string' &&
-    typeof prop.title === 'string' &&
-    typeof prop.description === 'string' &&
-    typeof prop.price === 'number' &&
-    typeof prop.location === 'string' &&
-    Array.isArray(prop.images) &&
-    typeof prop.verified === 'boolean' &&
-    typeof prop.type === 'string' &&
-    ['residential', 'commercial', 'land'].includes(prop.category as string) &&
-    typeof prop.features === 'object' &&
-    typeof prop.createdAt === 'string'
-  );
-
-  if (!hasRequiredFields) return false;
-
-  // Validate images array contains only strings
-  const images = prop.images as unknown[];
-  if (!images.every(img => typeof img === 'string')) {
+  if (
+    p.verificationStatus != null &&
+    !VALID_VERIFICATION_STATUSES.has(p.verificationStatus as string)
+  ) {
     return false;
   }
 
-  // Validate verification status is one of the allowed values
-  const { verificationStatus } = prop;
-  if (verificationStatus && !['verified', 'pending', 'unverified', 'flagged'].includes(verificationStatus as string)) {
-    return false;
-  }
-
-  // Validate dates are proper ISO strings
   try {
-    new Date(prop.createdAt as string);
-    if (prop.updatedAt) {
-      new Date(prop.updatedAt as string);
-    }
+    new Date(p.createdAt as string);
+    if (p.updatedAt != null) new Date(p.updatedAt as string);
   } catch {
     return false;
   }

@@ -31,4 +31,4 @@ export { IMAGE_SERVICE_CONFIG } from '../../local/config/image-system.config'
 export * from '../../local/types/images'
 
 // Utilities
-export { ImageUtils } from '../../local/utils/images/unified-utils'
+export { ImageUtils } from '../../../local/utils/images/unified-utils'

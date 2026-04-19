@@ -19,7 +19,7 @@ import {
 import React, { useCallback, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
-import { normalizeProperty } from "../utils/normalizeProperty"
+import { normalizeProperty } from "../utils/property-mapper"
 import { EnhancedPhotoManagementButton } from "../components/PhotoManagementButton"
 import { Badge } from "../../local/components/ui/badge"
 import { Button } from "../../local/components/ui/button"

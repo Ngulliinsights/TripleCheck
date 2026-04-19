@@ -15,7 +15,7 @@ import type {
   ImageServiceConfig,
 } from '../types/images'
 import { DOCUMENT_VALIDATION_PROFILES } from '../types/images'
-import { ImageUtils } from '../../local/utils/images/unified-utils'
+import { ImageUtils } from '../../../local/utils/images/unified-utils'
 
 // ---------------------------------------------------------------------------
 // Public interfaces
