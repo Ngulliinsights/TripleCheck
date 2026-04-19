@@ -2,6 +2,7 @@
 import React from 'react'
 
 export const createMockFetch = (mockResponse: any, delay = 0) => {
+  // @ts-ignore - Using jest from global scope for test mocks
   return jest.fn().mockImplementation((url: string, options?: RequestInit) => {
     const controller = options?.signal as AbortController['signal'];
     

@@ -1,10 +1,9 @@
-import { NormalizedProperty, PropertyOwner } from '@shared/types/property'
-import type { LandProperty } from '../components/PropertyCardShowcase'
+import { NormalizedProperty, PropertyOwner, RawLandProperty } from '@shared/types/property'
 
 /**
  * Normalizes land-specific property data
  */
-export function normalizeLandProperty(land: LandProperty): NormalizedProperty {
+export function normalizeRawLandProperty(land: RawLandProperty): NormalizedProperty {
   const normalizedLocation = typeof land.location === 'string' 
     ? land.location 
     : land.location.address;
@@ -32,7 +31,7 @@ export const normalizeProperty = (property: any, category: 'residential' | 'comm
   // If it's a land property shape, use the dedicated logic
   if (property.location !== undefined && property.verificationStatus !== undefined && !property.category) {
     if (typeof property.location !== 'string' || property.verificationStatus === 'verified') {
-       return normalizeLandProperty(property as LandProperty);
+       return normalizeRawLandProperty(property as RawLandProperty);
     }
   }
   const prop = property as Record<string, any>;

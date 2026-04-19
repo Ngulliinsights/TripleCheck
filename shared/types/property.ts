@@ -335,3 +335,37 @@ export interface PropertySearchResponse<T> {
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }
+
+// Raw Land Property interface - used as input for normalization
+export interface RawLandProperty {
+  id: string;
+  title: string;
+  description: string;
+  location: string | { address: string };
+  price: number;
+  originalPrice?: number;
+  size: string;
+  images: string[];
+  verificationStatus: "verified" | "pending" | "unverified" | "flagged";
+  trustScore: number;
+  landType: "agricultural" | "residential" | "commercial" | "industrial";
+  titleDeedStatus: "available" | "pending" | "missing";
+  lastVerified?: string;
+  riskLevel: "low" | "medium" | "high";
+  features?: {
+    soilType?: string;
+    waterAccess?: boolean;
+    roadAccess?: boolean;
+    electricityAccess?: boolean;
+    zoning?: string;
+    developmentPotential?: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    squareFeet?: number;
+  };
+  dateAdded?: Date;
+  viewCount?: number;
+  isNew?: boolean;
+  isFeatured?: boolean;
+  type?: "commercial" | "residential";
+}

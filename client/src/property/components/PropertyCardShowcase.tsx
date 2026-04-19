@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom"
 
 import { PropertyCard } from "./PropertyCard"
 import { Badge } from "../../local/components/ui/badge"
-import { normalizeLandProperty } from "../utils/normalizeLandProperty"
+import { normalizeRawLandProperty as normalizeLandProperty } from "../utils/property-mapper"
 import { cn } from "../../local/lib/utils"
 import { Button } from "../../local/components/ui/button"
 import {
@@ -26,7 +26,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "../../local/components/ui/tabs"
-import type { NormalizedProperty } from "@shared/types/property"
+import type { NormalizedProperty, RawLandProperty } from "@shared/types/property"
+type LandProperty = RawLandProperty;
 import type { CSSProperties } from "react"
 
 import EnhancedLandCard from "./LandCard"
@@ -69,38 +70,7 @@ interface ShowcaseProperty {
   isFeatured?: boolean;
 }
 
-export interface LandProperty {
-  id: string;
-  title: string;
-  description: string;
-  location: string | { address: string };
-  price: number;
-  originalPrice?: number;
-  size: string;
-  images: string[];
-  verificationStatus: "verified" | "pending" | "unverified" | "flagged";
-  trustScore: number;
-  landType: "agricultural" | "residential" | "commercial" | "industrial";
-  titleDeedStatus: "available" | "pending" | "missing";
-  lastVerified?: string;
-  riskLevel: "low" | "medium" | "high";
-  features?: {
-    soilType?: string;
-    waterAccess?: boolean;
-    roadAccess?: boolean;
-    electricityAccess?: boolean;
-    zoning?: string;
-    developmentPotential?: string;
-    bedrooms?: number;
-    bathrooms?: number;
-    squareFeet?: number;
-  };
-  dateAdded?: Date;
-  viewCount?: number;
-  isNew?: boolean;
-  isFeatured?: boolean;
-  type?: "commercial" | "residential";
-}
+
 
 /* ------------------------------------------------------------------ */
 /* Error Boundary Component                                           */

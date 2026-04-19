@@ -3,8 +3,8 @@ import { Heart, Share2, Maximize2, Plus, Check } from 'lucide-react'
 import { Button } from '../../../local/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../local/components/ui/tooltip'
 import { cn } from '../../../local/lib/utils'
-import type { UseImageGalleryReturn } from '../../../../local/hooks/useImageGallery'
-import type { UsePropertyCardActionsReturn } from '../../../hooks/usePropertyCardActions'
+import type { UseImageGalleryReturn } from '../../../local/hooks/useImageGallery'
+import type { UsePropertyCardActionsReturn } from '../../hooks/usePropertyCardActions'
 
 export interface QuickActionsOverlayProps {
   actions: UsePropertyCardActionsReturn
