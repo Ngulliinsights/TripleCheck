@@ -245,6 +245,8 @@ export const VirtualizedPropertyList = memo(
 );
 VirtualizedPropertyList.displayName = "VirtualizedPropertyList";
 
+export const EnhancedVirtualizedPropertyList = VirtualizedPropertyList;
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -272,4 +274,23 @@ export function useVirtualizedDimensions(
   }, [containerRef]);
 
   return dimensions;
+}
+
+/**
+ * Enhanced hook that provides both dimensions AND items-per-row calculation,
+ * matching the interface expected by PropertyListingPage.
+ */
+export function useVirtualizedPropertyList(
+  _properties: readonly Property[],
+  _viewMode:   ViewMode,
+  containerRef: React.RefObject<HTMLDivElement>,
+  itemWidth:    number = 320,
+) {
+  const dimensions = useVirtualizedDimensions(containerRef);
+  
+  // Logic from useResponsiveGrid
+  const available = Math.max(0, dimensions.width - 32); 
+  const itemsPerRow = Math.max(1, Math.min(6, Math.floor(available / itemWidth)));
+
+  return { dimensions, itemsPerRow };
 }

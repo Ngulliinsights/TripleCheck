@@ -1,6 +1,7 @@
 import { Grid3X3, List as ListIcon, Loader2 } from 'lucide-react'
 import React, { useMemo, useCallback } from 'react'
-import { FixedSizeGrid as Grid, FixedSizeList as List } from 'react-window'
+import * as ReactWindow from 'react-window'
+const { FixedSizeGrid: Grid, FixedSizeList: List } = ReactWindow as any;
 
 import { Button } from '../../local/components/ui/button'
 import { Card } from '../../local/components/ui/card'

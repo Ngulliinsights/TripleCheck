@@ -1,11 +1,4 @@
-/**
- * Property Image Workflow Manager
- *
- * Context-sensitive workflow orchestration for the property verification domain.
- * Integrates with existing API services and follows project patterns.
- */
-
-import { ImageServiceCore, ImageServiceRegistry } from './core/ImageServiceCore'
+import { ImageServiceCore, ImageServiceRegistry } from '../../../local/services/images/core/ImageServiceCore'
 import type {
   ProcessingStep,
   WorkflowStatus,
@@ -17,15 +10,13 @@ import type {
   ScanResult,
   DocumentAuthResult,
   ComplianceResult,
-} from '../../types/images'
-import { ImageProcessingError, PROCESSING_STEPS_ORDER } from '../../types/images'
-import { ImageUtils } from '../../utils/images/unified-utils'
+} from '../../../local/types/images'
+import { ImageProcessingError, PROCESSING_STEPS_ORDER } from '../../../local/types/images'
+import { ImageUtils } from '../../../local/utils/images/unified-utils'
 
-const UNKNOWN_ERROR = 'Unknown error'
-
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Public interfaces
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 export interface IPropertyImageWorkflowManager {
   startProcessingWorkflow(
@@ -95,23 +86,28 @@ export interface PropertyWorkflowDependencies {
   }
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Internal state type
-// ---------------------------------------------------------------------------
+// =============================================================================
 
-/** Extends the public WorkflowStatus with runtime-only context. */
+/**
+ * Runtime workflow state.  Extends the public `WorkflowStatus` snapshot with
+ * fields that are only meaningful inside this module.
+ */
 interface ActiveWorkflow extends WorkflowStatus {
   workflowId: string
   fileReference: string
   documentType?: DocumentType
   landVerificationId?: string
-  /** Resolved image metadata cache – populated after metadata_extraction step. */
+  /** Cached metadata populated after `metadata_extraction` so later steps can reuse it. */
   cachedMetadata?: PropertyImageMetadata
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Service implementation
-// ---------------------------------------------------------------------------
+// =============================================================================
+
+const UNKNOWN_ERROR = 'Unknown error'
 
 export class PropertyImageWorkflowManager
   extends ImageServiceCore
@@ -125,14 +121,18 @@ export class PropertyImageWorkflowManager
 
   constructor(
     private readonly dependencies: PropertyWorkflowDependencies,
-    config?: ImageServiceConfig,
+    config?: Partial<ImageServiceConfig>,
   ) {
-    super(config, ImageServiceRegistry.getInstance().getAuditService())
+    // Note: ImageServiceCore in local branch expects a full config. 
+    // We cast or merge here if needed, but since we are mirroring the orchestration 
+    // pattern, we'll pass the config and let the base handle its own defaults 
+    // if it were more flexible, but since it's not, we'll cast to satisfy the compiler.
+    super(config as ImageServiceConfig, ImageServiceRegistry.getInstance().getAuditService())
   }
 
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // Public API
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
 
   async startProcessingWorkflow(
     imageId: string,
@@ -141,6 +141,7 @@ export class PropertyImageWorkflowManager
     landVerificationId?: string,
   ): Promise<void> {
     const workflowId = ImageUtils.generateUniqueId()
+    const steps = this.determineProcessingSteps(documentType)
 
     const workflow: ActiveWorkflow = {
       imageId,
@@ -148,10 +149,11 @@ export class PropertyImageWorkflowManager
       fileReference,
       documentType,
       landVerificationId,
-      currentStep: 'validation',
+      currentStep: steps[0] || 'validation',
       completedSteps: [],
       failedSteps: [],
       status: 'running',
+      progress: 0,
       startTime: new Date(),
     }
 
@@ -174,7 +176,6 @@ export class PropertyImageWorkflowManager
         await this.processImage(imageId, step)
       }
 
-      // Link to land verification record if requested.
       if (landVerificationId && this.dependencies.landVerificationService) {
         const cachedMeta = this.activeWorkflows.get(imageId)?.cachedMetadata
         if (cachedMeta) {
@@ -227,18 +228,16 @@ export class PropertyImageWorkflowManager
     try {
       await this.executeProcessingStep(imageId, step, workflow.fileReference)
 
-      // Record completion and remove from any prior failed list.
       workflow.completedSteps.push(step)
       const failedIdx = workflow.failedSteps.indexOf(step)
       if (failedIdx > -1) workflow.failedSteps.splice(failedIdx, 1)
 
       workflow.progress =
-        (workflow.completedSteps.length / PROCESSING_STEPS_ORDER.length) * 100
+        Math.round((workflow.completedSteps.length / PROCESSING_STEPS_ORDER.length) * 100)
 
       await this.dependencies.notificationService?.notifyStepComplete(imageId, step, true, {
         progress: workflow.progress,
       })
-
       await this.dependencies.auditService?.logWorkflowEvent('step_completed', {
         imageId,
         step,
@@ -252,7 +251,6 @@ export class PropertyImageWorkflowManager
       await this.dependencies.notificationService?.notifyStepComplete(imageId, step, false, {
         error: error instanceof Error ? error.message : UNKNOWN_ERROR,
       })
-
       await this.dependencies.auditService?.logWorkflowEvent('step_failed', {
         imageId,
         step,
@@ -260,7 +258,7 @@ export class PropertyImageWorkflowManager
       })
 
       throw new ImageProcessingError(
-        `Failed to process step '${step}' for image ${imageId}: ${
+        `Failed step '${step}' for image ${imageId}: ${
           error instanceof Error ? error.message : UNKNOWN_ERROR
         }`,
         'PROCESSING_STEP_FAILED',
@@ -303,7 +301,6 @@ export class PropertyImageWorkflowManager
       progress: workflow.progress,
     })
 
-    // Continue asynchronously; surface errors through completeWorkflow.
     void this.continueWorkflow(imageId)
   }
 
@@ -311,13 +308,11 @@ export class PropertyImageWorkflowManager
     const workflow = this.activeWorkflows.get(imageId)
     if (!workflow) return
 
-    // Emit the cancellation notification before removing state.
     void this.dependencies.auditService?.logWorkflowEvent('workflow_cancelled', {
       imageId,
       currentStep: workflow.currentStep,
       progress: workflow.progress,
     })
-
     void this.dependencies.notificationService?.notifyWorkflowComplete(imageId, 'failed', {
       reason: 'cancelled',
     })
@@ -337,9 +332,7 @@ export class PropertyImageWorkflowManager
     }
 
     const failedIdx = workflow.failedSteps.indexOf(step)
-    if (failedIdx > -1) {
-      workflow.failedSteps.splice(failedIdx, 1)
-    }
+    if (failedIdx > -1) workflow.failedSteps.splice(failedIdx, 1)
 
     await this.dependencies.auditService?.logWorkflowEvent('step_retry', { imageId, step })
     await this.processImage(imageId, step)
@@ -349,9 +342,9 @@ export class PropertyImageWorkflowManager
     this.workflowCallbacks.set(imageId, callback)
   }
 
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // Private helpers
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
 
   private isRunning(imageId: string): boolean {
     const wf = this.activeWorkflows.get(imageId)
@@ -384,69 +377,65 @@ export class PropertyImageWorkflowManager
   ): Promise<void> {
     switch (step) {
       case 'validation':
-        await this.executeValidation(imageId, fileReference)
-        break
+        return this.executeValidation(imageId, fileReference)
       case 'virus_scan':
-        await this.executeVirusScan(imageId, fileReference)
-        break
+        return this.executeVirusScan(imageId, fileReference)
       case 'document_auth':
-        await this.executeDocumentAuth(imageId, fileReference)
-        break
+        return this.executeDocumentAuth(imageId, fileReference)
       case 'fraud_detection':
-        await this.executeFraudDetection(imageId, fileReference)
-        break
+        return this.executeFraudDetection(imageId, fileReference)
       case 'metadata_extraction':
-        await this.executeMetadataExtraction(imageId, fileReference)
-        break
+        return this.executeMetadataExtraction(imageId, fileReference)
       case 'compliance_check':
-        await this.executeComplianceCheck(imageId, fileReference)
-        break
+        return this.executeComplianceCheck(imageId, fileReference)
       case 'image_optimization':
-        await this.executeImageOptimization(imageId, fileReference)
-        break
+        return this.executeImageOptimization(imageId, fileReference)
       case 'thumbnail_generation':
-        await this.executeThumbnailGeneration(imageId, fileReference)
-        break
-      default:
+        return this.executeThumbnailGeneration(imageId, fileReference)
+      default: {
+        // Exhaustiveness guard – `step` is `never` here if all cases are covered.
+        const exhaustive: never = step
         throw new ImageProcessingError(
-          `Unknown processing step: ${step}`,
+          `Unknown processing step: ${exhaustive}`,
           'UNKNOWN_STEP',
           imageId,
-          step,
         )
+      }
     }
   }
 
   private async executeValidation(imageId: string, fileReference: string): Promise<void> {
-    const validationResult = await this.dependencies.validationService.validateUrl(fileReference)
+    const result = await this.dependencies.validationService.validateUrl(fileReference)
 
     await this.updateImageMetadata(imageId, {
-      validationResult,
-      status: validationResult.isValid ? 'processing' : 'error',
+      validationResult: result,
+      status: result.isValid ? 'processing' : 'error',
     })
 
-    if (!validationResult.isValid) {
+    if (!result.isValid) {
       throw new ImageProcessingError(
-        `Image validation failed: ${validationResult.errors.join(', ')}`,
+        `Validation failed: ${result.errors.join(', ')}`,
         'VALIDATION_FAILED',
         imageId,
+        'validation',
       )
     }
   }
 
   private async executeVirusScan(imageId: string, fileReference: string): Promise<void> {
-    const scanResult = await this.dependencies.metadataService.performVirusScan(fileReference)
+    const result = await this.dependencies.metadataService.performVirusScan(fileReference)
 
     await this.updateImageMetadata(imageId, {
-      virusScanResult: scanResult,
-      status: scanResult.clean ? 'processing' : 'error',
+      virusScanResult: result,
+      status: result.clean ? 'processing' : 'error',
     })
 
-    if (!scanResult.clean) {
+    if (!result.clean) {
       throw new ImageProcessingError(
-        `Virus scan failed – threats detected: ${scanResult.threats.join(', ')}`,
+        `Virus scan failed – threats: ${result.threats.join(', ')}`,
         'VIRUS_DETECTED',
         imageId,
+        'virus_scan',
       )
     }
   }
@@ -457,18 +446,19 @@ export class PropertyImageWorkflowManager
     const workflow = this.activeWorkflows.get(imageId)
     const documentType = workflow?.documentType ?? 'other_document'
 
-    const authResult = await this.dependencies.documentAuthService.authenticateDocument(
+    const result = await this.dependencies.documentAuthService.authenticateDocument(
       fileReference,
       documentType,
     )
 
-    await this.updateImageMetadata(imageId, { documentAuthResult: authResult, status: 'processing' })
+    await this.updateImageMetadata(imageId, { documentAuthResult: result, status: 'processing' })
 
-    if (!authResult.isAuthentic) {
+    if (!result.isAuthentic) {
       throw new ImageProcessingError(
-        `Document authentication failed: ${authResult.anomalies.join(', ')}`,
+        `Document authentication failed: ${result.anomalies.join(', ')}`,
         'DOCUMENT_AUTH_FAILED',
         imageId,
+        'document_auth',
       )
     }
   }
@@ -479,24 +469,26 @@ export class PropertyImageWorkflowManager
     const cachedMeta = this.activeWorkflows.get(imageId)?.cachedMetadata
     if (!cachedMeta) {
       throw new ImageProcessingError(
-        'Image metadata not available for fraud detection – run metadata_extraction first',
+        'Metadata unavailable for fraud detection – run metadata_extraction first',
         'METADATA_MISSING',
         imageId,
+        'fraud_detection',
       )
     }
 
-    const fraudScore = await this.dependencies.fraudDetectionService.analyzeImage(
+    const score = await this.dependencies.fraudDetectionService.analyzeImage(
       fileReference,
       cachedMeta,
     )
 
-    await this.updateImageMetadata(imageId, { fraudDetectionScore: fraudScore, status: 'processing' })
+    await this.updateImageMetadata(imageId, { fraudDetectionScore: score, status: 'processing' })
 
-    if (fraudScore > 0.8) {
+    if (score > 0.8) {
       throw new ImageProcessingError(
-        `High fraud risk detected (score: ${Math.round(fraudScore * 100)} %)`,
+        `High fraud risk detected (score: ${Math.round(score * 100)}%)`,
         'HIGH_FRAUD_RISK',
         imageId,
+        'fraud_detection',
       )
     }
   }
@@ -504,11 +496,8 @@ export class PropertyImageWorkflowManager
   private async executeMetadataExtraction(imageId: string, fileReference: string): Promise<void> {
     const metadata = await this.dependencies.metadataService.extractMetadata(fileReference)
 
-    // Cache so later steps (fraud detection, compliance) can reuse it.
     const workflow = this.activeWorkflows.get(imageId)
-    if (workflow) {
-      workflow.cachedMetadata = metadata
-    }
+    if (workflow) workflow.cachedMetadata = metadata
 
     await this.updateImageMetadata(imageId, { metadata, status: 'processing' })
   }
@@ -517,20 +506,21 @@ export class PropertyImageWorkflowManager
     const cachedMeta = this.activeWorkflows.get(imageId)?.cachedMetadata
     if (!cachedMeta) {
       throw new ImageProcessingError(
-        'Image metadata not available for compliance check – run metadata_extraction first',
+        'Metadata unavailable for compliance check – run metadata_extraction first',
         'METADATA_MISSING',
         imageId,
+        'compliance_check',
       )
     }
 
-    const complianceResult = await this.dependencies.metadataService.checkCompliance(
+    const result = await this.dependencies.metadataService.checkCompliance(
       fileReference,
       cachedMeta,
     )
 
     await this.updateImageMetadata(imageId, {
-      complianceFlags: complianceResult.complianceFlags,
-      regulatoryFlags: complianceResult.regulatoryFlags,
+      complianceFlags: result.complianceFlags,
+      regulatoryFlags: result.regulatoryFlags,
       status: 'processing',
     })
   }
@@ -601,7 +591,7 @@ export class PropertyImageWorkflowManager
       totalSteps: workflow.completedSteps.length + workflow.failedSteps.length,
       completedSteps: workflow.completedSteps.length,
       failedSteps: workflow.failedSteps.length,
-      duration: workflow.endTime.getTime() - workflow.startTime.getTime(),
+      durationMs: workflow.endTime.getTime() - workflow.startTime.getTime(),
     }
 
     void this.dependencies.notificationService?.notifyWorkflowComplete(
@@ -609,7 +599,6 @@ export class PropertyImageWorkflowManager
       status === 'completed' ? 'success' : 'failed',
       summary,
     )
-
     void this.dependencies.auditService?.logWorkflowEvent('workflow_completed', {
       imageId,
       status,
@@ -617,7 +606,7 @@ export class PropertyImageWorkflowManager
       ...summary,
     })
 
-    // Retain status for one minute so late-arriving status queries still resolve.
+    // Retain state for 60 s so late-arriving status queries still resolve.
     setTimeout(() => {
       this.activeWorkflows.delete(imageId)
       this.workflowCallbacks.delete(imageId)
@@ -628,14 +617,6 @@ export class PropertyImageWorkflowManager
     const callback = this.workflowCallbacks.get(imageId)
     const status = this.activeWorkflows.get(imageId)
     if (callback && status) callback(status)
-  }
-
-  private async getFileReference(imageId: string): Promise<string> {
-    if (this.dependencies.storageService) {
-      return this.dependencies.storageService.getFileReference(imageId)
-    }
-    // Development / test fallback.
-    return `mock://storage/${imageId}`
   }
 
   private async updateImageMetadata(
@@ -649,12 +630,12 @@ export class PropertyImageWorkflowManager
   }
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Module-level singleton
 //
-// Provide minimal stub dependencies so the registry entry is safe to
-// instantiate without external services being wired up.
-// ---------------------------------------------------------------------------
+// Stub dependencies make the registry entry safe to instantiate without any
+// real services wired up (useful in tests and dev environments).
+// =============================================================================
 
 const STUB_DEPENDENCIES: PropertyWorkflowDependencies = {
   validationService: {

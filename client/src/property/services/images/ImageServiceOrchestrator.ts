@@ -10,7 +10,7 @@
 import { PropertyImageUploadService } from './PropertyImageUploadService'
 import { PropertyImageValidationService } from './PropertyImageValidationService'
 import { PropertyImageWorkflowManager } from './PropertyImageWorkflowManager'
-import { ImageMetadataService } from './ImageMetadataService'
+import { ImageMetadataService } from '../../../local/services/images/ImageMetadataService'
 import type {
   PropertyImage,
   DocumentType,
@@ -20,7 +20,7 @@ import type {
   WorkflowStatus,
   PropertyImageMetadata,
   ImageServiceConfig,
-} from '../../types/images'
+} from '../../../local/types/images'
 
 // ---------------------------------------------------------------------------
 // Result types

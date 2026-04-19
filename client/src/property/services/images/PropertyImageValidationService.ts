@@ -5,7 +5,7 @@
  * Uses the shared core to eliminate duplication while maintaining clear boundaries.
  */
 
-import { ImageServiceCore, ImageServiceRegistry } from './core/ImageServiceCore'
+import { ImageServiceCore, ImageServiceRegistry } from '../../../local/services/images/core/ImageServiceCore'
 import type {
   ValidationResult,
   ValidationOptions,
@@ -13,8 +13,8 @@ import type {
   DocumentType,
   DocumentAuthResult,
   ImageServiceConfig,
-} from '../types/images'
-import { DOCUMENT_VALIDATION_PROFILES } from '../types/images'
+} from '../../../local/types/images'
+import { DOCUMENT_VALIDATION_PROFILES } from '../../../local/types/images'
 import { ImageUtils } from '../../../local/utils/images/unified-utils'
 
 // ---------------------------------------------------------------------------
@@ -96,7 +96,7 @@ export class PropertyImageValidationService
         result.isValid = false
         result.errors.push(
           `File size (${ImageUtils.formatFileSize(file.size)}) exceeds the maximum allowed ` +
-            `(${ImageUtils.formatFileSize(this.config.validation.maxFileSize)})`,
+            `(${ImageUtils.formatFileSize((this.config as ImageServiceConfig).validation.maxFileSize)})`,
         )
       }
 
@@ -104,7 +104,7 @@ export class PropertyImageValidationService
         result.isValid = false
         result.errors.push(
           `File format '${ImageUtils.getFileExtension(file.name)}' is not allowed. ` +
-            `Allowed formats: ${this.config.validation.allowedFormats.join(', ')}`,
+            `Allowed formats: ${(this.config as ImageServiceConfig).validation.allowedFormats.join(', ')}`,
         )
       }
 
