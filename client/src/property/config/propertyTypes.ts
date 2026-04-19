@@ -3,7 +3,7 @@ import AllPropertiesFiltersComponent from '../components/filters/AllPropertiesFi
 import CommercialFiltersComponent from '../components/filters/CommercialFilters'
 import LandFiltersComponent from '../components/filters/LandFilters'
 import { ResidentialFilters as ResidentialFiltersComponent } from '../components/filters/ResidentialFilters'
-import { PropertyCard } from '../components/PropertyCard'
+import { PropertyCard, AdaptivePropertyCard } from '../components/PropertyCard'
 import type {
   PropertyTypeConfig,
   ResidentialProperty,
@@ -15,118 +15,63 @@ import type {
   BasePropertyFilters,
   NormalizedProperty,
 } from '@shared/types/property'
-// Mock properties functionality moved to property module
 import {
   residentialPropertyAdapter,
   commercialPropertyAdapter,
-  landPropertyAdapter
+  landPropertyAdapter,
 } from '../utils/propertyAdapters'
 import { fetchMockProperties } from '../../local/utils/mockPropertyApi'
 
-// Simple fetcher functions
-async function fetchResidentialProperties(
-  filters: ResidentialFilters,
-  page: number,
-  pageSize: number
-) {
-  if (process.env.NODE_ENV === "development") {
+// ---------------------------------------------------------------------------
+// Dev logger
+// ---------------------------------------------------------------------------
+
+function devLog(label: string, data: object): void {
+  if (process.env.NODE_ENV === 'development') {
     // eslint-disable-next-line no-console
-    console.log("🏘️ fetchResidentialProperties called with:", { filters, page, pageSize });
+    console.log(label, data)
   }
-  const result = await fetchMockProperties({ ...filters, category: 'residential' }, page, pageSize);
-  const items = result.items.map(item => residentialPropertyAdapter(item) as ResidentialProperty);
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.log("🏘️ fetchResidentialProperties result:", { itemsCount: items.length, totalCount: result.totalCount });
-  }
-  return {
-    items,
-    totalCount: result.totalCount,
-    totalPages: result.totalPages,
-  };
 }
 
-async function fetchCommercialProperties(
-  filters: CommercialFilters,
-  page: number,
-  pageSize: number
+// ---------------------------------------------------------------------------
+// Fetch factory
+// ---------------------------------------------------------------------------
+
+type PropertyCategory = 'residential' | 'commercial' | 'land'
+
+type AdapterFn<T> = (item: unknown) => T
+
+function createPropertyFetcher<TFilter extends BasePropertyFilters, TItem>(
+  emoji: string,
+  category: PropertyCategory,
+  adapter: AdapterFn<TItem>,
 ) {
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.log("🏢 fetchCommercialProperties called with:", { filters, page, pageSize });
+  return async (filters: TFilter, page: number, pageSize: number) => {
+    const label = `${emoji} fetch${capitalize(category)}Properties`
+    devLog(`${label} called with:`, { filters, page, pageSize })
+
+    const result = await fetchMockProperties({ ...filters, category }, page, pageSize)
+    const items = result.items.map(adapter)
+
+    devLog(`${label} result:`, { itemsCount: items.length, totalCount: result.totalCount })
+
+    return {
+      items,
+      totalCount: result.totalCount,
+      totalPages: result.totalPages,
+    }
   }
-  const result = await fetchMockProperties({ ...filters, category: 'commercial' }, page, pageSize);
-  const items = result.items.map(item => commercialPropertyAdapter(item) as CommercialProperty);
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.log("🏢 fetchCommercialProperties result:", { itemsCount: items.length, totalCount: result.totalCount });
-  }
-  return {
-    items,
-    totalCount: result.totalCount,
-    totalPages: result.totalPages,
-  };
 }
 
-async function fetchLandProperties(
-  filters: LandFilters,
-  page: number,
-  pageSize: number
-) {
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.log("🏞️ fetchLandProperties called with:", { filters, page, pageSize });
-  }
-  const result = await fetchMockProperties({ ...filters, category: 'land' }, page, pageSize);
-  const items = result.items.map(item => landPropertyAdapter(item) as LandProperty);
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.log("🏞️ fetchLandProperties result:", { itemsCount: items.length, totalCount: result.totalCount });
-  }
-  return {
-    items,
-    totalCount: result.totalCount,
-    totalPages: result.totalPages,
-  };
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-async function fetchAllProperties(
-  filters: BasePropertyFilters,
-  page: number,
-  pageSize: number
-) {
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.log("🏠 fetchAllProperties called with:", { filters, page, pageSize });
-  }
-  const result = await fetchMockProperties(filters, page, pageSize);
-  const items = result.items.map(item => residentialPropertyAdapter(item));
-  if (process.env.NODE_ENV === "development") {
-    // eslint-disable-next-line no-console
-    console.log("🏠 fetchAllProperties result:", { itemsCount: items.length, totalCount: result.totalCount });
-  }
-  return {
-    items,
-    totalCount: result.totalCount,
-    totalPages: result.totalPages,
-  };
-}
-
-// Simple adapter functions
-const residentialAdapter = (item: ResidentialProperty): NormalizedProperty => {
-  return residentialPropertyAdapter(item as unknown as Parameters<typeof residentialPropertyAdapter>[0]);
-};
-
-const commercialAdapter = (item: CommercialProperty): NormalizedProperty => {
-  return commercialPropertyAdapter(item as unknown as Parameters<typeof commercialPropertyAdapter>[0]);
-};
-
-const landAdapter = (item: LandProperty): NormalizedProperty => {
-  return landPropertyAdapter(item as unknown as Parameters<typeof landPropertyAdapter>[0]);
-};
-
+// ---------------------------------------------------------------------------
 // Property type configurations
-export const residentialConfig: PropertyTypeConfig<ResidentialFilters, ResidentialProperty> = {
+// ---------------------------------------------------------------------------
+
+export const residentialConfig: PropertyTypeConfig<ResidentialFilters, NormalizedProperty> = {
   title: 'Residential Properties',
   description: 'Find your perfect home from apartments, houses, and more',
   queryKey: ['properties', 'residential'],
@@ -144,13 +89,17 @@ export const residentialConfig: PropertyTypeConfig<ResidentialFilters, Residenti
     furnished: false,
     petFriendly: false,
   },
-  fetcher: fetchResidentialProperties,
-  adapter: residentialAdapter,
+  fetcher: createPropertyFetcher<ResidentialFilters, NormalizedProperty>(
+    '🏘️',
+    'residential',
+    (item) => residentialPropertyAdapter(item as Parameters<typeof residentialPropertyAdapter>[0]),
+  ),
+  adapter: (item) => residentialPropertyAdapter(item as Parameters<typeof residentialPropertyAdapter>[0]),
   filterComponent: ResidentialFiltersComponent,
   cardComponent: PropertyCard,
-};
+}
 
-export const commercialConfig: PropertyTypeConfig<CommercialFilters, CommercialProperty> = {
+export const commercialConfig: PropertyTypeConfig<CommercialFilters, NormalizedProperty> = {
   title: 'Commercial Properties',
   description: 'Discover office spaces, retail locations, and investment opportunities',
   queryKey: ['properties', 'commercial'],
@@ -166,12 +115,8 @@ export const commercialConfig: PropertyTypeConfig<CommercialFilters, CommercialP
     sizeMax: null,
     yearBuiltMin: null,
     roiMin: null,
-    commercialType: '',
-    businessZone: '',
-    areaMin: '',
-    areaMax: '',
-    floorsMin: '',
-    floorsMax: '',
+    floorsMin: null,
+    floorsMax: null,
     parking: false,
     elevator: false,
     airConditioning: false,
@@ -179,13 +124,17 @@ export const commercialConfig: PropertyTypeConfig<CommercialFilters, CommercialP
     wifi: false,
     generator: false,
   },
-  fetcher: fetchCommercialProperties,
-  adapter: commercialAdapter,
+  fetcher: createPropertyFetcher<CommercialFilters, NormalizedProperty>(
+    '🏢',
+    'commercial',
+    (item) => commercialPropertyAdapter(item as Parameters<typeof commercialPropertyAdapter>[0]),
+  ),
+  adapter: (item) => commercialPropertyAdapter(item as Parameters<typeof commercialPropertyAdapter>[0]),
   filterComponent: CommercialFiltersComponent,
   cardComponent: PropertyCard,
-};
+}
 
-export const landConfig: PropertyTypeConfig<LandFilters, LandProperty> = {
+export const landConfig: PropertyTypeConfig<LandFilters, NormalizedProperty> = {
   title: 'Land Properties',
   description: 'Verified land with comprehensive verification and documentation',
   queryKey: ['properties', 'land'],
@@ -197,17 +146,21 @@ export const landConfig: PropertyTypeConfig<LandFilters, LandProperty> = {
     verified: false,
     category: 'land',
     landType: '',
-    sizeMin: '',
-    sizeMax: '',
+    sizeMin: null,
+    sizeMax: null,
     waterAccess: false,
     roadAccess: false,
     electricityAccess: false,
   },
-  fetcher: fetchLandProperties,
-  adapter: landAdapter,
+  fetcher: createPropertyFetcher<LandFilters, NormalizedProperty>(
+    '🏞️',
+    'land',
+    (item) => landPropertyAdapter(item as Parameters<typeof landPropertyAdapter>[0]),
+  ),
+  adapter: (item) => landPropertyAdapter(item as Parameters<typeof landPropertyAdapter>[0]),
   filterComponent: LandFiltersComponent,
   cardComponent: LandCard,
-};
+}
 
 export const allPropertiesConfig: PropertyTypeConfig<BasePropertyFilters, NormalizedProperty> = {
   title: 'All Properties',
@@ -221,42 +174,52 @@ export const allPropertiesConfig: PropertyTypeConfig<BasePropertyFilters, Normal
     verified: false,
     category: null,
   },
-  fetcher: fetchAllProperties,
-  adapter: (item: NormalizedProperty) => item,
+  fetcher: async (filters: BasePropertyFilters, page: number, pageSize: number) => {
+    devLog('🏠 fetchAllProperties called with:', { filters, page, pageSize })
+
+    const result = await fetchMockProperties(filters, page, pageSize)
+
+    devLog('🏠 fetchAllProperties result:', {
+      itemsCount: result.items.length,
+      totalCount: result.totalCount,
+    })
+
+    return {
+      items: result.items.map(item => residentialPropertyAdapter(item as unknown as Parameters<typeof residentialPropertyAdapter>[0])),
+      totalCount: result.totalCount,
+      totalPages: result.totalPages,
+    }
+  },
+  adapter: (item) => item as NormalizedProperty,
   filterComponent: AllPropertiesFiltersComponent,
   cardComponent: AdaptivePropertyCard,
-};
+}
 
-// Configuration registry
+// ---------------------------------------------------------------------------
+// Registry & utilities
+// ---------------------------------------------------------------------------
+
 export const propertyTypeConfigs = {
   residential: residentialConfig,
   commercial: commercialConfig,
   land: landConfig,
   all: allPropertiesConfig,
-} as const;
+} as const
 
-export type PropertyTypeKey = keyof typeof propertyTypeConfigs;
+export type PropertyTypeKey = keyof typeof propertyTypeConfigs
 
-// Utility functions
-export function getPropertyTypeConfig<T extends PropertyTypeKey>(type: T): typeof propertyTypeConfigs[T] {
-  switch (type) {
-    case 'residential':
-      return propertyTypeConfigs.residential as typeof propertyTypeConfigs[T];
-    case 'commercial':
-      return propertyTypeConfigs.commercial as typeof propertyTypeConfigs[T];
-    case 'land':
-      return propertyTypeConfigs.land as typeof propertyTypeConfigs[T];
-    case 'all':
-      return propertyTypeConfigs.all as typeof propertyTypeConfigs[T];
-    default:
-      throw new Error(`Invalid property type: ${type}`);
-  }
+export function getPropertyTypeConfig<T extends PropertyTypeKey>(
+  type: T,
+): (typeof propertyTypeConfigs)[T] {
+  const config = propertyTypeConfigs[type]
+  if (!config) throw new Error(`Invalid property type: ${type}`)
+  return config
 }
 
 export function isValidPropertyType(type: string): type is PropertyTypeKey {
-  return ['residential', 'commercial', 'land', 'all'].includes(type as PropertyTypeKey);
+  return type in propertyTypeConfigs
 }
 
 export function getAvailablePropertyTypes(): PropertyTypeKey[] {
-  return ['residential', 'commercial', 'land', 'all'];
+  return Object.keys(propertyTypeConfigs) as PropertyTypeKey[]
 }

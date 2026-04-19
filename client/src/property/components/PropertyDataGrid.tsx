@@ -1,29 +1,48 @@
+/**
+ * PropertyDataGrid
+ *
+ * Generic, virtualized data grid for property listings.
+ * Supports grid and list view modes via react-window with consistent performance
+ * regardless of item count.
+ */
+
 import { Grid3X3, List as ListIcon, Loader2 } from 'lucide-react'
 import React, { useMemo, useCallback } from 'react'
-import * as ReactWindow from 'react-window'
-const { FixedSizeGrid: Grid, FixedSizeList: List } = ReactWindow as any;
+import { Grid, List } from 'react-window'
+import type { CellComponentProps, RowComponentProps } from 'react-window'
 
 import { Button } from '../../local/components/ui/button'
 import { Card } from '../../local/components/ui/card'
 
-interface PropertyDataGridProps<T> {
-  readonly items: T[];
-  readonly loading: boolean;
-  readonly viewMode: 'grid' | 'list';
-  readonly onViewModeChange: (mode: 'grid' | 'list') => void;
-  readonly renderItem: (item: T, style: React.CSSProperties) => React.ReactNode;
-  readonly itemHeight: number;
-  readonly gridItemSize: { width: number; height: number };
-  readonly emptyState?: React.ReactNode;
-  readonly className?: string;
-  readonly containerHeight?: number;
-  readonly containerWidth?: number;
+// =============================================================================
+// Types
+// =============================================================================
+
+export interface PropertyDataGridProps<T> {
+  readonly items: T[]
+  readonly loading: boolean
+  readonly viewMode: 'grid' | 'list'
+  readonly onViewModeChange: (mode: 'grid' | 'list') => void
+  /**
+   * Renders a single item. The `innerStyle` argument provides computed inner
+   * dimensions so the item can fill its cell correctly.
+   */
+  readonly renderItem: (item: T, innerStyle: React.CSSProperties) => React.ReactNode
+  /** Row height used by the list virtualiser (px). */
+  readonly itemHeight: number
+  readonly gridItemSize: { width: number; height: number }
+  readonly emptyState?: React.ReactNode
+  readonly className?: string
+  /** Pixel height of the scrollable viewport (default: 600). */
+  readonly containerHeight?: number
+  /** Pixel width of the scrollable viewport (default: 1200). */
+  readonly containerWidth?: number
 }
 
-/**
- * Generic property data grid component with virtualization support
- * Supports both grid and list view modes with consistent performance
- */
+// =============================================================================
+// Component
+// =============================================================================
+
 export function PropertyDataGrid<T>({
   items,
   loading,
@@ -38,157 +57,172 @@ export function PropertyDataGrid<T>({
   containerWidth = 1200,
 }: PropertyDataGridProps<T>): React.ReactElement {
 
-  // Calculate grid dimensions
+  // ---------------------------------------------------------------------------
+  // Derived grid geometry
+  // ---------------------------------------------------------------------------
+
   const gridConfig = useMemo(() => {
-    const columnsPerRow = Math.floor(containerWidth / gridItemSize.width);
-    const rowCount = Math.ceil(items.length / columnsPerRow);
-    
+    // Clamp to ≥1 to prevent division-by-zero when containerWidth is very small.
+    const columnsPerRow = Math.max(1, Math.floor(containerWidth / gridItemSize.width))
+    const rowCount = Math.ceil(items.length / columnsPerRow)
+
     return {
       columnsPerRow,
       rowCount,
       columnWidth: gridItemSize.width,
       rowHeight: gridItemSize.height,
-    };
-  }, [items.length, containerWidth, gridItemSize]);
-
-  // Grid cell renderer
-  const GridCell = useCallback(({ columnIndex, rowIndex, style }: {
-    columnIndex: number;
-    rowIndex: number;
-    style: React.CSSProperties;
-  }) => {
-    const itemIndex = rowIndex * gridConfig.columnsPerRow + columnIndex;
-    const item = items[itemIndex];
-    
-    if (!item) {
-      return <div style={style} />;
     }
+  }, [items.length, containerWidth, gridItemSize])
 
-    return (
-      <div style={style}>
-        <div className="p-2">
-          {renderItem(item, { width: '100%', height: '100%' })}
+  // ---------------------------------------------------------------------------
+  // Cell / row renderers (stable references via useCallback)
+  // ---------------------------------------------------------------------------
+
+  const GridCell = useCallback(
+    ({ columnIndex, rowIndex, style, ariaAttributes }: CellComponentProps) => {
+      const itemIndex = rowIndex * gridConfig.columnsPerRow + columnIndex
+      const item = items[itemIndex]
+
+      if (!item) return <div style={style} {...ariaAttributes} />
+
+      return (
+        <div style={style} {...ariaAttributes}>
+          <div className="p-2 h-full">
+            {renderItem(item, { width: '100%', height: '100%' })}
+          </div>
         </div>
-      </div>
-    );
-  }, [items, gridConfig.columnsPerRow, renderItem]);
+      )
+    },
+    [items, gridConfig.columnsPerRow, renderItem],
+  )
 
-  // List item renderer
-  const ListItem = useCallback(({ index, style }: {
-    index: number;
-    style: React.CSSProperties;
-  }) => {
-    const item = items[index];
-    
-    return (
-      <div style={style}>
-        <div className="px-4 py-2">
-          {item && renderItem(item, { width: '100%', height: itemHeight - 16 })}
+  const ListRow = useCallback(
+    ({ index, style, ariaAttributes }: RowComponentProps) => {
+      const item = items[index]
+      if (!item) return <div style={style} {...ariaAttributes} />
+
+      return (
+        <div style={style} {...ariaAttributes}>
+          <div className="px-4 py-2">
+            {renderItem(item, { width: '100%', height: itemHeight - 16 })}
+          </div>
         </div>
-      </div>
-    );
-  }, [items, renderItem, itemHeight]);
+      )
+    },
+    [items, renderItem, itemHeight],
+  )
 
-  // Loading state
+  // ---------------------------------------------------------------------------
+  // Early-return states
+  // ---------------------------------------------------------------------------
+
   if (loading) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span>Loading properties...</span>
+          <Loader2 className="w-5 h-5 animate-spin" aria-hidden />
+          <span>Loading properties…</span>
         </div>
       </div>
-    );
+    )
   }
 
-  // Empty state
   if (items.length === 0) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>
-        {emptyState || (
+        {emptyState ?? (
           <Card className="p-8 text-center">
             <div className="text-muted-foreground">
-              <div className="text-4xl mb-4">🏠</div>
+              <div className="text-4xl mb-4" aria-hidden>🏠</div>
               <h3 className="text-lg font-medium mb-2">No properties found</h3>
               <p className="text-sm">Try adjusting your filters or search criteria</p>
             </div>
           </Card>
         )}
       </div>
-    );
+    )
   }
+
+  // ---------------------------------------------------------------------------
+  // Main render
+  // ---------------------------------------------------------------------------
+
+  const itemLabel = items.length === 1 ? 'property' : 'properties'
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* View Mode Toggle */}
+
+      {/* View-mode toggle + item count */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {items.length} {items.length === 1 ? 'property' : 'properties'} found
-        </div>
-        <div className="flex items-center gap-2">
+        <p className="text-sm text-muted-foreground">
+          {items.length} {itemLabel} found
+        </p>
+
+        <div className="flex items-center gap-2" role="group" aria-label="View mode">
           <Button
             variant={viewMode === 'grid' ? 'default' : 'outline'}
             size="sm"
             onClick={() => onViewModeChange('grid')}
+            aria-pressed={viewMode === 'grid'}
             className="flex items-center gap-2"
           >
-            <Grid3X3 className="w-4 h-4" />
+            <Grid3X3 className="w-4 h-4" aria-hidden />
             Grid
           </Button>
+
           <Button
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="sm"
             onClick={() => onViewModeChange('list')}
+            aria-pressed={viewMode === 'list'}
             className="flex items-center gap-2"
           >
-            <ListIcon className="w-4 h-4" />
+            <ListIcon className="w-4 h-4" aria-hidden />
             List
           </Button>
         </div>
       </div>
 
-      {/* Virtualized Content */}
+      {/* Virtualised viewport */}
       <div className="border rounded-lg overflow-hidden">
         {viewMode === 'grid' ? (
           <Grid
             columnCount={gridConfig.columnsPerRow}
             columnWidth={gridConfig.columnWidth}
-            height={containerHeight}
             rowCount={gridConfig.rowCount}
             rowHeight={gridConfig.rowHeight}
-            width={containerWidth}
+            cellComponent={GridCell}
+            cellProps={{}}
+            style={{ height: containerHeight, width: containerWidth }}
             className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-          >
-            {GridCell}
-          </Grid>
+          />
         ) : (
           <List
-            height={containerHeight}
-            itemCount={items.length}
-            itemSize={itemHeight}
-            width={containerWidth}
+            rowCount={items.length}
+            rowHeight={itemHeight}
+            rowComponent={ListRow}
+            rowProps={{}}
+            style={{ height: containerHeight, width: containerWidth }}
             className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-          >
-            {ListItem}
-          </List>
+          />
         )}
       </div>
 
-      {/* Performance Info (Development Only) */}
+      {/* Dev-only debug strip */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-          <div>Virtualized: {items.length} items</div>
-          <div>View: {viewMode}</div>
+        <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded font-mono">
+          <span>virtualised · {items.length} items · {viewMode} view</span>
           {viewMode === 'grid' && (
-            <div>Grid: {gridConfig.rowCount} rows × {gridConfig.columnsPerRow} columns</div>
+            <span>
+              {' '}· {gridConfig.rowCount}r × {gridConfig.columnsPerRow}c
+            </span>
           )}
         </div>
       )}
     </div>
-  );
+  )
 }
 
-// Export with display name for debugging
-PropertyDataGrid.displayName = 'PropertyDataGrid';
+PropertyDataGrid.displayName = 'PropertyDataGrid'
 
-export default PropertyDataGrid;
+export default PropertyDataGrid

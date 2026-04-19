@@ -54,7 +54,7 @@ interface PropertyListingPageProps<
  */
 export function PropertyListingPage<
   TFilters extends BasePropertyFilters,
-  TProperty,
+  TProperty extends { id: string | number; title?: string; category?: string },
 >({
   config,
   className = "",
@@ -224,7 +224,7 @@ export function PropertyListingPage<
 
   // Virtualized list hook
   const { dimensions, itemsPerRow } = useVirtualizedPropertyList(
-    normalizedProperties,
+    normalizedProperties as unknown as any[],
     viewMode,
     containerRef
   );
@@ -237,7 +237,7 @@ export function PropertyListingPage<
   }, []);
 
   const handlePropertyClick = useCallback(
-    (property: NormalizedProperty) => {
+    (property: TProperty) => {
       // All properties (including land) now use the unified /property/:id route
       // The PropertyDetails component handles different property types internally
       const route = `/property/${property.id}`;
@@ -593,13 +593,12 @@ export function PropertyListingPage<
                     </div>
                   </div>
                   <EnhancedVirtualizedPropertyList
-                    properties={normalizedProperties}
+                    properties={normalizedProperties as unknown as any[]}
                     viewMode={viewMode}
                     height={dimensions.height}
                     width={dimensions.width}
-                    onPropertyClick={handlePropertyClick}
+                    onPropertyClick={handlePropertyClick as any}
                     CardComponent={config.cardComponent}
-                    itemsPerRow={itemsPerRow}
                     gridItemWidth={320}
                     gridItemHeight={400}
                     listItemHeight={200}

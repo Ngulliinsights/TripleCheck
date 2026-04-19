@@ -126,7 +126,9 @@ const RelatedLandsCarousel: React.FC<RelatedLandsCarouselProps> = ({
     handlePrev,
     handleNext,
     handleSlideChange,
-    setIsAutoPlaying,
+    handleToggleAutoPlay,
+    handleMouseEnter,
+    handleMouseLeave,
   } = useCarousel({ totalItems: relatedLands.length, autoPlayInterval: 5000 })
 
   const handleLandClick = useCallback(
@@ -153,9 +155,9 @@ const RelatedLandsCarousel: React.FC<RelatedLandsCarouselProps> = ({
       onSlideChange={handleSlideChange}
       onPrev={handlePrev}
       onNext={handleNext}
-      onToggleAutoPlay={() => setIsAutoPlaying((prev: boolean) => !prev)}
-      onMouseEnter={() => setIsAutoPlaying(false)}
-      onMouseLeave={() => setIsAutoPlaying(true)}
+      onToggleAutoPlay={handleToggleAutoPlay}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       activeDotClass="bg-green-600"
       navButtonClass="bg-green-50 hover:bg-green-100 text-green-600"
     >

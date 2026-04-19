@@ -37,8 +37,8 @@ export { PropertyFeatures } from './shared/PropertyFeatures'
 export { QuickActionsOverlay } from './shared/QuickActionsOverlay'
 
 // Filters
-export { BasePropertyFilters } from './filters/BasePropertyFilters'
-export { AllPropertiesFilters } from './filters/AllPropertiesFilters'
+export { BasePropertyFiltersComponent as BasePropertyFilters } from './filters/BasePropertyFilters'
+export { default as AllPropertiesFilters } from './filters/AllPropertiesFilters'
 export { ResidentialFilters } from './filters/ResidentialFilters'
 export { CommercialFilters } from './filters/CommercialFilters'
-export { LandFilters } from './filters/LandFilters'
+export { default as LandFilters } from './filters/LandFilters'

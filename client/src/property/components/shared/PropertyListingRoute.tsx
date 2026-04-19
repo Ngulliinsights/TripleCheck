@@ -9,10 +9,10 @@
 
 import React, { useCallback, useState } from "react"
 
-import { PropertyListingPage } from "../components/PropertyListingPage"
+import { PropertyListingPage } from "../PropertyListingPage"
 import type { PropertyTypeConfig } from "@shared/types/property"
-import { CompareBar } from "../components/CompareBar"
-import { CompareModal } from "../components/CompareModal"
+import { CompareBar } from "../CompareBar"
+import { CompareModal } from "../CompareModal"
 
 // ---------------------------------------------------------------------------
 // Types

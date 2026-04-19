@@ -1,6 +1,6 @@
 # Project Structure
 
-**Generated:** 4/19/2026, 12:04:16 PM
+**Generated:** 4/19/2026, 11:09:43 PM
 **Max Depth:** 7 levels
 
 ```
@@ -202,10 +202,8 @@
 │   │   │   │   │   │   ├── utils.ts
 │   │   │   │   │   │   └── ValidationService.ts
 │   │   │   │   │   ├── ImageGallery.module.css
-│   │   │   │   │   ├── ImageGallery.tsx
 │   │   │   │   │   ├── ImageShowcase.tsx
-│   │   │   │   │   ├── index.ts
-│   │   │   │   │   └── PropertyImageVault.tsx
+│   │   │   │   │   └── index.ts
 │   │   │   │   ├── monitoring/
 │   │   │   │   │   └── ApiClientDashboard.tsx
 │   │   │   │   ├── navigation/
@@ -335,7 +333,6 @@
 │   │   │   │   ├── examples/
 │   │   │   │   │   └── configurationExamples.ts
 │   │   │   │   ├── images/
-│   │   │   │   │   └── usePropertyImageUpload.ts
 │   │   │   │   ├── migration/
 │   │   │   │   │   ├── COMPREHENSIVE_MIGRATION_GUIDE.md
 │   │   │   │   │   └── README.md
@@ -453,11 +450,7 @@
 │   │   │   │   │   ├── core/
 │   │   │   │   │   │   └── ImageServiceCore.ts
 │   │   │   │   │   ├── ImageMetadataService.ts
-│   │   │   │   │   ├── ImageServiceOrchestrator.ts
 │   │   │   │   │   ├── index.ts
-│   │   │   │   │   ├── PropertyImageUploadService.ts
-│   │   │   │   │   ├── PropertyImageValidationService.ts
-│   │   │   │   │   ├── PropertyImageWorkflowManager.ts
 │   │   │   │   │   └── USAGE_EXAMPLES.md
 │   │   │   │   ├── AlertingService.ts
 │   │   │   │   ├── api-client-monitor.ts
@@ -539,12 +532,16 @@
 │   │   │   │   │   ├── LandFilters.tsx
 │   │   │   │   │   └── ResidentialFilters.tsx
 │   │   │   │   ├── images/
-│   │   │   │   │   └── index.ts
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   └── PropertyImageVault.tsx
 │   │   │   │   ├── shared/
 │   │   │   │   │   ├── examples/
 │   │   │   │   │   │   ├── index.ts
 │   │   │   │   │   │   └── MinimalPropertyCard.tsx
+│   │   │   │   │   ├── CarouselShell.tsx
+│   │   │   │   │   ├── components.tsx
 │   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── LandSections.tsx
 │   │   │   │   │   ├── PropertyFeatures.tsx
 │   │   │   │   │   ├── PropertyImageSection.tsx
 │   │   │   │   │   └── QuickActionsOverlay.tsx
@@ -597,7 +594,8 @@
 │   │   │   │   ├── usePropertyCardActions.ts
 │   │   │   │   ├── usePropertyCardState.ts
 │   │   │   │   ├── usePropertyCompareActions.ts
-│   │   │   │   └── usePropertyFormatting.ts
+│   │   │   │   ├── usePropertyFormatting.ts
+│   │   │   │   └── usePropertyImageUpload.ts
 │   │   │   ├── pages/
 │   │   │   │   ├── CommercialProperties.tsx
 │   │   │   │   ├── index.ts
@@ -626,11 +624,6 @@
 │   │   │   │   ├── property-api.ts
 │   │   │   │   ├── property-validation.ts
 │   │   │   │   └── PropertyDocumentIntegration.ts
-│   │   │   ├── shared/
-│   │   │   │   ├── components.tsx
-│   │   │   │   ├── LandSections.tsx
-│   │   │   │   ├── PropertyGallery.tsx
-│   │   │   │   └── utils.ts
 │   │   │   ├── styles/
 │   │   │   │   ├── comparison.constants.ts
 │   │   │   │   └── index.ts
@@ -642,14 +635,11 @@
 │   │   │   │   └── property.types.ts
 │   │   │   ├── utils/
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── normalizeLandProperty.ts
-│   │   │   │   ├── normalizeProperty.ts
 │   │   │   │   ├── property-mapper.ts
 │   │   │   │   ├── propertyAdapters.ts
-│   │   │   │   └── propertyImages.ts
-│   │   │   ├── config && cp dProjectsDAfricanPropertyTrustclientsrclocaltypescontractsproperty-contracts.ts dProjectsDAfricanPropertyTrustclientsrcpropertytypes
-│   │   │   ├── index.ts
-│   │   │   └── utils && cp dProjectsDAfricanPropertyTrustclientsrclocalutilsproperty-mapper.ts dProjectsDAfricanPropertyTrustclientsrcpropertyutils
+│   │   │   │   ├── propertyImages.ts
+│   │   │   │   └── ui-utils.ts
+│   │   │   └── index.ts
 │   │   ├── search/
 │   │   │   ├── components/
 │   │   │   │   ├── ConsolidatedSearch.tsx
@@ -1394,6 +1384,7 @@
 │   ├── types/
 │   │   ├── auth-constants.ts
 │   │   ├── auth-errors.ts
+│   │   ├── express-session.d.ts
 │   │   ├── fraud.types.ts
 │   │   ├── index.ts
 │   │   ├── property.types.ts

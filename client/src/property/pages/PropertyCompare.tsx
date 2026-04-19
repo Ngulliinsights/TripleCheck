@@ -1,4 +1,4 @@
-﻿import {
+import {
   Home,
   X,
   BarChart3,
@@ -20,570 +20,505 @@ import {
 } from "../../local/utils/compare-utils"
 import { usePropertyCompare, usePropertyCompareActions } from "../contexts"
 
-// Validation result interface
-interface PropertyValidation {
-  isValid: boolean;
-  warnings: string[];
-  errors: string[];
+// ---------------------------------------------------------------------------
+// Derived types — avoids importing sub-types that may not be public exports
+// ---------------------------------------------------------------------------
+
+/** Inferred from the context hook so we never import CompareProperty directly. */
+type CompareProperty = ReturnType<typeof usePropertyCompare>["selectedProperties"][number]
+
+/**
+ * The widest possible features shape, defined inline rather than intersecting
+ * the three sub-types (Residential/Commercial/LandFeatures). Every field is
+ * optional so we can safely optional-chain regardless of property category.
+ */
+interface AnyFeatures {
+  bedrooms?: number
+  bathrooms?: number
+  squareFeet?: number
+  parkingSpaces?: number
+  yearBuilt?: number
+  amenities?: string[]
+  // Land-specific size aliases that may appear at runtime
+  size?: number
+  landSize?: number
 }
 
-// Enhanced component props
-interface PropertyCompareProps {
-  properties?: Property[];
-  onComparisonChange?: (selectedProperties: Property[]) => void;
-  onSelectionLimitReached?: (attemptedProperty: Property) => void;
-  showAdvancedStats?: boolean;
-  allowMixedTypes?: boolean;
+// ---------------------------------------------------------------------------
+// Feature accessor helpers
+// ---------------------------------------------------------------------------
+
+/** Cast any features value to the widest safe shape. */
+function feat(features: unknown): AnyFeatures {
+  return (features ?? {}) as AnyFeatures
 }
 
-// Enhanced statistics interface
-interface ComparisonStats {
-  basic: {
-    averagePrice: number;
-    priceRange: { min: number; max: number };
-    averageBedrooms: number;
-    averageSquareFeet: number;
-  };
-  advanced: {
-    pricePerSquareFoot: number[];
-    bestValue: string | null;
-    newestProperty: string | null;
-    mostSpaciousPerPrice: string | null;
-    verificationScore: number;
-  };
-  warnings: string[];
+/** Derive a flat display snapshot from any Property's features. */
+function getDisplayFields(features: unknown) {
+  const f = feat(features)
+  return {
+    bedrooms:      f.bedrooms      ?? null,
+    bathrooms:     f.bathrooms     ?? null,
+    squareFeet:    f.squareFeet    ?? f.size ?? f.landSize ?? 0,
+    parkingSpaces: f.parkingSpaces ?? 0,
+    yearBuilt:     f.yearBuilt     ?? null,
+    amenities:     f.amenities     ?? [],
+  }
 }
 
-// Constants to avoid duplicate strings
-const PROPERTY_TYPE_RESIDENTIAL = "residential";
-const PROPERTY_TYPE_COMMERCIAL = "commercial";
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
-// Sample properties with more realistic data
+const CURRENT_YEAR = new Date().getFullYear()
+
+const STATUS_STYLES = {
+  verified:   "bg-green-100 text-green-800",
+  pending:    "bg-yellow-100 text-yellow-800",
+  unverified: "bg-gray-100 text-gray-800",
+} as const
+
+type KnownStatus = keyof typeof STATUS_STYLES
+
+function statusStyle(status: string | undefined): string {
+  const s = (status ?? "unverified") as KnownStatus
+  return STATUS_STYLES[s in STATUS_STYLES ? s : "unverified"]
+}
+
+// ---------------------------------------------------------------------------
+// Sample / fallback data
+//
+// Cast via `unknown` — these objects intentionally omit subtype-specific
+// required fields (e.g. LandProperty.category). This is the correct escape
+// hatch for mock data that will be replaced by a real API.
+// ---------------------------------------------------------------------------
+
 const sampleProperties = [
   {
     id: "1",
     title: "Modern Apartment in Westlands",
-    price: 15000000,
+    price: 15_000_000,
     location: "Westlands, Nairobi",
     description: "A beautiful modern apartment with stunning city views.",
     images: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400"],
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 1200,
-    amenities: ["Swimming Pool", "Gym", "Security", "Backup Generator"],
-    verificationStatus: "verified" as const,
-    type: PROPERTY_TYPE_RESIDENTIAL,
+    verificationStatus: "verified",
+    category: "residential",
+    status: "active",
+    verified: true,
+    trustScore: 95,
+    createdAt: "2024-01-15",
+    type: "residential",
     features: {
-      bedrooms: 3,
-      bathrooms: 2,
-      squareFeet: 1200,
-      parkingSpaces: 2,
-      yearBuilt: 2020,
+      bedrooms: 3, bathrooms: 2, squareFeet: 1200, parkingSpaces: 2, yearBuilt: 2020,
       amenities: ["Swimming Pool", "Gym", "Security", "Backup Generator"],
     },
-    listingDate: "2024-01-15",
   },
   {
     id: "2",
     title: "Spacious Villa in Karen",
-    price: 45000000,
+    price: 45_000_000,
     location: "Karen, Nairobi",
     description: "Luxury villa with large gardens and premium finishes.",
-    images: [
-      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400",
-    ],
-    bedrooms: 5,
-    bathrooms: 4,
-    area: 3500,
-    amenities: [
-      "Garden",
-      "Swimming Pool",
-      "Staff Quarters",
-      "Solar Power",
-      "CCTV",
-    ],
-    verificationStatus: "verified" as const,
-    type: PROPERTY_TYPE_RESIDENTIAL,
+    images: ["https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400"],
+    verificationStatus: "verified",
+    category: "residential",
+    status: "active",
+    verified: true,
+    trustScore: 98,
+    createdAt: "2024-01-10",
+    type: "residential",
     features: {
-      bedrooms: 5,
-      bathrooms: 4,
-      squareFeet: 3500,
-      parkingSpaces: 4,
-      yearBuilt: 2018,
-      amenities: [
-        "Garden",
-        "Swimming Pool",
-        "Staff Quarters",
-        "Solar Power",
-        "CCTV",
-      ],
+      bedrooms: 5, bathrooms: 4, squareFeet: 3500, parkingSpaces: 4, yearBuilt: 2018,
+      amenities: ["Garden", "Swimming Pool", "Staff Quarters", "Solar Power", "CCTV"],
     },
-    listingDate: "2024-01-10",
   },
   {
     id: "3",
     title: "Cozy Townhouse in Kilimani",
-    price: 8500000,
+    price: 8_500_000,
     location: "Kilimani, Nairobi",
-    description: "Perfect starter home in a quiet neighborhood.",
-    images: [
-      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400",
-    ],
-    bedrooms: 2,
-    bathrooms: 2,
-    area: 900,
-    amenities: ["Security", "Water Backup", "Fiber Internet"],
-    verificationStatus: "pending" as const,
-    type: PROPERTY_TYPE_RESIDENTIAL,
+    description: "Perfect starter home in a quiet neighbourhood.",
+    images: ["https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400"],
+    verificationStatus: "pending",
+    category: "residential",
+    status: "active",
+    verified: false,
+    trustScore: 70,
+    createdAt: "2024-01-20",
+    type: "residential",
     features: {
-      bedrooms: 2,
-      bathrooms: 2,
-      squareFeet: 900,
-      parkingSpaces: 1,
-      yearBuilt: 2015,
+      bedrooms: 2, bathrooms: 2, squareFeet: 900, parkingSpaces: 1, yearBuilt: 2015,
       amenities: ["Security", "Water Backup", "Fiber Internet"],
     },
-    listingDate: "2024-01-20",
   },
   {
     id: "4",
     title: "Executive Office Space in Upper Hill",
-    price: 28000000,
+    price: 28_000_000,
     location: "Upper Hill, Nairobi",
     description: "Premium office space in the business district.",
-    images: [
-      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400",
-    ],
-    bedrooms: 0, // Office space has no bedrooms
-    bathrooms: 3,
-    area: 1800,
-    amenities: [
-      "Rooftop Terrace",
-      "Concierge",
-      "Business Center",
-      "High Speed Internet",
-    ],
-    verificationStatus: "verified" as const,
-    type: PROPERTY_TYPE_COMMERCIAL,
-    features: {
-      bedrooms: 0,
-      bathrooms: 3,
-      squareFeet: 1800,
-      parkingSpaces: 6,
-      yearBuilt: 2019,
-      amenities: [
-        "Rooftop Terrace",
-        "Concierge",
-        "Business Center",
-        "High Speed Internet",
-      ],
-    },
-    listingDate: "2024-01-05",
+    images: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400"],
+    verificationStatus: "verified",
+    category: "commercial",
+    status: "active",
+    verified: true,
+    trustScore: 92,
+    createdAt: "2024-01-05",
+    type: "commercial",
+    features: { squareFeet: 1800, parkingSpaces: 6, yearBuilt: 2019 },
   },
-];
+] as unknown as Property[]
 
-const PropertyCompareInner: React.FC<PropertyCompareProps> = ({
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface PropertyValidation {
+  isValid: boolean
+  warnings: string[]
+  errors: string[]
+}
+
+interface PropertyCompareProps {
+  properties?: Property[]
+  onComparisonChange?: (selected: CompareProperty[]) => void
+  onSelectionLimitReached?: (attempted: Property) => void
+  showAdvancedStats?: boolean
+  allowMixedTypes?: boolean
+}
+
+interface ComparisonStats {
+  basic: {
+    averagePrice: number
+    priceRange: { min: number; max: number }
+    averageBedrooms: number
+    averageSquareFeet: number
+  }
+  advanced: {
+    pricePerSquareFoot: number[]
+    bestValue: string | null
+    newestProperty: string | null
+    mostSpaciousPerPrice: string | null
+    verificationScore: number
+  }
+  warnings: string[]
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+const PropertyCompare: React.FC<PropertyCompareProps> = ({
   properties = sampleProperties,
   onComparisonChange,
   onSelectionLimitReached,
   showAdvancedStats = true,
   allowMixedTypes = false,
 }) => {
-  // Use unified PropertyContext for comparison functionality
-  const { selectedProperties, maxProperties, isSelected, canAddMore } =
-    usePropertyCompare();
-  const { toggleProperty, removeFromCompare, clearCompare, replaceProperty } =
-    usePropertyCompareActions();
-  const [searchParams] = useSearchParams();
-  const { error, handleError, clearError } = useCompareError();
+  const { selectedProperties, maxProperties, isSelected, canAddMore } = usePropertyCompare()
+  const { toggleProperty, removeFromCompare, clearCompare, replaceProperty } = usePropertyCompareActions()
+  const [searchParams] = useSearchParams()
+  const { error, handleError, clearError } = useCompareError()
 
-  // Local UI state only
-  const [showReplacementDialog, setShowReplacementDialog] = useState(false);
-  const [pendingProperty, setPendingProperty] = useState<Property | null>(null);
-  const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
+  const [showReplacementDialog, setShowReplacementDialog] = useState(false)
+  const [pendingProperty, setPendingProperty]             = useState<Property | null>(null)
+  const [validationWarnings, setValidationWarnings]       = useState<string[]>([])
 
-  // Convert CompareProperty back to Property format for display
-  const displayProperties = useMemo(() => {
-    return selectedProperties.map((p) => ({
-      ...p,
-      bedrooms: p.features?.bedrooms || 0,
-      bathrooms: p.features?.bathrooms || 0,
-      area: p.features?.squareFeet || 0,
-      size: p.features?.squareFeet || 0,
-      amenities: p.features?.amenities || [],
-      verificationStatus: p.verificationStatus || "unverified",
-      type: p.type || PROPERTY_TYPE_RESIDENTIAL,
-      images: p.images || [],
-      features: {
-        ...p.features,
-        parkingSpaces: p.features?.parkingSpaces || 0,
-        yearBuilt: p.features?.yearBuilt || new Date().getFullYear(),
-      },
-    })) as Property[];
-  }, [selectedProperties]);
+  // ------------------------------------------------------------------
+  // Utilities
+  // ------------------------------------------------------------------
 
-  // Load properties from URL params on mount
-  useEffect(() => {
-    const propertyIds =
-      searchParams.get("properties")?.split(",").filter(Boolean) || [];
-    if (propertyIds.length > 0) {
-      const urlProperties = properties.filter((p) =>
-        propertyIds.includes(String(p.id))
-      );
-      if (urlProperties.length > 0) {
-        // Convert to CompareProperty format and add to unified context
-        urlProperties.forEach((property) => {
-          const compareProperty = normalizePropertyForComparison({
-            ...property,
-            features: {
-              bedrooms: property.bedrooms,
-              bathrooms: property.bathrooms,
-              squareFeet: property.area || property.features?.squareFeet || 0,
-              parkingSpaces: property.features?.parkingSpaces || 0,
-              yearBuilt:
-                property.features?.yearBuilt || new Date().getFullYear(),
-              amenities:
-                property.amenities || property.features?.amenities || [],
-            },
-          });
-          if (compareProperty && !isSelected(String(property.id))) {
-            toggleProperty(compareProperty);
-          }
-        });
-      }
+  const locationStr = (loc: any): string =>
+    typeof loc === "string" ? loc : (loc?.address || "")
+
+  const numericPrice = (price: number | string): number =>
+    typeof price === "string" ? parseFloat(price) : price
+
+  /**
+   * Build the normalized features object that normalizePropertyForComparison
+   * expects, sourcing values from whatever shape the incoming Property carries.
+   */
+  const buildNormalizedFeatures = useCallback((property: Property) => {
+    const { squareFeet, parkingSpaces, yearBuilt, amenities, bedrooms, bathrooms } =
+      getDisplayFields(property.features)
+    return {
+      bedrooms:      bedrooms   ?? 0,
+      bathrooms:     bathrooms  ?? 0,
+      squareFeet,
+      parkingSpaces,
+      yearBuilt:     yearBuilt  ?? CURRENT_YEAR,
+      amenities,
     }
-  }, [searchParams, properties, isSelected, toggleProperty]);
+  }, [])
 
-  // Comprehensive property validation
-  const validateProperty = useCallback(
-    (property: Property): PropertyValidation => {
-      const warnings: string[] = [];
-      const errors: string[] = [];
+  const buildCompareProperty = useCallback(
+    (property: Property) =>
+      normalizePropertyForComparison({ ...property, features: buildNormalizedFeatures(property) }),
+    [buildNormalizedFeatures]
+  )
 
-      // Check for missing or invalid required fields
-      const price =
-        typeof property.price === "string" ?
-          parseFloat(property.price)
-        : property.price;
-      if (!price || price <= 0) {
-        errors.push(`${property.title}: Invalid or missing price`);
-      }
-      const squareFeet = property.area || property.features?.squareFeet || 0;
-      if (!squareFeet || squareFeet <= 0) {
-        errors.push(`${property.title}: Invalid or missing square footage`);
-      }
-      if ((property.bedrooms || 0) < 0) {
-        errors.push(`${property.title}: Invalid bedroom count`);
-      }
-      if ((property.bathrooms || 0) <= 0) {
-        errors.push(`${property.title}: Invalid bathroom count`);
-      }
+  // ------------------------------------------------------------------
+  // URL param initialisation
+  // ------------------------------------------------------------------
 
-      // Business logic warnings
-      if (property.verificationStatus !== "verified") {
-        warnings.push(`${property.title}: Property is not verified`);
-      }
-      const yearBuilt =
-        property.features?.yearBuilt || new Date().getFullYear();
-      if (yearBuilt < 1900 || yearBuilt > new Date().getFullYear()) {
-        warnings.push(`${property.title}: Unusual year built (${yearBuilt})`);
-      }
-      if (price && squareFeet && price / squareFeet > 25000) {
-        warnings.push(
-          `${property.title}: Price per sq ft seems high (KES ${Math.round(price / squareFeet).toLocaleString()})`
-        );
-      }
+  useEffect(() => {
+    const ids = searchParams.get("properties")?.split(",").filter(Boolean) ?? []
+    if (ids.length === 0) return
 
-      return {
-        isValid: errors.length === 0,
-        warnings,
-        errors,
-      };
-    },
-    []
-  );
+    properties
+      .filter((p) => ids.includes(String(p.id)) && !isSelected(String(p.id)))
+      .forEach((p) => {
+        const cp = buildCompareProperty(p)
+        if (cp) toggleProperty(cp)
+      })
+  }, [searchParams, properties, isSelected, buildCompareProperty, toggleProperty])
 
-  // Validate properties on load and selection
-  const validatedProperties = useMemo(() => {
-    return properties.filter((property) => {
-      const validation = validateProperty(property);
-      return validation.isValid;
-    });
-  }, [properties, validateProperty]);
+  // ------------------------------------------------------------------
+  // Validation
+  // ------------------------------------------------------------------
 
-  // Unified property selection handler using PropertyContext
-  const handlePropertySelection = useCallback(
-    (property: Property, validation: PropertyValidation) => {
-      const compareProperty = normalizePropertyForComparison({
-        ...property,
-        features: {
-          bedrooms: property.bedrooms,
-          bathrooms: property.bathrooms,
-          squareFeet: property.area || property.size || 0,
-          parkingSpaces: property.features?.parkingSpaces || 0,
-          yearBuilt: property.features?.yearBuilt || new Date().getFullYear(),
-          amenities: property.amenities || property.features?.amenities || [],
-        },
-      });
+  const validateProperty = useCallback((property: Property): PropertyValidation => {
+    const warnings: string[] = []
+    const errors:   string[] = []
+    const price = numericPrice(property.price)
+    const { squareFeet, yearBuilt, bedrooms, bathrooms } = getDisplayFields(property.features)
 
-      if (!compareProperty) {
-        handleError(
-          "Failed to normalize property data",
-          "handlePropertySelect"
-        );
-        return;
-      }
+    if (!price || price <= 0)
+      errors.push(`${property.title}: Invalid or missing price`)
+    if (!squareFeet || squareFeet <= 0)
+      errors.push(`${property.title}: Invalid or missing square footage`)
+    if ((bedrooms ?? 0) < 0)
+      errors.push(`${property.title}: Invalid bedroom count`)
+    if ((bathrooms ?? 0) <= 0)
+      errors.push(`${property.title}: Invalid bathroom count`)
+    if (property.verificationStatus !== "verified")
+      warnings.push(`${property.title}: Property is not verified`)
+    if (yearBuilt !== null && (yearBuilt < 1900 || yearBuilt > CURRENT_YEAR))
+      warnings.push(`${property.title}: Unusual year built (${yearBuilt})`)
+    if (price && squareFeet && price / squareFeet > 25_000)
+      warnings.push(
+        `${property.title}: Price per sq ft seems high (KES ${Math.round(price / squareFeet).toLocaleString()})`
+      )
 
-      // Check for mixed property types if not allowed
-      if (!allowMixedTypes && displayProperties.length > 0) {
-        const existingType = displayProperties[0]?.type;
-        if (property.type !== existingType) {
-          setValidationWarnings([
-            `Cannot compare ${property.type} properties with ${existingType} properties. Clear selection or enable mixed type comparison.`,
-          ]);
-          return;
-        }
-      }
+    return { isValid: errors.length === 0, warnings, errors }
+  }, [])
 
-      // Handle selection limit
-      if (!canAddMore && !isSelected(String(property.id))) {
-        setPendingProperty(property);
-        setShowReplacementDialog(true);
-        onSelectionLimitReached?.(property);
-        return;
-      }
+  const validatedProperties = useMemo(
+    () => properties.filter((p) => validateProperty(p).isValid),
+    [properties, validateProperty]
+  )
 
-      // Toggle property in unified context
-      toggleProperty(compareProperty);
-      setValidationWarnings(validation.warnings);
+  // ------------------------------------------------------------------
+  // Selection handlers
+  // ------------------------------------------------------------------
 
-      // Notify parent component of changes
-      const updatedProperties =
-        isSelected(String(property.id)) ?
-          displayProperties.filter((p) => p.id !== property.id)
-        : [...displayProperties, property];
-      onComparisonChange?.(updatedProperties);
-    },
-    [
-      allowMixedTypes,
-      displayProperties,
-      canAddMore,
-      isSelected,
-      toggleProperty,
-      onComparisonChange,
-      onSelectionLimitReached,
-      handleError,
-    ]
-  );
-
-  // Enhanced selection logic with proper business rules
   const handlePropertySelect = useCallback(
     (property: Property) => {
       try {
-        clearError();
-        const validation = validateProperty(property);
+        clearError()
+        const validation = validateProperty(property)
+        if (!validation.isValid) { setValidationWarnings(validation.errors); return }
 
-        if (!validation.isValid) {
-          setValidationWarnings(validation.errors);
-          return;
+        // Mixed-type guard
+        if (!allowMixedTypes && selectedProperties.length > 0) {
+          const existingType = selectedProperties[0]?.type
+          if (property.type !== existingType) {
+            setValidationWarnings([
+              `Cannot compare ${property.type} with ${existingType}. Clear selection or enable mixed-type comparison.`,
+            ])
+            return
+          }
         }
 
-        handlePropertySelection(property, validation);
-      } catch (error) {
-        handleError(error, "handlePropertySelect");
+        // Selection limit — open replacement dialog
+        if (!canAddMore && !isSelected(String(property.id))) {
+          setPendingProperty(property)
+          setShowReplacementDialog(true)
+          onSelectionLimitReached?.(property)
+          return
+        }
+
+        const cp = buildCompareProperty(property)
+        if (!cp) { handleError("Failed to normalize property data", "handlePropertySelect"); return }
+
+        toggleProperty(cp)
+        setValidationWarnings(validation.warnings)
+
+        const updated = isSelected(String(property.id))
+          ? selectedProperties.filter((p) => p.id !== String(property.id))
+          : [...selectedProperties, cp]
+        onComparisonChange?.(updated)
+      } catch (err) {
+        handleError(err, "handlePropertySelect")
       }
     },
-    [clearError, validateProperty, handlePropertySelection, handleError]
-  );
+    [
+      clearError, validateProperty, allowMixedTypes, selectedProperties,
+      canAddMore, isSelected, buildCompareProperty, toggleProperty,
+      onComparisonChange, onSelectionLimitReached, handleError,
+    ]
+  )
 
-  // Handle property replacement
   const handleReplaceProperty = useCallback(
     (indexToReplace: number) => {
-      if (
-        !pendingProperty ||
-        indexToReplace < 0 ||
-        indexToReplace >= selectedProperties.length
-      )
-        return;
+      if (!pendingProperty || indexToReplace < 0 || indexToReplace >= selectedProperties.length) return
+      const oldId = selectedProperties[indexToReplace]?.id
+      const cp    = oldId ? buildCompareProperty(pendingProperty) : null
+      if (!oldId || !cp) return
 
-      const propertyAtIndex = selectedProperties[indexToReplace];
-      const oldPropertyId = propertyAtIndex?.id;
-      if (oldPropertyId && pendingProperty) {
-        const compareProperty = normalizePropertyForComparison({
-          ...pendingProperty,
-          features: {
-            bedrooms: pendingProperty.bedrooms,
-            bathrooms: pendingProperty.bathrooms,
-            squareFeet:
-              pendingProperty.area || pendingProperty.features?.squareFeet || 0,
-            parkingSpaces: pendingProperty.features?.parkingSpaces || 0,
-            yearBuilt:
-              pendingProperty.features?.yearBuilt || new Date().getFullYear(),
-            amenities:
-              pendingProperty.amenities ||
-              pendingProperty.features?.amenities ||
-              [],
-          },
-        });
-
-        if (compareProperty) {
-          replaceProperty(oldPropertyId, compareProperty);
-          setPendingProperty(null);
-          setShowReplacementDialog(false);
-          onComparisonChange?.(
-            displayProperties.map((p, i) =>
-              i === indexToReplace ? pendingProperty : p
-            )
-          );
-        }
-      }
+      replaceProperty(oldId, cp)
+      onComparisonChange?.(selectedProperties.map((p, i) => (i === indexToReplace ? cp : p)))
+      setPendingProperty(null)
+      setShowReplacementDialog(false)
     },
-    [selectedProperties, pendingProperty, onComparisonChange, replaceProperty, displayProperties]
-  );
+    [selectedProperties, pendingProperty, buildCompareProperty, replaceProperty, onComparisonChange]
+  )
 
-  // Enhanced statistics with business insights
+  // ------------------------------------------------------------------
+  // Statistics
+  // ------------------------------------------------------------------
+
   const statistics = useMemo((): ComparisonStats | null => {
-    if (selectedProperties.length < 2) return null;
+    if (selectedProperties.length < 2) return null
 
-    const prices = selectedProperties.map((p) => p.price);
-    const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+    const prices   = selectedProperties.map((p) => p.price)
+    const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length
+    const minPrice = Math.min(...prices)
+    const maxPrice = Math.max(...prices)
+    const count    = selectedProperties.length
 
-    const avgBedrooms =
-      selectedProperties.reduce(
-        (sum, p) => sum + (p.features?.bedrooms || 0),
-        0
-      ) / selectedProperties.length;
-    const avgSquareFeet =
-      selectedProperties.reduce(
-        (sum, p) => sum + (p.features?.squareFeet || 0),
-        0
-      ) / selectedProperties.length;
+    const avgBedrooms = selectedProperties.reduce((s, p) => s + (feat(p.features).bedrooms ?? 0), 0) / count
+    const avgSqFt     = selectedProperties.reduce((s, p) => s + (feat(p.features).squareFeet ?? 0), 0) / count
 
-    // Advanced calculations
-    const pricePerSquareFoot = selectedProperties.map(
-      (p) => p.price / (p.features?.squareFeet || 1)
-    );
+    const pricePerSqFt = selectedProperties.map((p) => p.price / (feat(p.features).squareFeet || 1))
 
-    // Find best value (lowest price per square foot)
-    const bestValueIndex = pricePerSquareFoot.indexOf(
-      Math.min(...pricePerSquareFoot)
-    );
-    const bestValueProperty = bestValueIndex >= 0 && bestValueIndex < selectedProperties.length ? 
-      selectedProperties[bestValueIndex] : null;
-    const bestValue = bestValueProperty?.id || null;
+    const bestValue =
+      selectedProperties[pricePerSqFt.indexOf(Math.min(...pricePerSqFt))]?.id ?? null
 
-    // Find newest property
-    const newestIndex = selectedProperties.reduce((newest, current, index) => {
-      const newestPropertyAtIndex = selectedProperties[newest];
-      const currentYear = current.features?.yearBuilt || 0;
-      const newestYear = newestPropertyAtIndex?.features?.yearBuilt || 0;
-      return newestPropertyAtIndex && currentYear > newestYear ? index : newest;
-    }, 0);
-    const newestPropertyAtIndex = newestIndex >= 0 && newestIndex < selectedProperties.length ?
-      selectedProperties[newestIndex] : null;
-    const newestProperty = newestPropertyAtIndex?.id || null;
+    const newestIndex = selectedProperties.reduce((best, curr, i) => {
+      const bestYr = feat(selectedProperties[best]?.features).yearBuilt ?? 0
+      const currYr = feat(curr.features).yearBuilt ?? 0
+      return currYr > bestYr ? i : best
+    }, 0)
+    const newestProperty = selectedProperties[newestIndex]?.id ?? null
 
-    // Find most spacious per price
-    const spaciousPerPriceValues = selectedProperties.map(
-      (p) => (p.features?.squareFeet || 0) / p.price
-    );
-    const mostSpaciousIndex = spaciousPerPriceValues.indexOf(
-      Math.max(...spaciousPerPriceValues)
-    );
-    const mostSpaciousPropertyAtIndex = mostSpaciousIndex >= 0 && mostSpaciousIndex < selectedProperties.length ?
-      selectedProperties[mostSpaciousIndex] : null;
-    const mostSpaciousPerPrice = mostSpaciousPropertyAtIndex?.id || null;
+    const spaciousPerPrice = selectedProperties.map(
+      (p) => (feat(p.features).squareFeet ?? 0) / p.price
+    )
+    const mostSpaciousPerPrice =
+      selectedProperties[spaciousPerPrice.indexOf(Math.max(...spaciousPerPrice))]?.id ?? null
 
-    // Verification score (percentage of verified properties)
-    const verifiedCount = selectedProperties.filter(
-      (p) => p.verificationStatus === "verified"
-    ).length;
-    const verificationScore = (verifiedCount / selectedProperties.length) * 100;
+    const verifiedCount     = selectedProperties.filter((p) => p.verificationStatus === "verified").length
+    const verificationScore = (verifiedCount / count) * 100
 
-    // Generate warnings
-    const warnings: string[] = [];
-    if (verificationScore < 50) {
-      warnings.push("More than half of selected properties are not verified");
-    }
-    if (maxPrice / minPrice > 5) {
-      warnings.push(
-        "Large price variation detected - ensure properties are comparable"
-      );
-    }
-
-    const typeVariety = new Set(selectedProperties.map((p) => p.type)).size;
-    if (typeVariety > 1) {
-      warnings.push(
-        "Comparing different property types - results may not be meaningful"
-      );
-    }
+    const warnings: string[] = []
+    if (verificationScore < 50)  warnings.push("More than half of selected properties are not verified")
+    if (maxPrice / minPrice > 5) warnings.push("Large price variation — ensure properties are comparable")
+    if (new Set(selectedProperties.map((p) => p.type)).size > 1)
+      warnings.push("Comparing different property types — results may not be meaningful")
 
     return {
       basic: {
-        averagePrice: avgPrice,
-        priceRange: { min: minPrice, max: maxPrice },
-        averageBedrooms: Math.round(avgBedrooms * 10) / 10,
-        averageSquareFeet: Math.round(avgSquareFeet),
+        averagePrice:      avgPrice,
+        priceRange:        { min: minPrice, max: maxPrice },
+        averageBedrooms:   Math.round(avgBedrooms * 10) / 10,
+        averageSquareFeet: Math.round(avgSqFt),
       },
       advanced: {
-        pricePerSquareFoot: pricePerSquareFoot.map((p) => Math.round(p)),
+        pricePerSquareFoot: pricePerSqFt.map(Math.round),
         bestValue,
         newestProperty,
         mostSpaciousPerPrice,
-        verificationScore: Math.round(verificationScore),
+        verificationScore:  Math.round(verificationScore),
       },
       warnings,
-    };
-  }, [selectedProperties]);
+    }
+  }, [selectedProperties])
 
-  // Status styling helper
-  const getStatusStyle = (status: string) => {
-    const styles = {
-      verified: "bg-green-100 text-green-800",
-      pending: "bg-yellow-100 text-yellow-800",
-      unverified: "bg-gray-100 text-gray-800",
-    } as const;
+  const getHighlights = (id: string): string[] => {
+    if (!statistics) return []
+    return [
+      statistics.advanced.bestValue            === id && "Best Value",
+      statistics.advanced.newestProperty       === id && "Newest",
+      statistics.advanced.mostSpaciousPerPrice === id && "Most Space/Price",
+    ].filter(Boolean) as string[]
+  }
 
-    const validStatuses = ["verified", "pending", "unverified"] as const;
-    const safeStatus =
-      validStatuses.includes(status as (typeof validStatuses)[number]) ?
-        (status as keyof typeof styles)
-      : "unverified";
+  // ------------------------------------------------------------------
+  // Table row definitions — data-driven to eliminate 10× repeated <tr>
+  // ------------------------------------------------------------------
 
-    return styles[safeStatus];
-  };
+  const tableRows: Array<{ label: string; render: (p: CompareProperty) => React.ReactNode }> = useMemo(
+    () => [
+      {
+        label: "Price",
+        render: (p) => (
+          <span className="text-2xl font-bold text-blue-600">KES {p.price.toLocaleString()}</span>
+        ),
+      },
+      {
+        label: "Price per Sq Ft",
+        render: (p) => (
+          <span className="text-lg font-semibold text-green-600">
+            KES {Math.round(p.price / (feat(p.features).squareFeet || 1)).toLocaleString()}
+          </span>
+        ),
+      },
+      { label: "Bedrooms",       render: (p) => feat(p.features).bedrooms      ?? "N/A" },
+      { label: "Bathrooms",      render: (p) => feat(p.features).bathrooms     ?? 0 },
+      { label: "Square Feet",    render: (p) => (feat(p.features).squareFeet ?? 0).toLocaleString() },
+      { label: "Parking Spaces", render: (p) => feat(p.features).parkingSpaces ?? 0 },
+      { label: "Year Built",     render: (p) => feat(p.features).yearBuilt     ?? "N/A" },
+      {
+        label: "Property Age",
+        render: (p) => {
+          const yr = feat(p.features).yearBuilt
+          return yr ? `${CURRENT_YEAR - yr} years` : "N/A"
+        },
+      },
+      {
+        label: "Verification",
+        render: (p) => (
+          <span className={`px-2 py-1 rounded text-sm font-medium ${statusStyle(p.verificationStatus)}`}>
+            {p.verificationStatus ?? "unverified"}
+          </span>
+        ),
+      },
+      {
+        label: "Amenities",
+        render: (p) => {
+          const list = feat(p.features).amenities ?? []
+          return list.length > 0
+            ? list.map((a) => (
+                <span key={a} className="inline-block text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded mr-1 mb-1">
+                  {a}
+                </span>
+              ))
+            : <span className="text-gray-400 text-sm">None listed</span>
+        },
+      },
+    ],
+    // tableRows is pure — no reactive deps; useMemo prevents re-allocation on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
 
-  // Property highlight helper
-  const getPropertyHighlight = (propertyId: string) => {
-    if (!statistics) return null;
-
-    const highlights = [];
-    if (statistics.advanced.bestValue === propertyId)
-      highlights.push("Best Value");
-    if (statistics.advanced.newestProperty === propertyId)
-      highlights.push("Newest");
-    if (statistics.advanced.mostSpaciousPerPrice === propertyId)
-      highlights.push("Most Space/Price");
-
-    return highlights;
-  };
+  // ------------------------------------------------------------------
+  // Render
+  // ------------------------------------------------------------------
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
-      {/* Header */}
+
+      {/* ── Header ── */}
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Enhanced Property Comparison Tool
-        </h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Property Comparison</h1>
         <p className="text-lg text-gray-600">
-          Compare up to {maxProperties} properties with advanced analytics and
-          validation
+          Compare up to {maxProperties} properties with advanced analytics and validation
         </p>
       </div>
 
-      {/* Error Display */}
+      {/* ── Error banner ── */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -591,320 +526,209 @@ const PropertyCompareInner: React.FC<PropertyCompareProps> = ({
             <h3 className="font-medium text-red-800">Error</h3>
           </div>
           <p className="text-sm text-red-700">{error.message}</p>
-          <button
-            onClick={clearError}
-            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-          >
+          <button onClick={clearError} className="mt-2 text-sm text-red-600 hover:text-red-800 underline">
             Dismiss
           </button>
         </div>
       )}
 
-      {/* Validation Warnings */}
+      {/* ── Validation warnings ── */}
       {validationWarnings.length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-5 h-5 text-yellow-600" />
             <h3 className="font-medium text-yellow-800">Validation Warnings</h3>
           </div>
-          <div className="space-y-1">
-            {validationWarnings.map((warning, index) => (
-              <p key={index} className="text-sm text-yellow-700">
-                {warning}
-              </p>
-            ))}
-          </div>
+          {validationWarnings.map((w, i) => (
+            <p key={i} className="text-sm text-yellow-700">{w}</p>
+          ))}
         </div>
       )}
 
-      {/* Property Selection Grid */}
+      {/* ── Property grid ── */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-semibold text-gray-900">
-            Available Properties
-          </h2>
-          <div className="text-sm text-gray-600">
-            {validatedProperties.length} properties available (
-            {properties.length - validatedProperties.length} filtered out)
-          </div>
+          <h2 className="text-2xl font-semibold text-gray-900">Available Properties</h2>
+          <span className="text-sm text-gray-600">
+            {validatedProperties.length} available ({properties.length - validatedProperties.length} filtered out)
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {validatedProperties.map((property) => {
-            const isSelected = selectedProperties.some(
-              (p) => p.id === String(property.id)
-            );
-            const highlights = getPropertyHighlight(String(property.id));
-            const price =
-              typeof property.price === "string" ?
-                parseFloat(property.price)
-              : property.price;
-            const sqFt = property.area || property.features?.squareFeet || 1;
-            const pricePerSqFt = Math.round(price / sqFt);
+            const selected   = selectedProperties.some((p) => p.id === String(property.id))
+            const highlights = getHighlights(String(property.id))
+            const price      = numericPrice(property.price)
+            const { squareFeet, parkingSpaces, yearBuilt, bedrooms, bathrooms } =
+              getDisplayFields(property.features)
 
             return (
               <div
                 key={property.id}
                 className={`border rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${
-                  isSelected ?
-                    "border-blue-500 bg-blue-50 shadow-lg transform scale-105"
-                  : "border-gray-200 hover:border-gray-300 hover:shadow-md"
+                  selected
+                    ? "border-blue-500 bg-blue-50 shadow-lg scale-105"
+                    : "border-gray-200 hover:border-gray-300 hover:shadow-md"
                 }`}
                 onClick={() => handlePropertySelect(property)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handlePropertySelect(property);
-                  }
+                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePropertySelect(property) }
                 }}
                 role="button"
                 tabIndex={0}
-                aria-label={`${isSelected ? "Remove" : "Add"} ${property.title} ${isSelected ? "from" : "to"} comparison`}
+                aria-label={`${selected ? "Remove" : "Add"} ${property.title} ${selected ? "from" : "to"} comparison`}
               >
-                {/* Property Image */}
+                {/* Thumbnail */}
                 <div className="h-48 bg-gray-100 overflow-hidden relative">
-                  {property.images?.[0] ?
-                    <img
-                      src={property.images[0]}
-                      alt={property.title}
-                      className="w-full h-full object-cover"
-                    />
-                  : <div className="w-full h-full flex items-center justify-center">
-                      <Home className="w-12 h-12 text-gray-400" />
-                    </div>
+                  {property.images?.[0]
+                    ? <img src={property.images[0]} alt={property.title} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center"><Home className="w-12 h-12 text-gray-400" /></div>
                   }
-
-                  {/* Selection indicator */}
-                  {isSelected && (
+                  {selected && (
                     <div className="absolute top-3 right-3 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                      âœ“
+                      ✓
                     </div>
                   )}
-
-                  {/* Highlights */}
-                  {highlights && highlights.length > 0 && (
+                  {highlights.length > 0 && (
                     <div className="absolute top-3 left-3 space-y-1">
-                      {highlights.map((highlight) => (
-                        <div
-                          key={highlight}
-                          className="bg-green-500 text-white text-xs px-2 py-1 rounded font-medium"
-                        >
-                          {highlight}
-                        </div>
+                      {highlights.map((h) => (
+                        <div key={h} className="bg-green-500 text-white text-xs px-2 py-1 rounded font-medium">{h}</div>
                       ))}
                     </div>
                   )}
-
-                  {/* Verification Status */}
                   <div className="absolute bottom-3 left-3">
                     {getVerificationBadge(property.verificationStatus)}
                   </div>
                 </div>
 
-                {/* Property Details */}
+                {/* Details */}
                 <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2 text-gray-900">
-                    {property.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-3">
-                    {typeof property.location === "string" ?
-                      property.location
-                    : property.location.address}
-                  </p>
-
-                  <div className="text-2xl font-bold text-blue-600 mb-1">
-                    {formatComparePrice(
-                      typeof property.price === "string" ?
-                        parseFloat(property.price)
-                      : property.price
-                    )}
-                  </div>
+                  <h3 className="font-semibold text-lg mb-2 text-gray-900">{property.title}</h3>
+                  <p className="text-gray-600 text-sm mb-3">{locationStr(property.location)}</p>
+                  <div className="text-2xl font-bold text-blue-600 mb-1">{formatComparePrice(price)}</div>
                   <div className="text-sm text-gray-600 mb-3">
-                    {formatComparePrice(pricePerSqFt)}/sq ft
+                    {formatComparePrice(Math.round(price / (squareFeet || 1)))}/sq ft
                   </div>
-
                   <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
-                    <div>{property.bedrooms || "N/A"} bed</div>
-                    <div>{property.bathrooms || 0} bath</div>
-                    <div>
-                      {(
-                        property.area ||
-                        property.features?.squareFeet ||
-                        0
-                      ).toLocaleString()}{" "}
-                      sq ft
-                    </div>
-                    <div>{property.features?.parkingSpaces || 0} parking</div>
+                    <div>{bedrooms ?? "N/A"} bed</div>
+                    <div>{bathrooms ?? 0} bath</div>
+                    <div>{squareFeet.toLocaleString()} sq ft</div>
+                    <div>{parkingSpaces} parking</div>
                   </div>
-
                   <div className="flex items-center justify-between">
-                    <div className="text-xs text-gray-500">
-                      Built {property.features?.yearBuilt || "N/A"}
-                    </div>
+                    <div className="text-xs text-gray-500">Built {yearBuilt ?? "N/A"}</div>
                     <Link
                       to={`/property/${String(property.id)}`}
                       className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      Details
+                      <ExternalLink className="w-3 h-3 mr-1" /> Details
                     </Link>
                   </div>
                 </div>
               </div>
-            );
+            )
           })}
         </div>
       </div>
 
-      {/* Replacement Dialog */}
+      {/* ── Replacement dialog ── */}
       {showReplacementDialog && pendingProperty && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">Replace Property</h3>
             <p className="text-gray-600 mb-4">
-              You&apos;ve reached the maximum of {maxProperties} properties.
-              Which property would you like to replace with &quot;
-              {pendingProperty.title}&quot;?
+              You&apos;ve reached the maximum of {maxProperties} properties. Which would you like to
+              replace with &quot;{pendingProperty.title}&quot;?
             </p>
-
             <div className="space-y-2 mb-6">
-              {selectedProperties.map((property, index) => (
+              {selectedProperties.map((p, i) => (
                 <button
-                  key={property.id}
-                  onClick={() => handleReplaceProperty(index)}
+                  key={p.id}
+                  onClick={() => handleReplaceProperty(i)}
                   className="w-full text-left p-3 border rounded hover:bg-gray-50 transition-colors"
                 >
-                  <div className="font-medium">{property.title}</div>
-                  <div className="text-sm text-gray-600">
-                    {typeof property.location === "string" ?
-                      property.location
-                    : property.location.address}
-                  </div>
+                  <div className="font-medium">{p.title}</div>
+                  <div className="text-sm text-gray-600">{locationStr(p.location)}</div>
                 </button>
               ))}
             </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowReplacementDialog(false);
-                  setPendingProperty(null);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
+            <button
+              onClick={() => { setShowReplacementDialog(false); setPendingProperty(null) }}
+              className="w-full px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
 
-      {/* Enhanced Statistics */}
+      {/* ── Statistics panel ── */}
       {statistics && (
         <div className="space-y-6">
-          {/* Comparison Warnings */}
+
           {statistics.warnings.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
-                <h3 className="font-medium text-amber-800">
-                  Comparison Insights
-                </h3>
+                <h3 className="font-medium text-amber-800">Comparison Insights</h3>
               </div>
-              <div className="space-y-1">
-                {statistics.warnings.map((warning, index) => (
-                  <p key={index} className="text-sm text-amber-700">
-                    {warning}
-                  </p>
-                ))}
-              </div>
+              {statistics.warnings.map((w, i) => (
+                <p key={i} className="text-sm text-amber-700">{w}</p>
+              ))}
             </div>
           )}
 
-          {/* Basic Statistics */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="w-6 h-6 text-blue-600" />
-              <h3 className="text-xl font-semibold text-gray-900">
-                Comparison Statistics
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900">Comparison Statistics</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {formatComparePrice(statistics.basic.averagePrice)}
+              {([
+                { label: "Average Price",  value: formatComparePrice(statistics.basic.averagePrice),  color: "text-blue-600" },
+                { label: "Price Range",    value: `${formatComparePrice(statistics.basic.priceRange.min)} – ${formatComparePrice(statistics.basic.priceRange.max)}`, color: "text-green-600" },
+                { label: "Avg Bedrooms",   value: String(statistics.basic.averageBedrooms),            color: "text-purple-600" },
+                { label: "Avg Sq Ft",      value: statistics.basic.averageSquareFeet.toLocaleString(),  color: "text-orange-600" },
+              ] as const).map(({ label, value, color }) => (
+                <div key={label} className="bg-white rounded-lg p-4 text-center">
+                  <div className={`text-2xl font-bold ${color}`}>{value}</div>
+                  <div className="text-sm text-gray-600">{label}</div>
                 </div>
-                <div className="text-sm text-gray-600">Average Price</div>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-lg font-bold text-green-600">
-                  {formatComparePrice(statistics.basic.priceRange.min)} -{" "}
-                  {formatComparePrice(statistics.basic.priceRange.max)}
-                </div>
-                <div className="text-sm text-gray-600">Price Range</div>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {statistics.basic.averageBedrooms}
-                </div>
-                <div className="text-sm text-gray-600">Avg Bedrooms</div>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  {statistics.basic.averageSquareFeet.toLocaleString()}
-                </div>
-                <div className="text-sm text-gray-600">Avg Square Feet</div>
-              </div>
+              ))}
             </div>
 
-            {/* Advanced Statistics */}
             {showAdvancedStats && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white rounded-lg p-4 text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <TrendingUp className="w-5 h-5 text-green-600" />
-                    <div className="text-lg font-bold text-green-600">
-                      {statistics.advanced.verificationScore}%
-                    </div>
+                    <span className="text-lg font-bold text-green-600">{statistics.advanced.verificationScore}%</span>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    Verified Properties
-                  </div>
+                  <div className="text-sm text-gray-600">Verified Properties</div>
                 </div>
-
                 <div className="bg-white rounded-lg p-4 text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <DollarSign className="w-5 h-5 text-blue-600" />
-                    <div className="text-lg font-bold text-blue-600">
-                      KES{" "}
-                      {Math.round(
-                        statistics.advanced.pricePerSquareFoot.reduce(
-                          (a, b) => a + b,
-                          0
-                        ) / statistics.advanced.pricePerSquareFoot.length
+                    <span className="text-lg font-bold text-blue-600">
+                      KES {Math.round(
+                        statistics.advanced.pricePerSquareFoot.reduce((a, b) => a + b, 0) /
+                        statistics.advanced.pricePerSquareFoot.length
                       ).toLocaleString()}
-                    </div>
+                    </span>
                   </div>
                   <div className="text-sm text-gray-600">Avg Price/Sq Ft</div>
                 </div>
-
                 <div className="bg-white rounded-lg p-4 text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <Maximize className="w-5 h-5 text-purple-600" />
-                    <div className="text-lg font-bold text-purple-600">
+                    <span className="text-lg font-bold text-purple-600">
                       {Math.round(
-                        ((statistics.basic.priceRange.max -
-                          statistics.basic.priceRange.min) /
-                          statistics.basic.priceRange.min) *
-                          100
-                      )}
-                      %
-                    </div>
+                        ((statistics.basic.priceRange.max - statistics.basic.priceRange.min) /
+                          statistics.basic.priceRange.min) * 100
+                      )}%
+                    </span>
                   </div>
                   <div className="text-sm text-gray-600">Price Variation</div>
                 </div>
@@ -912,187 +736,38 @@ const PropertyCompareInner: React.FC<PropertyCompareProps> = ({
             )}
           </div>
 
-          {/* Enhanced Comparison Table */}
+          {/* Data-driven comparison table */}
           <div className="bg-white rounded-lg border overflow-hidden">
             <div className="p-6 border-b bg-gray-50">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Detailed Comparison
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900">Detailed Comparison</h3>
             </div>
-
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b bg-gray-50">
-                    <th className="text-left p-4 font-semibold text-gray-900">
-                      Feature
-                    </th>
-                    {selectedProperties.map((property) => {
-                      const highlights = getPropertyHighlight(property.id);
-                      return (
-                        <th
-                          key={property.id}
-                          className="text-left p-4 font-semibold text-gray-900 min-w-48"
-                        >
-                          <div className="truncate">{property.title}</div>
-                          <div className="text-xs text-gray-600 font-normal">
-                            {typeof property.location === "string" ?
-                              property.location
-                            : property.location.address}
+                    <th className="text-left p-4 font-semibold text-gray-900">Feature</th>
+                    {selectedProperties.map((p) => (
+                      <th key={p.id} className="text-left p-4 font-semibold text-gray-900 min-w-48">
+                        <div className="truncate">{p.title}</div>
+                        <div className="text-xs text-gray-600 font-normal">{locationStr(p.location)}</div>
+                        {getHighlights(p.id).map((h) => (
+                          <div key={h} className="mt-1 text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                            {h}
                           </div>
-                          {highlights && highlights.length > 0 && (
-                            <div className="mt-1 space-y-1">
-                              {highlights.map((highlight) => (
-                                <div
-                                  key={highlight}
-                                  className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium"
-                                >
-                                  {highlight}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </th>
-                      );
-                    })}
+                        ))}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">Price</td>
-                    {selectedProperties.map((property) => (
-                      <td
-                        key={property.id}
-                        className="p-4 text-2xl font-bold text-blue-600"
-                      >
-                        KES {property.price.toLocaleString()}
-                      </td>
-                    ))}
-                  </tr>
-
-                  <tr className="border-b hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">
-                      Price per Sq Ft
-                    </td>
-                    {selectedProperties.map((property) => (
-                      <td
-                        key={property.id}
-                        className="p-4 text-lg font-semibold text-green-600"
-                      >
-                        KES{" "}
-                        {Math.round(
-                          property.price / (property.features?.squareFeet || 1)
-                        ).toLocaleString()}
-                      </td>
-                    ))}
-                  </tr>
-
-                  <tr className="border-b hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">Bedrooms</td>
-                    {selectedProperties.map((property) => (
-                      <td key={property.id} className="p-4 text-lg">
-                        {property.features?.bedrooms || "N/A"}
-                      </td>
-                    ))}
-                  </tr>
-
-                  <tr className="border-b hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">Bathrooms</td>
-                    {selectedProperties.map((property) => (
-                      <td key={property.id} className="p-4 text-lg">
-                        {property.features?.bathrooms || 0}
-                      </td>
-                    ))}
-                  </tr>
-
-                  <tr className="border-b hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">
-                      Square Feet
-                    </td>
-                    {selectedProperties.map((property) => (
-                      <td key={property.id} className="p-4 text-lg">
-                        {(property.features?.squareFeet || 0).toLocaleString()}
-                      </td>
-                    ))}
-                  </tr>
-
-                  <tr className="border-b hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">
-                      Parking Spaces
-                    </td>
-                    {selectedProperties.map((property) => (
-                      <td key={property.id} className="p-4 text-lg">
-                        {property.features?.parkingSpaces || 0}
-                      </td>
-                    ))}
-                  </tr>
-
-                  <tr className="border-b hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">
-                      Year Built
-                    </td>
-                    {selectedProperties.map((property) => (
-                      <td key={property.id} className="p-4 text-lg">
-                        {property.features?.yearBuilt || "N/A"}
-                      </td>
-                    ))}
-                  </tr>
-
-                  <tr className="border-b hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">
-                      Property Age
-                    </td>
-                    {selectedProperties.map((property) => (
-                      <td key={property.id} className="p-4 text-lg">
-                        {property.features?.yearBuilt ?
-                          new Date().getFullYear() - property.features.yearBuilt
-                        : "N/A"}{" "}
-                        years
-                      </td>
-                    ))}
-                  </tr>
-
-                  <tr className="border-b hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">
-                      Verification Status
-                    </td>
-                    {selectedProperties.map((property) => (
-                      <td key={property.id} className="p-4">
-                        <span
-                          className={`px-2 py-1 rounded text-sm font-medium ${getStatusStyle(property.verificationStatus || "unverified")}`}
-                        >
-                          {property.verificationStatus || "unverified"}
-                        </span>
-                      </td>
-                    ))}
-                  </tr>
-
-                  <tr className="hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900 align-top">
-                      Amenities
-                    </td>
-                    {selectedProperties.map((property) => (
-                      <td key={property.id} className="p-4">
-                        <div className="space-y-1">
-                          {(property.features?.amenities || []).length > 0 ?
-                            (property.features?.amenities || []).map(
-                              (amenity: string) => (
-                                <div
-                                  key={amenity}
-                                  className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded inline-block mr-1 mb-1"
-                                >
-                                  {amenity}
-                                </div>
-                              )
-                            )
-                          : <span className="text-gray-400 text-sm">
-                              None listed
-                            </span>
-                          }
-                        </div>
-                      </td>
-                    ))}
-                  </tr>
+                  {tableRows.map(({ label, render }) => (
+                    <tr key={label} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="p-4 font-medium text-gray-900 align-top">{label}</td>
+                      {selectedProperties.map((p) => (
+                        <td key={p.id} className="p-4 text-lg align-top">{render(p)}</td>
+                      ))}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -1100,7 +775,7 @@ const PropertyCompareInner: React.FC<PropertyCompareProps> = ({
         </div>
       )}
 
-      {/* Selected Properties Summary */}
+      {/* ── Selected properties tray ── */}
       {selectedProperties.length > 0 && (
         <div className="bg-gray-50 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
@@ -1110,28 +785,14 @@ const PropertyCompareInner: React.FC<PropertyCompareProps> = ({
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => {
-                  // Export functionality would be implemented here
-                  // const exportData = {
-                  //   properties: selectedProperties,
-                  //   statistics: statistics,
-                  //   exportDate: new Date().toISOString(),
-                  // };
-                  window.alert(
-                    "Export functionality would be implemented here"
-                  );
-                }}
+                onClick={() => window.alert("Export functionality would be implemented here")}
                 className="text-blue-600 hover:text-blue-800 font-medium px-3 py-1 border border-blue-300 rounded hover:bg-blue-50 transition-colors"
               >
-                Export Comparison
+                Export
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  clearCompare();
-                  setValidationWarnings([]);
-                  onComparisonChange?.([]);
-                }}
+                onClick={() => { clearCompare(); setValidationWarnings([]); onComparisonChange?.([]) }}
                 className="text-red-600 hover:text-red-800 font-medium px-3 py-1 border border-red-300 rounded hover:bg-red-50 transition-colors"
               >
                 Clear All
@@ -1140,51 +801,30 @@ const PropertyCompareInner: React.FC<PropertyCompareProps> = ({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {selectedProperties.map((property) => (
-              <div
-                key={property.id}
-                className="bg-white border rounded-lg p-3 flex items-center gap-3 min-w-0"
-              >
+            {selectedProperties.map((p) => (
+              <div key={p.id} className="bg-white border rounded-lg p-3 flex items-center gap-3 min-w-0">
                 <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-                  {property.images?.[0] ?
-                    <img
-                      src={property.images[0]}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  : <div className="w-full h-full flex items-center justify-center">
-                      <Home className="w-6 h-6 text-gray-400" />
-                    </div>
+                  {p.images?.[0]
+                    ? <img src={p.images[0]} alt="" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center"><Home className="w-6 h-6 text-gray-400" /></div>
                   }
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">
-                    {property.title}
-                  </div>
-                  <div className="text-gray-600 text-xs truncate">
-                    {typeof property.location === "string" ?
-                      property.location
-                    : property.location.address}
-                  </div>
+                  <div className="font-medium text-sm truncate">{p.title}</div>
+                  <div className="text-gray-600 text-xs truncate">{locationStr(p.location)}</div>
                   <div className="text-blue-600 text-xs font-medium">
-                    KES{" "}
-                    {Math.round(
-                      property.price / (property.features?.squareFeet || 1)
-                    ).toLocaleString()}
-                    /sq ft
+                    KES {Math.round(p.price / (feat(p.features).squareFeet || 1)).toLocaleString()}/sq ft
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    removeFromCompare(property.id);
-                    onComparisonChange?.(
-                      displayProperties.filter((p) => p.id !== property.id)
-                    );
+                    e.stopPropagation()
+                    removeFromCompare(p.id)
+                    onComparisonChange?.(selectedProperties.filter((s) => s.id !== p.id))
                   }}
                   className="text-gray-400 hover:text-red-500 p-1 flex-shrink-0"
-                  aria-label={`Remove ${property.title} from comparison`}
+                  aria-label={`Remove ${p.title} from comparison`}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1192,89 +832,56 @@ const PropertyCompareInner: React.FC<PropertyCompareProps> = ({
             ))}
           </div>
 
-          {/* Quick Actions */}
           {selectedProperties.length >= 2 && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="flex flex-wrap gap-2 text-sm">
-                <div className="text-gray-600">Quick insights:</div>
-                {statistics?.advanced.bestValue && (
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
-                    Best value:{" "}
-                    {
-                      selectedProperties.find(
-                        (p) => p.id === statistics.advanced.bestValue
-                      )?.title
-                    }
-                  </span>
-                )}
-                {statistics?.advanced.newestProperty && (
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                    Newest:{" "}
-                    {
-                      selectedProperties.find(
-                        (p) => p.id == statistics.advanced.newestProperty
-                      )?.title
-                    }
-                  </span>
-                )}
-                {statistics &&
-                  statistics.advanced.verificationScore === 100 && (
-                    <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                      All properties verified âœ“
-                    </span>
-                  )}
-              </div>
+            <div className="mt-4 pt-4 border-t flex flex-wrap gap-2 text-sm items-center">
+              <span className="text-gray-600">Quick insights:</span>
+              {statistics?.advanced.bestValue && (
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                  Best value: {selectedProperties.find((p) => p.id === statistics.advanced.bestValue)?.title}
+                </span>
+              )}
+              {statistics?.advanced.newestProperty && (
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  Newest: {selectedProperties.find((p) => p.id === statistics.advanced.newestProperty)?.title}
+                </span>
+              )}
+              {statistics?.advanced.verificationScore === 100 && (
+                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                  All properties verified ✓
+                </span>
+              )}
             </div>
           )}
         </div>
       )}
 
-      {/* Enhanced Empty State */}
+      {/* ── Empty state ── */}
       {selectedProperties.length === 0 && (
         <div className="text-center py-16 bg-gray-50 rounded-lg">
           <Home className="w-20 h-20 text-gray-300 mx-auto mb-6" />
-          <h3 className="text-2xl font-medium text-gray-900 mb-3">
-            No Properties Selected
-          </h3>
+          <h3 className="text-2xl font-medium text-gray-900 mb-3">No Properties Selected</h3>
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            Click on properties above to add them to your comparison. You can
-            compare up to {maxProperties} properties at once
-            {!allowMixedTypes && " of the same type"}.
+            Click on properties above to add them to your comparison. You can compare up to{" "}
+            {maxProperties} properties at once{!allowMixedTypes && " of the same type"}.
           </p>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto text-sm text-gray-600">
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span>Side-by-side comparison</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Advanced analytics</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <span>Property validation</span>
-            </div>
+            {(["bg-blue-500", "bg-green-500", "bg-purple-500"] as const).map((color, i) => (
+              <div key={i} className="flex items-center justify-center gap-2">
+                <div className={`w-2 h-2 ${color} rounded-full`} />
+                <span>{["Side-by-side comparison", "Advanced analytics", "Property validation"][i]}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Help Text */}
-      <div className="text-center text-sm text-gray-500">
-        <p>
-          Properties are automatically validated for data quality.
-          {!allowMixedTypes &&
-            " Only properties of the same type can be compared together."}{" "}
-          Verified properties are recommended for accurate comparisons.
-        </p>
-      </div>
+      <p className="text-center text-sm text-gray-500">
+        Properties are automatically validated for data quality.
+        {!allowMixedTypes && " Only properties of the same type can be compared."}
+        {" "}Verified properties are recommended for accurate comparisons.
+      </p>
     </div>
-  );
-};
+  )
+}
 
-// Main component export
-const PropertyCompare: React.FC<PropertyCompareProps> = (props) => {
-  return <PropertyCompareInner {...props} />;
-};
-
-export default PropertyCompare;
+export default PropertyCompare

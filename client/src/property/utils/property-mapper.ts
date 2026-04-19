@@ -79,9 +79,11 @@ export const normalizeProperty = (property: any, category: 'residential' | 'comm
   }
 
   if (prop.owner) {
-    const owner: PropertyOwner = {
+    const owner: NonNullable<NormalizedProperty['owner']> = {
       id: String(prop.owner.id),
       name: prop.owner.name || `${prop.owner.firstName || ''} ${prop.owner.lastName || ''}`.trim() || 'Unknown Owner',
+      firstName: prop.owner.firstName || '',
+      lastName: prop.owner.lastName || '',
       trustScore: prop.owner.trustScore || 0,
       isVerifiedAgent: prop.owner.isVerifiedAgent || false,
     };

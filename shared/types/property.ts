@@ -130,6 +130,11 @@ export interface CommercialFeatures {
   airConditioning?: boolean;
   security?:       boolean;
   loadingDock?:    boolean;
+  
+  // Strategic optional fields for unified comparisons
+  bedrooms?:       number;
+  bathrooms?:      number;
+  amenities?:      string[];
 }
 
 export interface LandFeatures {
@@ -144,6 +149,14 @@ export interface LandFeatures {
   titleDeedStatus?:      TitleDeedStatus;
   topography?:           string;
   drainage?:             string;
+
+  // Strategic optional fields for unified comparisons
+  bedrooms?:             number;
+  bathrooms?:            number;
+  squareFeet?:           number;
+  parkingSpaces?:        number;
+  yearBuilt?:            number;
+  amenities?:            string[];
 }
 
 // ============================================================================
@@ -174,9 +187,19 @@ interface BaseProperty {
   isActive?:            boolean;
   isFeatured?:          boolean;
   availableFrom?:       string;   // ISO-8601
-  availableUntil?:      string;
+  availableUntil?:      string;   // Dates & metadata
   createdAt:            string;
   updatedAt?:           string;
+
+  // Strategic Features (added for comparisons and cross-category consistency)
+  bedrooms?:            number;
+  bathrooms?:           number;
+  area?:                number;
+  size?:                number;
+  squareFeet?:          number;
+  parkingSpaces?:       number;
+  yearBuilt?:           number;
+  amenities?:           string[];
 }
 
 export interface ResidentialProperty extends BaseProperty {
@@ -229,12 +252,13 @@ export interface AIVerificationResults {
 // 6. FILTERS — DISCRIMINATED UNION
 // ============================================================================
 
-interface BasePropertyFilters {
+export interface BasePropertyFilters {
   query:    string;
   location: string;
   priceMin: number | null;
   priceMax: number | null;
   verified: boolean;
+  category: PropertyCategory | null;
 }
 
 export interface ResidentialFilters extends BasePropertyFilters {
@@ -293,12 +317,12 @@ export interface PropertySearchParams {
 }
 
 export interface PropertySearchResponse<T = Property> {
-  items:          T[];
-  totalCount:     number;
-  totalPages:     number;
-  currentPage:    number;
-  hasNextPage:    boolean;
-  hasPreviousPage: boolean;
+  items:           T[];
+  totalCount:      number;
+  totalPages:      number;
+  currentPage?:    number;
+  hasNextPage?:    boolean;
+  hasPreviousPage?: boolean;
 }
 
 // ============================================================================
@@ -307,7 +331,7 @@ export interface PropertySearchResponse<T = Property> {
 
 export interface PropertyTypeConfig<
   TFilters extends BasePropertyFilters,
-  TProperty extends Property,
+  TProperty = Property,
 > {
   title:          string;
   description:    string;
@@ -319,6 +343,12 @@ export interface PropertyTypeConfig<
     pageSize: number,
   ) => Promise<PropertySearchResponse<TProperty>>;
   adapter: (raw: unknown) => TProperty;
+  /** Framework-specific filter component reference. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  filterComponent?: any;
+  /** Framework-specific card component reference. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cardComponent?: any;
 }
 
 export type PropertyAdapter<TRaw, TProperty extends Property = Property> =
@@ -364,4 +394,66 @@ export interface ApiPropertyRecord {
   availableUntil?:    string | Date | null;
   createdAt?:         string | Date;
   updatedAt?:         string | Date;
+}
+
+// ============================================================================
+// 10. NORMALISED PROPERTY  (flat, client-friendly shape)
+// ============================================================================
+
+/**
+ * Flattened property type used on the client after adapters have normalised
+ * the raw API data.  Unlike the discriminated `Property` union this is a
+ * single interface with optional fields, making it simpler for UI components.
+ */
+export interface NormalizedProperty {
+  id:                  string;
+  title:               string;
+  description:         string;
+  price:               number;
+  location:            string | LocationData;       // normalised to plain string or LocationData if needed
+  images:              string[];
+  verified:            boolean;
+  type:                string;
+  category:            PropertyCategory;
+  features:            ResidentialFeatures | CommercialFeatures | LandFeatures | Record<string, unknown>; // populated by adapters
+  createdAt:           string;                      // ISO-8601
+  status:              PropertyStatus;
+  updatedAt?:          string;
+  rating?:             number;
+  views?:              number;
+  viewCount?:          number;
+  trustScore?:         number;
+  verificationStatus?: VerificationStatus;
+  owner?:              PropertyOwner & { name?: string };
+  coordinates?:        Coordinates;
+  favoriteCount?:      number;
+  landVerification?:   LandVerificationStatus;
+  isFeatured?:         boolean;
+}
+
+// ============================================================================
+// 11. RAW LAND PROPERTY  (pre-normalisation shape from legacy endpoints)
+// ============================================================================
+
+/**
+ * Shape returned by legacy land-property endpoints before normalisation.
+ * Pass through `normalizeRawLandProperty` to produce a `NormalizedProperty`.
+ */
+export interface RawLandProperty {
+  id:                  string | number;
+  title:               string;
+  description:         string;
+  price:               string | number;
+  location:            string | { address: string; city?: string; state?: string; country?: string };
+  images?:             string[];
+  imageUrls?:          string[];
+  verificationStatus?: string;
+  features?:           Record<string, unknown>;
+  dateAdded?:          string | Date;
+  createdAt?:          string | Date;
+  status?:             string;
+  type?:               string;
+  category?:           string;
+  coordinates?:        Coordinates;
+  trustScore?:         number;
 }
