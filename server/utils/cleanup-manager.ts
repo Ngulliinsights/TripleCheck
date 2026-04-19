@@ -144,7 +144,7 @@ interface Logger {
         try {
           callback();
         } catch (error) {
-          this.logger.error({ error: error }, '❌ Error in managed interval:');
+          this.logger.error('❌ Error in managed interval:', { error: error });
         }
       }, ms);
       
@@ -163,7 +163,7 @@ interface Logger {
         try {
           callback();
         } catch (error) {
-          this.logger.error({ error: error }, '❌ Error in managed timeout:');
+          this.logger.error('❌ Error in managed timeout:', { error: error });
         }
       }, ms);
       
@@ -223,7 +223,7 @@ interface Logger {
         
         this.logger.log(`✅ Completed cleanup: ${task.name}`);
       } catch (error) {
-        this.logger.error({ error: error }, '❌ Failed to cleanup ${task.name}:');
+        this.logger.error(`❌ Failed to cleanup ${task.name}:`, { error: error });
       }
     }
   
@@ -280,7 +280,7 @@ interface Logger {
         
         this.logger.log('✅ Enhanced cleanup completed successfully');
       } catch (error) {
-        this.logger.error({ error: error }, '❌ Error during cleanup process:');
+        this.logger.error('❌ Error during cleanup process:', { error: error });
       } finally {
         clearTimeout(overallTimeoutId);
       }
@@ -321,8 +321,8 @@ interface Logger {
   
       // Enhanced uncaught exception handler
       process.on('uncaughtException', (error, origin) => {
-        this.logger.error({ error: error }, '❌ Uncaught Exception:');
-        this.logger.error({ error: origin }, '❌ Origin:');
+        this.logger.error('❌ Uncaught Exception:', { error: error });
+        this.logger.error('❌ Origin:', { error: origin });
         this.logger.error('❌ Stack:', error.stack);
         
         this.handleEmergencyShutdown();
@@ -330,8 +330,8 @@ interface Logger {
   
       // Enhanced unhandled rejection handler
       process.on('unhandledRejection', (reason, promise) => {
-        this.logger.error({ error: promise }, '❌ Unhandled Rejection at:');
-        this.logger.error({ error: reason }, '❌ Reason:');
+        this.logger.error('❌ Unhandled Rejection at:', { error: promise });
+        this.logger.error('❌ Reason:', { error: reason });
         
         this.handleEmergencyShutdown();
       });
@@ -355,7 +355,7 @@ interface Logger {
         await this.cleanup();
         process.exit(0);
       } catch (error) {
-        this.logger.error({ error: error }, '❌ Error during graceful shutdown:');
+        this.logger.error('❌ Error during graceful shutdown:', { error: error });
         process.exit(1);
       }
     }
@@ -372,7 +372,7 @@ interface Logger {
           new Promise(resolve => setTimeout(resolve, 10000)) // 10 second timeout
         ]);
       } catch (cleanupError) {
-        this.logger.error({ error: cleanupError }, '❌ Error during emergency cleanup:');
+        this.logger.error('❌ Error during emergency cleanup:', { error: cleanupError });
       } finally {
         process.exit(1);
       }

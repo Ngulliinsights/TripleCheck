@@ -10,7 +10,7 @@ import {
   generateCorrelationId,
   ErrorCategory,
   ErrorSeverity
-} from "./error-handling";
+} from "@shared/types/errors";
 import { logger } from "../../infrastructure/monitoring/logger";
 
 import { auditLogger, AuditSeverity } from "../AuditLogger";
@@ -106,7 +106,8 @@ export class ErrorHandlingService {
         operation: context.operation,
         status: 'started',
         details: context.metadata || {},
-        metadata: { correlationId }
+        correlationId,
+        metadata: {}
       });
     }
 
@@ -309,7 +310,8 @@ export class ErrorHandlingService {
         status: 'completed',
         duration,
         details: { strategy, ...context.metadata },
-        metadata: { correlationId }
+        correlationId,
+        metadata: {}
       });
     }
 

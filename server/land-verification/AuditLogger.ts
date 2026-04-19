@@ -6,7 +6,8 @@
  * Used by security/, error-handling/, and audit/ subdomules via thin wrapper re-exports.
  */
 
-import { generateCorrelationId } from "../../src/local/error-handling";
+import { sql, SQL } from "drizzle-orm";
+import { generateCorrelationId } from "../../shared/types/errors";
 import { db } from "../infrastructure/database/connection/index";
 import { logger } from "../infrastructure/monitoring/logger";
 
@@ -30,12 +31,7 @@ export interface AuditEvent {
     message: string;
     stack?: string;
   };
-  metadata: {
-    userAgent?: string;
-    ipAddress?: string;
-    requestId?: string;
-    version?: string;
-  };
+  metadata: Record<string, any>;
 }
 
 export enum AuditEventType {
@@ -261,31 +257,203 @@ export class AuditLogger {
   }
 
   /**
-   * Log security event
+   * Log security event (Enhanced for SecurityIntegration)
    */
   async logSecurityEvent(
-    eventDescription: string,
-    severity: AuditSeverity,
-    userId?: string,
+    userId: string,
+    event: string,
     details: Record<string, any> = {},
-    metadata: Record<string, any> = {}
+    ip?: string,
+    userAgent?: string,
+    success: boolean = true,
+    message?: string
   ): Promise<void> {
     await this.logEvent({
       eventType: AuditEventType.SECURITY_EVENT,
       category: AuditCategory.SECURITY,
-      severity,
+      severity: success ? AuditSeverity.MEDIUM : AuditSeverity.HIGH,
       userId,
       service: 'security',
-      operation: 'security_event',
-      status: 'completed',
+      operation: event,
+      status: success ? 'completed' : 'failed',
       details: {
-        description: eventDescription,
-        ...details
+        ...details,
+        ip,
+        userAgent,
+        message
       },
-      metadata: {
-        ...this.extractMetadata(),
-        ...metadata
-      }
+      metadata: this.extractMetadata()
+    });
+  }
+
+  /**
+   * Log access event
+   */
+  async logAccessEvent(
+    userId: string,
+    resourceType: string,
+    resourceId: string,
+    operation: string,
+    success: boolean = true,
+    errorMessage?: string,
+    ip?: string,
+    userAgent?: string
+  ): Promise<void> {
+    await this.logEvent({
+      eventType: AuditEventType.DATA_ACCESS,
+      category: AuditCategory.SECURITY,
+      severity: success ? AuditSeverity.LOW : AuditSeverity.MEDIUM,
+      userId,
+      propertyId: resourceType === 'property' ? resourceId : undefined,
+      service: 'access-control',
+      operation: `${resourceType}_${operation}`,
+      status: success ? 'completed' : 'failed',
+      details: {
+        resourceType,
+        resourceId,
+        ip,
+        userAgent,
+        errorMessage
+      },
+      metadata: this.extractMetadata()
+    });
+  }
+
+  /**
+   * Log session event
+   */
+  async logSessionEvent(
+    userId: string,
+    sessionId: string,
+    operation: string,
+    details: Record<string, any> = {},
+    success: boolean = true,
+    errorMessage?: string
+  ): Promise<void> {
+    await this.logEvent({
+      eventType: AuditEventType.LAYER_EXECUTED,
+      category: AuditCategory.USER_ACTION,
+      severity: AuditSeverity.LOW,
+      userId,
+      sessionId,
+      service: 'session-manager',
+      operation,
+      status: success ? 'completed' : 'failed',
+      details: {
+        ...details,
+        errorMessage
+      },
+      metadata: this.extractMetadata()
+    });
+  }
+
+  /**
+   * Log property event
+   */
+  async logPropertyEvent(
+    userId: string,
+    propertyId: string,
+    operation: string,
+    details: Record<string, any> = {},
+    success: boolean = true,
+    errorMessage?: string,
+    sessionId?: string
+  ): Promise<void> {
+    await this.logEvent({
+      eventType: AuditEventType.DOCUMENT_PROCESSED,
+      category: AuditCategory.VERIFICATION,
+      severity: AuditSeverity.LOW,
+      userId,
+      propertyId,
+      sessionId,
+      service: 'property-service',
+      operation,
+      status: success ? 'completed' : 'failed',
+      details: {
+        ...details,
+        errorMessage
+      },
+      metadata: this.extractMetadata()
+    });
+  }
+
+  /**
+   * Log feedback event
+   */
+  async logFeedbackEvent(
+    userId: string,
+    sessionId: string,
+    operation: string,
+    details: Record<string, any> = {},
+    success: boolean = true,
+    errorMessage?: string
+  ): Promise<void> {
+    await this.logEvent({
+      eventType: AuditEventType.COMMUNITY_FEEDBACK,
+      category: AuditCategory.VERIFICATION,
+      severity: AuditSeverity.LOW,
+      userId,
+      sessionId,
+      service: 'community-intelligence',
+      operation,
+      status: success ? 'completed' : 'failed',
+      details: {
+        ...details,
+        errorMessage
+      },
+      metadata: this.extractMetadata()
+    });
+  }
+
+  /**
+   * Log report event
+   */
+  async logReportEvent(
+    userId: string,
+    sessionId: string,
+    operation: string,
+    details: Record<string, any> = {},
+    success: boolean = true,
+    errorMessage?: string
+  ): Promise<void> {
+    await this.logEvent({
+      eventType: AuditEventType.RISK_ASSESSMENT,
+      category: AuditCategory.VERIFICATION,
+      severity: AuditSeverity.MEDIUM,
+      userId,
+      sessionId,
+      service: 'reporting-service',
+      operation,
+      status: success ? 'completed' : 'failed',
+      details: {
+        ...details,
+        errorMessage
+      },
+      metadata: this.extractMetadata()
+    });
+  }
+
+  /**
+   * Log system event
+   */
+  async logSystemEvent(
+    operation: string,
+    details: Record<string, any> = {},
+    success: boolean = true,
+    errorMessage?: string
+  ): Promise<void> {
+    await this.logEvent({
+      eventType: AuditEventType.SYSTEM_ERROR,
+      category: AuditCategory.SYSTEM,
+      severity: success ? AuditSeverity.LOW : AuditSeverity.HIGH,
+      service: 'system',
+      operation,
+      status: success ? 'completed' : 'failed',
+      details: {
+        ...details,
+        errorMessage
+      },
+      metadata: this.extractMetadata()
     });
   }
 
@@ -353,79 +521,65 @@ export class AuditLogger {
       // Ensure any pending events are flushed
       await this.flushEvents();
 
-      let sql = 'SELECT * FROM audit_events WHERE 1=1';
+      let querySql: SQL = sql`SELECT * FROM audit_events WHERE 1=1`;
       const params: any[] = [];
 
       if (query.startDate) {
-        sql += ' AND timestamp >= ?';
-        params.push(query.startDate.toISOString());
+        querySql = sql`${querySql} AND timestamp >= ${query.startDate.toISOString()}`;
       }
 
       if (query.endDate) {
-        sql += ' AND timestamp <= ?';
-        params.push(query.endDate.toISOString());
+        querySql = sql`${querySql} AND timestamp <= ${query.endDate.toISOString()}`;
       }
 
       if (query.eventTypes && query.eventTypes.length > 0) {
-        sql += ` AND event_type IN (${query.eventTypes.map(() => '?').join(',')})`;
-        params.push(...query.eventTypes);
+        querySql = sql`${querySql} AND event_type IN (${sql.join(query.eventTypes.map(t => sql`${t}`), sql`, `)})`;
       }
 
       if (query.categories && query.categories.length > 0) {
-        sql += ` AND category IN (${query.categories.map(() => '?').join(',')})`;
-        params.push(...query.categories);
+        querySql = sql`${querySql} AND category IN (${sql.join(query.categories.map(c => sql`${c}`), sql`, `)})`;
       }
 
       if (query.severities && query.severities.length > 0) {
-        sql += ` AND severity IN (${query.severities.map(() => '?').join(',')})`;
-        params.push(...query.severities);
+        querySql = sql`${querySql} AND severity IN (${sql.join(query.severities.map(s => sql`${s}`), sql`, `)})`;
       }
 
       if (query.userId) {
-        sql += ' AND user_id = ?';
-        params.push(query.userId);
+        querySql = sql`${querySql} AND user_id = ${query.userId}`;
       }
 
       if (query.sessionId) {
-        sql += ' AND session_id = ?';
-        params.push(query.sessionId);
+        querySql = sql`${querySql} AND session_id = ${query.sessionId}`;
       }
 
       if (query.propertyId) {
-        sql += ' AND property_id = ?';
-        params.push(query.propertyId);
+        querySql = sql`${querySql} AND property_id = ${query.propertyId}`;
       }
 
       if (query.service) {
-        sql += ' AND service = ?';
-        params.push(query.service);
+        querySql = sql`${querySql} AND service = ${query.service}`;
       }
 
       if (query.status) {
-        sql += ' AND status = ?';
-        params.push(query.status);
+        querySql = sql`${querySql} AND status = ${query.status}`;
       }
 
       if (query.correlationId) {
-        sql += ' AND correlation_id = ?';
-        params.push(query.correlationId);
+        querySql = sql`${querySql} AND correlation_id = ${query.correlationId}`;
       }
 
-      sql += ' ORDER BY timestamp DESC';
+      querySql = sql`${querySql} ORDER BY timestamp DESC`;
 
       if (query.limit) {
-        sql += ' LIMIT ?';
-        params.push(query.limit);
+        querySql = sql`${querySql} LIMIT ${query.limit}`;
       }
 
       if (query.offset) {
-        sql += ' OFFSET ?';
-        params.push(query.offset);
+        querySql = sql`${querySql} OFFSET ${query.offset}`;
       }
 
-      const results = await db.execute(sql, params);
+      const results = await db.execute(querySql);
       return this.mapDatabaseResults(results);
-
     } catch (error) {
       logger.error(
         'Failed to query audit events',
@@ -465,56 +619,81 @@ export class AuditLogger {
       }
 
       // Get total events
-      const totalResult = await db.execute(
-        `SELECT COUNT(*) as total FROM audit_events ${whereClause}`,
-        params
-      );
-      const totalEvents = totalResult[0]?.total || 0;
+      let totalQuery: SQL = sql`SELECT COUNT(*) as total FROM audit_events`;
+      if (startDate || endDate) {
+        let conditions: SQL[] = [];
+        if (startDate) conditions.push(sql`timestamp >= ${startDate.toISOString()}`);
+        if (endDate) conditions.push(sql`timestamp <= ${endDate.toISOString()}`);
+        totalQuery = sql`${totalQuery} WHERE ${sql.join(conditions, sql` AND `)}`;
+      }
+      const totalResult = await db.execute(totalQuery);
+      const totalEvents = Number(totalResult[0]?.total || 0);
 
       // Get events by type
-      const typeResults = await db.execute(
-        `SELECT event_type, COUNT(*) as count FROM audit_events ${whereClause} GROUP BY event_type`,
-        params
-      );
+      let typeQuery: SQL = sql`SELECT event_type, COUNT(*) as count FROM audit_events`;
+      if (startDate || endDate) {
+        let conditions: SQL[] = [];
+        if (startDate) conditions.push(sql`timestamp >= ${startDate.toISOString()}`);
+        if (endDate) conditions.push(sql`timestamp <= ${endDate.toISOString()}`);
+        typeQuery = sql`${typeQuery} WHERE ${sql.join(conditions, sql` AND `)}`;
+      }
+      typeQuery = sql`${typeQuery} GROUP BY event_type`;
+      const typeResults = await db.execute(typeQuery);
       const eventsByType = this.mapCountResults(typeResults);
 
       // Get events by category
-      const categoryResults = await db.execute(
-        `SELECT category, COUNT(*) as count FROM audit_events ${whereClause} GROUP BY category`,
-        params
-      );
+      let categoryQuery: SQL = sql`SELECT category, COUNT(*) as count FROM audit_events`;
+      if (startDate || endDate) {
+        let conditions: SQL[] = [];
+        if (startDate) conditions.push(sql`timestamp >= ${startDate.toISOString()}`);
+        if (endDate) conditions.push(sql`timestamp <= ${endDate.toISOString()}`);
+        categoryQuery = sql`${categoryQuery} WHERE ${sql.join(conditions, sql` AND `)}`;
+      }
+      categoryQuery = sql`${categoryQuery} GROUP BY category`;
+      const categoryResults = await db.execute(categoryQuery);
       const eventsByCategory = this.mapCountResults(categoryResults);
 
       // Get events by severity
-      const severityResults = await db.execute(
-        `SELECT severity, COUNT(*) as count FROM audit_events ${whereClause} GROUP BY severity`,
-        params
-      );
+      let severityQuery: SQL = sql`SELECT severity, COUNT(*) as count FROM audit_events`;
+      if (startDate || endDate) {
+        let conditions: SQL[] = [];
+        if (startDate) conditions.push(sql`timestamp >= ${startDate.toISOString()}`);
+        if (endDate) conditions.push(sql`timestamp <= ${endDate.toISOString()}`);
+        severityQuery = sql`${severityQuery} WHERE ${sql.join(conditions, sql` AND `)}`;
+      }
+      severityQuery = sql`${severityQuery} GROUP BY severity`;
+      const severityResults = await db.execute(severityQuery);
       const eventsBySeverity = this.mapCountResults(severityResults);
 
       // Get average duration
-      const durationResult = await db.execute(
-        `SELECT AVG(duration) as avg_duration FROM audit_events ${whereClause} AND duration IS NOT NULL`,
-        params
-      );
-      const averageDuration = durationResult[0]?.avg_duration || 0;
+      let durationQuery: SQL = sql`SELECT AVG(duration) as avg_duration FROM audit_events`;
+      let durationConditions: SQL[] = [sql`duration IS NOT NULL`];
+      if (startDate) durationConditions.push(sql`timestamp >= ${startDate.toISOString()}`);
+      if (endDate) durationConditions.push(sql`timestamp <= ${endDate.toISOString()}`);
+      durationQuery = sql`${durationQuery} WHERE ${sql.join(durationConditions, sql` AND `)}`;
+      const durationResult = await db.execute(durationQuery);
+      const averageDuration = Number(durationResult[0]?.avg_duration || 0);
 
       // Get error rate
-      const errorResult = await db.execute(
-        `SELECT COUNT(*) as error_count FROM audit_events ${whereClause} AND status = 'failed'`,
-        params
-      );
-      const errorCount = errorResult[0]?.error_count || 0;
+      let errorQuery: SQL = sql`SELECT COUNT(*) as error_count FROM audit_events`;
+      let errorConditions: SQL[] = [sql`status = 'failed'`];
+      if (startDate) errorConditions.push(sql`timestamp >= ${startDate.toISOString()}`);
+      if (endDate) errorConditions.push(sql`timestamp <= ${endDate.toISOString()}`);
+      errorQuery = sql`${errorQuery} WHERE ${sql.join(errorConditions, sql` AND `)}`;
+      const errorResult = await db.execute(errorQuery);
+      const errorCount = Number(errorResult[0]?.error_count || 0);
       const errorRate = totalEvents > 0 ? (errorCount / totalEvents) * 100 : 0;
 
       // Get top errors
-      const topErrorResults = await db.execute(
-        `SELECT error_code, COUNT(*) as count FROM audit_events ${whereClause} AND error_code IS NOT NULL GROUP BY error_code ORDER BY count DESC LIMIT 10`,
-        params
-      );
+      let topErrorQuery: SQL = sql`SELECT error_code, COUNT(*) as count FROM audit_events`;
+      let topErrorConditions: SQL[] = [sql`error_code IS NOT NULL`];
+      if (startDate) topErrorConditions.push(sql`timestamp >= ${startDate.toISOString()}`);
+      if (endDate) topErrorConditions.push(sql`timestamp <= ${endDate.toISOString()}`);
+      topErrorQuery = sql`${topErrorQuery} WHERE ${sql.join(topErrorConditions, sql` AND `)} GROUP BY error_code ORDER BY count DESC LIMIT 10`;
+      const topErrorResults = await db.execute(topErrorQuery);
       const topErrors = topErrorResults.map((row: any) => ({
         error: row.error_code,
-        count: row.count
+        count: Number(row.count)
       }));
 
       return {
@@ -573,39 +752,21 @@ export class AuditLogger {
   private async batchInsertEvents(events: AuditEvent[]): Promise<void> {
     if (events.length === 0) return;
 
-    const sql = `
+    const queryValues = events.map(event => sql`(
+      ${event.id}, ${event.correlationId}, ${event.timestamp.toISOString()}, ${event.eventType}, ${event.category}, ${event.severity},
+      ${event.userId || null}, ${event.sessionId || null}, ${event.propertyId || null}, ${event.service}, ${event.operation}, ${event.status},
+      ${event.duration || null}, ${JSON.stringify(event.details)}, ${event.error?.code || null}, ${event.error?.message || null}, ${event.error?.stack || null}, ${JSON.stringify(event.metadata)}
+    )`);
+
+    const insertQuery = sql`
       INSERT INTO audit_events (
         id, correlation_id, timestamp, event_type, category, severity,
         user_id, session_id, property_id, service, operation, status,
         duration, details, error_code, error_message, error_stack, metadata
-      ) VALUES ${events.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}
+      ) VALUES ${sql.join(queryValues, sql`, `)}
     `;
 
-    const params: any[] = [];
-    for (const event of events) {
-      params.push(
-        event.id,
-        event.correlationId,
-        event.timestamp.toISOString(),
-        event.eventType,
-        event.category,
-        event.severity,
-        event.userId || null,
-        event.sessionId || null,
-        event.propertyId || null,
-        event.service,
-        event.operation,
-        event.status,
-        event.duration || null,
-        JSON.stringify(event.details),
-        event.error?.code || null,
-        event.error?.message || null,
-        event.error?.stack || null,
-        JSON.stringify(event.metadata)
-      );
-    }
-
-    await db.execute(sql, params);
+    await db.execute(insertQuery);
   }
 
   /**

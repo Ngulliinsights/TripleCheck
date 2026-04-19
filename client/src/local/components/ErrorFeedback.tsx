@@ -1,6 +1,15 @@
 /**
  * Error Feedback Components
- * User-friendly error messages and recovery actions
+ *
+ * Fixes applied:
+ * - `currentTime` useMemo had `showDetails` in its dependency array, which is
+ *   wrong: `showDetails` controls *visibility*, not the timestamp value.
+ *   Replaced with a ref-stable `Date` captured at mount via `useState` init.
+ * - Button `variant` was forwarded via a non-standard `data-variant` attribute
+ *   instead of the actual `variant` prop — fixed.
+ * - `actions` typed with explicit ButtonVariant union instead of a loose string.
+ * - `getErrorMessage` uses a typed guard instead of `as any`.
+ * - Minor: redundant `className = ""` defaults kept for backwards-compat.
  */
 
 import React from "react";
@@ -10,19 +19,23 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 
-// ============================================================================
-// Type Definitions
-// ============================================================================
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type ButtonVariant = "default" | "outline" | "ghost";
+
+interface ActionItem {
+  label: string;
+  onClick: () => void;
+  variant?: ButtonVariant;
+}
 
 interface ErrorMessageProps {
   readonly title?: string;
   readonly message: string;
   readonly type?: "error" | "warning" | "info";
-  readonly actions?: ReadonlyArray<{
-    label: string;
-    onClick: () => void;
-    variant?: "default" | "outline" | "ghost";
-  }>;
+  readonly actions?: ReadonlyArray<ActionItem>;
   readonly className?: string;
 }
 
@@ -54,71 +67,97 @@ interface ErrorDetailsProps {
   readonly className?: string;
 }
 
-// ============================================================================
+// ---------------------------------------------------------------------------
 // Constants
-// ============================================================================
+// ---------------------------------------------------------------------------
 
 const TYPE_STYLES = {
-  error: "border-red-200 bg-red-50 text-red-800",
+  error:   "border-red-200 bg-red-50 text-red-800",
   warning: "border-yellow-200 bg-yellow-50 text-yellow-800",
-  info: "border-blue-200 bg-blue-50 text-blue-800",
+  info:    "border-blue-200 bg-blue-50 text-blue-800",
 } as const;
 
 const ICON_COLORS = {
-  error: "text-red-600",
+  error:   "text-red-600",
   warning: "text-yellow-600",
-  info: "text-blue-600",
+  info:    "text-blue-600",
 } as const;
 
-// ============================================================================
-// Error Message Component
-// ============================================================================
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Narrows `unknown` error values to a human-readable string.
+ * Uses a typed guard instead of casting to `any`.
+ */
+function getErrorMessage(error: unknown): string {
+  if (typeof error !== "object" || error === null) {
+    return "An unexpected error occurred.";
+  }
+
+  // Shape expected from Axios / fetch-wrapper errors
+  const err = error as {
+    response?: { status?: number };
+    message?: string;
+  };
+
+  switch (err.response?.status) {
+    case 403: return "You don't have permission to access this resource.";
+    case 404: return "The requested resource was not found.";
+    case 500: return "Server error. Please try again later.";
+  }
+
+  return typeof err.message === "string" ? err.message : "An unexpected error occurred.";
+}
+
+// ---------------------------------------------------------------------------
+// ErrorMessage
+// ---------------------------------------------------------------------------
 
 export const ErrorMessage = React.memo<ErrorMessageProps>(
-  ({ title, message, type = "error", actions = [], className = "" }) => {
-    return (
-      <Alert className={`${TYPE_STYLES[type]} ${className}`}>
-        <AlertTriangle className={`h-4 w-4 ${ICON_COLORS[type]}`} />
-        <AlertDescription>
-          <div className="flex flex-col gap-2">
-            {title && <p className="font-medium">{title}</p>}
-            <p>{message}</p>
-            {actions.length > 0 && (
-              <div className="flex gap-2 mt-2">
-                {actions.map((action, index) => (
-                  <Button
-                    key={index}
-                    size="sm"
-                    onClick={action.onClick}
-                    className="h-auto py-1 px-2"
-                    {...(action.variant && { "data-variant": action.variant })}
-                  >
-                    {action.label}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  ({ title, message, type = "error", actions = [], className = "" }) => (
+    <Alert className={`${TYPE_STYLES[type]} ${className}`}>
+      <AlertTriangle className={`h-4 w-4 ${ICON_COLORS[type]}`} aria-hidden="true" />
+      <AlertDescription>
+        <div className="flex flex-col gap-2">
+          {title && <p className="font-medium">{title}</p>}
+          <p>{message}</p>
+          {actions.length > 0 && (
+            <div className="flex gap-2 mt-2">
+              {actions.map((action, idx) => (
+                <Button
+                  key={idx}
+                  size="sm"
+                  // FIX: use the actual `variant` prop instead of data-variant
+                  variant={action.variant ?? "default"}
+                  onClick={action.onClick}
+                  className="h-auto py-1 px-2"
+                >
+                  {action.label}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+      </AlertDescription>
+    </Alert>
+  ),
 );
-
 ErrorMessage.displayName = "ErrorMessage";
 
-// ============================================================================
-// Network Error Component
-// ============================================================================
+// ---------------------------------------------------------------------------
+// NetworkError
+// ---------------------------------------------------------------------------
 
 export const NetworkError = React.memo<NetworkErrorProps>(
   ({ isOnline, onRetry, className = "" }) => {
-    if (isOnline) return null;
-
-    const actions = React.useMemo(
+    const actions = React.useMemo<ActionItem[]>(
       () => (onRetry ? [{ label: "Retry", onClick: onRetry }] : []),
-      [onRetry]
+      [onRetry],
     );
+
+    if (isOnline) return null;
 
     return (
       <ErrorMessage
@@ -129,51 +168,21 @@ export const NetworkError = React.memo<NetworkErrorProps>(
         className={className}
       />
     );
-  }
+  },
 );
-
 NetworkError.displayName = "NetworkError";
 
-// ============================================================================
-// API Error Component
-// ============================================================================
-
-const getErrorMessage = (error: unknown): string => {
-  if (typeof error === "object" && error !== null) {
-    const err = error as any;
-    
-    if (err.response?.status === 404) {
-      return "The requested resource was not found.";
-    }
-    if (err.response?.status === 500) {
-      return "Server error. Please try again later.";
-    }
-    if (err.response?.status === 403) {
-      return "You don't have permission to access this resource.";
-    }
-    if (err.message) {
-      return err.message;
-    }
-  }
-  
-  return "An unexpected error occurred.";
-};
+// ---------------------------------------------------------------------------
+// ApiError
+// ---------------------------------------------------------------------------
 
 export const ApiError = React.memo<ApiErrorProps>(
   ({ error, onRetry, onGoHome, className = "" }) => {
-    const actions = React.useMemo(() => {
-      const actionList = [];
-      if (onRetry) {
-        actionList.push({ label: "Try Again", onClick: onRetry });
-      }
-      if (onGoHome) {
-        actionList.push({
-          label: "Go Home",
-          onClick: onGoHome,
-          variant: "outline" as const,
-        });
-      }
-      return actionList;
+    const actions = React.useMemo<ActionItem[]>(() => {
+      const list: ActionItem[] = [];
+      if (onRetry)  list.push({ label: "Try Again", onClick: onRetry });
+      if (onGoHome) list.push({ label: "Go Home",   onClick: onGoHome, variant: "outline" });
+      return list;
     }, [onRetry, onGoHome]);
 
     const errorMessage = React.useMemo(() => getErrorMessage(error), [error]);
@@ -187,62 +196,68 @@ export const ApiError = React.memo<ApiErrorProps>(
         className={className}
       />
     );
-  }
+  },
 );
-
 ApiError.displayName = "ApiError";
 
-// ============================================================================
-// Form Error Component
-// ============================================================================
+// ---------------------------------------------------------------------------
+// FormError
+// ---------------------------------------------------------------------------
 
 export const FormError = React.memo<FormErrorProps>(
   ({ errors, generalError, onClear, className = "" }) => {
-    const hasErrors = Object.keys(errors).length > 0 || generalError;
-
-    const clearAction = React.useMemo(
+    const clearAction = React.useMemo<ActionItem[]>(
       () => (onClear ? [{ label: "Clear", onClick: onClear }] : []),
-      [onClear]
+      [onClear],
     );
 
+    const hasErrors = Object.keys(errors).length > 0 || Boolean(generalError);
     if (!hasErrors) return null;
 
     return (
       <div className={`space-y-2 ${className}`}>
         {generalError && (
-          <ErrorMessage
-            message={generalError}
-            type="error"
-            actions={clearAction}
-          />
+          <ErrorMessage message={generalError} type="error" actions={clearAction} />
         )}
         {Object.entries(errors).map(([field, message]) => (
           <ErrorMessage
             key={field}
-            title={`${field.charAt(0).toUpperCase() + field.slice(1)} Error`}
+            title={`${field.charAt(0).toUpperCase()}${field.slice(1)} Error`}
             message={message}
             type="error"
           />
         ))}
       </div>
     );
-  }
+  },
 );
-
 FormError.displayName = "FormError";
 
-// ============================================================================
-// Error Details Component
-// ============================================================================
+// ---------------------------------------------------------------------------
+// ErrorDetails
+//
+// FIX: The original component used:
+//   const currentTime = React.useMemo(() => new Date().toLocaleString(), [showDetails]);
+//
+// `showDetails` only determines whether the component renders — it does NOT
+// change what time it is. Using it as a dependency meant the timestamp would
+// reset whenever `showDetails` toggled, which is wrong.
+//
+// Fix: capture the mount time once with `useState` lazy initialiser.
+// The timestamp is then stable for the lifetime of the component instance,
+// which is the correct semantic (when did this error detail panel appear?).
+// ---------------------------------------------------------------------------
 
 export const ErrorDetails = React.memo<ErrorDetailsProps>(
   ({ error, errorId, showDetails = false, onCopyDetails, className = "" }) => {
+    // Stable timestamp — captured once at mount
+    const [mountTime] = React.useState(() => new Date().toLocaleString());
     const [copied, setCopied] = React.useState(false);
 
     const handleCopy = React.useCallback(() => {
       const details = {
         message: error.message,
-        stack: error.stack,
+        stack:   error.stack,
         errorId,
         timestamp: new Date().toISOString(),
         url: window.location.href,
@@ -255,15 +270,8 @@ export const ErrorDetails = React.memo<ErrorDetailsProps>(
           setTimeout(() => setCopied(false), 2000);
           onCopyDetails?.();
         })
-        .catch((err) => {
-          console.error("Failed to copy error details:", err);
-        });
+        .catch((err) => console.error("Failed to copy error details:", err));
     }, [error, errorId, onCopyDetails]);
-
-    const currentTime = React.useMemo(
-      () => new Date().toLocaleString(),
-      [showDetails]
-    );
 
     if (!showDetails) return null;
 
@@ -274,6 +282,7 @@ export const ErrorDetails = React.memo<ErrorDetailsProps>(
             Error Details
             <Button
               size="sm"
+              variant="ghost"
               onClick={handleCopy}
               className="h-auto p-1"
               aria-label={copied ? "Copied to clipboard" : "Copy error details"}
@@ -286,29 +295,27 @@ export const ErrorDetails = React.memo<ErrorDetailsProps>(
             </Button>
           </CardTitle>
         </CardHeader>
+
         <CardContent className="pt-0">
-          <div className="space-y-2 text-xs">
+          <dl className="space-y-2 text-xs">
             <div>
-              <span className="font-medium">Message:</span>
-              <p className="text-gray-600 mt-1 break-words">{error.message}</p>
+              <dt className="font-medium">Message:</dt>
+              <dd className="text-gray-600 mt-1 break-words">{error.message}</dd>
             </div>
             {errorId && (
               <div>
-                <span className="font-medium">Error ID:</span>
-                <Badge className="ml-2 text-xs border border-gray-300">
-                  {errorId}
-                </Badge>
+                <dt className="font-medium inline">Error ID:</dt>
+                <Badge className="ml-2 text-xs border border-gray-300">{errorId}</Badge>
               </div>
             )}
             <div>
-              <span className="font-medium">Time:</span>
-              <p className="text-gray-600 mt-1">{currentTime}</p>
+              <dt className="font-medium">Time:</dt>
+              <dd className="text-gray-600 mt-1">{mountTime}</dd>
             </div>
-          </div>
+          </dl>
         </CardContent>
       </Card>
     );
-  }
+  },
 );
-
 ErrorDetails.displayName = "ErrorDetails";

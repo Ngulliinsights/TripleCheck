@@ -1,76 +1,99 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+/**
+ * Trust Score — data layer
+ *
+ * Architecture
+ * ────────────
+ * • useTrustScore and useUpdateTrustScore are top-level exports, consistent
+ *   with the project's other data-layer hooks.
+ * • Uses apiClient (not raw fetch) for consistency with the rest of the codebase
+ *   and for interceptor/auth support.
+ * • queryFn unwraps ApiResponse<TrustScore> to the domain type — consumers
+ *   receive TrustScore directly and never need to dereference .data.
+ * • Pure utility functions (getTrustLevel, getTrustLevelColor) are module-level
+ *   exports — no hook overhead, fully tree-shakeable.
+ * • TanStack Query v5 API throughout: isPending (not isLoading).
+ */
 
-import { TrustScore } from '../types/trust.types'
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { ApiResponse } from '@shared/types/api.types'
+import { apiClient } from "../../local/services/unified-api-client"
+import { trustService } from "../services/TrustService"
+import { type TrustScore } from "../types/trust.types"
 
-// Mock API functions - replace with actual API calls
-const trustApi = {
-  getTrustScore: async (userId: string): Promise<ApiResponse<TrustScore>> => {
-    const response = await fetch(`/api/trust/score/${userId}`);
-    if (!response.ok) throw new Error('Failed to fetch trust score');
-    return response.json();
-  },
+// ─── Query key factory ─────────────────────────────────────────────────────────
 
-  updateTrustScore: async (userId: string, factors: Partial<TrustScore['factors']>): Promise<ApiResponse<TrustScore>> => {
-    const response = await fetch(`/api/trust/score/${userId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ factors }),
-    });
-    if (!response.ok) throw new Error('Failed to update trust score');
-    return response.json();
-  },
-};
-
-// Query keys
 export const trustKeys = {
-  all: ['trust'] as const,
-  scores: () => [...trustKeys.all, 'scores'] as const,
-  score: (userId: string) => [...trustKeys.scores(), userId] as const,
-};
+  all:    ["trust"] as const,
+  scores: () => [...trustKeys.all, "scores"] as const,
+  score:  (userId: string) => [...trustKeys.scores(), userId] as const,
+} as const
 
-// Get trust score for a user
+// ─── Query hooks ───────────────────────────────────────────────────────────────
+
+/** Fetch and cache the trust score for a given user. */
 export function useTrustScore(userId: string) {
-  return useQuery({
+  return useQuery<TrustScore>({
     queryKey: trustKeys.score(userId),
-    queryFn: () => trustApi.getTrustScore(userId),
-    enabled: !!userId,
-    staleTime: 1000 * 60 * 10, // 10 minutes
-  });
+    queryFn:  async () => {
+      const res = await trustService.getTrustScore(userId)
+      if (!res.success || !res.data) {
+        throw new Error(res.message || 'Failed to retrieve trust score');
+      }
+      return res.data.trustScore;
+    },
+    enabled:   Boolean(userId),
+    staleTime: 10 * 60 * 1_000, // 10 minutes
+  })
 }
 
-// Update trust score mutation
+// ─── Mutation hooks ────────────────────────────────────────────────────────────
+
+/** Partially update the trust-score factors for a user. */
 export function useUpdateTrustScore() {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ userId, factors }: { userId: string; factors: Partial<TrustScore['factors']> }) =>
-      trustApi.updateTrustScore(userId, factors),
-    onSuccess: (data, variables) => {
-      // Update the specific trust score in cache
-      queryClient.setQueryData(trustKeys.score(variables.userId), data);
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: trustKeys.scores() });
+    mutationFn: async ({
+      userId,
+      factors,
+    }: {
+      userId: string
+      factors: Partial<TrustScore["factors"]>
+    }): Promise<TrustScore> => {
+      const res = await trustService.updateTrustScore(userId, factors)
+      if (!res.success || !res.data) {
+        throw new Error(res.message || 'Failed to update trust score');
+      }
+      return res.data;
     },
-  });
+    onSuccess: (updatedScore, { userId }) => {
+      // Write the fresh value directly so consumers see it immediately.
+      queryClient.setQueryData(trustKeys.score(userId), updatedScore)
+      // Invalidate the broader scores list in case it's displayed elsewhere.
+      queryClient.invalidateQueries({ queryKey: trustKeys.scores() })
+    },
+  })
 }
 
-// Calculate trust level based on score
-export function getTrustLevel(score: number): 'low' | 'medium' | 'high' | 'premium' {
-  if (score >= 900) return 'premium';
-  if (score >= 750) return 'high';
-  if (score >= 500) return 'medium';
-  return 'low';
+// ─── Utility functions (pure — no hook dependency) ────────────────────────────
+
+export type TrustLevel = "low" | "medium" | "high" | "premium"
+
+/** Derive a named trust level from a numeric score (0–1000). */
+export function getTrustLevel(score: number): TrustLevel {
+  if (score >= 900) return "premium"
+  if (score >= 750) return "high"
+  if (score >= 500) return "medium"
+  return "low"
 }
 
-// Get trust level color
-export function getTrustLevelColor(level: string): string {
+/** Map a trust level to its Tailwind text-color class. */
+export function getTrustLevelColor(level: TrustLevel): string {
   switch (level) {
-    case 'premium': return 'text-purple-600';
-    case 'high': return 'text-green-600';
-    case 'medium': return 'text-yellow-600';
-    case 'low': return 'text-red-600';
-    default: return 'text-gray-600';
+    case "premium": return "text-purple-600"
+    case "high":    return "text-green-600"
+    case "medium":  return "text-yellow-600"
+    case "low":     return "text-red-600"
+    default:        return "text-gray-600"
   }
 }

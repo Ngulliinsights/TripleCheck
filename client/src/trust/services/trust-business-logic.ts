@@ -1,16 +1,23 @@
-import { z } from 'zod'
+import { z } from 'zod';
+import { 
+  TrustScore, 
+  VerificationCheck, 
+  TrustScoreAnalysis, 
+  VerificationOverview,
+  CommunityTrustOverview,
+  VerificationStatus
+} from '../types/trust.types';
 
-import { TrustScore } from '../types/trust.types'
+// ─── Zod schemas ──────────────────────────────────────────────────────────────
 
-// Trust validation schemas
 export const TrustScoreSchema = z.object({
-  userId: z.string().uuid('Invalid user ID'),
+  userId:     z.string().uuid('Invalid user ID'),
   propertyId: z.string().uuid('Invalid property ID').optional(),
-  score: z.number().int().min(0).max(1000),
+  score:      z.number().int().min(0).max(1000),
   factors: z.object({
     documentVerification: z.number().min(0).max(100),
-    communityFeedback: z.number().min(0).max(100),
-    transactionHistory: z.number().min(0).max(100),
+    communityFeedback:    z.number().min(0).max(100),
+    transactionHistory:   z.number().min(0).max(100),
     identityVerification: z.number().min(0).max(100),
     propertyVerification: z.number().min(0).max(100).optional(),
   }),
@@ -18,267 +25,350 @@ export const TrustScoreSchema = z.object({
 });
 
 export const VerificationCheckSchema = z.object({
-  type: z.enum(['document', 'identity', 'property', 'financial']),
-  status: z.enum(['pending', 'verified', 'rejected', 'expired']),
-  documentUrl: z.string().url().optional(),
-  verifiedBy: z.string().uuid().optional(),
+  type:             z.enum(['document', 'identity', 'property', 'financial']),
+  status:           z.enum(['pending', 'verified', 'rejected', 'expired']),
+  documentUrl:      z.string().url().optional(),
+  verifiedBy:       z.string().uuid().optional(),
   verificationDate: z.date().optional(),
-  expiryDate: z.date().optional(),
-  notes: z.string().max(1000).optional(),
+  expiryDate:       z.date().optional(),
+  notes:            z.string().max(1000).optional(),
 });
 
 export const FraudAlertSchema = z.object({
-  userId: z.string().uuid('Invalid user ID'),
-  propertyId: z.string().uuid('Invalid property ID').optional(),
-  alertType: z.enum(['suspicious_activity', 'fake_documents', 'duplicate_listing', 'payment_fraud']),
-  severity: z.enum(['low', 'medium', 'high', 'critical']),
+  userId:      z.string().uuid('Invalid user ID'),
+  propertyId:  z.string().uuid('Invalid property ID').optional(),
+  alertType:   z.enum(['suspicious_activity', 'fake_documents', 'duplicate_listing', 'payment_fraud']),
+  severity:    z.enum(['low', 'medium', 'high', 'critical']),
   description: z.string().min(10).max(1000),
-  status: z.enum(['active', 'investigating', 'resolved', 'false_positive']),
-  reportedBy: z.string().uuid().optional(),
+  status:      z.enum(['active', 'investigating', 'resolved', 'false_positive']),
+  reportedBy:  z.string().uuid().optional(),
 });
 
-// Type definitions for better type safety
-interface UserTransaction {
-  id: string;
-  date: string;
+// ─── Domain types ─────────────────────────────────────────────────────────────
+
+export interface UserTransaction {
+  id:     string;
+  date:   string;
   amount: number;
-  type: string;
+  type:   string;
   status: string;
 }
 
-interface PropertyData {
-  duplicateCount: number;
-  priceVariance: number;
-  imageAuthenticityScore: number;
+export interface PropertyData {
+  duplicateCount:          number;
+  priceVariance:           number;
+  imageAuthenticityScore:  number;
 }
 
-interface TransactionData {
+export interface TransactionData {
   unusualPaymentMethods: boolean;
-  urgencyIndicators: number;
+  urgencyIndicators:     number;
 }
 
-interface DocumentData {
+export interface DocumentData {
   tamperingScore: number;
-  expiryDate?: string;
-  [key: string]: unknown;
+  expiryDate?:    string;
+  [key: string]:  unknown;
 }
 
-interface CommunityReference {
-  id: string;
-  verified: boolean;
+export interface CommunityReference {
+  id:            string;
+  verified:      boolean;
   referenceType: string;
 }
 
-interface CommunityReview {
-  id: string;
-  rating: number;
+export interface CommunityReview {
+  id:      string;
+  rating:  number;
   comment: string;
-  date: string;
+  date:    string;
 }
 
-interface CommunityEngagement {
-  id: string;
+export interface CommunityEngagement {
+  id:   string;
   type: string;
   date: string;
 }
 
-interface ReportedIssue {
-  id: string;
-  status: 'active' | 'investigating' | 'resolved' | 'false_positive';
+export interface ReportedIssue {
+  id:       string;
+  status:   'active' | 'investigating' | 'resolved' | 'false_positive';
   severity: string;
 }
 
-// Trust business logic implementation
+// ─── Internal result types ────────────────────────────────────────────────────
+
+type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+
+interface RiskAssessment {
+  score:           number;
+  flags:           string[];
+  recommendations: string[];
+}
+
+interface TrustLevel {
+  min:   number;
+  max:   number;
+  label: string;
+  color: string;
+}
+
+// ─── Business logic ───────────────────────────────────────────────────────────
+
 export class TrustBusinessLogic {
-  // Trust score calculation weights
-  private static readonly TRUST_WEIGHTS = {
+
+  // ── Constants ──────────────────────────────────────────────────────────────
+
+  private static readonly TRUST_WEIGHTS: Record<keyof TrustScore['factors'], number> = {
     documentVerification: 0.25,
-    communityFeedback: 0.20,
-    transactionHistory: 0.25,
+    communityFeedback:    0.20,
+    transactionHistory:   0.25,
     identityVerification: 0.20,
     propertyVerification: 0.10,
   };
 
-  // Trust level thresholds
-  private static readonly TRUST_LEVELS = {
-    UNVERIFIED: { min: 0, max: 299, label: 'Unverified', color: 'red' },
-    BASIC: { min: 300, max: 499, label: 'Basic', color: 'orange' },
-    VERIFIED: { min: 500, max: 749, label: 'Verified', color: 'yellow' },
-    TRUSTED: { min: 750, max: 899, label: 'Trusted', color: 'green' },
-    PREMIUM: { min: 900, max: 1000, label: 'Premium', color: 'blue' },
+  // Ordered from highest threshold to lowest so the first match wins.
+  private static readonly TRUST_LEVELS: readonly TrustLevel[] = [
+    { min: 900,  max: 1000, label: 'Premium',    color: 'blue'   },
+    { min: 750,  max: 899,  label: 'Trusted',    color: 'green'  },
+    { min: 500,  max: 749,  label: 'Verified',   color: 'yellow' },
+    { min: 300,  max: 499,  label: 'Basic',      color: 'orange' },
+    { min: 0,    max: 299,  label: 'Unverified', color: 'red'    },
+  ];
+
+  private static readonly SCORE_THRESHOLDS = {
+    UPDATE_MIN_DELTA:  10,
+    UPDATE_MAX_DAYS:   7,
+    MAX_RECOMMENDATIONS: 5,
+  } as const;
+
+  private static readonly RECENT_TRANSACTION_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+  private static readonly REQUIRED_DOCUMENT_FIELDS: Record<string, string[]> = {
+    passport:         ['fullName', 'passportNumber', 'nationality', 'dateOfBirth', 'expiryDate'],
+    drivers_license:  ['fullName', 'licenseNumber', 'dateOfBirth', 'address', 'expiryDate'],
+    national_id:      ['fullName', 'idNumber', 'dateOfBirth', 'address'],
+    utility_bill:     ['fullName', 'address', 'billDate', 'serviceProvider'],
   };
 
-  // Calculate comprehensive trust score
-  static calculateTrustScore(factors: TrustScore['factors']): {
-    score: number;
-    level: string;
-    color: string;
-    breakdown: Record<string, number>;
-    recommendations: string[];
-  } {
-    // Calculate weighted score
-    let totalScore = 0;
-    const breakdown: Record<string, number> = {};
+  private static readonly VALID_DOCUMENT_TYPES = new Set(
+    Object.keys(TrustBusinessLogic.REQUIRED_DOCUMENT_FIELDS),
+  );
 
-    (Object.entries(this.TRUST_WEIGHTS) as Array<[keyof typeof factors, number]>).forEach(([factor, weight]) => {
-      const factorScore = factors[factor] || 0;
-      const weightedScore = factorScore * weight;
-      totalScore += weightedScore;
-      breakdown[factor] = weightedScore;
-    });
+  private static readonly VERIFICATION_NEXT_STEP_MAP: Record<VerificationCheck['type'], string> = {
+    document:  'Upload government-issued ID and proof of address',
+    identity:  'Complete video identity verification',
+    property:  'Verify property ownership documents',
+    financial: 'Provide financial verification documents',
+  };
 
-    const finalScore = Math.round(totalScore);
+  // ── Enrichment & Orchestration Helpers ─────────────────────────────────────
 
-    // Determine trust level
-    const level = this.getTrustLevel(finalScore);
+  /**
+   * Enrich raw trust score data with breakdown and level analysis
+   */
+  static enrichTrustScore(factors: TrustScore['factors']): TrustScoreAnalysis {
+    return this.calculateTrustScore(factors);
+  }
 
-    // Generate recommendations
-    const recommendations = this.generateTrustRecommendations(factors, finalScore);
+  /**
+   * Derive status, completion percentage, and next steps from verification checks
+   */
+  static deriveVerificationOverview(checks: VerificationCheck[]): VerificationOverview {
+    const checkTypes: VerificationCheck['type'][] = ['document', 'identity', 'property', 'financial'];
+    const completedTypes = new Set(
+      checks
+        .filter((c) => c.status === 'verified')
+        .map((c) => c.type),
+    );
+
+    const completionPercentage = Math.round((completedTypes.size / checkTypes.length) * 100);
+    const overallStatus: VerificationStatus =
+      completedTypes.size === 0
+        ? 'pending'
+        : completedTypes.size === checkTypes.length
+        ? 'complete'
+        : 'partial';
+
+    const nextSteps = checkTypes
+      .filter((type) => !completedTypes.has(type))
+      .map((type) => this.VERIFICATION_NEXT_STEP_MAP[type]);
 
     return {
-      score: finalScore,
-      level: level.label,
-      color: level.color,
-      breakdown,
-      recommendations,
+      checks,
+      overallStatus,
+      completionPercentage,
+      nextSteps,
     };
   }
 
-  // Get trust level based on score
-  static getTrustLevel(score: number) {
-    for (const level of Object.values(this.TRUST_LEVELS)) {
-      if (score >= level.min && score <= level.max) {
-        return level;
-      }
-    }
-    return this.TRUST_LEVELS.UNVERIFIED;
+  /**
+   * Enrich community trust data with insights and aggregated score
+   */
+  static enrichCommunityTrustData(data: {
+    references:          CommunityReference[];
+    reviews:             CommunityReview[];
+    communityEngagement: CommunityEngagement[];
+    reportedIssues?:      ReportedIssue[];
+  }): CommunityTrustOverview {
+    const result = this.calculateCommunityTrust({
+      references:          data.references,
+      reviews:             data.reviews,
+      communityEngagement: data.communityEngagement,
+      reportedIssues:      data.reportedIssues ?? [],
+    });
+
+    return {
+      score:    result.score,
+      factors:  result.factors,
+      insights: result.insights,
+    };
   }
 
-  // Generate personalized trust improvement recommendations
-  static generateTrustRecommendations(factors: TrustScore['factors'], currentScore: number): string[] {
-    const recommendations: string[] = [];
+  // ── Trust scoring ──────────────────────────────────────────────────────────
 
-    // Add verification recommendations
-    recommendations.push(...this.getVerificationRecommendations(factors));
-    
-    // Add community recommendations
-    recommendations.push(...this.getCommunityRecommendations(factors));
-    
-    // Add overall score recommendations
-    recommendations.push(...this.getScoreBasedRecommendations(currentScore));
+  static calculateTrustScore(factors: TrustScore['factors']): {
+    score:           number;
+    level:           string;
+    color:           string;
+    breakdown:       Record<string, number>;
+    recommendations: string[];
+  } {
+    const breakdown = Object.fromEntries(
+      (Object.entries(this.TRUST_WEIGHTS) as Array<[keyof TrustScore['factors'], number]>).map(
+        ([factor, weight]) => [factor, (factors[factor] ?? 0) * weight],
+      ),
+    );
 
-    return recommendations.slice(0, 5); // Limit to top 5 recommendations
+    const score = Math.round(Object.values(breakdown).reduce((sum, v) => sum + v, 0));
+    const level = this.getTrustLevel(score);
+
+    return {
+      score,
+      level:           level.label,
+      color:           level.color,
+      breakdown,
+      recommendations: this.generateTrustRecommendations(factors, score),
+    };
+  }
+
+  static getTrustLevel(score: number): TrustLevel {
+    return (
+      this.TRUST_LEVELS.find((l) => score >= l.min && score <= l.max) ??
+      this.TRUST_LEVELS[this.TRUST_LEVELS.length - 1]
+    );
+  }
+
+  static generateTrustRecommendations(
+    factors:      TrustScore['factors'],
+    currentScore: number,
+  ): string[] {
+    return [
+      ...this.getVerificationRecommendations(factors),
+      ...this.getCommunityRecommendations(factors),
+      ...this.getScoreBasedRecommendations(currentScore),
+    ].slice(0, this.SCORE_THRESHOLDS.MAX_RECOMMENDATIONS);
   }
 
   private static getVerificationRecommendations(factors: TrustScore['factors']): string[] {
-    const recommendations: string[] = [];
+    const recs: string[] = [];
 
     if (factors.documentVerification < 80) {
-      recommendations.push('Complete document verification to increase trust score');
-      if (factors.documentVerification < 50) {
-        recommendations.push('Upload government-issued ID and proof of address');
-      }
+      recs.push('Complete document verification to increase trust score');
+      if (factors.documentVerification < 50) recs.push('Upload government-issued ID and proof of address');
     }
 
     if (factors.identityVerification < 80) {
-      recommendations.push('Complete identity verification through video call');
-      if (factors.identityVerification < 30) {
-        recommendations.push('Verify your phone number and email address');
-      }
+      recs.push('Complete identity verification through video call');
+      if (factors.identityVerification < 30) recs.push('Verify your phone number and email address');
     }
 
-    if (factors.propertyVerification && factors.propertyVerification < 70) {
-      recommendations.push('Verify property ownership documents');
-      if (factors.propertyVerification < 40) {
-        recommendations.push('Schedule property inspection with certified agent');
-      }
+    if (factors.propertyVerification != null && factors.propertyVerification < 70) {
+      recs.push('Verify property ownership documents');
+      if (factors.propertyVerification < 40) recs.push('Schedule property inspection with certified agent');
     }
 
-    return recommendations;
+    return recs;
   }
 
   private static getCommunityRecommendations(factors: TrustScore['factors']): string[] {
-    const recommendations: string[] = [];
+    const recs: string[] = [];
 
     if (factors.communityFeedback < 70) {
-      recommendations.push('Engage with the community to build positive feedback');
-      if (factors.communityFeedback < 40) {
-        recommendations.push('Complete your profile and add references');
-      }
+      recs.push('Engage with the community to build positive feedback');
+      if (factors.communityFeedback < 40) recs.push('Complete your profile and add references');
     }
 
     if (factors.transactionHistory < 60) {
-      recommendations.push('Complete more transactions to build history');
-      if (factors.transactionHistory < 20) {
-        recommendations.push('Start with smaller transactions to build trust');
-      }
+      recs.push('Complete more transactions to build history');
+      if (factors.transactionHistory < 20) recs.push('Start with smaller transactions to build trust');
     }
 
-    return recommendations;
+    return recs;
   }
 
-  private static getScoreBasedRecommendations(currentScore: number): string[] {
-    if (currentScore < 500) {
-      return ['Focus on basic verification steps first'];
-    } else if (currentScore < 750) {
-      return ['Build community reputation through positive interactions'];
-    } else if (currentScore < 900) {
-      return ['Complete advanced verification for premium status'];
-    }
+  private static getScoreBasedRecommendations(score: number): string[] {
+    if (score < 500) return ['Focus on basic verification steps first'];
+    if (score < 750) return ['Build community reputation through positive interactions'];
+    if (score < 900) return ['Complete advanced verification for premium status'];
     return [];
   }
 
-  // Fraud detection algorithm
-  static detectFraudRisk(data: {
-    userId: string;
-    propertyId?: string;
-    userHistory: UserTransaction[];
-    propertyData?: PropertyData;
-    transactionData?: TransactionData;
-  }): {
-    riskLevel: 'low' | 'medium' | 'high' | 'critical';
-    riskScore: number;
-    flags: string[];
-    recommendations: string[];
-  } {
-    let riskScore = 0;
-    const flags: string[] = [];
-    const recommendations: string[] = [];
+  // ── Trust score update gate ────────────────────────────────────────────────
 
-    // Analyze different risk factors
-    const userRisk = this.analyzeUserRisk(data.userHistory);
-    const propertyRisk = this.analyzePropertyRisk(data.propertyData);
-    const transactionRisk = this.analyzeTransactionRisk(data.transactionData);
+  static shouldUpdateTrustScore(
+    currentScore: TrustScore,
+    newFactors:   Partial<TrustScore['factors']>,
+  ): { shouldUpdate: boolean; reason: string; newScore: number } {
+    const updatedFactors = { ...currentScore.factors, ...newFactors };
+    const { score: newScore } = this.calculateTrustScore(updatedFactors);
 
-    // Combine risk assessments
-    riskScore += userRisk.score;
-    flags.push(...userRisk.flags);
-    recommendations.push(...userRisk.recommendations);
+    const delta        = Math.abs(newScore - currentScore.score);
+    const daysSinceLast = (Date.now() - currentScore.lastUpdated.getTime()) / 86_400_000;
 
-    riskScore += propertyRisk.score;
-    flags.push(...propertyRisk.flags);
-    recommendations.push(...propertyRisk.recommendations);
+    const significantChange = delta >= this.SCORE_THRESHOLDS.UPDATE_MIN_DELTA;
+    const weeklyDue         = daysSinceLast >= this.SCORE_THRESHOLDS.UPDATE_MAX_DAYS;
 
-    riskScore += transactionRisk.score;
-    flags.push(...transactionRisk.flags);
-    recommendations.push(...transactionRisk.recommendations);
+    const reason = significantChange
+      ? `Significant score change: ${delta} points`
+      : weeklyDue
+      ? 'Regular weekly update'
+      : 'No update needed';
 
-    return {
-      riskLevel: this.calculateRiskLevel(riskScore),
-      riskScore,
-      flags,
-      recommendations,
-    };
+    return { shouldUpdate: significantChange || weeklyDue, reason, newScore };
   }
 
-  private static analyzeUserRisk(userHistory: UserTransaction[]): {
-    score: number;
-    flags: string[];
+  // ── Fraud detection ────────────────────────────────────────────────────────
+
+  static detectFraudRisk(data: {
+    userId:          string;
+    propertyId?:     string;
+    userHistory:     UserTransaction[];
+    propertyData?:   PropertyData;
+    transactionData?: TransactionData;
+  }): {
+    riskLevel:       RiskLevel;
+    riskScore:       number;
+    flags:           string[];
     recommendations: string[];
   } {
-    let score = 0;
-    const flags: string[] = [];
+    const assessments = [
+      this.analyzeUserRisk(data.userHistory),
+      this.analyzePropertyRisk(data.propertyData),
+      this.analyzeTransactionRisk(data.transactionData),
+    ];
+
+    const riskScore      = assessments.reduce((sum, a) => sum + a.score, 0);
+    const flags          = assessments.flatMap((a) => a.flags);
+    const recommendations = assessments.flatMap((a) => a.recommendations);
+
+    return { riskLevel: this.calculateRiskLevel(riskScore), riskScore, flags, recommendations };
+  }
+
+  private static analyzeUserRisk(userHistory: UserTransaction[]): RiskAssessment {
+    const flags:           string[] = [];
     const recommendations: string[] = [];
+    let score = 0;
 
     if (userHistory.length === 0) {
       score += 20;
@@ -286,12 +376,10 @@ export class TrustBusinessLogic {
       recommendations.push('Require additional verification for new users');
     }
 
-    const recentTransactions = userHistory.filter(
-      (transaction) =>
-        new Date(transaction.date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    );
+    const cutoff = Date.now() - this.RECENT_TRANSACTION_WINDOW_MS;
+    const recentCount = userHistory.filter((t) => new Date(t.date).getTime() > cutoff).length;
 
-    if (recentTransactions.length > 10) {
+    if (recentCount > 10) {
       score += 15;
       flags.push('High transaction frequency in recent period');
       recommendations.push('Monitor user activity closely');
@@ -300,287 +388,203 @@ export class TrustBusinessLogic {
     return { score, flags, recommendations };
   }
 
-  private static analyzePropertyRisk(propertyData?: PropertyData): {
-    score: number;
-    flags: string[];
-    recommendations: string[];
-  } {
-    let score = 0;
-    const flags: string[] = [];
-    const recommendations: string[] = [];
+  private static analyzePropertyRisk(propertyData?: PropertyData): RiskAssessment {
+    if (!propertyData) return { score: 0, flags: [], recommendations: [] };
 
-    if (!propertyData) return { score, flags, recommendations };
+    const checks: Array<[boolean, number, string, string]> = [
+      [
+        propertyData.duplicateCount > 0,
+        30,
+        'Property appears in multiple listings',
+        'Verify property ownership documents',
+      ],
+      [
+        propertyData.priceVariance > 50,
+        25,
+        'Property price significantly differs from market value',
+        'Request property valuation report',
+      ],
+      [
+        propertyData.imageAuthenticityScore < 70,
+        20,
+        'Property images may be manipulated or stolen',
+        'Request original property photos with timestamp',
+      ],
+    ];
 
-    if (propertyData.duplicateCount > 0) {
-      score += 30;
-      flags.push('Property appears in multiple listings');
-      recommendations.push('Verify property ownership documents');
-    }
-
-    if (propertyData.priceVariance > 50) {
-      score += 25;
-      flags.push('Property price significantly differs from market value');
-      recommendations.push('Request property valuation report');
-    }
-
-    if (propertyData.imageAuthenticityScore < 70) {
-      score += 20;
-      flags.push('Property images may be manipulated or stolen');
-      recommendations.push('Request original property photos with timestamp');
-    }
-
-    return { score, flags, recommendations };
+    return checks
+      .filter(([condition]) => condition)
+      .reduce<RiskAssessment>(
+        (acc, [, points, flag, rec]) => ({
+          score:           acc.score + points,
+          flags:           [...acc.flags, flag],
+          recommendations: [...acc.recommendations, rec],
+        }),
+        { score: 0, flags: [], recommendations: [] },
+      );
   }
 
-  private static analyzeTransactionRisk(transactionData?: TransactionData): {
-    score: number;
-    flags: string[];
-    recommendations: string[];
-  } {
-    let score = 0;
-    const flags: string[] = [];
-    const recommendations: string[] = [];
+  private static analyzeTransactionRisk(transactionData?: TransactionData): RiskAssessment {
+    if (!transactionData) return { score: 0, flags: [], recommendations: [] };
 
-    if (!transactionData) return { score, flags, recommendations };
+    const checks: Array<[boolean, number, string, string]> = [
+      [
+        transactionData.unusualPaymentMethods,
+        25,
+        'Unusual payment methods requested',
+        'Verify payment method legitimacy',
+      ],
+      [
+        transactionData.urgencyIndicators > 2,
+        20,
+        'High-pressure sales tactics detected',
+        'Allow cooling-off period for transactions',
+      ],
+    ];
 
-    if (transactionData.unusualPaymentMethods) {
-      score += 25;
-      flags.push('Unusual payment methods requested');
-      recommendations.push('Verify payment method legitimacy');
-    }
-
-    if (transactionData.urgencyIndicators > 2) {
-      score += 20;
-      flags.push('High-pressure sales tactics detected');
-      recommendations.push('Allow cooling-off period for transactions');
-    }
-
-    return { score, flags, recommendations };
+    return checks
+      .filter(([condition]) => condition)
+      .reduce<RiskAssessment>(
+        (acc, [, points, flag, rec]) => ({
+          score:           acc.score + points,
+          flags:           [...acc.flags, flag],
+          recommendations: [...acc.recommendations, rec],
+        }),
+        { score: 0, flags: [], recommendations: [] },
+      );
   }
 
-  private static calculateRiskLevel(riskScore: number): 'low' | 'medium' | 'high' | 'critical' {
+  private static calculateRiskLevel(riskScore: number): RiskLevel {
     if (riskScore >= 80) return 'critical';
     if (riskScore >= 60) return 'high';
     if (riskScore >= 30) return 'medium';
     return 'low';
   }
 
-  // Document verification logic
+  // ── Document verification ──────────────────────────────────────────────────
+
   static verifyDocument(document: {
-    type: string;
-    imageUrl: string;
+    type:          string;
+    imageUrl:      string;
     extractedData: DocumentData;
   }): {
-    isValid: boolean;
-    confidence: number;
-    issues: string[];
+    isValid:       boolean;
+    confidence:    number;
+    issues:        string[];
     extractedInfo: DocumentData;
   } {
-    const issues: string[] = [];
-    let confidence = 100;
+    const deductions: Array<[boolean, number, string]> = [
+      [
+        !this.VALID_DOCUMENT_TYPES.has(document.type),
+        50,
+        'Invalid document type',
+      ],
+      [
+        !document.extractedData || Object.keys(document.extractedData).length === 0,
+        30,
+        'Unable to extract data from document',
+      ],
+      [
+        document.extractedData.tamperingScore > 30,
+        40,
+        'Document may have been tampered with',
+      ],
+      [
+        !!document.extractedData.expiryDate &&
+          new Date(document.extractedData.expiryDate) < new Date(),
+        60,
+        'Document has expired',
+      ],
+    ];
 
-    // Basic document type validation
-    const validDocumentTypes = ['passport', 'drivers_license', 'national_id', 'utility_bill'];
-    if (!validDocumentTypes.includes(document.type)) {
-      issues.push('Invalid document type');
-      confidence -= 50;
-    }
+    const missingFields = this.REQUIRED_DOCUMENT_FIELDS[document.type]?.filter(
+      (field) => !(field in document.extractedData) || !document.extractedData[field],
+    ) ?? [];
 
-    // Check extracted data quality
-    if (!document.extractedData || Object.keys(document.extractedData).length === 0) {
-      issues.push('Unable to extract data from document');
-      confidence -= 30;
-    }
+    const issues = [
+      ...deductions.filter(([condition]) => condition).map(([, , msg]) => msg),
+      ...(missingFields.length > 0 ? [`Missing required fields: ${missingFields.join(', ')}`] : []),
+    ];
 
-    // Validate required fields based on document type
-    const requiredFields = this.getRequiredFieldsForDocument(document.type);
-    const missingFields = requiredFields.filter(
-      field => !(field in document.extractedData) || !document.extractedData[field]
+    const confidence = Math.max(
+      0,
+      100 -
+        deductions.filter(([cond]) => cond).reduce((sum, [, pts]) => sum + pts, 0) -
+        missingFields.length * 10,
     );
 
-    if (missingFields.length > 0) {
-      issues.push(`Missing required fields: ${missingFields.join(', ')}`);
-      confidence -= missingFields.length * 10;
-    }
-
-    // Check for document tampering indicators
-    if (document.extractedData.tamperingScore > 30) {
-      issues.push('Document may have been tampered with');
-      confidence -= 40;
-    }
-
-    // Check document expiry
-    if (document.extractedData.expiryDate) {
-      const expiryDate = new Date(document.extractedData.expiryDate);
-      if (expiryDate < new Date()) {
-        issues.push('Document has expired');
-        confidence -= 60;
-      }
-    }
-
-    const isValid = confidence >= 70 && issues.length === 0;
-
     return {
-      isValid,
-      confidence: Math.max(0, confidence),
+      isValid:      confidence >= 70 && issues.length === 0,
+      confidence,
       issues,
       extractedInfo: document.extractedData,
     };
   }
 
-  // Get required fields for document type
-  private static getRequiredFieldsForDocument(documentType: string): string[] {
-    const fieldMap: Record<string, string[]> = {
-      passport: ['fullName', 'passportNumber', 'nationality', 'dateOfBirth', 'expiryDate'],
-      drivers_license: ['fullName', 'licenseNumber', 'dateOfBirth', 'address', 'expiryDate'],
-      national_id: ['fullName', 'idNumber', 'dateOfBirth', 'address'],
-      utility_bill: ['fullName', 'address', 'billDate', 'serviceProvider'],
-    };
+  // ── Community trust ────────────────────────────────────────────────────────
 
-    return fieldMap[documentType] ?? [];
-  }
-
-  // Community trust scoring
   static calculateCommunityTrust(data: {
-    references: CommunityReference[];
-    reviews: CommunityReview[];
+    references:          CommunityReference[];
+    reviews:             CommunityReview[];
     communityEngagement: CommunityEngagement[];
-    reportedIssues: ReportedIssue[];
-  }): {
-    score: number;
-    factors: Record<string, number>;
-    insights: string[];
-  } {
-    let score = 0;
-    const factors: Record<string, number> = {};
-    const insights: string[] = [];
-
-    // Reference scoring
-    const validReferences = data.references.filter(ref => ref.verified);
-    factors.references = Math.min(validReferences.length * 15, 60);
-    score += factors.references;
-
-    if (validReferences.length < 2) {
-      insights.push('Add more verified references to improve trust');
-    }
-
-    // Review scoring
-    const avgRating = data.reviews.length > 0
-      ? data.reviews.reduce((sum, review) => sum + review.rating, 0) / data.reviews.length
+    reportedIssues:      ReportedIssue[];
+  }): { score: number; factors: Record<string, number>; insights: string[] } {
+    const validRefs    = data.references.filter((r) => r.verified);
+    const avgRating    = data.reviews.length > 0
+      ? data.reviews.reduce((sum, r) => sum + r.rating, 0) / data.reviews.length
       : 0;
-    factors.reviews = Math.round(avgRating * 10);
-    score += factors.reviews;
-
-    if (data.reviews.length < 5) {
-      insights.push('Encourage more users to leave reviews');
-    }
-
-    // Community engagement scoring
-    factors.engagement = Math.min(data.communityEngagement.length * 5, 30);
-    score += factors.engagement;
-
-    if (data.communityEngagement.length < 3) {
-      insights.push('Participate more in community discussions');
-    }
-
-    // Penalty for reported issues
-    const activePenalties = data.reportedIssues.filter(
-      (issue) => issue.status === 'active' || issue.status === 'investigating'
+    const activeIssues = data.reportedIssues.filter(
+      (i) => i.status === 'active' || i.status === 'investigating',
     );
-    factors.penalties = -activePenalties.length * 20;
-    score += factors.penalties;
 
-    if (activePenalties.length > 0) {
-      insights.push('Resolve outstanding reported issues');
-    }
-
-    return {
-      score: Math.max(0, Math.min(100, score)),
-      factors,
-      insights,
+    const factors: Record<string, number> = {
+      references: Math.min(validRefs.length * 15, 60),
+      reviews:    Math.round(avgRating * 10),
+      engagement: Math.min(data.communityEngagement.length * 5, 30),
+      penalties:  -activeIssues.length * 20,
     };
+
+    const insights: string[] = [
+      validRefs.length < 2          && 'Add more verified references to improve trust',
+      data.reviews.length < 5       && 'Encourage more users to leave reviews',
+      data.communityEngagement.length < 3 && 'Participate more in community discussions',
+      activeIssues.length > 0       && 'Resolve outstanding reported issues',
+    ].filter((s): s is string => typeof s === 'string');
+
+    const score = Math.max(0, Math.min(100, Object.values(factors).reduce((sum, v) => sum + v, 0)));
+
+    return { score, factors, insights };
   }
 
-  // Trust score update logic
-  static shouldUpdateTrustScore(
-    currentScore: TrustScore,
-    newFactors: Partial<TrustScore['factors']>
-  ): {
-    shouldUpdate: boolean;
-    reason: string;
-    newScore: number;
-  } {
-    const updatedFactors = { ...currentScore.factors, ...newFactors };
-    const newCalculation = this.calculateTrustScore(updatedFactors);
+  // ── Validation ─────────────────────────────────────────────────────────────
 
-    const scoreDifference = Math.abs(newCalculation.score - currentScore.score);
-    const timeSinceLastUpdate = Date.now() - currentScore.lastUpdated.getTime();
-    const daysSinceUpdate = timeSinceLastUpdate / (1000 * 60 * 60 * 24);
-
-    // Update if significant score change or enough time has passed
-    const shouldUpdate = scoreDifference >= 10 || daysSinceUpdate >= 7;
-
-    let reason = '';
-    if (scoreDifference >= 10) {
-      reason = `Significant score change: ${scoreDifference} points`;
-    } else if (daysSinceUpdate >= 7) {
-      reason = 'Regular weekly update';
-    } else {
-      reason = 'No update needed';
-    }
-
-    return {
-      shouldUpdate,
-      reason,
-      newScore: newCalculation.score,
-    };
-  }
-
-  // Validate trust operations
   static validateTrustOperation(
     operation: 'create' | 'update' | 'delete',
-    data: Record<string, unknown>,
-    userId: string
-  ): {
-    isValid: boolean;
-    errors: string[];
-  } {
+    data:      Record<string, unknown>,
+    userId:    string,
+  ): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     try {
-      switch (operation) {
-        case 'create':
-          TrustScoreSchema.parse(data);
-          break;
-        case 'update':
-          // Partial validation for updates
-          if (data.factors) {
-            TrustScoreSchema.shape.factors.parse(data.factors);
-          }
-          break;
-        case 'delete':
-          if (!data.id || !data.userId) {
-            errors.push('ID and user ID required for deletion');
-          }
-          break;
+      if (operation === 'create') {
+        TrustScoreSchema.parse(data);
+      } else if (operation === 'update' && data.factors) {
+        TrustScoreSchema.shape.factors.parse(data.factors);
+      } else if (operation === 'delete' && (!data.id || !data.userId)) {
+        errors.push('ID and user ID required for deletion');
       }
 
-      // Check user authorization
       if (data.userId && data.userId !== userId) {
-        errors.push('Unauthorized: Cannot modify another user\'s trust data');
+        errors.push("Unauthorized: Cannot modify another user's trust data");
       }
-
     } catch (error) {
       if (error instanceof z.ZodError) {
-        errors.push(...error.errors.map(err => `${err.path.join('.')}: ${err.message}`));
+        errors.push(...error.errors.map((e) => `${e.path.join('.')}: ${e.message}`));
       } else {
         errors.push('Validation failed');
       }
     }
 
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
+    return { isValid: errors.length === 0, errors };
   }
 }

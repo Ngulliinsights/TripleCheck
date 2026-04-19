@@ -287,7 +287,7 @@ export interface NPLBulkUpload {
   readonly totalRecords: number;
   readonly processedRecords: number;
   readonly failedRecords: number;
-  readonly status: 'processing' | 'completed' | 'failed';
+  readonly status: 'processing' | 'completed' | 'failed' | 'partial';
   readonly errors: BulkUploadError[];
 }
 

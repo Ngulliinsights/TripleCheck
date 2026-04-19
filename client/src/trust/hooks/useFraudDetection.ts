@@ -5,11 +5,11 @@
  * ────────────
  * • Query hooks are top-level exports — composable anywhere without violating
  *   the Rules of Hooks.
- * • useFraudDetection owns mutations only. Components compose it with the
+ * • useFraudDetection owns mutations only. Components compose it with whichever
  *   query hooks they need.
  * • Explicit generics are placed on mutationFn signatures (not on useMutation
- *   itself) to avoid the <Type> vs comparison-operator ambiguity in .ts files.
- * • TanStack Query v4 API: isLoading (not isPending), useMutation({mutationFn}).
+ *   itself) to avoid the <Type> vs. comparison-operator ambiguity in .ts files.
+ * • TanStack Query v5 API throughout: isPending (not isLoading).
  */
 
 import {
@@ -24,13 +24,13 @@ import { apiClient } from "../../local/services/unified-api-client"
 
 // ─── Domain types ──────────────────────────────────────────────────────────────
 
-export type AlertSeverity   = "critical" | "high" | "medium" | "low"
-export type AlertStatus     = "active" | "investigating" | "resolved" | "dismissed"
-export type ParticipantType = "individual" | "entity" | "professional" | "institution"
+export type AlertSeverity      = "critical" | "high" | "medium" | "low"
+export type AlertStatus        = "active" | "investigating" | "resolved" | "dismissed"
+export type ParticipantType    = "individual" | "entity" | "professional" | "institution"
 export type VerificationStatus = "verified" | "pending" | "failed" | "synthetic"
-export type EvidenceType    = "document" | "transaction" | "communication" | "behavioral" | "network"
-export type RiskLevel       = "low" | "medium" | "high"
-export type ReportPriority  = "low" | "medium" | "high" | "urgent"
+export type EvidenceType       = "document" | "transaction" | "communication" | "behavioral" | "network"
+export type RiskLevel          = "low" | "medium" | "high"
+export type ReportPriority     = "low" | "medium" | "high" | "urgent"
 export type SystemHealthStatus = "operational" | "degraded" | "down"
 
 export interface ParticipantInfo {
@@ -213,7 +213,8 @@ export interface CreateReportPayload {
   priority: ReportPriority
 }
 
-// Internal mutation variable shape — avoids generic-on-useMutation ambiguity
+// Internal shape for the update-alert mutation — keeps the variable bag
+// well-typed without needing a generic on useMutation itself.
 interface UpdateAlertVariables {
   alertId: string
   updates: Partial<FraudAlert>
@@ -222,24 +223,24 @@ interface UpdateAlertVariables {
 // ─── Query key factory ─────────────────────────────────────────────────────────
 
 export const fraudKeys = {
-  all: ["fraud-detection"] as const,
-  dashboard: (userId?: string, timeRange?: string) =>
+  all:             ["fraud-detection"] as const,
+  dashboard:       (userId?: string, timeRange?: string) =>
     [...fraudKeys.all, "dashboard", userId, timeRange] as const,
-  alerts: (filters?: AlertFilters) =>
+  alerts:          (filters?: AlertFilters) =>
     [...fraudKeys.all, "alerts", filters] as const,
-  alert: (id: string) =>
+  alert:           (id: string) =>
     [...fraudKeys.all, "alert", id] as const,
-  systemStatus: () =>
+  systemStatus:    () =>
     [...fraudKeys.all, "system-status"] as const,
   networkAnalysis: (opts?: { userId?: string; propertyId?: string; timeRange?: string }) =>
     [...fraudKeys.all, "network-analysis", opts] as const,
-  mlAnalytics: (timeRange?: string) =>
+  mlAnalytics:     (timeRange?: string) =>
     [...fraudKeys.all, "ml-analytics", timeRange] as const,
-  reports: (filters?: ReportFilters) =>
+  reports:         (filters?: ReportFilters) =>
     [...fraudKeys.all, "reports", filters] as const,
 } as const
 
-// ─── Utility ──────────────────────────────────────────────────────────────────
+// ─── Internal utility ─────────────────────────────────────────────────────────
 
 function buildParams(
   entries: Record<string, string | number | undefined | null>
@@ -261,10 +262,9 @@ export function useFraudDashboard(
 ) {
   return useQuery<FraudDashboardData>({
     queryKey: fraudKeys.dashboard(userId, timeRange),
-    queryFn: async () => {
-      const qs = buildParams({ userId, timeRange })
+    queryFn:  async () => {
       const res = await apiClient.get<FraudDashboardData>(
-        `/api/fraud-detection/dashboard${qs}`
+        `/api/fraud-detection/dashboard${buildParams({ userId, timeRange })}`
       )
       return res.data
     },
@@ -279,17 +279,16 @@ export function useFraudAlerts(
 ) {
   return useQuery<FraudAlert[]>({
     queryKey: fraudKeys.alerts(filters),
-    queryFn: async () => {
-      const qs = buildParams({
-        severity: filters?.severity,
-        category: filters?.category,
-        status:   filters?.status,
-        search:   filters?.search,
-        limit:    filters?.limit,
-        offset:   filters?.offset,
-      })
+    queryFn:  async () => {
       const res = await apiClient.get<FraudAlert[]>(
-        `/api/fraud-detection/alerts${qs}`
+        `/api/fraud-detection/alerts${buildParams({
+          severity: filters?.severity,
+          category: filters?.category,
+          status:   filters?.status,
+          search:   filters?.search,
+          limit:    filters?.limit,
+          offset:   filters?.offset,
+        })}`
       )
       return res.data
     },
@@ -304,7 +303,7 @@ export function useFraudAlert(
 ) {
   return useQuery<FraudAlert>({
     queryKey: fraudKeys.alert(alertId),
-    queryFn: async () => {
+    queryFn:  async () => {
       const res = await apiClient.get<FraudAlert>(
         `/api/fraud-detection/alerts/${alertId}`
       )
@@ -320,7 +319,7 @@ export function useSystemStatus(
 ) {
   return useQuery<SystemStatus>({
     queryKey: fraudKeys.systemStatus(),
-    queryFn: async () => {
+    queryFn:  async () => {
       const res = await apiClient.get<SystemStatus>(
         "/api/fraud-detection/system/status"
       )
@@ -337,14 +336,13 @@ export function useNetworkAnalysis(
 ) {
   return useQuery<NetworkAnalysis[]>({
     queryKey: fraudKeys.networkAnalysis(opts),
-    queryFn: async () => {
-      const qs = buildParams({
-        userId:     opts?.userId,
-        propertyId: opts?.propertyId,
-        timeRange:  opts?.timeRange,
-      })
+    queryFn:  async () => {
       const res = await apiClient.get<NetworkAnalysis[]>(
-        `/api/fraud-detection/network-analysis${qs}`
+        `/api/fraud-detection/network-analysis${buildParams({
+          userId:     opts?.userId,
+          propertyId: opts?.propertyId,
+          timeRange:  opts?.timeRange,
+        })}`
       )
       return res.data
     },
@@ -358,10 +356,9 @@ export function useMLAnalytics(
 ) {
   return useQuery<MLAnalytics>({
     queryKey: fraudKeys.mlAnalytics(timeRange),
-    queryFn: async () => {
-      const qs = buildParams({ timeRange })
+    queryFn:  async () => {
       const res = await apiClient.get<MLAnalytics>(
-        `/api/fraud-detection/ml-analytics${qs}`
+        `/api/fraud-detection/ml-analytics${buildParams({ timeRange })}`
       )
       return res.data
     },
@@ -375,14 +372,13 @@ export function useFraudReports(
 ) {
   return useQuery<FraudReport[]>({
     queryKey: fraudKeys.reports(filters),
-    queryFn: async () => {
-      const qs = buildParams({
-        status:   filters?.status,
-        priority: filters?.priority,
-        limit:    filters?.limit,
-      })
+    queryFn:  async () => {
       const res = await apiClient.get<FraudReport[]>(
-        `/api/fraud-detection/reports${qs}`
+        `/api/fraud-detection/reports${buildParams({
+          status:   filters?.status,
+          priority: filters?.priority,
+          limit:    filters?.limit,
+        })}`
       )
       return res.data
     },
@@ -393,11 +389,9 @@ export function useFraudReports(
 // ─── Mutation hook ────────────────────────────────────────────────────────────
 
 export function useFraudDetection() {
-  const qc = useQueryClient()
+  const queryClient = useQueryClient()
 
   // ── Process transaction ────────────────────────────────────────────────────
-  // Types on mutationFn — NOT on useMutation<...> — to avoid the
-  // less-than operator ambiguity that breaks the parser in .ts files.
 
   const processTransactionMutation = useMutation({
     mutationFn: async (payload: TransactionData): Promise<FraudAlert[]> => {
@@ -408,10 +402,10 @@ export function useFraudDetection() {
       return res.data
     },
     onSuccess: (alerts: FraudAlert[]) => {
-      qc.invalidateQueries({ queryKey: fraudKeys.dashboard() })
-      qc.invalidateQueries({ queryKey: fraudKeys.alerts() })
+      queryClient.invalidateQueries({ queryKey: fraudKeys.dashboard() })
+      queryClient.invalidateQueries({ queryKey: fraudKeys.alerts() })
       for (const alert of alerts) {
-        qc.setQueryData(fraudKeys.alert(alert.id), alert)
+        queryClient.setQueryData(fraudKeys.alert(alert.id), alert)
       }
     },
   })
@@ -427,9 +421,9 @@ export function useFraudDetection() {
       return res.data
     },
     onSuccess: (alert: FraudAlert) => {
-      qc.setQueryData(fraudKeys.alert(alert.id), alert)
-      qc.invalidateQueries({ queryKey: fraudKeys.alerts() })
-      qc.invalidateQueries({ queryKey: fraudKeys.dashboard() })
+      queryClient.setQueryData(fraudKeys.alert(alert.id), alert)
+      queryClient.invalidateQueries({ queryKey: fraudKeys.alerts() })
+      queryClient.invalidateQueries({ queryKey: fraudKeys.dashboard() })
     },
   })
 
@@ -444,11 +438,11 @@ export function useFraudDetection() {
       return res.data
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: fraudKeys.reports() })
+      queryClient.invalidateQueries({ queryKey: fraudKeys.reports() })
     },
   })
 
-  // ── Public API ─────────────────────────────────────────────────────────────
+  // ── Stable public wrappers ─────────────────────────────────────────────────
 
   const processTransaction = useCallback(
     (payload: TransactionData): Promise<FraudAlert[]> =>
@@ -468,11 +462,12 @@ export function useFraudDetection() {
     [createReportMutation]
   )
 
-  // ── Bulk helpers (bypass wrapper to avoid redundant re-renders) ────────────
+  // ── Bulk helpers ───────────────────────────────────────────────────────────
+  // Promise.allSettled ensures a single failure doesn't short-circuit the batch.
 
   const dismissAlerts = useCallback(
-    (alertIds: string[]): Promise<FraudAlert[]> =>
-      Promise.all(
+    (alertIds: string[]): Promise<PromiseSettledResult<FraudAlert>[]> =>
+      Promise.allSettled(
         alertIds.map((id) =>
           updateAlertMutation.mutateAsync({ alertId: id, updates: { status: "dismissed" } })
         )
@@ -481,8 +476,8 @@ export function useFraudDetection() {
   )
 
   const escalateAlerts = useCallback(
-    (alertIds: string[]): Promise<FraudAlert[]> =>
-      Promise.all(
+    (alertIds: string[]): Promise<PromiseSettledResult<FraudAlert>[]> =>
+      Promise.allSettled(
         alertIds.map((id) =>
           updateAlertMutation.mutateAsync({
             alertId: id,
@@ -494,8 +489,8 @@ export function useFraudDetection() {
   )
 
   const assignAlerts = useCallback(
-    (alertIds: string[], assignee: string): Promise<FraudAlert[]> =>
-      Promise.all(
+    (alertIds: string[], assignee: string): Promise<PromiseSettledResult<FraudAlert>[]> =>
+      Promise.allSettled(
         alertIds.map((id) =>
           updateAlertMutation.mutateAsync({
             alertId: id,
@@ -515,21 +510,21 @@ export function useFraudDetection() {
     escalateAlerts,
     assignAlerts,
 
-    // Granular loading flags (v5: isPending, not isLoading)
-    isProcessing:    processTransactionMutation.isPending,
-    isUpdating:      updateAlertMutation.isPending,
+    // Granular loading flags
+    isProcessing:     processTransactionMutation.isPending,
+    isUpdating:       updateAlertMutation.isPending,
     isCreatingReport: createReportMutation.isPending,
 
     // Combined convenience flag
     isLoading:
       processTransactionMutation.isPending ||
-      updateAlertMutation.isPending ||
+      updateAlertMutation.isPending       ||
       createReportMutation.isPending,
 
-    // Last error across any mutation
+    // First error across any mutation (null when all clear)
     error:
       processTransactionMutation.error ??
-      updateAlertMutation.error ??
+      updateAlertMutation.error        ??
       createReportMutation.error,
   }
 }

@@ -170,7 +170,6 @@ export class SocketIOService {
     socket.on('disconnect', (reason) => {
       logger.info('User disconnected', { userId, socketId: socket.id, reason });
     });
-    });
 
     // Handle errors
     socket.on('error', (error) => {

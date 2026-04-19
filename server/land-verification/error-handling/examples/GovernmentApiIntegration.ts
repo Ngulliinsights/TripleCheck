@@ -4,12 +4,13 @@
  */
 
 import { 
-  ExternalServiceError, 
+  AppError, 
   ErrorCode, 
-  HttpStatusCode 
-} from './error-handling';
+  HttpStatusCode,
+  ErrorCategory
+} from '../../../../shared/types/errors';
 import { logger } from '../../../infrastructure/monitoring/logger';
-import { auditLogger, AuditSeverity } from '../../../infrastructure/audit/audit-logger';
+import { auditLogger, AuditSeverity } from '../AuditLogger';
 import { errorHandlingService } from '../ErrorHandlingService';
 import { fallbackManager } from '../FallbackManager';
 import { retryPolicyManager } from '../RetryPolicyManager';
@@ -183,7 +184,8 @@ export class GovernmentApiService {
           handlingStrategy: result.handlingStrategy,
           warnings: result.warnings,
           correlationId: result.correlationId
-        }
+        },
+        metadata: {}
       });
 
       return result.data!;
@@ -257,11 +259,12 @@ export class GovernmentApiService {
       const response = await this.makeApiCall(`/registry/search/${titleNumber}`);
       
       if (!response.success) {
-        throw new ExternalServiceError(
-          `Registry search failed: ${response.error}`,
+        throw new AppError(
           ErrorCode.EXTERNAL_SERVICE_ERROR,
+          `Registry search failed: ${response.error}`,
           HttpStatusCode.BAD_GATEWAY,
-          { titleNumber, response }
+          ErrorCategory.EXTERNAL_SERVICE,
+          { details: { titleNumber, response } }
         );
       }
 
@@ -298,11 +301,12 @@ export class GovernmentApiService {
       });
 
       if (!response.success) {
-        throw new ExternalServiceError(
-          `Court records search failed: ${response.error}`,
+        throw new AppError(
           ErrorCode.EXTERNAL_SERVICE_ERROR,
+          `Court records search failed: ${response.error}`,
           HttpStatusCode.BAD_GATEWAY,
-          { propertyId, ownerNames, response }
+          ErrorCategory.EXTERNAL_SERVICE,
+          { details: { propertyId, ownerNames, response } }
         );
       }
 

@@ -1,13 +1,35 @@
 /**
  * Error Boundary Components
- * Comprehensive error handling with fallback UI and recovery mechanisms
+ *
+ * Fixes applied:
+ * - `substr()` (deprecated) → `substring()`
+ * - `logError` converted from class arrow-field to a regular method
+ *   (arrow fields on class instances skip the prototype chain and are
+ *    not ideal for methods that never need to be detached from `this`)
+ * - `useErrorHandler` callback deps corrected (empty array — the function
+ *   has no reactive deps)
+ * - Misc: `process.env.NODE_ENV` guard collapsed; redundant `else` branches
+ *   after a `return` removed; email placeholder updated to a constant
  */
 
-import React, { Component, ErrorInfo, ReactNode } from 'react'
-import { AlertTriangle, RefreshCw, Home, Bug, Mail } from 'lucide-react'
-import { Button } from './ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { Alert, AlertDescription } from './ui/alert'
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { AlertTriangle, RefreshCw, Home, Bug, Mail } from "lucide-react";
+
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Alert, AlertDescription } from "./ui/alert";
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const SUPPORT_EMAIL = "support@example.com";
+
+const IS_DEV = process.env.NODE_ENV === "development";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -20,124 +42,87 @@ interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
-  level?: 'component' | 'page' | 'global';
+  level?: "component" | "page" | "global";
   showDetails?: boolean;
 }
 
-/**
- * Base Error Boundary Component
- */
+// ---------------------------------------------------------------------------
+// ErrorBoundary
+// ---------------------------------------------------------------------------
+
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null,
-      errorId: ''
-    };
+    this.state = { hasError: false, error: null, errorInfo: null, errorId: "" };
   }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    return {
-      hasError: true,
-      error,
-      errorId: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
+    // FIX: `substr` is deprecated — use `substring`
+    const errorId = `error_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    return { hasError: true, error, errorId };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.setState({
-      error,
-      errorInfo
-    });
-
-    // Log error to monitoring service
+    this.setState({ error, errorInfo });
     this.logError(error, errorInfo);
-
-    // Call custom error handler
     this.props.onError?.(error, errorInfo);
   }
 
-  private logError = (error: Error, errorInfo: ErrorInfo) => {
+  // FIX: Regular method instead of class arrow-field.
+  // Arrow fields are bound per-instance and skip the prototype, which bloats
+  // memory when many instances exist and prevents subclass overrides.
+  // This method is only ever called as `this.logError(...)` so no binding needed.
+  private logError(error: Error, errorInfo: ErrorInfo) {
     const errorData = {
       message: error.message,
       stack: error.stack,
       componentStack: errorInfo.componentStack,
       errorId: this.state.errorId,
-      level: this.props.level || 'component',
+      level: this.props.level ?? "component",
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
-      url: window.location.href
+      url: window.location.href,
     };
 
-    // In production, send to monitoring service
-    if (process.env.NODE_ENV === 'production') {
-      // Example: Send to Sentry, LogRocket, etc.
-      console.error('Error Boundary caught an error:', errorData);
-    } else {
-      console.error('Error Boundary caught an error:', errorData);
-    }
-  };
+    // TODO: In production replace with your monitoring service (Sentry, Datadog, etc.)
+    console.error("Error Boundary caught an error:", errorData);
+  }
 
   private handleRetry = () => {
-    this.setState({
-      hasError: false,
-      error: null,
-      errorInfo: null,
-      errorId: ''
-    });
+    this.setState({ hasError: false, error: null, errorInfo: null, errorId: "" });
   };
 
-  private handleReload = () => {
-    window.location.reload();
-  };
+  private handleReload = () => window.location.reload();
 
-  private handleGoHome = () => {
-    window.location.href = '/';
-  };
+  private handleGoHome = () => { window.location.href = "/"; };
 
   private handleReportError = () => {
-    const errorReport = {
-      errorId: this.state.errorId,
-      message: this.state.error?.message,
-      stack: this.state.error?.stack,
-      componentStack: this.state.errorInfo?.componentStack,
-      timestamp: new Date().toISOString()
+    const { errorId, error, errorInfo } = this.state;
+    const report = {
+      errorId,
+      message: error?.message,
+      stack: error?.stack,
+      componentStack: errorInfo?.componentStack,
+      timestamp: new Date().toISOString(),
     };
-
-    // Create mailto link with error details
-    const subject = encodeURIComponent(`Error Report - ${this.state.errorId}`);
-    const body = encodeURIComponent(`
-Error Details:
-${JSON.stringify(errorReport, null, 2)}
-
-Please describe what you were doing when this error occurred:
-[Your description here]
-    `);
-    
-    window.open(`mailto:support@example.com?subject=${subject}&body=${body}`);
+    const subject = encodeURIComponent(`Error Report — ${errorId}`);
+    const body = encodeURIComponent(
+      `Error Details:\n${JSON.stringify(report, null, 2)}\n\nWhat I was doing:\n[describe here]`,
+    );
+    window.open(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
   };
 
   render() {
-    if (this.state.hasError) {
-      // Use custom fallback if provided
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
-      // Default fallback UI based on error level
-      return this.renderErrorFallback();
-    }
-
-    return this.props.children;
+    if (!this.state.hasError) return this.props.children;
+    if (this.props.fallback)   return this.props.fallback;
+    return this.renderErrorFallback();
   }
 
   private renderErrorFallback() {
-    const { level = 'component', showDetails = false } = this.props;
+    const { level = "component", showDetails = false } = this.props;
     const { error, errorId } = this.state;
 
-    if (level === 'component') {
+    if (level === "component") {
       return (
         <Alert className="border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -157,7 +142,7 @@ Please describe what you were doing when this error occurred:
       );
     }
 
-    if (level === 'page') {
+    if (level === "page") {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
           <Card className="w-full max-w-md">
@@ -171,7 +156,7 @@ Please describe what you were doing when this error occurred:
               <p className="text-gray-600 text-center">
                 This page encountered an error and couldn't load properly.
               </p>
-              
+
               {showDetails && error && (
                 <div className="bg-gray-100 p-3 rounded text-sm">
                   <p className="font-medium text-gray-800">Error Details:</p>
@@ -196,7 +181,7 @@ Please describe what you were doing when this error occurred:
       );
     }
 
-    // Global level error
+    // Global level
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <Card className="w-full max-w-lg">
@@ -208,9 +193,10 @@ Please describe what you were doing when this error occurred:
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-gray-600 text-center">
-              The application encountered an unexpected error. We apologize for the inconvenience.
+              The application encountered an unexpected error. We apologise for the
+              inconvenience.
             </p>
-            
+
             {showDetails && error && (
               <div className="bg-gray-100 p-4 rounded text-sm">
                 <p className="font-medium text-gray-800">Technical Details:</p>
@@ -235,7 +221,8 @@ Please describe what you were doing when this error occurred:
             </div>
 
             <p className="text-xs text-gray-500 text-center">
-              If this problem persists, please contact support with Error ID: {errorId}
+              If this problem persists, contact support with Error ID:{" "}
+              <span className="font-mono">{errorId}</span>
             </p>
           </CardContent>
         </Card>
@@ -244,30 +231,31 @@ Please describe what you were doing when this error occurred:
   }
 }
 
-/**
- * Component-level Error Boundary
- */
-export const ComponentErrorBoundary: React.FC<Omit<ErrorBoundaryProps, 'level'>> = (props) => (
+// ---------------------------------------------------------------------------
+// Convenience wrappers
+// ---------------------------------------------------------------------------
+
+export const ComponentErrorBoundary: React.FC<Omit<ErrorBoundaryProps, "level">> = (props) => (
   <ErrorBoundary {...props} level="component" />
 );
 
-/**
- * Page-level Error Boundary
- */
-export const PageErrorBoundary: React.FC<Omit<ErrorBoundaryProps, 'level'>> = (props) => (
-  <ErrorBoundary {...props} level="page" showDetails={process.env.NODE_ENV === 'development'} />
+export const PageErrorBoundary: React.FC<Omit<ErrorBoundaryProps, "level">> = (props) => (
+  <ErrorBoundary {...props} level="page" showDetails={IS_DEV} />
 );
 
-/**
- * Global Error Boundary
- */
-export const GlobalErrorBoundary: React.FC<Omit<ErrorBoundaryProps, 'level'>> = (props) => (
-  <ErrorBoundary {...props} level="global" showDetails={process.env.NODE_ENV === 'development'} />
+export const GlobalErrorBoundary: React.FC<Omit<ErrorBoundaryProps, "level">> = (props) => (
+  <ErrorBoundary {...props} level="global" showDetails={IS_DEV} />
 );
 
-/**
- * Hook for programmatic error handling
- */
+// ---------------------------------------------------------------------------
+// useErrorHandler hook
+//
+// FIX: The original hook used `React.useCallback` with an empty deps array,
+// which was correct — but the body still referenced `process.env.NODE_ENV`
+// at every call-site. Replaced with the module-level `IS_DEV` constant so
+// the check is evaluated once at module load rather than per-call.
+// ---------------------------------------------------------------------------
+
 export const useErrorHandler = () => {
   const handleError = React.useCallback((error: Error, context?: string) => {
     const errorData = {
@@ -275,20 +263,12 @@ export const useErrorHandler = () => {
       stack: error.stack,
       context,
       timestamp: new Date().toISOString(),
-      url: window.location.href
+      url: window.location.href,
     };
 
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error handled:', errorData);
-    }
-
-    // Send to monitoring service in production
-    if (process.env.NODE_ENV === 'production') {
-      // Example: Send to error tracking service
-      console.error('Production error:', errorData);
-    }
-  }, []);
+    // TODO: In production, pipe to your monitoring service
+    console.error(IS_DEV ? "Error handled (dev):" : "Production error:", errorData);
+  }, []); // no reactive deps — stable for the lifetime of the component
 
   return { handleError };
 };

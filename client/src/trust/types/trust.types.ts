@@ -65,3 +65,32 @@ export interface CommunityFeedback extends BaseEntity {
   reportCount: number;
   sentiment?: 'positive' | 'negative' | 'neutral';
 }
+
+// ─── UI & Enrichment Types ──────────────────────────────────────────────────
+
+export interface TrustScoreAnalysis {
+  score: number;
+  level: string;
+  color: string;
+  breakdown: Record<string, number>;
+  recommendations: string[];
+}
+
+export type TrustScoreHistory = Array<{ date: string; score: number; change: number }>;
+
+export type FraudRiskLevel = 'low' | 'medium' | 'high' | 'critical';
+
+export type VerificationStatus = 'pending' | 'partial' | 'complete';
+
+export interface VerificationOverview {
+  checks: VerificationCheck[];
+  overallStatus: VerificationStatus;
+  completionPercentage: number;
+  nextSteps: string[];
+}
+
+export interface CommunityTrustOverview {
+  score: number;
+  factors: Record<string, number>;
+  insights: string[];
+}

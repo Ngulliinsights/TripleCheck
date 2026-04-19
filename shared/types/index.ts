@@ -10,5 +10,6 @@
 export * from './api-contracts';
 export * from './property';
 export * from './messaging';
+export * from './errors';
 
 

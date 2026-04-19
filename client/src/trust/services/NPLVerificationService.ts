@@ -21,25 +21,59 @@ import type {
 } from '../types/npl-verification.types'
 
 // ============================================================================
+// Supporting Types
+// ============================================================================
+
+interface ComparableProperty {
+  readonly propertyId: string;
+  readonly soldPrice: number;
+  readonly soldDate: Date;
+  readonly distanceKm: number;
+}
+
+interface OwnershipRecord {
+  readonly ownerId: string;
+  readonly ownerName: string;
+  readonly acquisitionDate: Date;
+  readonly disposalDate?: Date;
+  readonly acquisitionType: 'purchase' | 'inheritance' | 'gift' | 'court_order' | 'unknown';
+  readonly source: 'digital' | 'physical';
+  readonly documentReference?: string;
+}
+
+interface TitleGap {
+  readonly fromDate: Date;
+  readonly toDate: Date;
+  readonly description: string;
+  readonly severity: 'critical' | 'high' | 'medium' | 'low';
+}
+
+interface FraudIndicator {
+  readonly type: string;
+  readonly description: string;
+  readonly confidence: number;
+  readonly evidence: string[];
+}
+
+// ============================================================================
 // NPL Verification Service
 // ============================================================================
 
 export class NPLVerificationService {
-  private readonly apiBaseUrl = '/api/npl';
 
   // ============================================================================
   // Collateral Valuation
   // ============================================================================
 
   /**
-   * Assess current market value of collateral property
+   * Assess the current market value of a collateral property.
    */
   async assessCollateralValue(
     propertyId: string,
     loanDetails: {
-      originalLoanAmount: number;
-      outstandingBalance: number;
-      loanOriginDate: Date;
+      readonly originalLoanAmount: number;
+      readonly outstandingBalance: number;
+      readonly loanOriginDate: Date;
     }
   ): Promise<{
     currentMarketValue: number;
@@ -49,32 +83,18 @@ export class NPLVerificationService {
     marketTrend: MarketConditions['trend'];
     recommendations: string[];
   }> {
-    // In production, this would call property valuation APIs
-    // For now, simulate with business logic
-
-    const marketValue = await this.fetchMarketValue(propertyId);
-    const comparables = await this.fetchComparableProperties(propertyId);
+    const [marketValue, comparables] = await Promise.all([
+      this.fetchMarketValue(propertyId),
+      this.fetchComparableProperties(propertyId),
+    ]);
 
     const ltvRatio = (loanDetails.outstandingBalance / marketValue) * 100;
     const daysSinceLoan = Math.floor(
-      (Date.now() - loanDetails.loanOriginDate.getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - loanDetails.loanOriginDate.getTime()) / 86_400_000
     );
 
-    // Calculate confidence based on available data
-    const valuationConfidence = this.calculateValuationConfidence(
-      comparables.length,
-      daysSinceLoan
-    );
-
-    // Determine market trend from comparables
+    const valuationConfidence = this.calculateValuationConfidence(comparables.length, daysSinceLoan);
     const marketTrend = this.analyzeMarketTrend(comparables);
-
-    // Generate recommendations
-    const recommendations = this.generateValuationRecommendations(
-      ltvRatio,
-      marketTrend,
-      valuationConfidence
-    );
 
     return {
       currentMarketValue: marketValue,
@@ -82,7 +102,7 @@ export class NPLVerificationService {
       valuationConfidence,
       comparableProperties: comparables,
       marketTrend,
-      recommendations,
+      recommendations: this.generateValuationRecommendations(ltvRatio, marketTrend, valuationConfidence),
     };
   }
 
@@ -91,8 +111,8 @@ export class NPLVerificationService {
   // ============================================================================
 
   /**
-   * Perform deep historical ownership verification
-   * Key for detecting fraudulent transfers (e.g., Mwangi vs Mount Pleasant case)
+   * Perform deep historical ownership verification.
+   * Key for detecting fraudulent transfers (e.g., Mwangi vs. Mount Pleasant case).
    */
   async auditTitleChain(propertyId: string): Promise<{
     ownershipHistory: OwnershipRecord[];
@@ -101,29 +121,25 @@ export class NPLVerificationService {
     fraudIndicators: FraudIndicator[];
     registryConsistency: 'consistent' | 'mismatch' | 'unknown';
   }> {
-    // Fetch ownership history from multiple sources
-    const digitalHistory = await this.fetchDigitalOwnershipHistory(propertyId);
-    const physicalHistory = await this.fetchPhysicalOwnershipHistory(propertyId);
+    const [digitalHistory, physicalHistory] = await Promise.all([
+      this.fetchDigitalOwnershipHistory(propertyId),
+      this.fetchPhysicalOwnershipHistory(propertyId),
+    ]);
 
-    // Compare and find gaps
     const gaps = this.identifyTitleGaps(digitalHistory, physicalHistory);
     const fraudIndicators = this.detectFraudIndicators(digitalHistory, physicalHistory);
 
-    // Determine chain integrity
     let chainIntegrity: 'valid' | 'broken' | 'suspicious' = 'valid';
     if (gaps.length > 0) {
       chainIntegrity = gaps.some((g) => g.severity === 'critical') ? 'broken' : 'suspicious';
     }
-
-    // Check registry consistency
-    const registryConsistency = this.checkRegistryConsistency(digitalHistory, physicalHistory);
 
     return {
       ownershipHistory: this.mergeOwnershipHistories(digitalHistory, physicalHistory),
       chainIntegrity,
       gaps,
       fraudIndicators,
-      registryConsistency,
+      registryConsistency: this.checkRegistryConsistency(digitalHistory, physicalHistory),
     };
   }
 
@@ -132,7 +148,7 @@ export class NPLVerificationService {
   // ============================================================================
 
   /**
-   * Generate AI-powered recovery recommendation
+   * Generate a data-driven recovery recommendation for an NPL property.
    */
   async generateRecoveryRecommendation(
     nplProperty: NPLProperty,
@@ -141,9 +157,6 @@ export class NPLVerificationService {
   ): Promise<RecoveryRecommendation> {
     const recoveryRate = this.estimateRecoveryRate(nplProperty, marketConditions, riskAssessment);
     const action = this.determineOptimalAction(nplProperty, recoveryRate, riskAssessment);
-    const timeToRecovery = this.estimateTimeToRecovery(action, marketConditions);
-    const risks = this.identifyRecoveryRisks(nplProperty, action, riskAssessment);
-    const alternatives = this.generateAlternativeActions(nplProperty, action, marketConditions);
 
     return {
       action,
@@ -151,49 +164,11 @@ export class NPLVerificationService {
       estimatedRecoveryRate: recoveryRate,
       confidence: this.calculateRecommendationConfidence(riskAssessment),
       rationale: this.generateRationale(action, nplProperty, marketConditions),
-      timeToRecovery,
+      timeToRecovery: this.estimateTimeToRecovery(action, marketConditions),
       marketConditions,
-      risks,
-      alternativeActions: alternatives,
+      risks: this.identifyRecoveryRisks(nplProperty, action, riskAssessment),
+      alternativeActions: this.generateAlternativeActions(nplProperty, action, marketConditions),
     };
-  }
-
-  /**
-   * Determine optimal recovery action based on multiple factors
-   */
-  private determineOptimalAction(
-    property: NPLProperty,
-    recoveryRate: number,
-    riskAssessment: NPLRiskAssessment
-  ): RecoveryAction {
-    // Critical risk factors
-    if (riskAssessment.registryRisk.level === 'critical') {
-      return 'legal_action'; // Registry issues require legal resolution
-    }
-
-    if (riskAssessment.titleRisk.level === 'critical') {
-      return 'legal_action';
-    }
-
-    // Recovery rate-based decisions
-    if (recoveryRate < 20) {
-      return 'write_off';
-    }
-
-    if (recoveryRate < 40) {
-      return property.daysInDefault > 365 ? 'auction' : 'hold';
-    }
-
-    if (recoveryRate < 60) {
-      return property.daysInDefault > 180 ? 'sell_marketed' : 'restructure_loan';
-    }
-
-    if (recoveryRate < 80) {
-      return 'sell_marketed';
-    }
-
-    // High recovery potential
-    return 'sell_immediate';
   }
 
   // ============================================================================
@@ -201,27 +176,24 @@ export class NPLVerificationService {
   // ============================================================================
 
   /**
-   * Process bulk NPL property upload from CSV
+   * Process a bulk NPL property upload parsed from CSV.
    */
   async processBulkUpload(
     bankId: string,
     records: NPLImportRow[]
   ): Promise<NPLBulkUpload> {
-    const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const uploadId = `upload_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 11)}`;
     const errors: NPLBulkUpload['errors'] = [];
     let processedCount = 0;
 
     for (let i = 0; i < records.length; i++) {
       const row = records[i];
       try {
-        // Validate and transform row
-        const validated = this.validateImportRow(row, i + 2); // +2 for header row
+        const validated = this.validateImportRow(row, i + 2); // +2: 1-indexed + header row
         if (validated.errors.length > 0) {
           errors.push(...validated.errors);
           continue;
         }
-
-        // Create NPL property record
         await this.createNPLProperty(bankId, validated.data);
         processedCount++;
       } catch (error) {
@@ -234,6 +206,11 @@ export class NPLVerificationService {
       }
     }
 
+    const status: NPLBulkUpload['status'] =
+      errors.length === 0 ? 'completed'
+      : processedCount === 0 ? 'failed'
+      : 'partial';
+
     return {
       uploadId,
       bankId,
@@ -242,7 +219,7 @@ export class NPLVerificationService {
       totalRecords: records.length,
       processedRecords: processedCount,
       failedRecords: errors.length,
-      status: errors.length === 0 ? 'completed' : (processedCount > 0 ? 'completed' : 'failed'),
+      status,
       errors,
     };
   }
@@ -252,111 +229,61 @@ export class NPLVerificationService {
   // ============================================================================
 
   /**
-   * Generate portfolio summary for bank dashboard
+   * Generate an aggregated portfolio summary for the bank dashboard.
    */
   async generatePortfolioSummary(properties: NPLProperty[]): Promise<PortfolioSummary> {
     const totalOutstandingBalance = properties.reduce((sum, p) => sum + p.outstandingBalance, 0);
 
-    // Calculate estimated recovery for completed verifications
-    let totalEstimatedRecovery = 0;
-    for (const prop of properties) {
-      if (prop.recoveryRecommendation) {
-        totalEstimatedRecovery += prop.recoveryRecommendation.estimatedRecoveryAmount;
-      }
-    }
-
-    const byStatus = this.groupBy(properties, 'verificationStatus');
-    const byPriority = this.groupBy(properties, 'verificationPriority');
+    const totalEstimatedRecovery = properties.reduce((sum, p) => {
+      return sum + (p.recoveryRecommendation?.estimatedRecoveryAmount ?? 0);
+    }, 0);
 
     const propertiesWithRegistryIssues = properties.filter(
-      (p) => p.riskAssessment?.registryRisk.level === 'critical' ||
-             p.riskAssessment?.registryRisk.level === 'high'
+      (p) =>
+        p.riskAssessment?.registryRisk.level === 'critical' ||
+        p.riskAssessment?.registryRisk.level === 'high'
     ).length;
 
     return {
       totalProperties: properties.length,
       totalOutstandingBalance,
       totalEstimatedRecovery,
-      averageRecoveryRate: totalOutstandingBalance > 0
-        ? (totalEstimatedRecovery / totalOutstandingBalance) * 100
-        : 0,
-      byStatus: this.countByKey(byStatus),
-      byPriority: this.countByKey(byPriority),
+      averageRecoveryRate:
+        totalOutstandingBalance > 0
+          ? (totalEstimatedRecovery / totalOutstandingBalance) * 100
+          : 0,
+      byStatus: this.countByKey(this.groupBy(properties, 'verificationStatus')),
+      byPriority: this.countByKey(this.groupBy(properties, 'verificationPriority')),
       byRiskLevel: this.countRiskLevels(properties),
       propertiesWithRegistryIssues,
     };
   }
 
   // ============================================================================
-  // Private Helper Methods
+  // Private: Recovery Logic
   // ============================================================================
 
-  private async fetchMarketValue(propertyId: string): Promise<number> {
-    // Simulated - would call valuation API
-    return 15000000; // KES 15M
-  }
-
-  private async fetchComparableProperties(propertyId: string): Promise<ComparableProperty[]> {
-    // Simulated - would fetch from property database
-    return [
-      { propertyId: 'comp_1', soldPrice: 14500000, soldDate: new Date('2025-11-15'), distanceKm: 0.5 },
-      { propertyId: 'comp_2', soldPrice: 16000000, soldDate: new Date('2025-10-20'), distanceKm: 1.2 },
-    ];
-  }
-
-  private calculateValuationConfidence(comparableCount: number, daysSinceLoan: number): number {
-    let confidence = 50;
-    confidence += Math.min(comparableCount * 10, 30);
-    confidence += daysSinceLoan < 180 ? 10 : 0;
-    return Math.min(confidence, 95);
-  }
-
-  private analyzeMarketTrend(comparables: ComparableProperty[]): MarketConditions['trend'] {
-    if (comparables.length < 2) return 'stable';
-    // Simplified trend analysis
-    return 'stable';
-  }
-
-  private generateValuationRecommendations(
-    ltvRatio: number,
-    marketTrend: MarketConditions['trend'],
-    confidence: number
-  ): string[] {
-    const recommendations: string[] = [];
-    if (ltvRatio > 100) {
-      recommendations.push('Property is underwater - consider restructuring or write-off');
+  /**
+   * Select the optimal recovery action based on risk assessment and recovery rate.
+   */
+  private determineOptimalAction(
+    property: NPLProperty,
+    recoveryRate: number,
+    riskAssessment: NPLRiskAssessment
+  ): RecoveryAction {
+    // Registry or title issues require legal resolution first
+    if (
+      riskAssessment.registryRisk.level === 'critical' ||
+      riskAssessment.titleRisk.level === 'critical'
+    ) {
+      return 'legal_action';
     }
-    if (marketTrend === 'declining') {
-      recommendations.push('Market is declining - expedite sale to preserve value');
-    }
-    if (confidence < 70) {
-      recommendations.push('Low confidence in valuation - recommend physical inspection');
-    }
-    return recommendations;
-  }
 
-  private async fetchDigitalOwnershipHistory(propertyId: string): Promise<OwnershipRecord[]> {
-    return [];
-  }
-
-  private async fetchPhysicalOwnershipHistory(propertyId: string): Promise<OwnershipRecord[]> {
-    return [];
-  }
-
-  private identifyTitleGaps(digital: OwnershipRecord[], physical: OwnershipRecord[]): TitleGap[] {
-    return [];
-  }
-
-  private detectFraudIndicators(digital: OwnershipRecord[], physical: OwnershipRecord[]): FraudIndicator[] {
-    return [];
-  }
-
-  private checkRegistryConsistency(digital: OwnershipRecord[], physical: OwnershipRecord[]): 'consistent' | 'mismatch' | 'unknown' {
-    return 'unknown';
-  }
-
-  private mergeOwnershipHistories(digital: OwnershipRecord[], physical: OwnershipRecord[]): OwnershipRecord[] {
-    return [...digital, ...physical];
+    if (recoveryRate < 20) return 'write_off';
+    if (recoveryRate < 40) return property.daysInDefault > 365 ? 'auction' : 'hold';
+    if (recoveryRate < 60) return property.daysInDefault > 180 ? 'sell_marketed' : 'restructure_loan';
+    if (recoveryRate < 80) return 'sell_marketed';
+    return 'sell_immediate';
   }
 
   private estimateRecoveryRate(
@@ -364,26 +291,23 @@ export class NPLVerificationService {
     market: MarketConditions,
     risk: NPLRiskAssessment
   ): number {
-    let baseRate = 70;
+    let rate = 70;
 
-    // Adjust for market conditions
-    if (market.trend === 'declining') baseRate -= 15;
-    if (market.trend === 'rising') baseRate += 10;
+    if (market.trend === 'declining') rate -= 15;
+    if (market.trend === 'rising')   rate += 10;
 
-    // Adjust for risk
-    if (risk.overallRiskLevel === 'critical') baseRate -= 30;
-    if (risk.overallRiskLevel === 'high') baseRate -= 20;
+    if (risk.overallRiskLevel === 'critical') rate -= 30;
+    if (risk.overallRiskLevel === 'high')     rate -= 20;
 
-    // Adjust for registry issues
-    if (risk.registryRisk.level === 'critical') baseRate -= 25;
+    if (risk.registryRisk.level === 'critical') rate -= 25;
 
-    return Math.max(baseRate, 10);
+    return Math.max(rate, 10);
   }
 
   private calculateRecommendationConfidence(risk: NPLRiskAssessment): number {
     let confidence = 85;
     if (risk.overallRiskLevel === 'critical') confidence -= 30;
-    if (risk.overallRiskLevel === 'high') confidence -= 15;
+    if (risk.overallRiskLevel === 'high')     confidence -= 15;
     return Math.max(confidence, 40);
   }
 
@@ -393,26 +317,29 @@ export class NPLVerificationService {
     market: MarketConditions
   ): string {
     const rationales: Record<RecoveryAction, string> = {
-      sell_immediate: `Quick sale recommended due to ${market.trend} market and ${property.daysInDefault} days in default.`,
-      sell_marketed: `Full marketing campaign recommended to maximize recovery in a ${market.demandLevel} demand market.`,
-      restructure_loan: `Loan restructuring may preserve relationship and recover more than forced sale.`,
-      write_off: `Property value unlikely to recover loan balance. Write-off minimizes further losses.`,
-      hold: `Market conditions suggest waiting for improvement before sale.`,
-      legal_action: `Title or registry issues require legal resolution before recovery action.`,
-      auction: `Auction recommended to accelerate recovery after extended default period.`,
+      sell_immediate:   `Quick sale recommended given ${market.trend} market conditions and ${property.daysInDefault} days in default.`,
+      sell_marketed:    `Full marketing campaign recommended to maximise recovery in a ${market.demandLevel} demand market.`,
+      restructure_loan: `Loan restructuring may preserve the banking relationship and recover more than a forced sale.`,
+      write_off:        `Collateral value is unlikely to cover the outstanding balance. Write-off minimises further losses.`,
+      hold:             `Current market conditions suggest waiting for improvement before initiating a sale.`,
+      legal_action:     `Title or registry issues must be resolved legally before any recovery action can proceed.`,
+      auction:          `Auction recommended to accelerate recovery following an extended default period.`,
     };
     return rationales[action];
   }
 
-  private estimateTimeToRecovery(action: RecoveryAction, market: MarketConditions): RecoveryRecommendation['timeToRecovery'] {
+  private estimateTimeToRecovery(
+    action: RecoveryAction,
+    market: MarketConditions
+  ): RecoveryRecommendation['timeToRecovery'] {
     const estimates: Record<RecoveryAction, { min: number; max: number; likely: number }> = {
-      sell_immediate: { min: 1, max: 3, likely: 2 },
-      sell_marketed: { min: 3, max: 9, likely: 6 },
-      restructure_loan: { min: 6, max: 24, likely: 12 },
-      write_off: { min: 1, max: 3, likely: 1 },
-      hold: { min: 12, max: 36, likely: 18 },
-      legal_action: { min: 12, max: 48, likely: 24 },
-      auction: { min: 2, max: 6, likely: 3 },
+      sell_immediate:   { min: 1,  max: 3,  likely: 2  },
+      sell_marketed:    { min: 3,  max: 9,  likely: 6  },
+      restructure_loan: { min: 6,  max: 24, likely: 12 },
+      write_off:        { min: 1,  max: 3,  likely: 1  },
+      hold:             { min: 12, max: 36, likely: 18 },
+      legal_action:     { min: 12, max: 48, likely: 24 },
+      auction:          { min: 2,  max: 6,  likely: 3  },
     };
     const est = estimates[action];
     return {
@@ -424,8 +351,8 @@ export class NPLVerificationService {
   }
 
   private identifyRecoveryRisks(
-    property: NPLProperty,
-    action: RecoveryAction,
+    _property: NPLProperty,
+    _action: RecoveryAction,
     risk: NPLRiskAssessment
   ): RecoveryRisk[] {
     const risks: RecoveryRisk[] = [];
@@ -434,8 +361,8 @@ export class NPLVerificationService {
       risks.push({
         type: 'registry_mismatch',
         severity: risk.registryRisk.level === 'critical' ? 'high' : 'medium',
-        description: 'Physical and digital registry records may not match',
-        mitigationStrategy: 'Obtain blockchain-anchored proof before proceeding',
+        description: 'Physical and digital registry records may not match.',
+        mitigationStrategy: 'Obtain a blockchain-anchored proof before proceeding.',
       });
     }
 
@@ -443,12 +370,140 @@ export class NPLVerificationService {
   }
 
   private generateAlternativeActions(
-    property: NPLProperty,
+    _property: NPLProperty,
     primaryAction: RecoveryAction,
-    market: MarketConditions
+    _market: MarketConditions
   ): RecoveryRecommendation['alternativeActions'] {
+    // TODO: Expand with ranked alternatives derived from recoveryRate brackets
     return [];
   }
+
+  // ============================================================================
+  // Private: Valuation Helpers
+  // ============================================================================
+
+  /** TODO (production): Replace with live property valuation API call. */
+  private async fetchMarketValue(_propertyId: string): Promise<number> {
+    return 15_000_000; // KES 15M
+  }
+
+  /** TODO (production): Replace with live comparable-sales database query. */
+  private async fetchComparableProperties(_propertyId: string): Promise<ComparableProperty[]> {
+    return [
+      { propertyId: 'comp_1', soldPrice: 14_500_000, soldDate: new Date('2025-11-15'), distanceKm: 0.5 },
+      { propertyId: 'comp_2', soldPrice: 16_000_000, soldDate: new Date('2025-10-20'), distanceKm: 1.2 },
+    ];
+  }
+
+  private calculateValuationConfidence(comparableCount: number, daysSinceLoan: number): number {
+    let confidence = 50;
+    confidence += Math.min(comparableCount * 10, 30);
+    confidence += daysSinceLoan < 180 ? 10 : 0;
+    return Math.min(confidence, 95);
+  }
+
+  /**
+   * Derive market trend from the price trajectory of comparable sales.
+   * Requires at least 2 comparables; falls back to 'stable'.
+   */
+  private analyzeMarketTrend(comparables: ComparableProperty[]): MarketConditions['trend'] {
+    if (comparables.length < 2) return 'stable';
+
+    // Sort by sale date (oldest first) and compare first vs last price
+    const sorted = [...comparables].sort(
+      (a, b) => a.soldDate.getTime() - b.soldDate.getTime()
+    );
+    const oldest = sorted[0].soldPrice;
+    const newest = sorted[sorted.length - 1].soldPrice;
+    const changePct = ((newest - oldest) / oldest) * 100;
+
+    if (changePct > 5)  return 'rising';
+    if (changePct < -5) return 'declining';
+    return 'stable';
+  }
+
+  private generateValuationRecommendations(
+    ltvRatio: number,
+    marketTrend: MarketConditions['trend'],
+    confidence: number
+  ): string[] {
+    const recommendations: string[] = [];
+    if (ltvRatio > 100) {
+      recommendations.push('Property is underwater — consider restructuring or write-off.');
+    }
+    if (marketTrend === 'declining') {
+      recommendations.push('Market is declining — expedite sale to preserve collateral value.');
+    }
+    if (confidence < 70) {
+      recommendations.push('Low valuation confidence — recommend physical inspection and formal appraisal.');
+    }
+    return recommendations;
+  }
+
+  // ============================================================================
+  // Private: Title Chain Helpers
+  // ============================================================================
+
+  /** TODO (production): Fetch from lands.go.ke digital registry API. */
+  private async fetchDigitalOwnershipHistory(_propertyId: string): Promise<OwnershipRecord[]> {
+    return [];
+  }
+
+  /** TODO (production): Fetch from physical registry scan/OCR pipeline. */
+  private async fetchPhysicalOwnershipHistory(_propertyId: string): Promise<OwnershipRecord[]> {
+    return [];
+  }
+
+  private identifyTitleGaps(
+    _digital: OwnershipRecord[],
+    _physical: OwnershipRecord[]
+  ): TitleGap[] {
+    // TODO: Identify date gaps between consecutive ownership records
+    return [];
+  }
+
+  private detectFraudIndicators(
+    _digital: OwnershipRecord[],
+    _physical: OwnershipRecord[]
+  ): FraudIndicator[] {
+    // TODO: Flag rapid transfers, company↔individual flips, back-dated entries, etc.
+    return [];
+  }
+
+  private checkRegistryConsistency(
+    digital: OwnershipRecord[],
+    physical: OwnershipRecord[]
+  ): 'consistent' | 'mismatch' | 'unknown' {
+    if (digital.length === 0 || physical.length === 0) return 'unknown';
+    // TODO: Field-level comparison of overlapping ownership periods
+    return 'unknown';
+  }
+
+  /**
+   * Merge digital and physical ownership records, deduplicated by ownerId + source,
+   * sorted chronologically by acquisition date.
+   */
+  private mergeOwnershipHistories(
+    digital: OwnershipRecord[],
+    physical: OwnershipRecord[]
+  ): OwnershipRecord[] {
+    const seen = new Set<string>();
+    const merged: OwnershipRecord[] = [];
+
+    for (const record of [...digital, ...physical]) {
+      const key = `${record.ownerId}::${record.source}::${record.acquisitionDate.toISOString()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(record);
+      }
+    }
+
+    return merged.sort((a, b) => a.acquisitionDate.getTime() - b.acquisitionDate.getTime());
+  }
+
+  // ============================================================================
+  // Private: Bulk Upload Helpers
+  // ============================================================================
 
   private validateImportRow(
     row: NPLImportRow,
@@ -463,7 +518,7 @@ export class NPLVerificationService {
       errors.push({
         rowNumber,
         field: 'outstanding_balance',
-        error: 'Outstanding balance must be positive',
+        error: 'Outstanding balance must be a positive number',
         rawValue: String(row.outstanding_balance),
       });
     }
@@ -471,68 +526,36 @@ export class NPLVerificationService {
     return { data: row, errors };
   }
 
-  private async createNPLProperty(bankId: string, data: NPLImportRow): Promise<void> {
-    // Would create record in database
+  /** TODO (production): Persist NPL property record to the database. */
+  private async createNPLProperty(_bankId: string, _data: NPLImportRow): Promise<void> {
+    // Integration point: insert into DB via repository layer
   }
+
+  // ============================================================================
+  // Private: Generic Utilities
+  // ============================================================================
 
   private groupBy<T, K extends keyof T>(items: T[], key: K): Record<string, T[]> {
     return items.reduce((acc, item) => {
       const k = String(item[key]);
-      if (!acc[k]) acc[k] = [];
-      acc[k].push(item);
+      (acc[k] ??= []).push(item);
       return acc;
     }, {} as Record<string, T[]>);
   }
 
   private countByKey<T>(grouped: Record<string, T[]>): Record<string, number> {
-    return Object.entries(grouped).reduce((acc, [key, items]) => {
-      acc[key] = items.length;
-      return acc;
-    }, {} as Record<string, number>);
+    return Object.fromEntries(
+      Object.entries(grouped).map(([k, v]) => [k, v.length])
+    );
   }
 
   private countRiskLevels(properties: NPLProperty[]): Record<string, number> {
     return properties.reduce((acc, p) => {
-      const level = p.riskAssessment?.overallRiskLevel || 'unknown';
-      acc[level] = (acc[level] || 0) + 1;
+      const level = p.riskAssessment?.overallRiskLevel ?? 'unknown';
+      acc[level] = (acc[level] ?? 0) + 1;
       return acc;
     }, {} as Record<string, number>);
   }
-}
-
-// ============================================================================
-// Supporting Types
-// ============================================================================
-
-interface ComparableProperty {
-  propertyId: string;
-  soldPrice: number;
-  soldDate: Date;
-  distanceKm: number;
-}
-
-interface OwnershipRecord {
-  ownerId: string;
-  ownerName: string;
-  acquisitionDate: Date;
-  disposalDate?: Date;
-  acquisitionType: 'purchase' | 'inheritance' | 'gift' | 'court_order' | 'unknown';
-  source: 'digital' | 'physical';
-  documentReference?: string;
-}
-
-interface TitleGap {
-  fromDate: Date;
-  toDate: Date;
-  description: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-}
-
-interface FraudIndicator {
-  type: string;
-  description: string;
-  confidence: number;
-  evidence: string[];
 }
 
 // Export singleton instance
