@@ -1,4 +1,4 @@
-import { Property } from "../../../server/property/property-business.service"
+import { Property } from "../"
 import { Card, CardContent, CardFooter } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { Link } from "wouter"

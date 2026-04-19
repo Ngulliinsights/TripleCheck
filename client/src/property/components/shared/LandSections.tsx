@@ -11,16 +11,15 @@
 import { FileCheck, TreePine } from "lucide-react"
 import React from "react"
 
-import { Badge } from "../../local/components/ui/badge"
+import { Badge } from "../../../local/components/ui/badge"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../local/components/ui/card"
-import { formatDate } from "../../local/utils/date-utils"
-import { NOT_SPECIFIED } from "./PropertyGallery"
-import { getVerificationBadgeVariant } from "./utils"
+} from "../../../local/components/ui/card"
+import { formatDate } from "../../../local/utils/date-utils"
+import { NOT_SPECIFIED, getVerificationBadgeVariant } from "../../utils/ui-utils"
 
 // ---------------------------------------------------------------------------
 // Shared types

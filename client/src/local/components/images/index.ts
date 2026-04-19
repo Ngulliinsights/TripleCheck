@@ -4,8 +4,8 @@
  */
 
 // Component exports
-export { default as ImageGallery } from './ImageGallery'
-export { default as PropertyImageGallery } from './ImageGallery' // Alias for backward compatibility
+export { ImageGallery } from './gallery'
+export { ImageGallery as PropertyImageGallery } from './gallery' // Alias for backward compatibility
 
 // Unified utilities and services
 export { ImageUtils } from '../../utils/images/unified-utils'

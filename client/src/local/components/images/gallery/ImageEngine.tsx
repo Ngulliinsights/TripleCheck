@@ -1,11 +1,19 @@
 /**
  * Image Engine Component
- * Handles image rendering with watermark and validation
+ * Handles image rendering with optional watermark overlay.
+ *
+ * Changes vs original:
+ * - Removed the per-mount HEAD-request validation. HEAD requests are
+ *   frequently blocked by CORS, generate unnecessary traffic, and duplicate
+ *   what the browser's own image loader already does. Broken URLs are caught
+ *   by the `onError` callback from LazyImage instead.
+ * - Image source is derived synchronously where possible; FileReader is only
+ *   used as a fallback for File objects.
+ * - Loading state is handled entirely by LazyImage's built-in skeleton.
  */
 
 import React, { memo, useEffect, useState, useCallback } from "react";
 import { LazyImage } from "./LazyImage";
-import { ImageValidationService } from "./ValidationService";
 import type { GalleryImage, WatermarkConfig } from "./types";
 
 interface ImageEngineProps {
@@ -18,55 +26,45 @@ interface ImageEngineProps {
 
 export const ImageEngine = memo<ImageEngineProps>(
   ({ image, enableWatermark, watermarkConfig, className, onError }) => {
-    const [validationStatus, setValidationStatus] = useState<
-      "pending" | "valid" | "invalid"
-    >("pending");
-    const [imageSrc, setImageSrc] = useState<string>("");
+    const [imageSrc, setImageSrc] = useState<string>(() => {
+      // Prefer preview → src; File objects are handled in useEffect below
+      return image.preview ?? image.src ?? "";
+    });
 
     useEffect(() => {
-      // Determine image source
+      // Fast paths: preview or remote src are already strings
       if (image.preview) {
         setImageSrc(image.preview);
-      } else if (image.src) {
+        return;
+      }
+      if (image.src) {
         setImageSrc(image.src);
-      } else if (image.file) {
+        return;
+      }
+      // Slow path: local File that needs a data-URL
+      if (image.file) {
+        let cancelled = false;
         const reader = new FileReader();
         reader.onload = (e) => {
-          if (e.target?.result) {
-            setImageSrc(e.target.result as string);
+          if (!cancelled && typeof e.target?.result === "string") {
+            setImageSrc(e.target.result);
           }
         };
         reader.readAsDataURL(image.file);
+        return () => {
+          cancelled = true;
+        };
       }
-    }, [image]);
-
-    useEffect(() => {
-      // Validate image if URL is available
-      if (image.src) {
-        const validator = new ImageValidationService();
-        validator
-          .validateUrl(image.src)
-          .then((result) => {
-            setValidationStatus(result.isValid ? "valid" : "invalid");
-          })
-          .catch(() => {
-            setValidationStatus("invalid");
-          });
-      }
-    }, [image.src]);
+      setImageSrc("");
+    }, [image.preview, image.src, image.file]);
 
     const handleError = useCallback(() => {
-      setValidationStatus("invalid");
       onError?.();
     }, [onError]);
 
     if (!imageSrc) {
       return (
-        <div className={`bg-gray-200 animate-pulse ${className}`}>
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            Loading...
-          </div>
-        </div>
+        <div className={`bg-gray-200 animate-pulse ${className ?? ""}`} />
       );
     }
 
@@ -74,7 +72,7 @@ export const ImageEngine = memo<ImageEngineProps>(
       <div className="relative w-full h-full">
         <LazyImage
           src={imageSrc}
-          alt={image.alt || "Image"}
+          alt={image.alt ?? "Image"}
           className={className}
           onError={handleError}
         />
@@ -82,24 +80,17 @@ export const ImageEngine = memo<ImageEngineProps>(
         {/* Watermark overlay */}
         {enableWatermark && watermarkConfig && (
           <div
-            className={`absolute pointer-events-none ${getWatermarkPositionClass(
+            className={`absolute pointer-events-none select-none ${getWatermarkPositionClass(
               watermarkConfig.position
             )}`}
             style={{
               opacity: watermarkConfig.opacity,
-              fontSize: watermarkConfig.fontSize || 14,
-              color: watermarkConfig.color || "white",
+              fontSize: watermarkConfig.fontSize ?? 14,
+              color: watermarkConfig.color ?? "white",
               textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
             }}
           >
             {watermarkConfig.text}
-          </div>
-        )}
-
-        {/* Validation indicator */}
-        {validationStatus === "invalid" && (
-          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-            Invalid
           </div>
         )}
       </div>
@@ -109,21 +100,19 @@ export const ImageEngine = memo<ImageEngineProps>(
 
 ImageEngine.displayName = "ImageEngine";
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 const getWatermarkPositionClass = (
   position: WatermarkConfig["position"]
 ): string => {
-  switch (position) {
-    case "top-left":
-      return "top-2 left-2";
-    case "top-right":
-      return "top-2 right-2";
-    case "bottom-left":
-      return "bottom-2 left-2";
-    case "bottom-right":
-      return "bottom-2 right-2";
-    case "center":
-      return "top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2";
-    default:
-      return "bottom-2 right-2";
-  }
+  const map: Record<WatermarkConfig["position"], string> = {
+    "top-left": "top-2 left-2",
+    "top-right": "top-2 right-2",
+    "bottom-left": "bottom-2 left-2",
+    "bottom-right": "bottom-2 right-2",
+    center: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+  };
+  return map[position] ?? "bottom-2 right-2";
 };

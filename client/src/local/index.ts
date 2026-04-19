@@ -16,8 +16,7 @@ export * from './components/ui/label'
 export { LoadingSkeleton } from './components/ui/loading-skeleton'
 export * from './components/ui/loading-states'
 // Image components - refactored architecture
-export { default as ImageGallery } from './components/images/ImageGallery'
-export { default as PropertyImageGallery } from './components/images/ImageGallery'
+export { ImageGallery, PropertyImageGallery } from './components/images'
 export { Logo } from './components/ui/logo'
 
 // Navigation Components

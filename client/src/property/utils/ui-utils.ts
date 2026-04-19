@@ -1,4 +1,4 @@
-import { GalleryImage } from "./PropertyGallery"
+import { GalleryImage } from "../../local/components/images/gallery/types"
 
 export function convertToGalleryImages(
   images: string[],
@@ -32,9 +32,8 @@ export function getVerificationBadgeVariant(
   }
   return map[status] ?? "outline"
 }
-
 export function getTrustScoreColor(score: number): string {
-  if (score >= 80) return "text-green-600"
-  if (score >= 60) return "text-yellow-600"
-  return "text-red-600"
+  return score >= 80 ? "text-green-600" : score >= 60 ? "text-yellow-600" : "text-red-600"
 }
+
+export const NOT_SPECIFIED = "Not specified"

@@ -1,6 +1,6 @@
 import { useCallback } from "react"
 import type { NormalizedProperty } from '@shared/types/property'
-import type { CompareProperty } from "../types/compare"
+import type { CompareProperty } from "../../local/types/compare"
 
 export interface UsePropertyCompareActionsOptions {
   /** The property to manage comparison actions for */

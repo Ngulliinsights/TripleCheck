@@ -1,8 +1,8 @@
 import React from "react"
 import { Loader2 } from "lucide-react"
-import { Button } from "../../local/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "../../local/components/ui/card"
-import PropertyDetailsSkeleton from "../../local/components/skeletons/PropertyDetailsSkeleton"
+import { Button } from "../../../local/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "../../../local/components/ui/card"
+import PropertyDetailsSkeleton from "../../../local/components/skeletons/PropertyDetailsSkeleton"
 
 interface StateProps {
   title?: string

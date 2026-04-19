@@ -1,6 +1,10 @@
 /**
  * Simple Gallery Component
- * Basic image gallery without advanced features
+ * Basic image gallery without advanced features.
+ *
+ * Changes vs original:
+ * - `showImageCounter` was only rendered inside the `wrapInCard` branch;
+ *   moved to the shared `content` block so it works in both render paths.
  */
 
 import React, { memo } from "react";
@@ -42,35 +46,38 @@ export const SimpleGallery = memo<SimpleGalleryProps>(
     }
 
     const content = (
-      <div className={VIEW_MODES.grid.gridClass}>
-        {images.map((image, index) => (
-          <ImageCard
-            key={image.id}
-            image={image}
-            index={index}
-            viewMode="grid"
-            isSelected={false}
-            enableSelection={false}
-            enableCollaboration={false}
-            enableWatermark={enableWatermark}
-            watermarkConfig={watermarkConfig}
-            userRole={userRole}
-            onToggleSelection={() => {}}
-            onImageClick={onImageClick}
-            onImageUpdate={onImageUpdate}
-          />
-        ))}
-      </div>
+      <>
+        {showImageCounter && (
+          <div className="mb-4 text-sm text-gray-600">
+            {images.length} image{images.length !== 1 ? "s" : ""}
+          </div>
+        )}
+
+        <div className={VIEW_MODES.grid.gridClass}>
+          {images.map((image, index) => (
+            <ImageCard
+              key={image.id}
+              image={image}
+              index={index}
+              viewMode="grid"
+              isSelected={false}
+              enableSelection={false}
+              enableCollaboration={false}
+              enableWatermark={enableWatermark}
+              watermarkConfig={watermarkConfig}
+              userRole={userRole}
+              onToggleSelection={() => {}}
+              onImageClick={onImageClick}
+              onImageUpdate={onImageUpdate}
+            />
+          ))}
+        </div>
+      </>
     );
 
     if (wrapInCard) {
       return (
         <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
-          {showImageCounter && (
-            <div className="mb-4 text-sm text-gray-600">
-              {images.length} image{images.length !== 1 ? "s" : ""}
-            </div>
-          )}
           {content}
         </div>
       );

@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from "react"
 
 import type { NormalizedProperty } from '@shared/types/property'
-import { useSafeQuery } from "./useSafeQuery"
+import { useSafeQuery } from "../../local/hooks/useSafeQuery"
 
 // ---------------------------------------------------------------------------
 // API response types

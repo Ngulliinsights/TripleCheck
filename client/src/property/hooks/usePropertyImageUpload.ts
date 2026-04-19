@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 
-import { getImageServiceOrchestrator, type DefaultImageServiceOrchestrator } from '../services/images/ImageServiceOrchestrator'
+import { getImageServiceOrchestrator, DefaultImageServiceOrchestrator } from '../services/images/ImageServiceOrchestrator'
 import { PropertyImageUploadService } from '../services/images/PropertyImageUploadService'
 import { PropertyImageWorkflowManager } from '../services/images/PropertyImageWorkflowManager'
 import type {
@@ -16,6 +16,7 @@ import type {
   PropertyImage,
   DocumentType,
   WorkflowStatus,
+  ImageChunk,
 } from '../../local/types/images'
 import { ImageProcessingError } from '../../local/types/images'
 import { ImageUtils } from '../../local/utils/images/unified-utils'
@@ -57,7 +58,7 @@ export interface UsePropertyImageUploadReturn {
 }
 
 export function usePropertyImageUpload(
-  orchestratorOrLegacyCoordinator?: DefaultImageServiceOrchestrator | PropertyImageUploadCoordinator,
+  orchestratorOrLegacyCoordinator?: DefaultImageServiceOrchestrator | PropertyImageUploadService,
   legacyWorkflowManager?: PropertyImageWorkflowManager,
   options: UsePropertyImageUploadOptions = {}
 ): UsePropertyImageUploadReturn {
@@ -67,7 +68,7 @@ export function usePropertyImageUpload(
     : getImageServiceOrchestrator();
     
   // For legacy compatibility, extract services from orchestrator or use provided ones
-  const uploadCoordinator = (orchestratorOrLegacyCoordinator instanceof PropertyImageUploadCoordinator ||
+  const uploadCoordinator = (orchestratorOrLegacyCoordinator instanceof PropertyImageUploadService ||
                             orchestratorOrLegacyCoordinator instanceof PropertyImageUploadService)
     ? orchestratorOrLegacyCoordinator
     : orchestrator.getUploadService();
@@ -181,7 +182,7 @@ export function usePropertyImageUpload(
       imageSessionMapRef.current.set(imageId, session.id);
 
       // Set up progress tracking
-      uploadCoordinator.onProgressUpdate(session.id, (progress) => {
+      uploadCoordinator.onProgressUpdate(session.id, (progress: UploadProgress) => {
         updateImageStatus(imageId, {
           progress: progress.progress,
           uploadSpeed: progress.uploadSpeed,
@@ -207,15 +208,22 @@ export function usePropertyImageUpload(
               onUploadComplete?.(imageId, docType);
               return imageId;
             })
-            .catch((error) => {
+            .catch((error: Error | unknown) => {
               updateImageStatus(imageId, { status: 'error' });
-              onUploadError?.(error);
+              const processingError = error instanceof ImageProcessingError 
+                ? error 
+                : new ImageProcessingError(
+                    error instanceof Error ? error.message : 'Workflow failed',
+                    'WORKFLOW_FAILED',
+                    imageId
+                  );
+              onUploadError?.(processingError);
             });
         }
       });
 
       // Start uploading chunks
-      const chunkPromises = session.chunks.map(chunk =>
+      const chunkPromises = session.chunks.map((chunk: ImageChunk) =>
         uploadCoordinator.uploadChunk(session.id, chunk)
       );
 

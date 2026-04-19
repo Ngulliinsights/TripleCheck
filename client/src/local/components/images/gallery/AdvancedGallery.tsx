@@ -1,9 +1,12 @@
 /**
  * Advanced Gallery Component
- * Feature-rich gallery with search, collaboration, and batch operations
+ * Feature-rich gallery with search, collaboration, and batch operations.
+ *
+ * Changes vs original:
+ * - Removed unused `useMemo` import.
  */
 
-import React, { memo, useState, useCallback, useMemo } from "react";
+import React, { memo, useState, useCallback } from "react";
 import { Upload } from "lucide-react";
 import { VIEW_MODES } from "./constants";
 import { useImageSearch } from "./useImageSearch";
@@ -37,28 +40,40 @@ export const AdvancedGallery = memo<GalleryProps>(
     onCommentAdd,
     onAnnotationAdd,
   }) => {
-    // Search and filtering state
+    // -----------------------------------------------------------------------
+    // Search / filter state
+    // -----------------------------------------------------------------------
+
     const [query, setQuery] = useState("");
     const [selectedFacets, setSelectedFacets] = useState<SelectedFacets>({
-      categories: [],
+      categories:     [],
       approvalStatus: [],
-      tags: [],
-      users: [],
-      collections: [],
+      tags:           [],
+      users:          [],
+      collections:    [],
     });
-    const [sortMode, setSortMode] = useState<SortMode>("date");
+    const [sortMode, setSortMode]           = useState<SortMode>("date");
     const [sortAscending, setSortAscending] = useState(false);
-    const [showFacets, setShowFacets] = useState(false);
+    const [showFacets, setShowFacets]       = useState(false);
 
+    // -----------------------------------------------------------------------
     // View state
-    const [viewMode, setViewMode] = useState<ViewMode>("grid");
+    // -----------------------------------------------------------------------
+
+    const [viewMode, setViewMode]             = useState<ViewMode>("grid");
     const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
 
+    // -----------------------------------------------------------------------
     // Lightbox state
-    const [lightboxOpen, setLightboxOpen] = useState(false);
+    // -----------------------------------------------------------------------
+
+    const [lightboxOpen, setLightboxOpen]   = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
 
-    // Search and filter images
+    // -----------------------------------------------------------------------
+    // Derived data
+    // -----------------------------------------------------------------------
+
     const { filtered, facets, total } = useImageSearch(
       images,
       query,
@@ -67,7 +82,10 @@ export const AdvancedGallery = memo<GalleryProps>(
       sortAscending
     );
 
-    // Facet toggle handler
+    // -----------------------------------------------------------------------
+    // Handlers
+    // -----------------------------------------------------------------------
+
     const handleFacetToggle = useCallback(
       (facetType: keyof SelectedFacets, value: string) => {
         setSelectedFacets((prev) => {
@@ -81,38 +99,29 @@ export const AdvancedGallery = memo<GalleryProps>(
       []
     );
 
-    // Selection handlers
     const handleToggleSelection = useCallback((id: string) => {
       setSelectedImages((prev) => {
         const next = new Set(prev);
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
+        next.has(id) ? next.delete(id) : next.add(id);
         return next;
       });
     }, []);
 
-    const handleClearSelection = useCallback(() => {
-      setSelectedImages(new Set());
-    }, []);
+    const handleClearSelection = useCallback(() => setSelectedImages(new Set()), []);
 
-    const handleSelectAll = useCallback(() => {
-      setSelectedImages(new Set(filtered.map((img) => img.id)));
-    }, [filtered]);
+    const handleSelectAll = useCallback(
+      () => setSelectedImages(new Set(filtered.map((img) => img.id))),
+      [filtered]
+    );
 
-    // Batch operation handler
     const handleBatchOperation = useCallback(
       (operation: string) => {
-        const selectedIds = Array.from(selectedImages);
-        onBatchOperation?.(operation, selectedIds);
+        onBatchOperation?.(operation, Array.from(selectedImages));
         setSelectedImages(new Set());
       },
       [selectedImages, onBatchOperation]
     );
 
-    // Image click handler
     const handleImageClick = useCallback(
       (index: number) => {
         if (enableFullscreen) {
@@ -120,41 +129,33 @@ export const AdvancedGallery = memo<GalleryProps>(
           setLightboxOpen(true);
         }
         const image = filtered[index];
-        if (image) {
-          onImageClick?.(image, index);
-        }
+        if (image) onImageClick?.(image, index);
       },
       [filtered, enableFullscreen, onImageClick]
     );
 
-    // File upload handler
     const handleFileUpload = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (files && onImageUpload) {
-          onImageUpload(files);
-        }
+        if (e.target.files && onImageUpload) onImageUpload(e.target.files);
       },
       [onImageUpload]
     );
 
-    // Keyboard shortcuts
-    const handleKeyDown = useCallback(
-      (e: KeyboardEvent) => {
-        if (e.ctrlKey || e.metaKey) {
-          if (e.key === "a") {
-            e.preventDefault();
-            handleSelectAll();
-          }
-        }
-      },
-      [handleSelectAll]
-    );
-
+    // Ctrl/Cmd + A → select all
     React.useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "a") {
+          e.preventDefault();
+          handleSelectAll();
+        }
+      };
       window.addEventListener("keydown", handleKeyDown);
       return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [handleKeyDown]);
+    }, [handleSelectAll]);
+
+    // -----------------------------------------------------------------------
+    // Empty state
+    // -----------------------------------------------------------------------
 
     if (images.length === 0) {
       return (
@@ -162,7 +163,7 @@ export const AdvancedGallery = memo<GalleryProps>(
           <div className="text-gray-400 text-5xl mb-4">📷</div>
           <p className="text-gray-500 text-lg mb-4">No images available</p>
           {onImageUpload && (userRole === "editor" || userRole === "admin") && (
-            <label className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer">
+            <label className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer transition-colors">
               <Upload className="w-5 h-5" />
               <span>Upload Images</span>
               <input
@@ -177,6 +178,13 @@ export const AdvancedGallery = memo<GalleryProps>(
         </div>
       );
     }
+
+    // -----------------------------------------------------------------------
+    // Render
+    // -----------------------------------------------------------------------
+
+    const canUpload =
+      !!onImageUpload && (userRole === "editor" || userRole === "admin");
 
     return (
       <div className={`space-y-6 ${className}`}>
@@ -199,7 +207,7 @@ export const AdvancedGallery = memo<GalleryProps>(
           />
         )}
 
-        {/* Header with counter and upload */}
+        {/* Toolbar row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {showImageCounter && (
@@ -218,8 +226,8 @@ export const AdvancedGallery = memo<GalleryProps>(
             )}
           </div>
 
-          {onImageUpload && (userRole === "editor" || userRole === "admin") && (
-            <label className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer">
+          {canUpload && (
+            <label className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer transition-colors">
               <Upload className="w-4 h-4" />
               <span>Upload</span>
               <input
@@ -247,7 +255,7 @@ export const AdvancedGallery = memo<GalleryProps>(
                 index={index}
                 viewMode={viewMode}
                 isSelected={selectedImages.has(image.id)}
-                enableSelection={true}
+                enableSelection
                 enableCollaboration={enableCollaboration}
                 enableWatermark={enableWatermark}
                 watermarkConfig={watermarkConfig}

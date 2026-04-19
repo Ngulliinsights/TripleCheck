@@ -23,23 +23,21 @@ import {
 // Unified import — formatDate lives in date-utils, formatPrice in formatters
 import { formatDate } from "../../local/utils/date-utils"
 import { formatPrice } from "../../local/utils/formatters"
+import { EnhancedImageShowcase } from "../../local/components/images/ImageShowcase"
 import { useProperty } from "../hooks/useProperty"
-import { PropertyErrorState, PropertyLoadingState } from "../shared/components"
+import { PropertyErrorState, PropertyLoadingState } from "../components/shared/components"
 import {
   LandFeaturesSection,
   LandVerificationSection,
-} from "../shared/LandSections"
-import {
-  CarouselShell,
-  NOT_SPECIFIED,
-  PropertyImageGallery,
-  useCarousel,
-} from "../shared/PropertyGallery"
+} from "../components/shared/LandSections"
+import { CarouselShell, useCarousel } from "../components/shared/CarouselShell"
+import type { GalleryImage } from "../../local/components/images/gallery/types"
 import {
   convertToGalleryImages,
   getTrustScoreColor,
   getVerificationBadgeVariant,
-} from "../shared/utils"
+  NOT_SPECIFIED,
+} from "../utils/ui-utils"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -155,7 +153,7 @@ const RelatedLandsCarousel: React.FC<RelatedLandsCarouselProps> = ({
       onSlideChange={handleSlideChange}
       onPrev={handlePrev}
       onNext={handleNext}
-      onToggleAutoPlay={() => setIsAutoPlaying(prev => !prev)}
+      onToggleAutoPlay={() => setIsAutoPlaying((prev: boolean) => !prev)}
       onMouseEnter={() => setIsAutoPlaying(false)}
       onMouseLeave={() => setIsAutoPlaying(true)}
       activeDotClass="bg-green-600"
@@ -279,12 +277,9 @@ export default function LandDetails({ id }: LandDetailsProps) {
           </div>
 
           {/* Gallery */}
-          <PropertyImageGallery
-            images={galleryImages}
-            emptyIcon="🏞️"
-            emptyText="No land images available"
-            activeThumbnailClass="border-green-500"
-            counterIcon={<TreePine className="w-4 h-4" />}
+          <EnhancedImageShowcase
+            images={galleryImages.map((img: GalleryImage) => img.src).filter((src): src is string => !!src)}
+            title={land.title}
           />
 
           {/* Related lands carousel */}

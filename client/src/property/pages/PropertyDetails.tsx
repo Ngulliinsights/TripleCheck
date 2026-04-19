@@ -23,6 +23,7 @@ import { normalizeProperty } from "../utils/normalizeProperty"
 import { EnhancedPhotoManagementButton } from "../components/PhotoManagementButton"
 import { Badge } from "../../local/components/ui/badge"
 import { Button } from "../../local/components/ui/button"
+import { EnhancedImageShowcase } from "../../local/components/images/ImageShowcase"
 import {
   Card,
   CardContent,
@@ -33,23 +34,20 @@ import { useSafePropertyQuery } from "../../local/hooks/useSafeQuery"
 import { Property } from "@shared/types/property"
 // Canonical location for both helpers
 import { formatDate, formatPrice } from "../../local/utils/formatters"
-import { PropertyErrorState, PropertyLoadingState } from "../shared/components"
+import { PropertyErrorState, PropertyLoadingState } from "../components/shared/components"
 import {
   LandFeaturesSection,
   LandVerificationSection,
-} from "../shared/LandSections"
-import type { LandFeatures, LandVerificationData } from "../shared/LandSections"
+} from "../components/shared/LandSections"
+import type { LandFeatures, LandVerificationData } from "../components/shared/LandSections"
 import {
   convertToGalleryImages,
   getVerificationBadgeVariant,
   getTrustScoreColor,
-} from "../shared/utils"
-import {
-  CarouselShell,
   NOT_SPECIFIED,
-  PropertyImageGallery,
-  useCarousel,
-} from "../shared/PropertyGallery"
+} from "../utils/ui-utils"
+import { CarouselShell, useCarousel } from "../components/shared/CarouselShell"
+import type { GalleryImage } from "../../local/components/images/gallery/types"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -207,7 +205,7 @@ const RelatedPropertiesCarousel: React.FC<RelatedPropertiesCarouselProps> = ({
       onSlideChange={handleSlideChange}
       onPrev={handlePrev}
       onNext={handleNext}
-      onToggleAutoPlay={() => setIsAutoPlaying(prev => !prev)}
+      onToggleAutoPlay={() => setIsAutoPlaying((prev: boolean) => !prev)}
       onMouseEnter={() => setIsAutoPlaying(false)}
       onMouseLeave={() => setIsAutoPlaying(true)}
       activeDotClass="bg-primary"
@@ -535,7 +533,10 @@ export default function PropertyDetails({
 
         {/* Gallery + related carousel */}
         <div className="mb-8">
-          <PropertyImageGallery images={galleryImages} />
+          <EnhancedImageShowcase 
+            images={galleryImages.map((img: GalleryImage) => img.src).filter((src): src is string => !!src)} 
+            title={normalizedProperty.title} 
+          />
           <RelatedPropertiesCarousel
             currentPropertyId={String(normalizedProperty.id)}
           />
