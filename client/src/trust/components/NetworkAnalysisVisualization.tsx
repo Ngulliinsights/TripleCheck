@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../local/components/ui/select'
 import { Slider } from '../../local/components/ui/slider'
 import { useToast } from '../../local/hooks/use-toast'
-import { useFraudDetection } from '../hooks/useFraudDetection'
+import { useFraudDetection, useNetworkAnalysis } from '../hooks/useFraudDetection'
 
 interface NetworkAnalysisVisualizationProps {
   userId?: string;
@@ -74,7 +74,6 @@ export function NetworkAnalysisVisualization({
   const [nodes, setNodes] = useState<NetworkNode[]>([]);
   const [edges, setEdges] = useState<NetworkEdge[]>([]);
 
-  const { useNetworkAnalysis } = useFraudDetection();
   const { data: networkData, isLoading, refetch } = useNetworkAnalysis({
     userId,
     timeRange
@@ -86,7 +85,7 @@ export function NetworkAnalysisVisualization({
       // Convert real network data to visualization format
       const analysis = networkData[0];
       
-      const mockNodes: NetworkNode[] = analysis.participants.map((participant, index) => ({
+      const mockNodes: NetworkNode[] = analysis.participants.map((participant: any, index: number) => ({
         id: participant.id,
         name: participant.name,
         type: participant.type as any,
@@ -150,7 +149,7 @@ export function NetworkAnalysisVisualization({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Filter edges based on risk threshold
-      const filteredEdges = edges.filter(edge => {
+      const filteredEdges = edges.filter((edge: NetworkEdge) => {
         const fromNode = nodes.find(n => n.id === edge.from);
         const toNode = nodes.find(n => n.id === edge.to);
         if (!fromNode || !toNode) return false;
@@ -160,7 +159,7 @@ export function NetworkAnalysisVisualization({
       });
 
       // Draw edges
-      filteredEdges.forEach(edge => {
+      filteredEdges.forEach((edge: NetworkEdge) => {
         const fromNode = nodes.find(n => n.id === edge.from);
         const toNode = nodes.find(n => n.id === edge.to);
         
@@ -177,9 +176,9 @@ export function NetworkAnalysisVisualization({
       });
 
       // Filter and draw nodes
-      const filteredNodes = nodes.filter(node => node.riskScore >= riskThreshold[0]);
+      const filteredNodes = nodes.filter((node: NetworkNode) => node.riskScore >= riskThreshold[0]);
       
-      filteredNodes.forEach(node => {
+      filteredNodes.forEach((node: NetworkNode) => {
         // Node circle
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.radius, 0, 2 * Math.PI);
@@ -225,7 +224,7 @@ export function NetworkAnalysisVisualization({
     const y = event.clientY - rect.top;
 
     // Find clicked node
-    const clickedNode = nodes.find(node => {
+    const clickedNode = nodes.find((node: NetworkNode) => {
       const distance = Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2);
       return distance <= node.radius;
     });
@@ -249,10 +248,10 @@ export function NetworkAnalysisVisualization({
   };
 
   const getNetworkStats = () => {
-    const highRiskNodes = nodes.filter(n => n.riskScore > 70).length;
+    const highRiskNodes = nodes.filter((n: NetworkNode) => n.riskScore > 70).length;
     const totalConnections = edges.length;
     const avgRiskScore = nodes.length > 0 ? 
-      nodes.reduce((sum, n) => sum + n.riskScore, 0) / nodes.length : 0;
+      nodes.reduce((sum: number, n: NetworkNode) => sum + n.riskScore, 0) / nodes.length : 0;
 
     return { highRiskNodes, totalConnections, avgRiskScore };
   };
@@ -455,7 +454,7 @@ export function NetworkAnalysisVisualization({
                       <Badge 
                         variant={selectedNode.riskScore > 70 ? "destructive" : "outline"}
                       >
-                        {selectedNode.riskScore}
+                        {selectedNode.riskScore as React.ReactNode}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
@@ -475,7 +474,7 @@ export function NetworkAnalysisVisualization({
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {networkData?.[0]?.suspiciousPatterns.map((pattern, index) => (
+                {networkData?.[0]?.suspiciousPatterns.map((pattern: string, index: number) => (
                   <Alert key={index}>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription className="text-sm">

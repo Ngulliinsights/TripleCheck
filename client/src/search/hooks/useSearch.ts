@@ -5,6 +5,7 @@ import { searchService } from "../../local/services/SearchService";
 import {
   PropertySearchFilters,
   SearchOptions,
+  SearchResult,
   UseSearchOptions,
   searchKeys,
 } from "../../local/types/search";

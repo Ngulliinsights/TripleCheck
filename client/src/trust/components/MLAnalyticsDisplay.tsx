@@ -25,7 +25,7 @@ import { Progress } from '../../local/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../local/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
 import { useToast } from '../../local/hooks/use-toast'
-import { useFraudDetection } from '../hooks/useFraudDetection'
+import { useFraudDetection, useMLAnalytics } from '../hooks/useFraudDetection'
 
 interface MLAnalyticsDisplayProps {
   userId?: string;
@@ -51,8 +51,7 @@ export function MLAnalyticsDisplay({ userId, timeRange = '7d' }: MLAnalyticsDisp
   const [selectedModel, setSelectedModel] = useState('fraud_detection');
   const [selectedTab, setSelectedTab] = useState('performance');
 
-  const { useMLAnalytics } = useFraudDetection();
-  const { data: analytics, isLoading, refetch } = useMLAnalytics({ timeRange });
+  const { data: analytics, isLoading, refetch } = useMLAnalytics(timeRange);
 
   const getPerformanceColor = (value: number) => {
     if (value >= PERFORMANCE_THRESHOLDS.excellent) return 'text-green-600';
@@ -412,7 +411,7 @@ export function MLAnalyticsDisplay({ userId, timeRange = '7d' }: MLAnalyticsDisp
                     {Object.entries(analytics.predictionDistribution).map(([category, count]) => (
                       <div key={category} className="text-center p-4 bg-gray-50 rounded-lg">
                         <div className="text-2xl font-bold text-gray-900">
-                          {count}
+                          {count as number}
                         </div>
                         <div className="text-sm text-gray-600 mt-1">
                           {category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}

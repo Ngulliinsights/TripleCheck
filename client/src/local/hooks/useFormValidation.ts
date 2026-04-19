@@ -62,6 +62,7 @@ export interface UseFormValidationReturn<T> {
   isFieldValid: (field: keyof T) => boolean;
   clearForm: () => void;
   isDirty: boolean;
+  isValid: boolean;
   canSubmit: boolean;
 }
 

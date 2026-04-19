@@ -29,7 +29,7 @@ import { Progress } from '../../local/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../local/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../local/components/ui/tabs'
 import { useToast } from '../../local/hooks/use-toast'
-import { useFraudDetection } from '../hooks/useFraudDetection'
+import { useFraudDetection, useFraudDashboard, useFraudAlerts, useSystemStatus } from '../hooks/useFraudDetection'
 
 import { FraudAlertsList } from './FraudAlertsList'
 import { MLAnalyticsDisplay } from './MLAnalyticsDisplay'
@@ -66,9 +66,6 @@ export function FraudDetectionDashboard({ userId, showControls = true }: FraudDe
   const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
 
   const {
-    useFraudDashboard,
-    useFraudAlerts,
-    useSystemStatus,
     processTransaction,
     isProcessing
   } = useFraudDetection();
@@ -77,11 +74,11 @@ export function FraudDetectionDashboard({ userId, showControls = true }: FraudDe
     data: dashboardData, 
     isLoading: dashboardLoading,
     refetch: refetchDashboard 
-  } = useFraudDashboard(userId, { timeRange });
+  } = useFraudDashboard(userId, timeRange);
 
   const alertsQuery = useFraudAlerts({
-    ...(severityFilter !== 'all' && { severity: severityFilter }),
-    ...(categoryFilter !== 'all' && { category: categoryFilter }),
+    ...(severityFilter !== 'all' && { severity: severityFilter as any }),
+    ...(categoryFilter !== 'all' && { category: categoryFilter as any }),
     ...(searchQuery && { search: searchQuery }),
     limit: 50
   });

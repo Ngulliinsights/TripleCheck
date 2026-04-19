@@ -1,4 +1,4 @@
-﻿import { MapPin, Search } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 
 import { CompareBar } from "../../property/components/CompareBar";
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../local/components/ui/select";
-import { NormalizedProperty } from "@shared/types/property";
+import { Property } from "@shared/types/property";
 import ConsolidatedSearch from "../components/ConsolidatedSearch";
 
 // ============================================================================
@@ -28,20 +28,20 @@ const SORT_OPTIONS = [
   { label: "Newest First", value: "newest" as SortOption },
 ] as const;
 
-const MOCK_PROPERTIES: NormalizedProperty[] = [
+const MOCK_PROPERTIES: Property[] = [
   {
     id: "1",
     title: "Modern 3-Bedroom Apartment in Westlands",
     description: "Beautiful modern apartment with city views and premium amenities",
-    location: "Westlands, Nairobi",
+    location: { address: "Westlands, Nairobi", state: "Nairobi", country: "Kenya" },
     price: 150_000,
-    images: [
-      "/assets/apartment-luxury-1.jpg",
-      "/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg",
-    ],
-    verified: true,
-    type: "apartment",
+    images: ["/assets/apartment-luxury-1.jpg"],
+    status: "available",
+    verificationStatus: "verified",
+    trustScore: 85,
+    createdAt: new Date().toISOString(),
     category: "residential",
+    type: "apartment",
     features: {
       bedrooms: 3,
       bathrooms: 2,
@@ -49,27 +49,23 @@ const MOCK_PROPERTIES: NormalizedProperty[] = [
       parkingSpaces: 2,
       yearBuilt: 2020,
       amenities: ["Swimming Pool", "Gym", "24/7 Security"],
-      propertyType: "Apartment",
       petFriendly: true,
       furnished: false,
     },
-    status: "available",
-    createdAt: new Date().toISOString(),
-    verificationStatus: "verified",
   },
   {
     id: "2",
     title: "Spacious Family Home in Karen",
     description: "Perfect family home with large garden and quiet neighborhood setting",
-    location: "Karen, Nairobi",
+    location: { address: "Karen, Nairobi", state: "Nairobi", country: "Kenya" },
     price: 280_000,
-    images: [
-      "/assets/house-executive-1.jpg",
-      "/assets/Residential/luke-van-zyl-koH7IVuwRLw-unsplash.jpg",
-    ],
-    verified: true,
-    type: "house",
+    images: ["/assets/house-executive-1.jpg"],
+    status: "available",
+    verificationStatus: "verified",
+    trustScore: 92,
+    createdAt: new Date().toISOString(),
     category: "residential",
+    type: "house",
     features: {
       bedrooms: 4,
       bathrooms: 3,
@@ -77,13 +73,9 @@ const MOCK_PROPERTIES: NormalizedProperty[] = [
       parkingSpaces: 3,
       yearBuilt: 2018,
       amenities: ["Private Garden", "Gated Community", "Covered Parking"],
-      propertyType: "House",
       petFriendly: true,
       furnished: false,
     },
-    status: "available",
-    createdAt: new Date().toISOString(),
-    verificationStatus: "verified",
   },
 ];
 
@@ -175,7 +167,7 @@ export default function SearchResults(): JSX.Element {
                     </div>
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-gray-900 mb-1">{property.title}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{property.location}</p>
+                      <p className="text-sm text-gray-600 mb-2">{property.location.address}</p>
                       <p className="text-lg font-bold text-gray-900">
                         KES {property.price.toLocaleString()}
                       </p>

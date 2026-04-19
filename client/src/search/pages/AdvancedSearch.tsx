@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Bath,
   Bed,
@@ -25,7 +25,7 @@ import { Input } from "../../local/components/ui/input";
 import { Label } from "../../local/components/ui/label";
 import { Slider } from "../../local/components/ui/slider";
 import { useToast } from "../../local/hooks/use-toast";
-import { NormalizedProperty } from "@shared/types/property";
+import { Property } from "@shared/types/property";
 import { PropertySearchFilters } from "../../local/types/search";
 
 // ============================================================================
@@ -109,36 +109,36 @@ const SORT_OPTIONS = [
   { id: "area-small", label: "Smallest Area" },
 ] as const;
 
-const MOCK_RESULTS: NormalizedProperty[] = [
+const MOCK_RESULTS: Property[] = [
   {
     id: "1",
     title: "Modern 3BR Apartment in Westlands",
     description: "Spacious apartment with modern amenities",
     price: 15_000_000,
-    location: "Westlands, Nairobi",
+    location: { address: "Westlands, Nairobi", state: "Nairobi", country: "Kenya" },
     images: ["/assets/Residential/cytonn-photography-TVyhDpvL8MY-unsplash.jpg"],
-    verified: true,
-    type: "apartment",
-    category: "residential",
-    features: { bedrooms: 3, bathrooms: 2, squareFeet: 1200 },
-    createdAt: new Date().toISOString(),
     status: "available",
     verificationStatus: "verified",
+    trustScore: 85,
+    createdAt: new Date().toISOString(),
+    category: "residential",
+    type: "apartment",
+    features: { bedrooms: 3, bathrooms: 2, squareFeet: 1200 },
   },
   {
     id: "2",
     title: "Luxury Villa in Karen",
     description: "Beautiful villa with garden and pool",
     price: 45_000_000,
-    location: "Karen, Nairobi",
+    location: { address: "Karen, Nairobi", state: "Nairobi", country: "Kenya" },
     images: ["/assets/Residential/dillon-kydd-XGvwt544g8k-unsplash.jpg"],
-    verified: true,
-    type: "villa",
-    category: "residential",
-    features: { bedrooms: 5, bathrooms: 4, squareFeet: 3500 },
-    createdAt: new Date().toISOString(),
     status: "available",
     verificationStatus: "verified",
+    trustScore: 92,
+    createdAt: new Date().toISOString(),
+    category: "residential",
+    type: "villa",
+    features: { bedrooms: 5, bathrooms: 4, squareFeet: 3500 },
   },
 ];
 
@@ -159,7 +159,7 @@ function formatPrice(value: number): string {
 export default function AdvancedSearch(): JSX.Element {
   const { toast } = useToast();
   const [filters, setFilters] = useState<AdvancedSearchFilters>(DEFAULT_FILTERS);
-  const [results, setResults] = useState<NormalizedProperty[]>([]);
+  const [results, setResults] = useState<Property[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -198,7 +198,7 @@ export default function AdvancedSearch(): JSX.Element {
 
     if (filters.location.trim()) {
       const loc = filters.location.toLowerCase();
-      filtered = filtered.filter((p) => p.location.toLowerCase().includes(loc));
+      filtered = filtered.filter((p) => p.location.address.toLowerCase().includes(loc));
     }
 
     if (filters.propertyType.length > 0) {
@@ -206,10 +206,10 @@ export default function AdvancedSearch(): JSX.Element {
     }
 
     if (filters.bedrooms != null) {
-      filtered = filtered.filter((p) => p.features?.bedrooms === filters.bedrooms);
+      filtered = filtered.filter((p) => p.category === 'residential' && (p as any).features.bedrooms === filters.bedrooms);
     }
     if (filters.bathrooms != null) {
-      filtered = filtered.filter((p) => p.features?.bathrooms === filters.bathrooms);
+      filtered = filtered.filter((p) => p.category === 'residential' && (p as any).features.bathrooms === filters.bathrooms);
     }
 
     filtered = filtered.filter(
@@ -594,19 +594,19 @@ export default function AdvancedSearch(): JSX.Element {
                     </div>
                     <CardContent className="p-4">
                       <h3 className="font-semibold mb-1">{p.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">{p.location}</p>
+                      <p className="text-sm text-muted-foreground mb-2">{p.location.address}</p>
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-lg">{formatPrice(p.price)}</span>
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          {p.features?.bedrooms != null && (
-                            <span className="flex items-center gap-1">
-                              <Bed className="w-3.5 h-3.5" /> {p.features.bedrooms}
-                            </span>
-                          )}
-                          {p.features?.bathrooms != null && (
-                            <span className="flex items-center gap-1">
-                              <Bath className="w-3.5 h-3.5" /> {p.features.bathrooms}
-                            </span>
+                          {p.category === 'residential' && (
+                            <>
+                              <span className="flex items-center gap-1">
+                                <Bed className="w-3.5 h-3.5" /> {(p as any).features.bedrooms}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Bath className="w-3.5 h-3.5" /> {(p as any).features.bathrooms}
+                              </span>
+                            </>
                           )}
                         </div>
                       </div>

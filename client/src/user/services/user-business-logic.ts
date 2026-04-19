@@ -1,8 +1,21 @@
-import { z } from "zod"
+import { z } from "zod";
+import { User, UserRole } from "@shared/types/auth.types";
 
-import { User } from "../../auth/types/auth.types"
+// ─── Shared sub-schemas ───────────────────────────────────────────────────────
 
-// User validation schemas
+const NotificationsSchema = z.object({
+  email: z.boolean(),
+  sms: z.boolean(),
+  push: z.boolean(),
+});
+
+const PrivacyBaseSchema = z.object({
+  showProfile: z.boolean(),
+  showContactInfo: z.boolean(),
+});
+
+// ─── Validation schemas ───────────────────────────────────────────────────────
+
 export const UserProfileSchema = z.object({
   firstName: z
     .string()
@@ -16,10 +29,7 @@ export const UserProfileSchema = z.object({
     .max(50, "Last name must not exceed 50 characters")
     .regex(/^[a-zA-Z\s'-]+$/, "Last name contains invalid characters"),
 
-  email: z
-    .string()
-    .email("Invalid email address")
-    .max(255, "Email must not exceed 255 characters"),
+  email: z.string().email("Invalid email address").max(255, "Email must not exceed 255 characters"),
 
   phone: z
     .string()
@@ -31,23 +41,13 @@ export const UserProfileSchema = z.object({
   avatar: z.string().url("Invalid avatar URL").optional(),
 
   preferences: z.object({
-    notifications: z.object({
-      email: z.boolean(),
-      sms: z.boolean(),
-      push: z.boolean(),
-    }),
-    privacy: z.object({
-      showProfile: z.boolean(),
-      showContactInfo: z.boolean(),
-    }),
+    notifications: NotificationsSchema,
+    privacy: PrivacyBaseSchema,
   }),
 });
 
 export const UserPreferencesSchema = z.object({
-  notifications: z.object({
-    email: z.boolean(),
-    sms: z.boolean(),
-    push: z.boolean(),
+  notifications: NotificationsSchema.extend({
     frequency: z.enum(["immediate", "daily", "weekly"]).default("immediate"),
     types: z
       .object({
@@ -59,9 +59,7 @@ export const UserPreferencesSchema = z.object({
       })
       .default({}),
   }),
-  privacy: z.object({
-    showProfile: z.boolean().default(true),
-    showContactInfo: z.boolean().default(false),
+  privacy: PrivacyBaseSchema.extend({
     showTrustScore: z.boolean().default(true),
     allowDirectMessages: z.boolean().default(true),
     showActivityStatus: z.boolean().default(true),
@@ -82,7 +80,7 @@ export const UserPreferencesSchema = z.object({
         .array(
           z.object({
             name: z.string(),
-            criteria: z.record(z.any()),
+            criteria: z.record(z.unknown()),
             alertsEnabled: z.boolean(),
           })
         )
@@ -91,293 +89,398 @@ export const UserPreferencesSchema = z.object({
     .default({}),
 });
 
-// User business logic implementation
+// ─── Derived types ────────────────────────────────────────────────────────────
+
+type UserProfile = z.infer<typeof UserProfileSchema>;
+type UserPreferences = z.infer<typeof UserPreferencesSchema>;
+
+type ActivityData = {
+  loginFrequency: number;
+  propertyInteractions: number;
+  messageActivity: number;
+  profileCompleteness: number;
+  accountAge: number;
+  verificationLevel: number;
+};
+
+type ActivityLevel = "inactive" | "low" | "moderate" | "active" | "highly_active";
+
+type Achievement = {
+  title: string;
+  description: string;
+  earnedDate?: string;
+  progress?: number;
+};
+
+type Goal = {
+  title: string;
+  description: string;
+  progress: number;
+  target: number;
+};
+
+type ActivityScore = {
+  score: number;
+  level: ActivityLevel;
+  factors: Record<string, number>;
+  recommendations: string[];
+};
+
+type Notification = {
+  type: "info" | "warning" | "success" | "error";
+  title: string;
+  message: string;
+  actionUrl?: string;
+};
+
+type QuickAction = {
+  title: string;
+  description: string;
+  actionUrl: string;
+  icon: string;
+};
+
+type RecentActivityItem = {
+  type: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  actionUrl?: string;
+};
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const ROLE_HIERARCHY: Readonly<Record<UserRole, number>> = {
+  user: 0,
+  agent: 1,
+  admin: 2,
+};
+
+const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly string[]>> = {
+  user: [
+    "view_properties",
+    "create_property",
+    "edit_own_property",
+    "send_messages",
+    "view_trust_scores",
+  ],
+  agent: [
+    "view_properties",
+    "create_property",
+    "edit_own_property",
+    "edit_client_property",
+    "send_messages",
+    "view_trust_scores",
+    "verify_properties",
+    "access_analytics",
+  ],
+  admin: [
+    "view_properties",
+    "create_property",
+    "edit_any_property",
+    "delete_any_property",
+    "send_messages",
+    "view_trust_scores",
+    "edit_trust_scores",
+    "verify_properties",
+    "access_analytics",
+    "manage_users",
+    "system_settings",
+  ],
+};
+
+const PROFILE_FIELDS: ReadonlyArray<keyof User> = [
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "avatar",
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function parseSchema<T>(
+  schema: z.ZodType<T>,
+  data: unknown,
+  context: string
+): T {
+  const result = schema.safeParse(data);
+  if (result.success) return result.data;
+
+  const messages = result.error.errors
+    .map((e) => `${e.path.join(".")}: ${e.message}`)
+    .join(", ");
+  throw new Error(`${context} validation failed: ${messages}`);
+}
+
+function isValidEmail(email: string): boolean {
+  const [local, domain, ...rest] = email.split("@");
+  return (
+    rest.length === 0 &&
+    Boolean(local) &&
+    Boolean(domain) &&
+    domain.includes(".") &&
+    domain.length > 3 &&
+    !email.includes(" ")
+  );
+}
+
+function isValidUrl(value: string): boolean {
+  return /^https?:\/\/.+/.test(value);
+}
+
+function isValidPhone(value: string): boolean {
+  return /^\+?[\d\s\-()]+$/.test(value);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function isRecentActivityItem(item: unknown): item is RecentActivityItem {
+  if (!item || typeof item !== "object") return false;
+  const r = item as Record<string, unknown>;
+  return (
+    typeof r.type === "string" &&
+    typeof r.title === "string" &&
+    typeof r.description === "string" &&
+    typeof r.timestamp === "string"
+  );
+}
+
+// ─── UserBusinessLogic ────────────────────────────────────────────────────────
+
 export class UserBusinessLogic {
-  // User role hierarchy and permissions
-  private static readonly ROLE_HIERARCHY = {
-    user: 0,
-    agent: 1,
-    admin: 2,
-  };
+  // ── Validation ──────────────────────────────────────────────────────────────
 
-  private static readonly ROLE_PERMISSIONS = {
-    user: [
-      "view_properties",
-      "create_property",
-      "edit_own_property",
-      "send_messages",
-      "view_trust_scores",
-    ],
-    agent: [
-      "view_properties",
-      "create_property",
-      "edit_own_property",
-      "edit_client_property",
-      "send_messages",
-      "view_trust_scores",
-      "verify_properties",
-      "access_analytics",
-    ],
-    admin: [
-      "view_properties",
-      "create_property",
-      "edit_any_property",
-      "delete_any_property",
-      "send_messages",
-      "view_trust_scores",
-      "edit_trust_scores",
-      "verify_properties",
-      "access_analytics",
-      "manage_users",
-      "system_settings",
-    ],
-  };
-
-  // Validate user profile data
   static validateUserProfile(data: unknown): Partial<User> {
-    try {
-      const parsed = UserProfileSchema.parse(data);
-      const result: Partial<User> = {
-        firstName: parsed.firstName,
-        lastName: parsed.lastName,
-        email: parsed.email,
-        preferences: parsed.preferences,
-      };
-
-      if (parsed.phone !== undefined) {
-        result.phone = parsed.phone;
-      }
-
-      if (parsed.avatar !== undefined) {
-        result.avatar = parsed.avatar;
-      }
-
-      return result;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errorMessages = error.errors.map(
-          (err) => `${err.path.join(".")}: ${err.message}`
-        );
-        throw new Error(
-          `Profile validation failed: ${errorMessages.join(", ")}`
-        );
-      }
-      throw error;
-    }
+    const parsed = parseSchema(UserProfileSchema, data, "Profile");
+    const result: Partial<User> = {
+      firstName: parsed.firstName,
+      lastName: parsed.lastName,
+      email: parsed.email,
+      preferences: parsed.preferences as User["preferences"],
+    };
+    if (parsed.phone !== undefined) result.phone = parsed.phone;
+    if (parsed.avatar !== undefined) result.avatar = parsed.avatar;
+    return result;
   }
 
-  // Validate user preferences
-  static validateUserPreferences(data: unknown): User["preferences"] {
-    try {
-      return UserPreferencesSchema.parse(data);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errorMessages = error.errors.map(
-          (err) => `${err.path.join(".")}: ${err.message}`
-        );
-        throw new Error(
-          `Preferences validation failed: ${errorMessages.join(", ")}`
-        );
-      }
-      throw error;
-    }
+  static validateUserPreferences(data: unknown): UserPreferences {
+    return parseSchema(UserPreferencesSchema, data, "Preferences") as UserPreferences;
   }
 
-  // Check user permissions
+  // ── Permissions ─────────────────────────────────────────────────────────────
+
   static hasPermission(user: User, permission: string): boolean {
-    const userPermissions = this.ROLE_PERMISSIONS[user.role] || [];
-    return userPermissions.includes(permission);
+    return (ROLE_PERMISSIONS[user.role] ?? []).includes(permission);
   }
 
-  // Check if user can perform action on another user
   static canManageUser(
     currentUser: User,
     targetUser: User
-  ): {
-    canManage: boolean;
-    reasons: string[];
-  } {
+  ): { canManage: boolean; reasons: string[] } {
+    if (currentUser.id === targetUser.id) return { canManage: true, reasons: [] };
+
     const reasons: string[] = [];
-    let canManage = true;
 
-    // Check role hierarchy
-    const currentUserLevel = this.ROLE_HIERARCHY[currentUser.role];
-    const targetUserLevel = this.ROLE_HIERARCHY[targetUser.role];
-
-    if (
-      currentUserLevel <= targetUserLevel &&
-      currentUser.id !== targetUser.id
-    ) {
-      canManage = false;
+    if (ROLE_HIERARCHY[currentUser.role] <= ROLE_HIERARCHY[targetUser.role]) {
       reasons.push("Insufficient permissions to manage this user");
     }
 
-    // Admin can manage anyone except other admins (unless it's themselves)
-    if (
-      currentUser.role === "admin" &&
-      targetUser.role === "admin" &&
-      currentUser.id !== targetUser.id
-    ) {
-      canManage = false;
+    if (currentUser.role === "admin" && targetUser.role === "admin") {
       reasons.push("Admins cannot manage other admins");
     }
 
-    // Users can only manage themselves
-    if (currentUser.role === "user" && currentUser.id !== targetUser.id) {
-      canManage = false;
+    if (currentUser.role === "user") {
       reasons.push("Users can only manage their own profile");
     }
 
-    return { canManage, reasons };
+    return { canManage: reasons.length === 0, reasons };
   }
 
-  // Calculate user activity score
-  static calculateActivityScore(data: {
-    loginFrequency: number; // logins per week
-    propertyInteractions: number; // views, saves, inquiries
-    messageActivity: number; // messages sent/received
-    profileCompleteness: number; // percentage
-    accountAge: number; // days since registration
-    verificationLevel: number; // 0-100
-  }): {
-    score: number;
-    level: "inactive" | "low" | "moderate" | "active" | "highly_active";
-    factors: Record<string, number>;
-    recommendations: string[];
-  } {
-    let score = 0;
-    const factors: Record<string, number> = {};
+  // ── Activity Score ───────────────────────────────────────────────────────────
+
+  static calculateActivityScore(data: ActivityData): ActivityScore {
     const recommendations: string[] = [];
+    const factors: Record<string, number> = {};
 
-    // Login frequency (0-25 points)
-    const loginScore = Math.min(data.loginFrequency * 5, 25);
-    factors.loginFrequency = loginScore;
-    score += loginScore;
+    const scoringRules: Array<{
+      key: keyof ActivityData;
+      compute: (v: number) => number;
+      threshold: number;
+      tip: string;
+    }> = [
+      {
+        key: "loginFrequency",
+        compute: (v) => clamp(v * 5, 0, 25),
+        threshold: 2,
+        tip: "Log in more frequently to stay updated",
+      },
+      {
+        key: "propertyInteractions",
+        compute: (v) => clamp(v * 2, 0, 30),
+        threshold: 5,
+        tip: "Explore more properties to find your perfect match",
+      },
+      {
+        key: "messageActivity",
+        compute: (v) => clamp(v * 3, 0, 20),
+        threshold: 3,
+        tip: "Engage with property owners and agents",
+      },
+      {
+        key: "profileCompleteness",
+        compute: (v) => (v / 100) * 15,
+        threshold: 80,
+        tip: "Complete your profile to build trust",
+      },
+      {
+        key: "accountAge",
+        compute: (v) => clamp(v / 30, 0, 5),
+        threshold: Infinity,
+        tip: "",
+      },
+      {
+        key: "verificationLevel",
+        compute: (v) => (v / 100) * 5,
+        threshold: 50,
+        tip: "Complete verification to increase trust",
+      },
+    ];
 
-    if (data.loginFrequency < 2) {
-      recommendations.push("Log in more frequently to stay updated");
+    let score = 0;
+    for (const rule of scoringRules) {
+      const pts = rule.compute(data[rule.key]);
+      factors[rule.key] = pts;
+      score += pts;
+      if (rule.tip && data[rule.key] < rule.threshold) {
+        recommendations.push(rule.tip);
+      }
     }
 
-    // Property interactions (0-30 points)
-    const interactionScore = Math.min(data.propertyInteractions * 2, 30);
-    factors.propertyInteractions = interactionScore;
-    score += interactionScore;
-
-    if (data.propertyInteractions < 5) {
-      recommendations.push(
-        "Explore more properties to find your perfect match"
-      );
-    }
-
-    // Message activity (0-20 points)
-    const messageScore = Math.min(data.messageActivity * 3, 20);
-    factors.messageActivity = messageScore;
-    score += messageScore;
-
-    if (data.messageActivity < 3) {
-      recommendations.push("Engage with property owners and agents");
-    }
-
-    // Profile completeness (0-15 points)
-    const profileScore = (data.profileCompleteness / 100) * 15;
-    factors.profileCompleteness = profileScore;
-    score += profileScore;
-
-    if (data.profileCompleteness < 80) {
-      recommendations.push("Complete your profile to build trust");
-    }
-
-    // Account age bonus (0-5 points)
-    const ageScore = Math.min(data.accountAge / 30, 5); // 1 point per month, max 5
-    factors.accountAge = ageScore;
-    score += ageScore;
-
-    // Verification bonus (0-5 points)
-    const verificationScore = (data.verificationLevel / 100) * 5;
-    factors.verificationLevel = verificationScore;
-    score += verificationScore;
-
-    if (data.verificationLevel < 50) {
-      recommendations.push("Complete verification to increase trust");
-    }
-
-    // Determine activity level
-    let level: "inactive" | "low" | "moderate" | "active" | "highly_active";
-    if (score >= 80) {
-      level = "highly_active";
-    } else if (score >= 60) {
-      level = "active";
-    } else if (score >= 40) {
-      level = "moderate";
-    } else if (score >= 20) {
-      level = "low";
-    } else {
-      level = "inactive";
-    }
+    const level: ActivityLevel =
+      score >= 80 ? "highly_active"
+      : score >= 60 ? "active"
+      : score >= 40 ? "moderate"
+      : score >= 20 ? "low"
+      : "inactive";
 
     return {
       score: Math.round(score),
       level,
       factors,
-      recommendations: recommendations.slice(0, 3), // Top 3 recommendations
+      recommendations: recommendations.slice(0, 3),
     };
   }
 
-  // Generate user insights and recommendations
+  // ── User Insights ────────────────────────────────────────────────────────────
+
   static generateUserInsights(
     user: User,
     activityData: unknown
   ): {
     insights: string[];
     recommendations: string[];
-    achievements: Array<{
-      title: string;
-      description: string;
-      earnedDate?: string | undefined;
-      progress?: number | undefined;
-    }>;
-    goals: Array<{
-      title: string;
-      description: string;
-      progress: number;
-      target: number;
-    }>;
+    achievements: Achievement[];
+    goals: Goal[];
   } {
     const insights: string[] = [];
     const recommendations: string[] = [];
-    const achievements: Array<{
-      title: string;
-      description: string;
-      earnedDate?: string | undefined;
-      progress?: number | undefined;
-    }> = [];
-    const goals: Array<{
-      title: string;
-      description: string;
-      progress: number;
-      target: number;
-    }> = [];
+    const achievements: Achievement[] = [];
+    const goals: Goal[] = [];
 
-    // Generate profile insights
-    this.addProfileInsights(user, achievements, goals, recommendations);
+    const now = user.updatedAt ? new Date(user.updatedAt).toISOString() : new Date().toISOString();
 
-    // Generate trust score insights
-    this.addTrustScoreInsights(
-      user,
-      insights,
-      achievements,
-      goals,
-      recommendations
-    );
+    // Profile completeness
+    const completed = PROFILE_FIELDS.filter((f) => Boolean(user[f]));
+    if (completed.length === PROFILE_FIELDS.length) {
+      achievements.push({
+        title: "Profile Complete",
+        description: "Completed all profile information",
+        earnedDate: now,
+      });
+    } else {
+      goals.push({
+        title: "Complete Profile",
+        description: "Fill in all profile information",
+        progress: completed.length,
+        target: PROFILE_FIELDS.length,
+      });
+      recommendations.push("Complete your profile to build trust with other users");
+    }
 
-    // Generate verification insights
-    this.addVerificationInsights(user, achievements, recommendations, goals);
+    // Trust score
+    if (user.trustScore !== undefined) {
+      if (user.trustScore >= 800) {
+        insights.push("You have an excellent trust score");
+        achievements.push({
+          title: "Trusted Member",
+          description: "Achieved high trust score",
+          earnedDate: now,
+        });
+      } else {
+        insights.push(
+          user.trustScore >= 600
+            ? "You have a good trust score"
+            : "Your trust score has room for improvement"
+        );
+        const target = user.trustScore >= 600 ? 800 : 600;
+        goals.push({
+          title: user.trustScore >= 600 ? "Trusted Member" : "Build Trust",
+          description: `Reach trust score of ${target}`,
+          progress: user.trustScore,
+          target,
+        });
+        if (user.trustScore < 600) {
+          recommendations.push("Complete verification steps to improve your trust score");
+        }
+      }
+    }
 
-    // Generate role-specific insights
-    this.addRoleInsights(user, insights, recommendations);
+    // Verification
+    if (user.isVerified) {
+      achievements.push({
+        title: "Verified User",
+        description: "Successfully completed account verification",
+        earnedDate: now,
+      });
+    } else {
+      recommendations.push("Complete account verification to access more features");
+      goals.push({
+        title: "Get Verified",
+        description: "Complete account verification process",
+        progress: 0,
+        target: 1,
+      });
+    }
 
-    // Generate activity insights
-    this.addActivityInsights(activityData, recommendations, achievements);
+    // Role-specific
+    if (user.role === "agent") {
+      insights.push("As an agent, you have access to advanced property management tools");
+      if (!user.isVerified) {
+        recommendations.push("Agent verification is required to list properties");
+      }
+    }
+
+    // Activity
+    if (activityData && typeof activityData === "object") {
+      try {
+        const activityScore = this.calculateActivityScore(activityData as ActivityData);
+        if (activityScore.level === "inactive") {
+          recommendations.push("Stay active on the platform to get the best experience");
+        } else if (activityScore.level === "highly_active") {
+          achievements.push({
+            title: "Power User",
+            description: "Highly active platform user",
+            earnedDate: new Date().toISOString(),
+          });
+        }
+        recommendations.push(...activityScore.recommendations);
+      } catch {
+        // Silently skip malformed activity data
+      }
+    }
 
     return {
       insights: insights.slice(0, 5),
@@ -387,251 +490,36 @@ export class UserBusinessLogic {
     };
   }
 
-  private static addProfileInsights(
-    user: User,
-    achievements: Array<{
-      title: string;
-      description: string;
-      earnedDate?: string | undefined;
-    }>,
-    goals: Array<{
-      title: string;
-      description: string;
-      progress: number;
-      target: number;
-    }>,
-    recommendations: string[]
-  ): void {
-    const profileFields = ["firstName", "lastName", "email", "phone", "avatar"];
-    const completedFields = profileFields.filter(
-      (field) => user[field as keyof User]
-    );
-    const completeness = (completedFields.length / profileFields.length) * 100;
+  // ── Settings Update ──────────────────────────────────────────────────────────
 
-    if (completeness >= 100) {
-      achievements.push({
-        title: "Profile Complete",
-        description: "Completed all profile information",
-        earnedDate: user.updatedAt.toISOString(),
-      });
-    } else {
-      goals.push({
-        title: "Complete Profile",
-        description: "Fill in all profile information",
-        progress: completedFields.length,
-        target: profileFields.length,
-      });
-      recommendations.push(
-        "Complete your profile to build trust with other users"
-      );
-    }
-  }
-
-  private static addTrustScoreInsights(
-    user: User,
-    insights: string[],
-    achievements: Array<{
-      title: string;
-      description: string;
-      earnedDate?: string | undefined;
-    }>,
-    goals: Array<{
-      title: string;
-      description: string;
-      progress: number;
-      target: number;
-    }>,
-    recommendations: string[]
-  ): void {
-    if (!user.trustScore) return;
-
-    if (user.trustScore >= 800) {
-      insights.push("You have an excellent trust score");
-      achievements.push({
-        title: "Trusted Member",
-        description: "Achieved high trust score",
-        earnedDate: user.updatedAt.toISOString(),
-      });
-    } else if (user.trustScore >= 600) {
-      insights.push("You have a good trust score");
-      goals.push({
-        title: "Trusted Member",
-        description: "Reach trust score of 800",
-        progress: user.trustScore,
-        target: 800,
-      });
-    } else {
-      insights.push("Your trust score has room for improvement");
-      recommendations.push(
-        "Complete verification steps to improve your trust score"
-      );
-      goals.push({
-        title: "Build Trust",
-        description: "Reach trust score of 600",
-        progress: user.trustScore,
-        target: 600,
-      });
-    }
-  }
-
-  private static addVerificationInsights(
-    user: User,
-    achievements: Array<{
-      title: string;
-      description: string;
-      earnedDate?: string | undefined;
-    }>,
-    recommendations: string[],
-    goals: Array<{
-      title: string;
-      description: string;
-      progress: number;
-      target: number;
-    }>
-  ): void {
-    if (user.isVerified) {
-      achievements.push({
-        title: "Verified User",
-        description: "Successfully completed account verification",
-        earnedDate: user.updatedAt.toISOString(),
-      });
-    } else {
-      recommendations.push(
-        "Complete account verification to access more features"
-      );
-      goals.push({
-        title: "Get Verified",
-        description: "Complete account verification process",
-        progress: 0,
-        target: 1,
-      });
-    }
-  }
-
-  private static addRoleInsights(
-    user: User,
-    insights: string[],
-    recommendations: string[]
-  ): void {
-    if (user.role === "agent") {
-      insights.push(
-        "As an agent, you have access to advanced property management tools"
-      );
-      if (!user.isVerified) {
-        recommendations.push(
-          "Agent verification is required to list properties"
-        );
-      }
-    }
-  }
-
-  private static addActivityInsights(
-    activityData: unknown,
-    recommendations: string[],
-    achievements: Array<{
-      title: string;
-      description: string;
-      earnedDate?: string | undefined;
-    }>
-  ): void {
-    if (!activityData || typeof activityData !== "object") return;
-
-    try {
-      const activityScore = this.calculateActivityScore(
-        activityData as {
-          loginFrequency: number;
-          propertyInteractions: number;
-          messageActivity: number;
-          profileCompleteness: number;
-          accountAge: number;
-          verificationLevel: number;
-        }
-      );
-
-      if (activityScore.level === "inactive") {
-        recommendations.push(
-          "Stay active on the platform to get the best experience"
-        );
-      } else if (activityScore.level === "highly_active") {
-        achievements.push({
-          title: "Power User",
-          description: "Highly active platform user",
-          earnedDate: new Date().toISOString(),
-        });
-      }
-
-      recommendations.push(...activityScore.recommendations);
-    } catch {
-      // Ignore activity data if it's malformed
-    }
-  }
-
-  // Validate user settings update
   static validateSettingsUpdate(
     currentUser: User,
     updates: Partial<User>,
     requestingUserId: string
-  ): {
-    isValid: boolean;
-    errors: string[];
-    allowedUpdates: Partial<User>;
-  } {
+  ): { isValid: boolean; errors: string[]; allowedUpdates: Partial<User> } {
     const errors: string[] = [];
     const allowedUpdates: Partial<User> = {};
 
-    // Check permissions first
-    const permissionCheck = this.checkUpdatePermissions(
-      currentUser,
-      requestingUserId
-    );
-    if (!permissionCheck.canUpdate) {
+    // Permission check: only the user themselves or a higher-role manager may update
+    if (
+      String(currentUser.id) !== String(requestingUserId) &&
+      !this.canManageUser({ id: requestingUserId, role: "admin", email: "", firstName: "", lastName: "", isVerified: true } as User, currentUser).canManage
+    ) {
       return {
         isValid: false,
-        errors: permissionCheck.errors,
+        errors: ["You do not have permission to update this user"],
         allowedUpdates: {},
       };
     }
 
-    // Validate each field
-    this.validateFieldUpdates(updates, allowedUpdates, errors);
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-      allowedUpdates,
-    };
-  }
-
-  private static checkUpdatePermissions(
-    currentUser: User,
-    requestingUserId: string
-  ): {
-    canUpdate: boolean;
-    errors: string[];
-  } {
-    if (currentUser.id === requestingUserId) {
-      return { canUpdate: true, errors: [] };
+    for (const [key, value] of Object.entries(updates)) {
+      this.applyFieldUpdate(key, value, allowedUpdates, errors);
     }
 
-    const { canManage, reasons } = this.canManageUser(
-      { id: requestingUserId, role: "user" } as User,
-      currentUser
-    );
-
-    return { canUpdate: canManage, errors: reasons };
+    return { isValid: errors.length === 0, errors, allowedUpdates };
   }
 
-  private static validateFieldUpdates(
-    updates: Partial<User>,
-    allowedUpdates: Partial<User>,
-    errors: string[]
-  ): void {
-    Object.entries(updates).forEach(([key, value]) => {
-      this.validateSingleField(key, value, allowedUpdates, errors);
-    });
-  }
-
-  private static validateSingleField(
+  private static applyFieldUpdate(
     key: string,
     value: unknown,
     allowedUpdates: Partial<User>,
@@ -639,21 +527,50 @@ export class UserBusinessLogic {
   ): void {
     switch (key) {
       case "firstName":
-      case "lastName":
-        this.validateNameField(key, value, allowedUpdates, errors);
+      case "lastName": {
+        if (typeof value === "string" && value.length >= 2 && value.length <= 50) {
+          (allowedUpdates as Record<string, unknown>)[key] = value;
+        } else {
+          errors.push(`${key} must be between 2 and 50 characters`);
+        }
         break;
-      case "email":
-        this.validateEmailField(value, allowedUpdates, errors);
+      }
+      case "email": {
+        if (typeof value === "string" && isValidEmail(value)) {
+          allowedUpdates.email = value;
+        } else {
+          errors.push("Invalid email format");
+        }
         break;
-      case "phone":
-        this.validatePhoneField(value, allowedUpdates, errors);
+      }
+      case "phone": {
+        if (!value) {
+          delete (allowedUpdates as Record<string, unknown>).phone;
+        } else if (typeof value === "string" && isValidPhone(value)) {
+          allowedUpdates.phone = value;
+        } else {
+          errors.push("Invalid phone number format");
+        }
         break;
-      case "avatar":
-        this.validateAvatarField(value, allowedUpdates, errors);
+      }
+      case "avatar": {
+        if (!value) {
+          delete (allowedUpdates as Record<string, unknown>).avatar;
+        } else if (typeof value === "string" && isValidUrl(value)) {
+          allowedUpdates.avatar = value;
+        } else {
+          errors.push("Invalid avatar URL");
+        }
         break;
-      case "preferences":
-        this.validatePreferencesField(value, allowedUpdates, errors);
+      }
+      case "preferences": {
+        try {
+          allowedUpdates.preferences = this.validateUserPreferences(value);
+        } catch (err) {
+          errors.push(`Invalid preferences: ${err}`);
+        }
         break;
+      }
       case "role":
         errors.push("Role changes are not allowed through this method");
         break;
@@ -662,97 +579,8 @@ export class UserBusinessLogic {
     }
   }
 
-  private static validateNameField(
-    fieldName: string,
-    value: unknown,
-    allowedUpdates: Partial<User>,
-    errors: string[]
-  ): void {
-    if (typeof value === "string" && value.length >= 2 && value.length <= 50) {
-      if (fieldName === "firstName") {
-        allowedUpdates.firstName = value;
-      } else if (fieldName === "lastName") {
-        allowedUpdates.lastName = value;
-      }
-    } else {
-      errors.push(`${fieldName} must be between 2 and 50 characters`);
-    }
-  }
+  // ── Dashboard ────────────────────────────────────────────────────────────────
 
-  private static validateEmailField(
-    value: unknown,
-    allowedUpdates: Partial<User>,
-    errors: string[]
-  ): void {
-    if (typeof value === "string" && this.isValidEmail(value)) {
-      allowedUpdates.email = value;
-    } else {
-      errors.push("Invalid email format");
-    }
-  }
-
-  private static validatePhoneField(
-    value: unknown,
-    allowedUpdates: Partial<User>,
-    errors: string[]
-  ): void {
-    if (!value) {
-      // Don't set undefined for optional properties with exactOptionalPropertyTypes
-      delete (allowedUpdates as Record<string, unknown>).phone;
-    } else if (typeof value === "string" && /^\+?[\d\s\-()]+$/.test(value)) {
-      allowedUpdates.phone = value;
-    } else {
-      errors.push("Invalid phone number format");
-    }
-  }
-
-  private static validateAvatarField(
-    value: unknown,
-    allowedUpdates: Partial<User>,
-    errors: string[]
-  ): void {
-    if (!value) {
-      // Don't set undefined for optional properties with exactOptionalPropertyTypes
-      delete (allowedUpdates as Record<string, unknown>).avatar;
-    } else if (typeof value === "string" && /^https?:\/\/.+/.test(value)) {
-      allowedUpdates.avatar = value;
-    } else {
-      errors.push("Invalid avatar URL");
-    }
-  }
-
-  private static validatePreferencesField(
-    value: unknown,
-    allowedUpdates: Partial<User>,
-    errors: string[]
-  ): void {
-    try {
-      const validatedPreferences = this.validateUserPreferences(value);
-      allowedUpdates.preferences = validatedPreferences;
-    } catch (error) {
-      errors.push(`Invalid preferences: ${error}`);
-    }
-  }
-
-  // Email validation helper
-  private static isValidEmail(email: string): boolean {
-    // Simple email validation to avoid ReDoS vulnerability
-    const emailParts = email.split("@");
-    if (emailParts.length !== 2) return false;
-
-    const [localPart, domainPart] = emailParts;
-    if (!localPart || !domainPart) return false;
-
-    // Basic checks without complex regex
-    return (
-      localPart.length > 0 &&
-      domainPart.includes(".") &&
-      domainPart.length > 3 &&
-      !email.includes(" ")
-    );
-  }
-
-  // Generate user dashboard data
   static generateDashboardData(
     user: User,
     recentActivity: unknown[]
@@ -765,136 +593,59 @@ export class UserBusinessLogic {
       trustScore: number;
       verificationStatus: string;
     };
-    recentActivity: Array<{
-      type: string;
-      title: string;
-      description: string;
-      timestamp: string;
-      actionUrl?: string;
-    }>;
-    quickActions: Array<{
-      title: string;
-      description: string;
-      actionUrl: string;
-      icon: string;
-    }>;
-    notifications: Array<{
-      type: "info" | "warning" | "success" | "error";
-      title: string;
-      message: string;
-      actionUrl?: string;
-    }>;
+    recentActivity: RecentActivityItem[];
+    quickActions: QuickAction[];
+    notifications: Notification[];
   } {
-    // This would typically fetch data from various services
-    const summary = {
-      totalProperties: 0, // Would be fetched from property service
-      activeListings: 0,
-      totalMessages: 0, // Would be fetched from message service
-      unreadMessages: 0,
-      trustScore: user.trustScore || 0,
-      verificationStatus: user.isVerified ? "verified" : "pending",
-    };
+    const agentActions: QuickAction[] = [
+      { title: "List Property", description: "Add a new property listing", actionUrl: "/property/list", icon: "home" },
+      { title: "View Analytics", description: "Check your performance metrics", actionUrl: "/analytics", icon: "chart" },
+    ];
 
-    const quickActions = [];
+    const userActions: QuickAction[] = [
+      { title: "Search Properties", description: "Find your perfect property", actionUrl: "/search", icon: "search" },
+      { title: "Saved Properties", description: "View your saved properties", actionUrl: "/saved", icon: "heart" },
+    ];
 
-    // Role-specific quick actions
-    if (user.role === "agent") {
-      quickActions.push(
-        {
-          title: "List Property",
-          description: "Add a new property listing",
-          actionUrl: "/property/list",
-          icon: "home",
-        },
-        {
-          title: "View Analytics",
-          description: "Check your performance metrics",
-          actionUrl: "/analytics",
-          icon: "chart",
-        }
-      );
-    } else {
-      quickActions.push(
-        {
-          title: "Search Properties",
-          description: "Find your perfect property",
-          actionUrl: "/search",
-          icon: "search",
-        },
-        {
-          title: "Saved Properties",
-          description: "View your saved properties",
-          actionUrl: "/saved",
-          icon: "heart",
-        }
-      );
-    }
+    const commonActions: QuickAction[] = [
+      { title: "Messages", description: "Check your messages", actionUrl: "/inbox", icon: "message" },
+      { title: "Profile", description: "Update your profile", actionUrl: "/profile", icon: "user" },
+    ];
 
-    // Common quick actions
-    quickActions.push(
-      {
-        title: "Messages",
-        description: "Check your messages",
-        actionUrl: "/inbox",
-        icon: "message",
-      },
-      {
-        title: "Profile",
-        description: "Update your profile",
-        actionUrl: "/profile",
-        icon: "user",
-      }
-    );
+    const notifications: Notification[] = [];
 
-    const notifications = [];
-
-    // Generate notifications based on user state
     if (!user.isVerified) {
       notifications.push({
-        type: "warning" as const,
+        type: "warning",
         title: "Verification Pending",
         message: "Complete your verification to access all features",
         actionUrl: "/verification",
       });
     }
 
-    if (user.trustScore && user.trustScore < 500) {
+    if (user.trustScore !== undefined && user.trustScore < 500) {
       notifications.push({
-        type: "info" as const,
+        type: "info",
         title: "Improve Trust Score",
         message: "Complete verification steps to increase your trust score",
         actionUrl: "/trust",
       });
     }
 
-    // Filter and type-check recent activity
-    const typedRecentActivity = recentActivity
-      .filter(
-        (
-          item
-        ): item is {
-          type: string;
-          title: string;
-          description: string;
-          timestamp: string;
-          actionUrl?: string;
-        } => {
-          return (
-            typeof item === "object" &&
-            item !== null &&
-            typeof (item as Record<string, unknown>).type === "string" &&
-            typeof (item as Record<string, unknown>).title === "string" &&
-            typeof (item as Record<string, unknown>).description === "string" &&
-            typeof (item as Record<string, unknown>).timestamp === "string"
-          );
-        }
-      )
-      .slice(0, 10);
-
     return {
-      summary,
-      recentActivity: typedRecentActivity,
-      quickActions,
+      summary: {
+        totalProperties: 0,   // Provided by property service
+        activeListings: 0,    // Provided by property service
+        totalMessages: 0,     // Provided by messaging service
+        unreadMessages: 0,    // Provided by messaging service
+        trustScore: user.trustScore ?? 0,
+        verificationStatus: user.isVerified ? "verified" : "pending",
+      },
+      recentActivity: recentActivity.filter(isRecentActivityItem).slice(0, 10),
+      quickActions: [
+        ...(user.role === "agent" ? agentActions : userActions),
+        ...commonActions,
+      ],
       notifications,
     };
   }

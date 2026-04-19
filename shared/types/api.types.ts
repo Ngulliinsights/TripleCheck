@@ -1,176 +1,119 @@
-// Unified API response types for consistent frontend-backend communication
-import { Property, PropertyFeatures } from './property'
-
 /**
- * CANONICAL API types for entire monorepo (client + server)
- * Single source of truth for API contracts
+ * Domain-specific API types for the property & search layer.
+ *
+ * Rule: envelope types (ApiResponse, SuccessResponse, PaginatedResponse, etc.)
+ * are imported from `api-contracts` — never redefined here.
+ *
+ * Auth types (User, AuthResult) are imported from `auth.types` — never redefined here.
  */
 
-// Common API response interface
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  status?: number;
-  timestamp?: string;
-  errors?: unknown[];
-  metadata?: ApiMetadata;
+import type { PaginatedResponse, SuccessResponse, ApiResponse } from './api-contracts';
+import type { Property }                           from './property';
+
+export type { PaginatedResponse, SuccessResponse, ApiResponse, Property };
+
+// ============================================================================
+// SEARCH & FILTERING
+// ============================================================================
+
+export type SortField = 'date' | 'price' | 'relevance' | 'trustScore' | 'landVerification';
+export type SortOrder = 'asc' | 'desc';
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+
+export interface PropertySearchParams {
+  query:        string;
+  page:         number;
+  limit:        number;
+  sortBy:       SortField;
+  sortOrder:    SortOrder;
+  // Filters — all optional, no need for explicit `| undefined`
+  location?:         string;
+  priceMin?:         number;
+  priceMax?:         number;
+  propertyType?:     string;
+  bedrooms?:         number;
+  bathrooms?:        number;
+  areaMin?:          number;
+  areaMax?:          number;
+  landVerified?:     boolean;
+  landRiskLevel?:    RiskLevel;
 }
 
-// API metadata for responses (server-side enrichment)
-export interface ApiMetadata {
-  totalCount?: number;
-  page?: number;
-  limit?: number;
-  filters?: SearchFilters;
-  verificationStatus?: string;
-  riskLevel?: string;
-  fraudDetectionPerformed?: boolean;
-  requiresManualReview?: boolean;
-  correlationId?: string;
-  // API Versioning metadata
-  supportedVersions?: string[];
-  availableVersions?: string[];
-  availableInVersions?: string[];
-  currentVersion?: string;
-  feature?: string;
-  versioningMethods?: string[];
-  versionDetails?: Array<{
-    version: string;
-    status: string;
-    releaseDate: Date;
-  }>;
-}
+/** Subset of PropertySearchParams used for display / URL serialisation. */
+export interface SearchFilters
+  extends Pick<
+    PropertySearchParams,
+    | 'location'
+    | 'priceMin'
+    | 'priceMax'
+    | 'propertyType'
+    | 'bedrooms'
+    | 'bathrooms'
+    | 'landVerified'
+  > {}
 
-// Search filters interface
-export interface SearchFilters {
-  location?: string;
-  priceMin?: number;
-  priceMax?: number;
-  propertyType?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  verified?: boolean;
-}
+// ============================================================================
+// PROPERTY API RESPONSES
+// (aliases of the canonical envelope — avoids ad-hoc duplication)
+// ============================================================================
 
-// Pagination parameters
-export interface PaginationParams {
-  page: number;
-  limit: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
+/** GET /properties  — paginated list */
+export type PropertyListResponse = PaginatedResponse<Property>;
 
-export interface PaginatedResponse<T = unknown> {
-  success: boolean;
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
+/** GET /properties/:id  — single property, with optional cache flag */
+export type SinglePropertyResponse = SuccessResponse<Property & { cached?: boolean }>;
 
-export interface PropertyApiResponse {
-  success: boolean;
-  data: Property[];
-  total: number;
-  page: number;
-  limit: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
+// ============================================================================
+// LAND VERIFICATION
+// ============================================================================
 
-export interface SinglePropertyResponse {
-  success: boolean;
-  data: Property;
-  cached?: boolean;
+export type VerificationStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'completed'
+  | 'suspended'
+  | 'failed';
+
+export interface VerificationBadge {
+  type:        string;
+  label:       string;
+  color:       string;
+  description: string;
 }
 
 export interface LandVerificationData {
-  sessionId?: string;
-  status: 'not_started' | 'in_progress' | 'completed' | 'suspended' | 'failed';
+  sessionId?:       string;
+  status:           VerificationStatus;
   overallRiskScore: number;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
-  confidence: number;
-  completedLayers: string[];
-  lastUpdated: Date | string;
-  badge?: {
-    type: string;
-    label: string;
-    color: string;
-    description: string;
-  };
+  riskLevel:        RiskLevel;
+  confidence:       number;          // 0–1
+  completedLayers:  string[];
+  lastUpdated:      string | Date;   // prefer ISO-8601 string across the wire
+  badge?:           VerificationBadge;
 }
 
-export interface PropertySearchParams {
-  query: string;
-  location?: string;
-  priceMin?: number | undefined;
-  priceMax?: number | undefined;
-  propertyType?: string | undefined;
-  bedrooms?: number | undefined;
-  bathrooms?: number | undefined;
-  areaMin?: number | undefined;
-  areaMax?: number | undefined;
-  landVerified?: boolean | undefined;
-  landRiskLevel?: 'low' | 'medium' | 'high' | 'critical' | undefined;
-  page: number;
-  limit: number;
-  sortBy: 'date' | 'trustScore' | 'price' | 'relevance' | 'landVerification';
-  sortOrder: 'asc' | 'desc';
-}
+// ============================================================================
+// LOCATION
+// ============================================================================
 
-// Error response types
-export interface ApiError {
-  success: false;
-  error: string;
-  message?: string;
-  status?: number;
-  code?: string;
-  timestamp?: string;
-}
-
-// Authentication types
-export interface AuthUser {
-  id: number;
-  username: string;
-  email: string;
-  role: 'user' | 'agent' | 'admin';
-  trustScore: number;
-  isVerifiedAgent: boolean;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  profileImageUrl?: string;
-}
-
-export interface AuthResponse {
-  success: boolean;
-  data?: {
-    user: AuthUser;
-    token?: string;
-  };
-  message?: string;
-  error?: string;
-}
-
-// Location data interface
 export interface LocationData {
-  id: number;
-  name: string;
+  id:          number;
+  name:        string;
   description?: string;
   coordinates?: {
-    latitude: number;
+    latitude:  number;
     longitude: number;
-  } | null;
+  };
 }
 
-// Validation result interface
-export interface ValidationResult<T = unknown> {
-  valid: boolean;
-  data?: T;
-  error?: string;
-}
+// ============================================================================
+// VALIDATION HELPER
+// ============================================================================
+
+/**
+ * Lightweight result type for local validation utilities.
+ * Not to be confused with server SessionValidationResult (auth.types).
+ */
+export type ValidationResult<T> =
+  | { valid: true;  data: T;      error?: never }
+  | { valid: false; data?: never; error: string };

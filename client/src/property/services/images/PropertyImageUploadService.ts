@@ -5,14 +5,14 @@
  * Uses the shared core to eliminate duplication while maintaining clear boundaries.
  */
 
-import { ImageServiceCore, ImageServiceRegistry } from './core/ImageServiceCore'
+import { ImageServiceCore, ImageServiceRegistry } from '../../../local/services/images/core/ImageServiceCore'
 import type {
   UploadSession,
   UploadProgress,
   ImageChunk,
   DocumentType,
   ImageServiceConfig,
-} from '../types/images'
+} from '../../../local/types/images'
 import { ImageUtils } from '../../../local/utils/images/unified-utils'
 
 // ---------------------------------------------------------------------------
@@ -224,9 +224,9 @@ export class PropertyImageUploadService
     const session = this.activeSessions.get(sessionId)
     if (!session) return null
 
-    const completedChunks = session.chunks.filter(c => c.uploaded)
-    const uploadedBytes = completedChunks.reduce((sum, c) => sum + c.size, 0)
-    const totalBytes = session.chunks.reduce((sum, c) => sum + c.size, 0)
+    const completedChunks = session.chunks.filter((c: ImageChunk) => c.uploaded)
+    const uploadedBytes = completedChunks.reduce((sum: number, c: ImageChunk) => sum + c.size, 0)
+    const totalBytes = session.chunks.reduce((sum: number, c: ImageChunk) => sum + c.size, 0)
 
     return {
       sessionId,
@@ -270,18 +270,18 @@ export class PropertyImageUploadService
     const session = this.activeSessions.get(sessionId)
     if (!session) return
 
-    const completed = session.chunks.filter(c => c.uploaded)
+    const completed = session.chunks.filter((c: ImageChunk) => c.uploaded)
     const totalChunks = session.chunks.length
 
     session.progress = this.calculateProgress(completed.length, totalChunks)
 
     const elapsedSec = (Date.now() - session.startTime) / 1000
-    const uploadedBytes = completed.reduce((sum, c) => sum + c.size, 0)
+    const uploadedBytes = completed.reduce((sum: number, c: ImageChunk) => sum + c.size, 0)
     session.uploadSpeed = this.calculateSpeed(uploadedBytes, elapsedSec)
 
     const remainingBytes = session.chunks
-      .filter(c => !c.uploaded)
-      .reduce((sum, c) => sum + c.size, 0)
+      .filter((c: ImageChunk) => !c.uploaded)
+      .reduce((sum: number, c: ImageChunk) => sum + c.size, 0)
     session.estimatedTimeRemaining = this.calculateETA(remainingBytes, session.uploadSpeed)
 
     if (completed.length === totalChunks) {

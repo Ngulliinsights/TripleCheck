@@ -5,8 +5,8 @@
 
 import React from 'react'
 import { useSearch } from '../hooks/useSearch'
-import { SearchBar } from '../components/SearchBar'
-import { AdvancedSearch } from '../components/SearchFilters'
+import SearchBar from '../components/SearchBar'
+import AdvancedSearch from '../components/SearchFilters'
 
 export function SearchExample() {
   // Use the unified search hook
@@ -88,11 +88,11 @@ export function SearchExample() {
         <h3 className="text-lg font-semibold mb-4">Search Results</h3>
         {isLoading ? (
           <div>Loading...</div>
-        ) : searchResults?.properties?.length ? (
+        ) : searchResults?.items?.length ? (
           <div>
             <p>Found {searchResults.total} properties</p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-              {searchResults.properties.map((property: any) => (
+              {searchResults.items.map((property: any) => (
                 <div key={property.id} className="border rounded-lg p-4">
                   <h4 className="font-semibold">{property.title}</h4>
                   <p className="text-sm text-gray-600">{property.location}</p>

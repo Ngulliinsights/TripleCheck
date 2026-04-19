@@ -68,6 +68,11 @@ export const trustApi = {
   ): Promise<ApiResponse<TrustScore>> => {
     // Get current trust score first
     const currentScoreResponse = await trustApi.getTrustScore(userId);
+    
+    if (!currentScoreResponse.success || !currentScoreResponse.data) {
+      throw new Error('Failed to fetch trust score');
+    }
+    
     const currentScore = currentScoreResponse.data.trustScore;
 
     // Check if update is needed

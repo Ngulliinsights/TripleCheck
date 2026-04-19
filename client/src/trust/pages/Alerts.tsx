@@ -48,16 +48,13 @@ export default function AlertsPage() {
   ]);
 
   const {
-    values,
-    errors,
-    touched,
-    isValid,
-    isSubmitting,
+    formState,
     handleSubmit,
     getFieldProps,
-    getFieldError
+    getFieldError,
+    isValid
   } = useForm({
-    initialValues: {
+    initialData: {
       location: '',
       minPrice: '',
       maxPrice: '',
@@ -70,20 +67,22 @@ export default function AlertsPage() {
         maxLength: 100
       },
       minPrice: {
-        numeric: true,
-        min: 0,
-        custom: (value: unknown, allValues?: unknown) => {
-          if (value && (allValues as any)?.maxPrice && parseFloat(value as string) >= parseFloat((allValues as any).maxPrice)) {
+        custom: (value: unknown, allValues?: any) => {
+          if (value && isNaN(Number(value))) return 'Must be a number';
+          const n = Number(value);
+          if (n < 0) return 'Must be at least 0';
+          if (value && allValues?.maxPrice && n >= Number(allValues.maxPrice)) {
             return 'Minimum price must be less than maximum price';
           }
           return null;
         }
       },
       maxPrice: {
-        numeric: true,
-        min: 0,
-        custom: (value: unknown, allValues?: unknown) => {
-          if (value && (allValues as any)?.minPrice && parseFloat(value as string) <= parseFloat((allValues as any).minPrice)) {
+        custom: (value: unknown, allValues?: any) => {
+          if (value && isNaN(Number(value))) return 'Must be a number';
+          const n = Number(value);
+          if (n < 0) return 'Must be at least 0';
+          if (value && allValues?.minPrice && n <= Number(allValues.minPrice)) {
             return 'Maximum price must be greater than minimum price';
           }
           return null;
@@ -213,17 +212,15 @@ export default function AlertsPage() {
                   { value: 'commercial', label: 'Commercial' },
                   { value: 'any', label: 'Any Type' }
                 ]}
-                 error={getFieldError('propertyType')}
-                touched={touched.propertyType}
                 {...getFieldProps('propertyType')}
               />
 
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={isSubmitting || !isValid}
+                disabled={formState.isSubmitting || !isValid}
               >
-                {isSubmitting ? 'Saving...' : 'Save Alert Preferences'}
+                {formState.isSubmitting ? 'Saving...' : 'Save Alert Preferences'}
               </Button>
             </form>
           </CardContent>

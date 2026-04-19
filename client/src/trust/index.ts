@@ -1,7 +1,17 @@
 // Trust Domain Exports
 export * from './types/trust.types'
 export * from './hooks/useTrustScore'
-export * from './hooks/useFraudDetection'
+export { 
+  useFraudDetection, 
+  useFraudDashboard, 
+  useFraudAlerts, 
+  useFraudAlert, 
+  useSystemStatus, 
+  useNetworkAnalysis, 
+  useMLAnalytics, 
+  useFraudReports,
+  type FraudAlert as DetectionAlert 
+} from './hooks/useFraudDetection'
 
 // Components
 export { default as TrustScore } from './components/TrustScore'

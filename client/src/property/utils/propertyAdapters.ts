@@ -1,16 +1,16 @@
-import type {
-  Property,
-  NormalizedProperty,
-  ResidentialProperty,
-  CommercialProperty,
-  LandProperty,
-  PropertyAdapter,
-} from '@shared/types/property'
+import { Property, LocationData, ResidentialProperty, CommercialProperty, LandProperty, PropertyAdapter } from '@shared/types/property'
 
 // ─── Value coercion helpers ────────────────────────────────────────────────────
 
-function normalizeLocation(location: string | { address: string }): string {
-  return typeof location === 'string' ? location : location.address;
+function normalizeLocation(location: string | LocationData): LocationData {
+  if (typeof location === 'object' && location !== null && 'address' in location) {
+    return location as LocationData;
+  }
+  return {
+    address: typeof location === 'string' ? location : 'Unknown Address',
+    state: 'Unknown',
+    country: 'Kenya',
+  };
 }
 
 function normalizePrice(price: string | number): number {
@@ -20,7 +20,7 @@ function normalizePrice(price: string | number): number {
 }
 
 function normalizeImages(property: Property): string[] {
-  return property.images ?? property.imageUrls ?? [];
+  return property.images ?? (property as any).imageUrls ?? [];
 }
 
 function normalizeVerificationStatus(
@@ -85,7 +85,7 @@ function passAdditionalFeatures(
 // ─── Category detection ────────────────────────────────────────────────────────
 
 function determineCategory(property: Property): 'residential' | 'commercial' | 'land' {
-  const type = (property.type ?? property.propertyType ?? '').toLowerCase();
+  const type = (property.type ?? (property as any).propertyType ?? '').toLowerCase();
   const title = property.title.toLowerCase();
   const description = property.description.toLowerCase();
 
@@ -112,16 +112,16 @@ function determineCategory(property: Property): 'residential' | 'commercial' | '
 
 // ─── Base adapter ──────────────────────────────────────────────────────────────
 
-export const basePropertyAdapter: PropertyAdapter<Property> = (property: Property): NormalizedProperty => {
-  const required: NormalizedProperty = {
+export const basePropertyAdapter: PropertyAdapter<Property> = (property: Property): Property => {
+  const required: any = {
     id: String(property.id),
     title: property.title,
     description: property.description,
     price: normalizePrice(property.price),
     location: normalizeLocation(property.location),
     images: normalizeImages(property),
-    verified: property.verificationStatus === 'verified',
-    type: property.type ?? property.propertyType ?? 'unknown',
+    verified: property.verified ?? (property as any).verificationStatus === 'verified',
+    type: property.type ?? (property as any).propertyType ?? 'unknown',
     category: determineCategory(property),
     features: property.features ?? {},
     createdAt: property.createdAt
@@ -130,8 +130,8 @@ export const basePropertyAdapter: PropertyAdapter<Property> = (property: Propert
     updatedAt: property.updatedAt
       ? new Date(property.updatedAt).toISOString()
       : new Date().toISOString(),
-    status: (property.status as NormalizedProperty['status']) ?? 'available',
-    rating: property.aiVerificationResults?.overallScore ?? 0,
+    status: (property.status as Property['status']) ?? 'available',
+    rating: (property as any).aiVerification?.overallScore ?? 0,
     verificationStatus: normalizeVerificationStatus(property.verificationStatus),
   };
 
@@ -144,7 +144,9 @@ export const basePropertyAdapter: PropertyAdapter<Property> = (property: Propert
           id: property.owner.id,
           name:
             `${property.owner.firstName ?? ''} ${property.owner.lastName ?? ''}`.trim() ||
-            property.owner.username,
+            (property.owner as any).username || property.owner.email,
+          firstName: property.owner.firstName,
+          lastName: property.owner.lastName,
           email: property.owner.email,
           trustScore: property.owner.trustScore,
           isVerifiedAgent: property.owner.isVerifiedAgent,
@@ -167,12 +169,12 @@ export const residentialPropertyAdapter: PropertyAdapter<Property> = (property: 
   const f = property.features ?? {};
 
   const coreFeatures: ResidentialProperty['features'] = {
-    bedrooms: Number(property.bedrooms ?? f.bedrooms) || 0,
-    bathrooms: Number(property.bathrooms ?? f.bathrooms) || 0,
-    squareFeet: Number(property.size ?? f.squareFeet) || 0,
-    amenities: property.amenities ?? f.amenities ?? [],
-    furnished: Boolean(f.furnished),
-    petFriendly: Boolean(f.petFriendly),
+    bedrooms: Number((property as any).bedrooms ?? (f as any).bedrooms) || 0,
+    bathrooms: Number((property as any).bathrooms ?? (f as any).bathrooms) || 0,
+    squareFeet: Number((property as any).size ?? (f as any).squareFeet) || 0,
+    amenities: (property as any).amenities ?? (f as any).amenities ?? [],
+    furnished: Boolean((f as any).furnished),
+    petFriendly: Boolean((f as any).petFriendly),
   };
 
   return {
@@ -182,12 +184,12 @@ export const residentialPropertyAdapter: PropertyAdapter<Property> = (property: 
     features: {
       ...coreFeatures,
       ...pickDefined({
-        parkingSpaces: toNumber(f.parkingSpaces),
-        yearBuilt: toNumber(f.yearBuilt),
-        balcony: toBoolean(f.balcony),
-        garden: toBoolean(f.garden),
+        parkingSpaces: toNumber((f as any).parkingSpaces),
+        yearBuilt: toNumber((f as any).yearBuilt),
+        balcony: toBoolean((f as any).balcony),
+        garden: toBoolean((f as any).garden),
       }),
-      ...passAdditionalFeatures(f, RESIDENTIAL_HANDLED),
+      ...passAdditionalFeatures(f as any, RESIDENTIAL_HANDLED),
     },
   };
 };
@@ -204,8 +206,8 @@ export const commercialPropertyAdapter: PropertyAdapter<Property> = (property: P
   const f = property.features ?? {};
 
   const coreFeatures: CommercialProperty['features'] = {
-    size: Number(property.size ?? property.area ?? f.squareFeet) || 0,
-    yearBuilt: Number(f.yearBuilt) || new Date().getFullYear(),
+    squareFeet: Number((property as any).size ?? (property as any).area ?? (f as any).squareFeet) || 0,
+    yearBuilt: Number((f as any).yearBuilt) || new Date().getFullYear(),
   };
 
   return {
@@ -215,16 +217,16 @@ export const commercialPropertyAdapter: PropertyAdapter<Property> = (property: P
     features: {
       ...coreFeatures,
       ...pickDefined({
-        occupancyRate: toNumber(f.occupancyRate),
-        roi: toNumber(f.roi),
-        parkingSpaces: toNumber(f.parkingSpaces),
-        floors: toNumber(f.floors),
-        elevators: toNumber(f.elevators),
-        airConditioning: toBoolean(f.airConditioning),
-        security: toBoolean(f.security),
-        loadingDock: toBoolean(f.loadingDock),
+        occupancyRate: toNumber((f as any).occupancyRate),
+        roi: toNumber((f as any).roi),
+        parkingSpaces: toNumber((f as any).parkingSpaces),
+        floors: toNumber((f as any).floors),
+        elevators: toNumber((f as any).elevators),
+        airConditioning: toBoolean((f as any).airConditioning),
+        security: toBoolean((f as any).security),
+        loadingDock: toBoolean((f as any).loadingDock),
       }),
-      ...passAdditionalFeatures(f, COMMERCIAL_HANDLED),
+      ...passAdditionalFeatures(f as any, COMMERCIAL_HANDLED),
     },
   };
 };
@@ -237,8 +239,8 @@ const LAND_HANDLED = new Set([
 ]);
 
 function resolveLandType(property: Property): LandProperty['type'] {
-  const zoning = typeof property.features?.zoning === 'string'
-    ? property.features.zoning.toLowerCase()
+  const zoning = typeof (property.features as any)?.zoning === 'string'
+    ? (property.features as any).zoning.toLowerCase()
     : undefined;
 
   switch (zoning) {
@@ -261,9 +263,10 @@ export const landPropertyAdapter: PropertyAdapter<Property> = (property: Propert
   const f = property.features ?? {};
 
   const coreFeatures: LandProperty['features'] = {
-    size: String(f.size ?? `${property.size ?? property.area ?? 0} sqm`),
+    sizeValue: Number((property as any).size ?? (property as any).area ?? (f as any).sizeValue ?? 0),
+    sizeUnit: ((f as any).sizeUnit as any) ?? 'sqm',
     titleDeedStatus:
-      (f.titleDeedStatus as LandProperty['features']['titleDeedStatus']) ?? 'available',
+      ((f as any).titleDeedStatus as LandProperty['features']['titleDeedStatus']) ?? 'available',
   };
 
   return {
@@ -273,27 +276,29 @@ export const landPropertyAdapter: PropertyAdapter<Property> = (property: Propert
     features: {
       ...coreFeatures,
       ...pickDefined({
-        soilType: toString(f.soilType),
-        zoning: toString(f.zoning),
-        developmentPotential: toString(f.developmentPotential),
-        topography: toString(f.topography),
-        drainage: toString(f.drainage),
-        waterAccess: toBoolean(f.waterAccess),
-        roadAccess: toBoolean(f.roadAccess),
-        electricityAccess: toBoolean(f.electricityAccess),
+        soilType: toString((f as any).soilType),
+        zoning: toString((f as any).zoning),
+        developmentPotential: toString((f as any).developmentPotential),
+        topography: toString((f as any).topography),
+        drainage: toString((f as any).drainage),
+        waterAccess: toBoolean((f as any).waterAccess),
+        roadAccess: toBoolean((f as any).roadAccess),
+        electricityAccess: toBoolean((f as any).electricityAccess),
       }),
-      ...passAdditionalFeatures(f, LAND_HANDLED),
+      ...passAdditionalFeatures(f as any, LAND_HANDLED),
     },
   };
 };
 
 // ─── Adaptive & batch adapters ─────────────────────────────────────────────────
 
-export const adaptivePropertyAdapter: PropertyAdapter<Property> = (property: Property): NormalizedProperty => {
-  switch (determineCategory(property)) {
+export const adaptivePropertyAdapter: PropertyAdapter<Property> = (property: Property): Property => {
+  const category = determineCategory(property);
+  switch (category) {
     case 'residential': return residentialPropertyAdapter(property);
     case 'commercial':  return commercialPropertyAdapter(property);
     case 'land':        return landPropertyAdapter(property);
+    default:            return basePropertyAdapter(property);
   }
 };
 
@@ -308,7 +313,7 @@ export function adaptProperties<T>(
 
 // ─── Type guards ───────────────────────────────────────────────────────────────
 
-export function isResidentialProperty(property: NormalizedProperty): property is ResidentialProperty {
+export function isResidentialProperty(property: Property): property is ResidentialProperty {
   return (
     property.category === 'residential' &&
     typeof property.features.bedrooms === 'number' &&
@@ -316,16 +321,16 @@ export function isResidentialProperty(property: NormalizedProperty): property is
   );
 }
 
-export function isCommercialProperty(property: NormalizedProperty): property is CommercialProperty {
+export function isCommercialProperty(property: Property): property is CommercialProperty {
   return (
     property.category === 'commercial' &&
-    typeof property.features.size === 'number' &&
+    typeof property.features.squareFeet === 'number' &&
     typeof property.features.yearBuilt === 'number'
   );
 }
 
-export function isLandProperty(property: NormalizedProperty): property is LandProperty {
-  return property.category === 'land' && typeof property.features.size === 'string';
+export function isLandProperty(property: Property): property is LandProperty {
+  return property.category === 'land' && typeof property.features.sizeValue === 'number';
 }
 
 // ─── Runtime validation ────────────────────────────────────────────────────────
@@ -333,7 +338,7 @@ export function isLandProperty(property: NormalizedProperty): property is LandPr
 const VALID_VERIFICATION_STATUSES = new Set(['verified', 'pending', 'unverified', 'flagged']);
 const VALID_CATEGORIES = new Set(['residential', 'commercial', 'land']);
 
-export function validateNormalizedProperty(property: unknown): property is NormalizedProperty {
+export function validateNormalizedProperty(property: unknown): property is Property {
   if (typeof property !== 'object' || property === null) return false;
 
   const p = property as Record<string, unknown>;

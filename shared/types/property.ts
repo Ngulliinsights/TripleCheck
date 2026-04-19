@@ -1,371 +1,367 @@
-// Legacy Property interface - maintained for backward compatibility
-export interface Property {
-  id: number | string; // Allow both for API compatibility
-  title: string;
-  description: string;
-  location: string | LocationData;
-  address?: string | null | undefined; // Optional since not always present in API
-  price: string | number; // Allow both for API compatibility
-  coordinates?: Coordinates | null | undefined; // Optional since not always present in API
-  imageUrls?: string[] | undefined; // Optional, API uses 'images'
-  images?: string[] | undefined; // API field name
-  verificationStatus?:
-  | "verified"
-  | "pending"
-  | "unverified"
-  | "draft"
-  | undefined;
-  features?: PropertyFeatures | null | undefined;
-  ownerId?: string | undefined;
-  aiVerificationResults?: AIVerificationResults | null | undefined;
-  viewCount?: number | undefined;
-  favoriteCount?: number | undefined;
-  isActive?: boolean | undefined;
-  isFeatured?: boolean | undefined;
-  availableFrom?: Date | string | null | undefined;
-  availableUntil?: Date | string | null | undefined;
-  createdAt?: Date | string | undefined;
-  updatedAt?: Date | string | undefined;
-  // Extended properties for frontend use
-  landVerification?: LandVerificationStatus | undefined;
-  trustScore?: number | undefined;
-  owner?:
-  | {
-    id: string;
-    username: string;
-    email: string;
-    firstName?: string | undefined;
-    lastName?: string | undefined;
-    trustScore: number;
-    isVerifiedAgent: boolean;
-  }
-  | undefined;
-  // Additional fields that might be present in API responses
-  bedrooms?: number | undefined;
-  bathrooms?: number | undefined;
-  size?: number | undefined;
-  area?: number | undefined;
-  type?: string | undefined;
-  propertyType?: string | undefined;
-  status?: string | undefined;
-  amenities?: string[] | undefined;
-}
+/**
+ * Property Domain Types
+ *
+ * Sections:
+ *   1. Primitives & union types
+ *   2. Supporting models (location, owner, verification)
+ *   3. Feature shapes (per category)
+ *   4. Core property — discriminated union
+ *   5. AI verification
+ *   6. Filters — discriminated union
+ *   7. Search & pagination
+ *   8. Configuration (framework-agnostic)
+ *   9. API boundary type (raw wire shape)
+ *
+ * Rule: `Property` is the canonical domain type — a discriminated union on
+ * `category`. Narrow with `if (p.category === 'residential')` to access
+ * category-specific fields without casting.
+ */
 
-// Enhanced normalized property interface for new architecture
-export interface NormalizedProperty {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  location: string;
-  images: string[];
-  verified: boolean;
-  type: string;
-  category: "residential" | "commercial" | "land";
-  features: Record<string, any>;
-  createdAt: string;
-  updatedAt?: string;
-  status: "available" | "under-offer" | "sold" | "rented" | "pending";
-  rating?: number;
-  views?: number;
-  trustScore?: number;
-  verificationStatus?: "verified" | "pending" | "unverified" | "flagged";
-  owner?: PropertyOwner;
-  coordinates?: Coordinates;
-}
+// ============================================================================
+// 1. PRIMITIVES & UNION TYPES
+// ============================================================================
 
-// Property owner interface
-export interface PropertyOwner {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  trustScore: number;
-  isVerifiedAgent: boolean;
-  avatar?: string;
-}
+export type PropertyCategory = 'residential' | 'commercial' | 'land';
 
-// Property-specific interfaces extending NormalizedProperty
-export interface ResidentialProperty extends NormalizedProperty {
-  category: "residential";
-  type:
-  | "apartment"
-  | "house"
-  | "duplex"
-  | "penthouse"
-  | "studio"
-  | "townhouse"
-  | "villa";
-  features: {
-    bedrooms: number;
-    bathrooms: number;
-    squareFeet: number;
-    parkingSpaces?: number;
-    yearBuilt?: number;
-    amenities?: string[];
-    furnished?: boolean;
-    petFriendly?: boolean;
-    balcony?: boolean;
-    garden?: boolean;
-    [key: string]: any;
-  };
-}
+export type PropertyStatus = 'available' | 'under-offer' | 'sold' | 'rented' | 'pending';
 
-export interface CommercialProperty extends NormalizedProperty {
-  category: "commercial";
-  type: "office" | "retail" | "warehouse" | "industrial" | "mixed-use";
-  features: {
-    size: number; // in square feet
-    yearBuilt: number;
-    occupancyRate?: number;
-    roi?: number;
-    parkingSpaces?: number;
-    floors?: number;
-    elevators?: number;
-    airConditioning?: boolean;
-    security?: boolean;
-    loadingDock?: boolean;
-    [key: string]: any;
-  };
-}
+export type VerificationStatus = 'verified' | 'pending' | 'unverified' | 'flagged' | 'draft';
 
-export interface LandProperty extends NormalizedProperty {
-  category: "land";
-  type: "agricultural" | "residential" | "commercial" | "industrial";
-  features: {
-    size: string; // e.g., "2.5 acres", "1000 sqm"
-    soilType?: string;
-    waterAccess?: boolean;
-    roadAccess?: boolean;
-    electricityAccess?: boolean;
-    zoning?: string;
-    developmentPotential?: string;
-    titleDeedStatus?: "available" | "pending" | "missing";
-    topography?: string;
-    drainage?: string;
-    [key: string]: any;
-  };
-}
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
-export interface LocationData {
-  address: string;
-  city?: string | undefined;
-  state: string;
-  country: string;
-  coordinates?: Coordinates | undefined;
-}
+export type VerificationSessionStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'completed'
+  | 'suspended'
+  | 'failed';
+
+export type ResidentialType =
+  | 'apartment'
+  | 'house'
+  | 'duplex'
+  | 'penthouse'
+  | 'studio'
+  | 'townhouse'
+  | 'villa';
+
+export type CommercialType = 'office' | 'retail' | 'warehouse' | 'industrial' | 'mixed-use';
+
+export type LandType = 'agricultural' | 'residential' | 'commercial' | 'industrial';
+
+export type TitleDeedStatus = 'available' | 'pending' | 'missing';
+
+export type ViewMode  = 'grid' | 'list';
+export type SortOption = 'newest' | 'oldest' | 'price-low' | 'price-high' | 'rating' | 'views';
+
+// ============================================================================
+// 2. SUPPORTING MODELS
+// ============================================================================
 
 export interface Coordinates {
   lat: number;
   lng: number;
 }
 
-export interface PropertyFeatures {
-  bedrooms?: number | undefined;
-  bathrooms?: number | undefined;
-  squareFeet?: number | undefined;
-  parkingSpaces?: number | undefined;
-  yearBuilt?: number | undefined;
-  amenities?: string[] | undefined;
-  propertyType?: string | undefined;
-  petFriendly?: boolean | undefined;
-  furnished?: boolean | undefined;
-  // Allow additional dynamic properties from API
-  [key: string]: unknown;
+export interface LocationData {
+  address:      string;
+  city?:        string;
+  state:        string;
+  country:      string;
+  coordinates?: Coordinates;
 }
 
-export interface AIVerificationResults {
-  overallScore?: number;
-  imageAnalysis?: {
-    authenticity: number;
-    quality: number;
-    flags: string[];
-  };
-  textAnalysis?: {
-    sentiment: number;
-    credibility: number;
-    flags: string[];
-  };
-  priceAnalysis?: {
-    marketComparison: number;
-    reasonableness: number;
-    flags: string[];
-  };
-  lastVerified?: string;
-  verificationId?: string;
+export interface PropertyOwner {
+  id:              string;
+  firstName:       string;
+  lastName:        string;
+  email?:          string;
+  phone?:          string;
+  avatar?:         string;
+  trustScore:      number;
+  isVerifiedAgent: boolean;
 }
 
-export interface LandVerificationStatus {
-  sessionId?: string | undefined;
-  status: "not_started" | "in_progress" | "completed" | "suspended" | "failed";
-  overallRiskScore: number;
-  riskLevel: "low" | "medium" | "high" | "critical";
-  confidence: number;
-  completedLayers: string[];
-  lastUpdated: Date;
-  badge?: LandVerificationBadge | undefined;
-}
+// ── Land verification ─────────────────────────────────────────────────────────
 
 export interface LandVerificationBadge {
-  type: "verified" | "in_progress" | "high_risk" | "expert_required";
-  label: string;
-  color: "green" | "blue" | "red" | "orange";
+  type:        'verified' | 'in_progress' | 'high_risk' | 'expert_required';
+  label:       string;
+  color:       'green' | 'blue' | 'red' | 'orange';
   description: string;
 }
 
-// Filter interfaces for different property types
-export type PropertySearchFilters = BasePropertyFilters;
+export interface LandVerificationStatus {
+  sessionId?:       string;
+  status:           VerificationSessionStatus;
+  overallRiskScore: number;             // 0–100
+  riskLevel:        RiskLevel;
+  confidence:       number;             // 0–1
+  completedLayers:  string[];
+  lastUpdated:      string;             // ISO-8601 — safe across JSON boundary
+  badge?:           LandVerificationBadge;
+}
 
-export interface BasePropertyFilters {
-  query: string;
+// ============================================================================
+// 3. FEATURE SHAPES  (per category — no index signatures)
+// ============================================================================
+
+export interface ResidentialFeatures {
+  bedrooms:       number;
+  bathrooms:      number;
+  squareFeet:     number;
+  parkingSpaces?: number;
+  yearBuilt?:     number;
+  amenities?:     string[];
+  furnished?:     boolean;
+  petFriendly?:   boolean;
+  balcony?:       boolean;
+  garden?:        boolean;
+}
+
+export interface CommercialFeatures {
+  squareFeet:      number;
+  yearBuilt:       number;
+  occupancyRate?:  number;   // 0–1
+  roi?:            number;   // percentage
+  parkingSpaces?:  number;
+  floors?:         number;
+  elevators?:      number;
+  airConditioning?: boolean;
+  security?:       boolean;
+  loadingDock?:    boolean;
+}
+
+export interface LandFeatures {
+  sizeValue:             number;      // numeric — pair with sizeUnit
+  sizeUnit:              'sqm' | 'acres' | 'hectares';
+  soilType?:             string;
+  waterAccess?:          boolean;
+  roadAccess?:           boolean;
+  electricityAccess?:    boolean;
+  zoning?:               string;
+  developmentPotential?: string;
+  titleDeedStatus?:      TitleDeedStatus;
+  topography?:           string;
+  drainage?:             string;
+}
+
+// ============================================================================
+// 4. CORE PROPERTY — DISCRIMINATED UNION
+// ============================================================================
+
+/**
+ * Fields shared across all property categories.
+ * Internal — consumers should use the `Property` union, not `BaseProperty` directly.
+ */
+interface BaseProperty {
+  id:                   string;
+  title:                string;
+  description:          string;
+  price:                number;
+  location:             LocationData;
+  images:               string[];
+  status:               PropertyStatus;
+  verificationStatus:   VerificationStatus;
+  verified:             boolean;
+  trustScore:           number;
+  owner?:               PropertyOwner;
+  coordinates?:         Coordinates;
+  landVerification?:    LandVerificationStatus;
+  aiVerification?:      AIVerificationResults;
+  viewCount?:           number;
+  favoriteCount?:       number;
+  isActive?:            boolean;
+  isFeatured?:          boolean;
+  availableFrom?:       string;   // ISO-8601
+  availableUntil?:      string;
+  createdAt:            string;
+  updatedAt?:           string;
+}
+
+export interface ResidentialProperty extends BaseProperty {
+  category: 'residential';
+  type:     ResidentialType;
+  features: ResidentialFeatures;
+}
+
+export interface CommercialProperty extends BaseProperty {
+  category: 'commercial';
+  type:     CommercialType;
+  features: CommercialFeatures;
+}
+
+export interface LandProperty extends BaseProperty {
+  category: 'land';
+  type:     LandType;
+  features: LandFeatures;
+}
+
+/**
+ * Canonical property type.
+ * Discriminant: `category` — narrow with `property.category === 'residential'`
+ * to access category-specific `type` and `features` without casting.
+ */
+export type Property = ResidentialProperty | CommercialProperty | LandProperty;
+
+/** Utility: extract the property subtype for a given category. */
+export type PropertyByCategory<C extends PropertyCategory> = Extract<Property, { category: C }>;
+
+// ============================================================================
+// 5. AI VERIFICATION
+// ============================================================================
+
+interface AnalysisResult {
+  score: number;    // 0–1
+  flags: string[];
+}
+
+export interface AIVerificationResults {
+  overallScore?:   number;  // 0–1
+  imageAnalysis?:  AnalysisResult & { quality: number };
+  textAnalysis?:   AnalysisResult & { sentiment: number };
+  priceAnalysis?:  AnalysisResult & { marketComparison: number; reasonableness: number };
+  lastVerified?:   string;  // ISO-8601
+  verificationId?: string;
+}
+
+// ============================================================================
+// 6. FILTERS — DISCRIMINATED UNION
+// ============================================================================
+
+interface BasePropertyFilters {
+  query:    string;
   location: string;
   priceMin: number | null;
   priceMax: number | null;
   verified: boolean;
-  category?: "residential" | "commercial" | "land" | null;
 }
 
-export interface ResidentialFilters extends Omit<BasePropertyFilters, 'category'> {
-  category: "residential";
-  bedrooms: number | null;
-  bathrooms: number | null;
+export interface ResidentialFilters extends BasePropertyFilters {
+  category:     'residential';
+  bedrooms:     number | null;
+  bathrooms:    number | null;
   propertyType: string;
-  amenities: string[];
-  furnished?: boolean;
+  amenities:    string[];
+  furnished?:   boolean;
   petFriendly?: boolean;
 }
 
-export interface CommercialFilters extends Omit<BasePropertyFilters, 'category'> {
-  category: "commercial";
-  propertyType: string;
-  sizeMin: number | null;
-  sizeMax: number | null;
-  yearBuiltMin: number | null;
-  roiMin: number | null;
-  // Commercial-specific properties
-  commercialType: string;
-  businessZone: string;
-  areaMin: string;
-  areaMax: string;
-  floorsMin: string;
-  floorsMax: string;
-  // Amenities
-  parking: boolean;
-  elevator: boolean;
+export interface CommercialFilters extends BasePropertyFilters {
+  category:       'commercial';
+  propertyType:   string;
+  sizeMin:        number | null;  // sqft
+  sizeMax:        number | null;
+  yearBuiltMin:   number | null;
+  roiMin:         number | null;
+  floorsMin:      number | null;
+  floorsMax:      number | null;
+  // Amenity toggles
+  parking:        boolean;
+  elevator:       boolean;
   airConditioning: boolean;
-  security: boolean;
-  wifi: boolean;
-  generator: boolean;
+  security:       boolean;
+  wifi:           boolean;
+  generator:      boolean;
 }
 
 export interface LandFilters extends BasePropertyFilters {
-  category: "land";
-  landType: string;
-  sizeMin: string;
-  sizeMax: string;
-  waterAccess: boolean;
-  roadAccess: boolean;
+  category:          'land';
+  landType:          string;
+  sizeMin:           number | null;  // sqm
+  sizeMax:           number | null;
+  waterAccess:       boolean;
+  roadAccess:        boolean;
   electricityAccess: boolean;
 }
 
-// Configuration interfaces for property type system
-export interface PropertyTypeConfig<
-  TFilters extends BasePropertyFilters,
-  TProperty,
-> {
-  title: string;
-  description: string;
-  queryKey: string[];
-  defaultFilters: TFilters;
-  fetcher: (
-    filters: TFilters,
-    page: number,
-    pageSize: number
-  ) => Promise<{
-    items: TProperty[];
-    totalCount: number;
-    totalPages: number;
-  }>;
-  adapter: (item: TProperty) => NormalizedProperty;
-  filterComponent: React.ComponentType<{
-    filters: TFilters;
-    onChange: (filters: TFilters) => void;
-    onReset: () => void;
-    errors?: Record<string, string>;
-  }>;
-  cardComponent: React.ComponentType<{
-    property: NormalizedProperty;
-    onClick?: (property: NormalizedProperty) => void;
-    className?: string;
-  }>;
-}
+/**
+ * Canonical filter type — discriminant: `category`.
+ * Omit `category` for the base (unfiltered-by-category) case.
+ */
+export type PropertyFilters = ResidentialFilters | CommercialFilters | LandFilters;
 
-// View and sort options
-export type ViewMode = "grid" | "list";
-export type SortOption =
-  | "newest"
-  | "oldest"
-  | "price-low"
-  | "price-high"
-  | "rating"
-  | "views";
+// ============================================================================
+// 7. SEARCH & PAGINATION
+// ============================================================================
 
-// Property adapter utility type
-export type PropertyAdapter<T> = (item: T) => NormalizedProperty;
-
-// Validation result interface
-export interface ValidationResult {
-  isValid: boolean;
-  errors: Record<string, string>;
-}
-
-// Property search and pagination types
 export interface PropertySearchParams {
-  filters: BasePropertyFilters;
-  page: number;
+  filters:  BasePropertyFilters;
+  page:     number;
   pageSize: number;
-  sortBy: SortOption;
+  sortBy:   SortOption;
 }
 
-export interface PropertySearchResponse<T> {
-  items: T[];
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
-  hasNextPage: boolean;
+export interface PropertySearchResponse<T = Property> {
+  items:          T[];
+  totalCount:     number;
+  totalPages:     number;
+  currentPage:    number;
+  hasNextPage:    boolean;
   hasPreviousPage: boolean;
 }
 
-// Raw Land Property interface - used as input for normalization
-export interface RawLandProperty {
-  id: string;
-  title: string;
-  description: string;
-  location: string | { address: string };
-  price: number;
-  originalPrice?: number;
-  size: string;
-  images: string[];
-  verificationStatus: "verified" | "pending" | "unverified" | "flagged";
-  trustScore: number;
-  landType: "agricultural" | "residential" | "commercial" | "industrial";
-  titleDeedStatus: "available" | "pending" | "missing";
-  lastVerified?: string;
-  riskLevel: "low" | "medium" | "high";
-  features?: {
-    soilType?: string;
-    waterAccess?: boolean;
-    roadAccess?: boolean;
-    electricityAccess?: boolean;
-    zoning?: string;
-    developmentPotential?: string;
-    bedrooms?: number;
-    bathrooms?: number;
-    squareFeet?: number;
-  };
-  dateAdded?: Date;
-  viewCount?: number;
-  isNew?: boolean;
-  isFeatured?: boolean;
-  type?: "commercial" | "residential";
+// ============================================================================
+// 8. CONFIGURATION  (framework-agnostic — no React imports)
+// ============================================================================
+
+export interface PropertyTypeConfig<
+  TFilters extends BasePropertyFilters,
+  TProperty extends Property,
+> {
+  title:          string;
+  description:    string;
+  queryKey:       string[];
+  defaultFilters: TFilters;
+  fetcher: (
+    filters:  TFilters,
+    page:     number,
+    pageSize: number,
+  ) => Promise<PropertySearchResponse<TProperty>>;
+  adapter: (raw: unknown) => TProperty;
+}
+
+export type PropertyAdapter<TRaw, TProperty extends Property = Property> =
+  (raw: TRaw) => TProperty;
+
+// ============================================================================
+// 9. API BOUNDARY TYPE  (raw wire shape — normalise before use)
+// ============================================================================
+
+/**
+ * Raw property record as returned by the API before normalisation.
+ * Do not use this type inside application logic — pass it through an adapter
+ * that produces the typed `Property` discriminated union.
+ *
+ * Loose types here are intentional: they reflect real API inconsistencies
+ * that adapters are responsible for resolving.
+ */
+export interface ApiPropertyRecord {
+  id:                 number | string;
+  title:              string;
+  description:        string;
+  price:              string | number;
+  location:           string | { address: string; city?: string; state?: string; country?: string };
+  address?:           string | null;
+  images?:            string[];
+  imageUrls?:         string[];          // legacy field name — prefer `images`
+  category?:          PropertyCategory;
+  type?:              string;
+  propertyType?:      string;            // legacy field name — prefer `type`
+  status?:            string;
+  verificationStatus?: VerificationStatus;
+  trustScore?:        number;
+  bedrooms?:          number;
+  bathrooms?:         number;
+  squareFeet?:        number;
+  area?:              number;            // legacy field name — prefer `squareFeet`
+  size?:              number | string;   // legacy: may be "2.5 acres"
+  ownerId?:           string;
+  coordinates?:       Coordinates | null;
+  isActive?:          boolean;
+  isFeatured?:        boolean;
+  availableFrom?:     string | Date | null;
+  availableUntil?:    string | Date | null;
+  createdAt?:         string | Date;
+  updatedAt?:         string | Date;
 }

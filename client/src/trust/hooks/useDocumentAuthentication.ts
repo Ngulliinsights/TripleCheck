@@ -155,7 +155,7 @@ export function useDocumentAuthentication() {
         return response.data.status;
       },
       enabled: !!documentId,
-      refetchInterval: (data) => data === 'processing' ? 2000 : false, // Poll every 2 seconds while processing
+      refetchInterval: (query) => query.state.data === 'processing' ? 2000 : false, // Poll every 2 seconds while processing
     });
   };
 

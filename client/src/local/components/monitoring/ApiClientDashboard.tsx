@@ -25,8 +25,8 @@ export const ApiClientDashboard: React.FC<DashboardProps> = ({
       try {
         const currentMetrics = apiMonitor.getCurrentMetrics();
         const currentEndpoints = apiMonitor.getEndpointMetrics();
-        const healthCheck = monitoringUtils.getHealthCheck();
-        const comparison = apiMonitor.compareToBaseline();
+        const healthCheck = monitoringUtils.getHealthCheck(currentMetrics);
+        const comparison = apiMonitor.compareToBaseline(currentMetrics);
 
         setMetrics(currentMetrics);
         setEndpointMetrics(currentEndpoints.slice(0, 10)); // Top 10 endpoints
@@ -189,7 +189,7 @@ export const ApiClientDashboard: React.FC<DashboardProps> = ({
       {/* Actions */}
       <div className="dashboard-actions">
         <button 
-          onClick={() => monitoringUtils.logPerformanceSummary()}
+          onClick={() => monitoringUtils.logPerformanceSummary(metrics)}
           className="action-button"
         >
           📋 Log Summary
