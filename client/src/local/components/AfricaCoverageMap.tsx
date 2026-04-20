@@ -86,7 +86,7 @@ const CountryMarker = memo<CountryMarkerProps>(({ country, isSelected, onClick }
       style={{ left: `${x}%`, top: `${y}%` }}
       onClick={handleClick}
       aria-label={`${country.name} — ${STATUS_LABEL[country.status]}`}
-      aria-pressed={isSelected}
+      aria-pressed={isSelected ? 'true' : 'false'}
     >
       {/* Dot */}
       <span
@@ -104,7 +104,7 @@ const CountryMarker = memo<CountryMarkerProps>(({ country, isSelected, onClick }
         <div
           className="absolute top-6 left-1/2 -translate-x-1/2 z-30
                      bg-white border border-gray-200 rounded-xl shadow-xl
-                     p-3 min-w-[11rem] text-left"
+                     p-3 min-w-44 text-left"
           role="tooltip"
         >
           <p className="text-sm font-semibold text-gray-900 mb-1">{country.name}</p>
@@ -191,7 +191,7 @@ export const AfricaCoverageMap = memo<AfricaCoverageMapProps>(
               {/* Africa outline — purely decorative */}
               <svg
                 viewBox="0 0 100 100"
-                className="w-full h-auto max-h-96 border border-gray-200 rounded-xl bg-gradient-to-br from-blue-50 to-green-50"
+                className="w-full h-auto max-h-96 border border-gray-200 rounded-xl bg-linear-to-br from-blue-50 to-green-50"
                 aria-hidden="true"
                 focusable="false"
               >
@@ -265,7 +265,7 @@ export const AfricaCoverageMap = memo<AfricaCoverageMapProps>(
             ].map(({ icon, value, label, bg, text, sub }) => (
               <Card
                 key={label}
-                className={`text-center border-0 shadow-sm bg-gradient-to-br ${bg}`}
+                className={`text-center border-0 shadow-sm bg-linear-to-br ${bg}`}
               >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-center mb-3">{icon}</div>

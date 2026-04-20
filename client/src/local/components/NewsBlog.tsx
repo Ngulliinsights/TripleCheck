@@ -10,7 +10,7 @@ interface NewsBlogProps {
 
 export const NewsBlog = memo(function NewsBlog({
   maxPosts = 3,
-  variant = "default",
+  _variant = "default",
 }: NewsBlogProps) {
   const { data: posts = [], isLoading, error } = useBlogPosts()
 
@@ -25,7 +25,7 @@ export const NewsBlog = memo(function NewsBlog({
 
   return (
     <section
-      className="py-24 bg-gradient-to-b from-dark-500 to-dark-600"
+      className="py-24 bg-linear-to-b from-dark-500 to-dark-600"
       aria-label="Latest news and blog posts"
     >
       <div className="container mx-auto px-4">

@@ -29,6 +29,7 @@ export * from './audit-trail-service'
 export * from './security-monitoring-service'
 export * from './performance-monitoring-service'
 export * from './AlertingService'
+export * from './api-client-monitor'
 
 // ============================================================================
 // SERVICE INSTANCE EXPORTS - Singleton References
@@ -40,6 +41,7 @@ export { apiClient } from "./unified-api-client"
 export { auditTrailService, auditLogger } from './audit-trail-service'
 export { securityMonitoringService, securityMonitor } from './security-monitoring-service'
 export { performanceMonitoringService, performanceMonitor } from './performance-monitoring-service'
+export { apiMonitor, monitoringUtils } from './api-client-monitor'
 // export { errorHandler } from "@server/infrastructure/error-handling" // Module doesn't exist
 
 // ============================================================================

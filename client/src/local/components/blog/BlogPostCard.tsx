@@ -35,7 +35,7 @@ interface BlogPostCardProps {
   post: BlogPost;
   onReadMore: () => void;
   /** Controls visual emphasis. "featured" may be used by parent grids for layout; reserved for future card-level styling. */
-  variant?: "default" | "featured";
+  _variant?: "default" | "featured";
   showTags?: boolean;
   showViewCount?: boolean;
   maxTags?: number;

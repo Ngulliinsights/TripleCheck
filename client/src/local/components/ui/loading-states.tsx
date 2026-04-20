@@ -12,7 +12,7 @@ import React from "react";
 import { Alert, AlertDescription } from "./alert";
 import { Button } from "./button";
 import { Card, CardContent, CardHeader } from "./card";
-import { Progress } from "./progress";
+
 import { Skeleton } from "./skeleton";
 
 // ─── Utilities ───────────────────────────────────────────────────────────────

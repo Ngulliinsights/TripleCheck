@@ -101,7 +101,7 @@ const AccordionSection = memo<AccordionSectionProps>(
             type="button"
             onClick={onToggle}
             className={`w-full flex justify-between items-center p-4 text-left font-semibold text-slate-800 transition-colors ${priorityColors[priority]}`}
-            aria-expanded={isOpen}
+            aria-expanded={isOpen ? 'true' : 'false'}
           >
             <span className="flex items-center gap-2">
               {icon}
