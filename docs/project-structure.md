@@ -1,6 +1,6 @@
 # Project Structure
 
-**Generated:** 4/19/2026, 11:09:43 PM
+**Generated:** 4/21/2026, 12:34:50 PM
 **Max Depth:** 7 levels
 
 ```
@@ -67,6 +67,117 @@
 │   │   │   └── index.ts
 │   │   ├── config/
 │   │   │   └── external-dependencies.ts
+│   │   ├── core/
+│   │   │   ├── components/
+│   │   │   │   ├── ai-integration/
+│   │   │   │   ├── b2b/
+│   │   │   │   ├── blog/
+│   │   │   │   ├── error-handling/
+│   │   │   │   ├── examples/
+│   │   │   │   ├── fallbacks/
+│   │   │   │   ├── forms/
+│   │   │   │   ├── hero/
+│   │   │   │   ├── images/
+│   │   │   │   │   └── gallery/
+│   │   │   │   ├── monitoring/
+│   │   │   │   ├── navigation/
+│   │   │   │   ├── skeletons/
+│   │   │   │   └── ui/
+│   │   │   ├── config/
+│   │   │   ├── contexts/
+│   │   │   ├── docs/
+│   │   │   │   └── memory-optimization-guide.md
+│   │   │   ├── error-handling/
+│   │   │   │   ├── client/
+│   │   │   │   ├── constants/
+│   │   │   │   ├── errors/
+│   │   │   │   ├── server/
+│   │   │   │   └── utilities/
+│   │   │   ├── hooks/
+│   │   │   │   ├── configs/
+│   │   │   │   ├── examples/
+│   │   │   │   ├── images/
+│   │   │   │   ├── migration/
+│   │   │   │   │   └── COMPREHENSIVE_MIGRATION_GUIDE.md
+│   │   │   │   ├── presets/
+│   │   │   │   └── utils/
+│   │   │   ├── lib/
+│   │   │   ├── local/
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── ai-integration/
+│   │   │   │   │   ├── b2b/
+│   │   │   │   │   ├── blog/
+│   │   │   │   │   ├── error-handling/
+│   │   │   │   │   ├── examples/
+│   │   │   │   │   ├── fallbacks/
+│   │   │   │   │   ├── forms/
+│   │   │   │   │   ├── hero/
+│   │   │   │   │   ├── images/
+│   │   │   │   │   │   └── gallery/
+│   │   │   │   │   ├── monitoring/
+│   │   │   │   │   ├── navigation/
+│   │   │   │   │   ├── skeletons/
+│   │   │   │   │   └── ui/
+│   │   │   │   ├── config/
+│   │   │   │   ├── contexts/
+│   │   │   │   ├── docs/
+│   │   │   │   │   └── memory-optimization-guide.md
+│   │   │   │   ├── error-handling/
+│   │   │   │   │   ├── client/
+│   │   │   │   │   ├── constants/
+│   │   │   │   │   ├── errors/
+│   │   │   │   │   ├── server/
+│   │   │   │   │   └── utilities/
+│   │   │   │   ├── hooks/
+│   │   │   │   │   ├── configs/
+│   │   │   │   │   ├── examples/
+│   │   │   │   │   ├── migration/
+│   │   │   │   │   │   └── COMPREHENSIVE_MIGRATION_GUIDE.md
+│   │   │   │   │   ├── presets/
+│   │   │   │   │   └── utils/
+│   │   │   │   ├── lib/
+│   │   │   │   ├── pages/
+│   │   │   │   │   └── solutions/
+│   │   │   │   ├── performance/
+│   │   │   │   ├── security/
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── ai-integration/
+│   │   │   │   │   │   └── monitoring/
+│   │   │   │   │   ├── archive/
+│   │   │   │   │   ├── examples/
+│   │   │   │   │   └── images/
+│   │   │   │   │       ├── core/
+│   │   │   │   │       └── USAGE_EXAMPLES.md
+│   │   │   │   ├── styles/
+│   │   │   │   ├── test-utils/
+│   │   │   │   ├── testing/
+│   │   │   │   ├── types/
+│   │   │   │   │   ├── contracts/
+│   │   │   │   │   └── images/
+│   │   │   │   ├── utils/
+│   │   │   │   │   └── images/
+│   │   │   │   ├── index.ts
+│   │   │   │   └── README.md
+│   │   │   ├── pages/
+│   │   │   │   └── solutions/
+│   │   │   ├── performance/
+│   │   │   ├── security/
+│   │   │   ├── services/
+│   │   │   │   ├── ai-integration/
+│   │   │   │   │   └── monitoring/
+│   │   │   │   ├── archive/
+│   │   │   │   ├── examples/
+│   │   │   │   └── images/
+│   │   │   │       ├── core/
+│   │   │   │       └── USAGE_EXAMPLES.md
+│   │   │   ├── styles/
+│   │   │   ├── test-utils/
+│   │   │   ├── testing/
+│   │   │   ├── types/
+│   │   │   │   ├── contracts/
+│   │   │   │   └── images/
+│   │   │   └── utils/
+│   │   │       └── images/
 │   │   ├── infrastructure/
 │   │   │   ├── ai/
 │   │   │   ├── api/
@@ -192,6 +303,7 @@
 │   │   │   │   │   │   ├── ImageCard.tsx
 │   │   │   │   │   │   ├── ImageEngine.tsx
 │   │   │   │   │   │   ├── ImageGallery.tsx
+│   │   │   │   │   │   ├── ImageShowcase.tsx
 │   │   │   │   │   │   ├── index.ts
 │   │   │   │   │   │   ├── LazyImage.tsx
 │   │   │   │   │   │   ├── Lightbox.tsx
@@ -202,7 +314,6 @@
 │   │   │   │   │   │   ├── utils.ts
 │   │   │   │   │   │   └── ValidationService.ts
 │   │   │   │   │   ├── ImageGallery.module.css
-│   │   │   │   │   ├── ImageShowcase.tsx
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── monitoring/
 │   │   │   │   │   └── ApiClientDashboard.tsx
@@ -275,14 +386,11 @@
 │   │   │   │   │   └── wordmark.tsx
 │   │   │   │   ├── AfricaCoverageMap.tsx
 │   │   │   │   ├── CommunityInsights.tsx
-│   │   │   │   ├── DemoLoginHelper.tsx
 │   │   │   │   ├── ErrorBoundary.tsx
 │   │   │   │   ├── ErrorFeedback.tsx
 │   │   │   │   ├── GlobalPerformanceTestPanel.tsx
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── IntegrationTest.tsx
 │   │   │   │   ├── LazyComponents.tsx
-│   │   │   │   ├── listing-card.tsx
 │   │   │   │   ├── LoadingStates.tsx
 │   │   │   │   ├── NewsBlog.tsx
 │   │   │   │   ├── Pagination.tsx
@@ -332,7 +440,6 @@
 │   │   │   │   │   └── propertyQueryConfigs.ts
 │   │   │   │   ├── examples/
 │   │   │   │   │   └── configurationExamples.ts
-│   │   │   │   ├── images/
 │   │   │   │   ├── migration/
 │   │   │   │   │   ├── COMPREHENSIVE_MIGRATION_GUIDE.md
 │   │   │   │   │   └── README.md
@@ -361,6 +468,7 @@
 │   │   │   │   ├── useGeolocation.ts
 │   │   │   │   ├── useHealthMonitoring.ts
 │   │   │   │   ├── useImageGallery.ts
+│   │   │   │   ├── useLoadingState.ts
 │   │   │   │   ├── useMemoryOptimization.ts
 │   │   │   │   ├── useNavigationSpacing.ts
 │   │   │   │   ├── useOperationTracking.ts
@@ -461,7 +569,6 @@
 │   │   │   │   ├── HealthCheckService.ts
 │   │   │   │   ├── huggingface-api-client.ts
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── mock-ai-data.ts
 │   │   │   │   ├── performance-monitoring-service.ts
 │   │   │   │   ├── PerformanceService.ts
 │   │   │   │   ├── RateLimitService.ts
@@ -473,13 +580,20 @@
 │   │   │   │   └── globals.css
 │   │   │   ├── test-utils/
 │   │   │   │   ├── index.ts
+│   │   │   │   ├── mockPropertyApi.ts
 │   │   │   │   ├── render.tsx
 │   │   │   │   └── setup.ts
 │   │   │   ├── testing/
 │   │   │   │   ├── ApiTestUtils.ts
 │   │   │   │   ├── E2ETestUtils.ts
 │   │   │   │   ├── index.ts
+│   │   │   │   ├── test-helpers.tsx
 │   │   │   │   └── TestUtils.tsx
+│   │   │   ├── tests/
+│   │   │   │   ├── fixtures/
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   └── mock-ai-data.ts
+│   │   │   │   ├── index.ts
 │   │   │   ├── types/
 │   │   │   │   ├── contracts/
 │   │   │   │   │   └── user-contracts.ts
@@ -504,10 +618,8 @@
 │   │   │   │   ├── globalPerformanceMonitor.ts
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── logger.ts
-│   │   │   │   ├── mockPropertyApi.ts
 │   │   │   │   ├── navigation.ts
 │   │   │   │   ├── safe-navigation.ts
-│   │   │   │   ├── test-helpers.tsx
 │   │   │   │   └── toast-utils.ts
 │   │   │   ├── index.ts
 │   │   │   ├── README.md
@@ -694,7 +806,8 @@
 │   │   │   │   ├── NPLVerificationService.ts
 │   │   │   │   ├── RegistryMismatchDetector.ts
 │   │   │   │   ├── trust-api.ts
-│   │   │   │   └── trust-business-logic.ts
+│   │   │   │   ├── trust-business-logic.ts
+│   │   │   │   └── TrustService.ts
 │   │   │   ├── types/
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── npl-verification.types.ts
@@ -937,6 +1050,7 @@
 │   │   ├── test-system.js
 │   │   └── validate-backend.js
 │   ├── infrastructure/
+│   │   ├── audit/
 │   │   ├── cache/
 │   │   │   ├── AnalyticsCache.ts
 │   │   │   ├── CacheIntegrationAdapter.ts
@@ -1254,11 +1368,14 @@
 │   │   │   ├── AuditLogger.ts
 │   │   │   ├── ErrorHandlingService.ts
 │   │   │   ├── FallbackManager.ts
+│   │   │   ├── FallbackMechanisms.ts
+│   │   │   ├── GracefulDegradation.ts
 │   │   │   ├── GracefulDegradationManager.ts
+│   │   │   ├── index.ts
+│   │   │   ├── LandVerificationErrors.ts
 │   │   │   ├── README.md
+│   │   │   ├── RetryPolicy.ts
 │   │   │   └── RetryPolicyManager.ts
-│   │   ├── errors/
-│   │   │   └── LandVerificationErrors.ts
 │   │   ├── health/
 │   │   │   └── HealthCheckService.ts
 │   │   ├── monitoring/
@@ -1269,10 +1386,6 @@
 │   │   │   ├── DatabaseOptimizer.ts
 │   │   │   ├── PaginationService.ts
 │   │   │   └── PerformanceManager.ts
-│   │   ├── resilience/
-│   │   │   ├── FallbackMechanisms.ts
-│   │   │   ├── GracefulDegradation.ts
-│   │   │   └── RetryPolicy.ts
 │   │   ├── security/
 │   │   │   ├── AccessControlService.ts
 │   │   │   ├── AuditLogger.ts
@@ -1398,6 +1511,7 @@
 │   ├── utils/
 │   │   ├── cleanup-manager.ts
 │   │   ├── constants.ts
+│   │   ├── error-messages.ts
 │   │   ├── index.ts
 │   │   ├── README.md
 │   │   └── response-helpers.ts
@@ -1410,6 +1524,7 @@
 │   │   ├── api-contracts.ts
 │   │   ├── api.types.ts
 │   │   ├── auth.types.ts
+│   │   ├── errors.ts
 │   │   ├── index.ts
 │   │   ├── messaging.ts
 │   │   └── property.ts
@@ -1458,7 +1573,9 @@
 ├── CLEANUP_REPORT.md
 ├── CSS_CLEANUP_REPORT.md
 ├── generate-structure.mjs
+├── IMAGESHOWCASE_DEEP_AUDIT.md
 ├── NEXT_PHASES_PLAN.md
+├── ORPHANED_CODE_AUDIT.md
 ├── package-lock.json
 ├── package.json
 ├── PHASE_12_COMPLETION_REPORT.md

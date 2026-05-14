@@ -1,5 +1,5 @@
 /**
- * CANONICAL API contract layer for entire monorepo (client + server)
+ * Canonical API contract layer for the entire monorepo (client + server).
  *
  * Owns:
  *   - Envelope schemas & types  (ApiResponse, SuccessResponse, ErrorResponse)
@@ -13,11 +13,11 @@
 import { z } from 'zod';
 
 // ============================================================================
-// SHARED META SCHEMA  (single definition, composed everywhere)
+// META
 // ============================================================================
 
 export const MetaSchema = z.object({
-  timestamp: z.string(),   // ISO-8601
+  timestamp: z.string(),                    // ISO-8601
   requestId: z.string(),
   version:   z.string().default('1.0'),
 });
@@ -25,10 +25,9 @@ export const MetaSchema = z.object({
 export type ResponseMeta = z.infer<typeof MetaSchema>;
 
 // ============================================================================
-// ENVELOPE SCHEMAS
+// ERROR DETAIL
 // ============================================================================
 
-/** Error detail — used inside both ApiResponse and ErrorResponse. */
 export const ErrorDetailSchema = z.object({
   code:    z.string(),
   message: z.string(),
@@ -37,8 +36,13 @@ export const ErrorDetailSchema = z.object({
 
 export type ErrorDetail = z.infer<typeof ErrorDetailSchema>;
 
-// ── Generic envelope (union: success | failure) ───────────────────────────────
+// ============================================================================
+// ENVELOPES
+// ============================================================================
 
+// ── Generic (success | failure) ──────────────────────────────────────────────
+
+/** Generic runtime schema — use SuccessResponseSchema<T> or ErrorResponseSchema for narrow validation. */
 export const ApiResponseSchema = z.object({
   success: z.boolean(),
   data:    z.unknown().optional(),
@@ -46,7 +50,7 @@ export const ApiResponseSchema = z.object({
   meta:    MetaSchema,
 });
 
-/** Generic envelope — prefer SuccessResponse<T> or ErrorResponse for narrow typing. */
+/** Wide envelope type. Prefer SuccessResponse<T> or ErrorResponse at call sites. */
 export type ApiResponse<T = unknown> = {
   success: boolean;
   data?:   T;
@@ -54,7 +58,7 @@ export type ApiResponse<T = unknown> = {
   meta:    ResponseMeta;
 };
 
-// ── Narrow success envelope ───────────────────────────────────────────────────
+// ── Success ───────────────────────────────────────────────────────────────────
 
 export const SuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({
@@ -64,12 +68,12 @@ export const SuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   });
 
 export type SuccessResponse<T> = {
-  success: true;
-  data:    T;
-  meta:    ResponseMeta;
+  readonly success: true;
+  readonly data:    T;
+  readonly meta:    ResponseMeta;
 };
 
-// ── Narrow error envelope ─────────────────────────────────────────────────────
+// ── Error ─────────────────────────────────────────────────────────────────────
 
 export const ErrorResponseSchema = z.object({
   success: z.literal(false),
@@ -97,7 +101,7 @@ export type Pagination = z.infer<typeof PaginationSchema>;
 export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
   z.object({
     success: z.literal(true),
-    data: z.object({
+    data:    z.object({
       items:      z.array(itemSchema),
       pagination: PaginationSchema,
     }),
@@ -105,17 +109,17 @@ export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =
   });
 
 export type PaginatedResponse<T> = {
-  success: true;
-  data: {
-    items:      T[];
-    pagination: Pagination;
+  readonly success: true;
+  readonly data: {
+    readonly items:      T[];
+    readonly pagination: Pagination;
   };
-  meta: ResponseMeta;
+  readonly meta: ResponseMeta;
 };
 
 // ============================================================================
-// HTTP STATUS CODES & ERROR CODES
-// (const objects instead of enums — tree-shakeable, compatible with plain JS)
+// HTTP STATUS CODES
+// (const object — tree-shakeable, usable from plain JS)
 // ============================================================================
 
 export const HttpStatus = {
@@ -135,15 +139,19 @@ export const HttpStatus = {
 
 export type HttpStatus = typeof HttpStatus[keyof typeof HttpStatus];
 
+// ============================================================================
+// API ERROR CODES
+// ============================================================================
+
 export const ApiErrorCode = {
-  VALIDATION_ERROR:       'VALIDATION_ERROR',
-  AUTHENTICATION_ERROR:   'AUTHENTICATION_ERROR',
-  AUTHORIZATION_ERROR:    'AUTHORIZATION_ERROR',
-  NOT_FOUND:              'NOT_FOUND',
-  CONFLICT:               'CONFLICT',
-  RATE_LIMIT_EXCEEDED:    'RATE_LIMIT_EXCEEDED',
-  INTERNAL_ERROR:         'INTERNAL_ERROR',
-  SERVICE_UNAVAILABLE:    'SERVICE_UNAVAILABLE',
+  VALIDATION_ERROR:     'VALIDATION_ERROR',
+  AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
+  AUTHORIZATION_ERROR:  'AUTHORIZATION_ERROR',
+  NOT_FOUND:            'NOT_FOUND',
+  CONFLICT:             'CONFLICT',
+  RATE_LIMIT_EXCEEDED:  'RATE_LIMIT_EXCEEDED',
+  INTERNAL_ERROR:       'INTERNAL_ERROR',
+  SERVICE_UNAVAILABLE:  'SERVICE_UNAVAILABLE',
 } as const;
 
 export type ApiErrorCode = typeof ApiErrorCode[keyof typeof ApiErrorCode];
@@ -153,29 +161,32 @@ export type ApiErrorCode = typeof ApiErrorCode[keyof typeof ApiErrorCode];
 // ============================================================================
 
 export interface ApiContract<TRequest = unknown, TResponse = unknown> {
-  method:          'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  path:            string;
-  requestSchema?:  z.ZodType<TRequest>;
-  responseSchema:  z.ZodType<TResponse>;
-  description?:    string;
-  tags?:           string[];
+  readonly method:          'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  readonly path:            string;
+  readonly requestSchema?:  z.ZodType<TRequest>;
+  readonly responseSchema:  z.ZodType<TResponse>;
+  readonly description?:    string;
+  readonly tags?:           readonly string[];
 }
 
+/** Extracts the request type from a typed ApiContract. */
 export type ExtractRequest<T>  = T extends ApiContract<infer R, unknown> ? R : never;
+/** Extracts the response type from a typed ApiContract. */
 export type ExtractResponse<T> = T extends ApiContract<unknown, infer R> ? R : never;
 
 export class ApiContractRegistry {
   private readonly contracts = new Map<string, ApiContract>();
 
-  register<TRequest, TResponse>(
-    name:     string,
-    contract: ApiContract<TRequest, TResponse>,
-  ): void {
+  register<TReq, TRes>(name: string, contract: ApiContract<TReq, TRes>): this {
+    if (this.contracts.has(name)) {
+      throw new Error(`Contract "${name}" is already registered.`);
+    }
     this.contracts.set(name, contract);
+    return this;               // fluent — enables registry.register(...).register(...)
   }
 
-  get<TRequest, TResponse>(name: string): ApiContract<TRequest, TResponse> | undefined {
-    return this.contracts.get(name) as ApiContract<TRequest, TResponse> | undefined;
+  get<TReq = unknown, TRes = unknown>(name: string): ApiContract<TReq, TRes> | undefined {
+    return this.contracts.get(name) as ApiContract<TReq, TRes> | undefined;
   }
 
   getAll(): ReadonlyMap<string, ApiContract> {
@@ -183,21 +194,22 @@ export class ApiContractRegistry {
   }
 
   /**
-   * Validates `data` against the contract's request schema.
-   * Throws a `z.ZodError` on failure (structured, not a plain Error string).
+   * Validates `data` against the named contract's request schema.
+   * @throws `z.ZodError` with field-level details on failure.
+   * @throws `Error` if no request schema is registered for the contract.
    */
   validateRequest<T>(contractName: string, data: unknown): T {
     const contract = this.contracts.get(contractName);
     if (!contract?.requestSchema) {
       throw new Error(`No request schema registered for contract "${contractName}"`);
     }
-    // `.parse` throws ZodError directly — callers get field-level details
     return contract.requestSchema.parse(data) as T;
   }
 
   /**
-   * Validates `data` against the contract's response schema.
-   * Throws a `z.ZodError` on failure.
+   * Validates `data` against the named contract's response schema.
+   * @throws `z.ZodError` with field-level details on failure.
+   * @throws `Error` if the contract is not found.
    */
   validateResponse<T>(contractName: string, data: unknown): T {
     const contract = this.contracts.get(contractName);

@@ -1,17 +1,16 @@
 /**
- * CANONICAL Authentication types for entire monorepo (client + server)
- * Single source of truth for auth contracts.
+ * Canonical authentication types for the entire monorepo (client + server).
+ * Single source of truth for all auth contracts.
  *
  * Sections:
- *   1. Primitives & constants    — roles, permissions, thresholds
- *   2. Domain models             — User, UserPreferences
- *   3. Client types              — auth state, form payloads
- *   4. Server types              — requests, sessions, results
+ *   1. Primitives & constants
+ *   2. Domain models
+ *   3. Client types   — auth state, form payloads
+ *   4. Server types   — sessions, middleware, results
+ *
+ * NOTE: Express types live in `auth.server.types.ts`, not here, so this file
+ * is safe to import in client bundles without a polyfill or tree-shake risk.
  */
-
-// ─── SERVER IMPORT (server-only consumers) ────────────────────────────────────
-// Import Express types only when consumed server-side; tree-shaken on the client.
-import type { Request } from 'express';
 
 // ============================================================================
 // 1. PRIMITIVES & CONSTANTS
@@ -19,7 +18,7 @@ import type { Request } from 'express';
 
 export type UserRole = 'user' | 'agent' | 'admin';
 
-/** Numeric rank used for ≥ comparisons (e.g. requiresRole('agent')). */
+/** Numeric rank used for ≥ comparisons (e.g. `hasMinRole('agent')`). */
 export const ROLE_HIERARCHY = {
   user:  1,
   agent: 2,
@@ -28,12 +27,12 @@ export const ROLE_HIERARCHY = {
 
 export type PermissionLevel = 'read' | 'write' | 'delete' | 'admin';
 
-/** Cumulative: each role inherits all permissions below it. */
+/** Cumulative: each role inherits all permissions below it in the hierarchy. */
 export const ROLE_PERMISSIONS = {
   user:  ['read', 'write'],
   agent: ['read', 'write', 'delete'],
   admin: ['read', 'write', 'delete', 'admin'],
-} as const satisfies Record<UserRole, PermissionLevel[]>;
+} as const satisfies Record<UserRole, readonly PermissionLevel[]>;
 
 export const TRUST_THRESHOLDS = {
   LOW:      30,
@@ -45,9 +44,9 @@ export const TRUST_THRESHOLDS = {
 export type TrustTier = keyof typeof TRUST_THRESHOLDS;
 
 export const AUTH_CONSTANTS = {
-  SESSION_MAX_AGE:    24 * 60 * 60 * 1000, // 24 h  (ms)
-  RATE_LIMIT_WINDOW:  15 * 60 * 1000,       // 15 min (ms)
-  MAX_LOGIN_ATTEMPTS: 5,
+  SESSION_MAX_AGE:     24 * 60 * 60 * 1000, // 24 h  (ms)
+  RATE_LIMIT_WINDOW:   15 * 60 * 1000,       // 15 min (ms)
+  MAX_LOGIN_ATTEMPTS:  5,
   PASSWORD_MIN_LENGTH: 8,
   USERNAME_MIN_LENGTH: 3,
   USERNAME_MAX_LENGTH: 30,
@@ -59,18 +58,22 @@ export const AUTH_CONSTANTS = {
 
 // ── Preferences ──────────────────────────────────────────────────────────────
 
+export type NotificationFrequency = 'immediate' | 'daily' | 'weekly';
+
+export interface NotificationTopics {
+  propertyUpdates?: boolean;
+  trustAlerts?:     boolean;
+  messages?:        boolean;
+  marketing?:       boolean;
+  systemUpdates?:   boolean;
+}
+
 export interface NotificationPreferences {
-  email: boolean;
-  sms:   boolean;
-  push:  boolean;
-  frequency?: 'immediate' | 'daily' | 'weekly';
-  types?: {
-    propertyUpdates?: boolean;
-    trustAlerts?:     boolean;
-    messages?:        boolean;
-    marketing?:       boolean;
-    systemUpdates?:   boolean;
-  };
+  email:      boolean;
+  sms:        boolean;
+  push:       boolean;
+  frequency?: NotificationFrequency;
+  topics?:    NotificationTopics;
 }
 
 export interface PrivacyPreferences {
@@ -83,6 +86,11 @@ export interface PrivacyPreferences {
 
 export type PropertyType = 'apartment' | 'house' | 'condo' | 'townhouse' | 'land';
 
+export interface PriceRange {
+  min: number;
+  max: number;
+}
+
 export interface SavedSearch {
   name:          string;
   criteria:      Record<string, unknown>;
@@ -91,12 +99,9 @@ export interface SavedSearch {
 
 export interface SearchPreferences {
   defaultLocation?:        string;
-  priceRange?: {
-    min: number;
-    max: number;
-  };
+  priceRange?:             PriceRange;
   preferredPropertyTypes?: PropertyType[];
-  savedSearches?:           SavedSearch[];
+  savedSearches?:          SavedSearch[];
 }
 
 export interface UserPreferences {
@@ -109,31 +114,35 @@ export interface UserPreferences {
 
 /**
  * Canonical user shape shared across client and server.
- * `id` is always `number` — coerce string IDs at the API boundary.
  *
- * NOTE: password hash is NEVER included here. Use `UserRecord` in the DB
- * layer for the row type that carries the hashed password.
+ * - `id` is `string` — numeric DB IDs must be coerced to string at the API boundary.
+ *   This keeps the type consistent with UUID-based systems and avoids `number | string`.
+ * - Timestamps are `string` (ISO-8601) — `Date` objects must be serialised before transport.
+ * - Password hash is NEVER present here. The DB row type (`UserRecord`) carries it separately.
+ * - `avatarUrl` consolidates the previous `avatar` / `profileImageUrl` split.
  */
 export interface User {
-  id:               number | string;
-  email:            string;
-  firstName:        string;
-  lastName:         string;
-  username?:        string;
-  phone?:           string;
-  avatar?:          string;
-  profileImageUrl?: string;
-  role:             UserRole;
-  isVerified:       boolean;
-  isVerifiedAgent?: boolean;
-  trustScore?:      number;
-  preferences?:     UserPreferences;
-  createdAt?:       string | Date;
-  updatedAt?:       string | Date;
+  id:              string;
+  email:           string;
+  firstName:       string;
+  lastName:        string;
+  username?:       string;
+  phone?:          string;
+  avatarUrl?:      string;
+  role:            UserRole;
+  isVerified:      boolean;
+  isVerifiedAgent: boolean;  // always present; default false rather than undefined
+  trustScore:      number;   // always present; default 0 rather than undefined
+  preferences?:    UserPreferences;
+  createdAt?:      string;   // ISO-8601
+  updatedAt?:      string;
 }
 
+/** Read-only view of a user — safe to pass as props or freeze in state. */
+export type ReadonlyUser = Readonly<User>;
+
 // ============================================================================
-// 3. CLIENT TYPES  (frontend auth state & form payloads)
+// 3. CLIENT TYPES
 // ============================================================================
 
 export interface AuthState {
@@ -143,7 +152,10 @@ export interface AuthState {
   token?:          string;
 }
 
-/** Login form — supports email or username, never both simultaneously. */
+/**
+ * Login form payload.
+ * Either `email` or `username` is required — never both simultaneously.
+ */
 export type LoginCredentials =
   | { email: string;    username?: never; password: string; rememberMe?: boolean }
   | { username: string; email?: never;    password: string; rememberMe?: boolean };
@@ -159,28 +171,19 @@ export interface RegisterData {
 }
 
 // ============================================================================
-// 4. SERVER TYPES  (sessions, middleware, results)
+// 4. SERVER TYPES
 // ============================================================================
 
 // ── Session ───────────────────────────────────────────────────────────────────
 
 /**
  * Application-level session payload stored in the session store.
- * Express session management methods are intentionally excluded — use the
- * `req.session` object directly for `.destroy()`, `.save()`, etc.
+ * Express session management methods (`.destroy`, `.save`, etc.) are
+ * intentionally excluded — access them via `req.session` directly.
  */
 export interface SessionPayload {
-  userId?:       number;
-  lastActivity?: string; // ISO-8601
-}
-
-// ── Authenticated request ─────────────────────────────────────────────────────
-
-export interface AuthenticatedRequest extends Omit<Request, 'session'> {
-  session?: SessionPayload & {
-    destroy: (callback: (err?: unknown) => void) => void;
-  };
-  user?: User;
+  userId?:       string;   // aligned with User.id (string)
+  lastActivity?: string;   // ISO-8601
 }
 
 // ── Auth operation results ────────────────────────────────────────────────────
@@ -188,34 +191,41 @@ export interface AuthenticatedRequest extends Omit<Request, 'session'> {
 export interface AuthResult {
   user:       User;
   token?:     string;
-  expiresAt?: Date;
+  expiresAt?: string; // ISO-8601
 }
 
-export interface SessionValidationResult {
-  valid:   boolean;
-  userId?: number;
-  user?:   User;
-  error?:  string;
-}
+/**
+ * Discriminated union — exhaustively narrows without a `valid` boolean check.
+ *
+ * @example
+ * if (result.valid) { result.userId; result.user; }
+ * else              { result.error; }
+ */
+export type SessionValidationResult =
+  | { valid: true;  userId: string; user: User  }
+  | { valid: false; error: string               };
 
 export interface RateLimitResult {
-  allowed:            boolean;
-  timeLeft?:          number; // ms
-  attemptsRemaining?: number;
+  allowed:             boolean;
+  timeLeft?:           number; // ms until reset
+  attemptsRemaining?:  number;
 }
 
 export interface PermissionCheckResult {
-  allowed:             boolean;
-  reason?:             string;
-  requiredRole?:       UserRole;
-  requiredTrustScore?: number;
+  allowed:              boolean;
+  reason?:              string;
+  requiredRole?:        UserRole;
+  requiredTrustScore?:  number;
 }
 
 // ── Auth context & config ─────────────────────────────────────────────────────
 
-/** Hydrated context passed to authorization middleware and service calls. */
+/**
+ * Hydrated context passed to authorisation middleware and service calls.
+ * All fields required — build this only after a successful session validation.
+ */
 export interface AuthorizationContext {
-  userId:          number;
+  userId:          string;   // aligned with User.id (string)
   user:            User;
   role:            UserRole;
   isVerifiedAgent: boolean;
@@ -223,15 +233,19 @@ export interface AuthorizationContext {
 }
 
 export interface SessionConfig {
-  maxAge:          number; // ms
-  updateActivity:  boolean;
-  requireReauth:   boolean;
+  maxAge:         number;  // ms
+  updateActivity: boolean;
+  requireReauth:  boolean;
 }
 
-// ── Errors ────────────────────────────────────────────────────────────────────
+// ── Utility helpers ───────────────────────────────────────────────────────────
 
-export interface AuthError {
-  code:        string;
-  message:     string;
-  statusCode:  number;
+/** Returns true when a given role meets or exceeds the required minimum. */
+export function hasMinRole(actual: UserRole, required: UserRole): boolean {
+  return ROLE_HIERARCHY[actual] >= ROLE_HIERARCHY[required];
+}
+
+/** Returns true when a user holds a specific permission. */
+export function hasPermission(role: UserRole, permission: PermissionLevel): boolean {
+  return (ROLE_PERMISSIONS[role] as readonly string[]).includes(permission);
 }

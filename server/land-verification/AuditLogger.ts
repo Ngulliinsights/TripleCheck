@@ -1,233 +1,235 @@
 /**
- * Comprehensive Audit Logger for Kenya Land Verification System
- * Provides detailed logging and audit trails for all verification activities
+ * Audit Logger — Kenya Land Verification System
  *
- * CANONICAL SOURCE: All audit logging for land-verification domain goes through this class.
- * Used by security/, error-handling/, and audit/ subdomules via thin wrapper re-exports.
+ * CANONICAL SOURCE: All audit logging for the land-verification domain flows through
+ * this class. Security, error-handling, and audit sub-modules re-export thin wrappers.
+ *
+ * Design decisions:
+ *  - Severity uses a risk scale (LOW → CRITICAL), not a log-level scale.
+ *  - Events are buffered and flushed in batches; CRITICAL events also log immediately.
+ *  - Flush failures re-queue events at the tail (preserving order) and do not throw.
+ *  - All public-facing types use `unknown` rather than `any`.
  */
 
-import { sql, SQL } from "drizzle-orm";
-import { generateCorrelationId } from "../../shared/types/errors";
-import { db } from "../infrastructure/database/connection/index";
-import { logger } from "../infrastructure/monitoring/logger";
+import { sql, SQL } from 'drizzle-orm';
+import { generateCorrelationId } from '../../shared/types/errors';
+import { db } from '../infrastructure/database/connection/index';
+import { logger } from '../infrastructure/monitoring/logger';
 
-export interface AuditEvent {
-  id?: string;
-  correlationId: string;
-  timestamp: Date;
-  eventType: AuditEventType;
-  category: AuditCategory;
-  severity: AuditSeverity;
-  userId?: string;
-  sessionId?: string;
-  propertyId?: string;
-  service: string;
-  operation: string;
-  status: 'started' | 'completed' | 'failed' | 'cancelled';
-  duration?: number;
-  details: Record<string, any>;
-  error?: {
-    code: string;
-    message: string;
-    stack?: string;
-  };
-  metadata: Record<string, any>;
-}
+// ─── Enums ────────────────────────────────────────────────────────────────────
 
 export enum AuditEventType {
-  VERIFICATION_STARTED = 'verification_started',
-  VERIFICATION_COMPLETED = 'verification_completed',
-  VERIFICATION_FAILED = 'verification_failed',
-  LAYER_EXECUTED = 'layer_executed',
-  GOVERNMENT_API_CALL = 'government_api_call',
-  EXPERT_ASSIGNED = 'expert_assigned',
-  RISK_ASSESSMENT = 'risk_assessment',
-  DOCUMENT_PROCESSED = 'document_processed',
-  COMMUNITY_FEEDBACK = 'community_feedback',
-  PHYSICAL_VERIFICATION = 'physical_verification',
-  MONITORING_ALERT = 'monitoring_alert',
-  SECURITY_EVENT = 'security_event',
-  SYSTEM_ERROR = 'system_error',
-  DATA_ACCESS = 'data_access',
-  CONFIGURATION_CHANGE = 'configuration_change'
+  // Verification lifecycle
+  VERIFICATION_STARTED    = 'verification_started',
+  VERIFICATION_COMPLETED  = 'verification_completed',
+  VERIFICATION_FAILED     = 'verification_failed',
+  OPERATION_STARTED       = 'operation_started',
+  OPERATION_SUCCEEDED     = 'operation_succeeded',
+  OPERATION_FAILED        = 'operation_failed',
+  LAYER_EXECUTED          = 'layer_executed',
+  // Integrations
+  GOVERNMENT_API_CALL     = 'government_api_call',
+  // Domain actions
+  EXPERT_ASSIGNED         = 'expert_assigned',
+  RISK_ASSESSMENT         = 'risk_assessment',
+  DOCUMENT_PROCESSED      = 'document_processed',
+  COMMUNITY_FEEDBACK      = 'community_feedback',
+  PHYSICAL_VERIFICATION   = 'physical_verification',
+  PROPERTY_ACTION         = 'property_action',
+  // Session & access
+  SESSION_ACTION          = 'session_action',
+  DATA_ACCESS             = 'data_access',
+  // Reports
+  REPORT_GENERATED        = 'report_generated',
+  // System & security
+  SECURITY_EVENT          = 'security_event',
+  SYSTEM_EVENT            = 'system_event',
+  SYSTEM_ERROR            = 'system_error',
+  MONITORING_ALERT        = 'monitoring_alert',
+  CONFIGURATION_CHANGE    = 'configuration_change',
 }
 
 export enum AuditCategory {
-  VERIFICATION = 'verification',
-  SECURITY = 'security',
-  SYSTEM = 'system',
-  DATA = 'data',
-  INTEGRATION = 'integration',
-  USER_ACTION = 'user_action',
-  MONITORING = 'monitoring'
+  VERIFICATION  = 'verification',
+  INTEGRATION   = 'integration',
+  SECURITY      = 'security',
+  USER_ACTION   = 'user_action',
+  DATA          = 'data',
+  MONITORING    = 'monitoring',
+  SYSTEM        = 'system',
 }
 
+/** Risk-oriented severity, not a log-level scale. */
 export enum AuditSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
+  LOW      = 'low',
+  MEDIUM   = 'medium',
+  HIGH     = 'high',
+  CRITICAL = 'critical',
+}
+
+export type AuditEventStatus = 'started' | 'completed' | 'failed' | 'cancelled';
+
+// ─── Interfaces ───────────────────────────────────────────────────────────────
+
+export interface AuditError {
+  readonly code: string;
+  readonly message: string;
+  readonly stack?: string;
+}
+
+export interface AuditEvent {
+  readonly id: string;
+  readonly correlationId: string;
+  readonly timestamp: Date;
+  readonly eventType: AuditEventType;
+  readonly category: AuditCategory;
+  readonly severity: AuditSeverity;
+  readonly status: AuditEventStatus;
+  readonly service: string;
+  readonly operation: string;
+  // Optional context
+  readonly userId?: string;
+  readonly sessionId?: string;
+  readonly propertyId?: string;
+  readonly duration?: number;
+  readonly ipAddress?: string;
+  readonly userAgent?: string;
+  // Payload
+  readonly details: Record<string, unknown>;
+  readonly error?: AuditError;
+  readonly metadata: Record<string, unknown>;
 }
 
 export interface AuditQuery {
-  startDate?: Date;
-  endDate?: Date;
-  eventTypes?: AuditEventType[];
-  categories?: AuditCategory[];
-  severities?: AuditSeverity[];
-  userId?: string;
-  sessionId?: string;
-  propertyId?: string;
-  service?: string;
-  status?: string;
-  correlationId?: string;
-  limit?: number;
-  offset?: number;
+  readonly correlationId?: string;
+  readonly eventTypes?: AuditEventType[];
+  readonly categories?: AuditCategory[];
+  readonly severities?: AuditSeverity[];
+  readonly status?: AuditEventStatus;
+  readonly userId?: string;
+  readonly sessionId?: string;
+  readonly propertyId?: string;
+  readonly service?: string;
+  readonly startDate?: Date;
+  readonly endDate?: Date;
+  readonly limit?: number;
+  readonly offset?: number;
 }
 
 export interface AuditMetrics {
-  totalEvents: number;
-  eventsByType: Record<string, number>;
-  eventsByCategory: Record<string, number>;
-  eventsBySeverity: Record<string, number>;
-  averageDuration: number;
-  errorRate: number;
-  topErrors: Array<{ error: string; count: number }>;
+  readonly totalEvents: number;
+  readonly eventsByType: Record<string, number>;
+  readonly eventsByCategory: Record<string, number>;
+  readonly eventsBySeverity: Record<string, number>;
+  readonly averageDuration: number;
+  readonly errorRate: number;
+  readonly topErrors: ReadonlyArray<{ error: string; count: number }>;
 }
 
+// ─── AuditLogger ──────────────────────────────────────────────────────────────
+
 export class AuditLogger {
-  private readonly batchSize = 100;
-  private readonly flushInterval = 5000; // 5 seconds
-  private eventBuffer: AuditEvent[] = [];
+  private readonly batchSize: number;
+  private readonly flushIntervalMs: number;
+  private buffer: AuditEvent[] = [];
   private flushTimer?: NodeJS.Timeout;
 
-  constructor() {
+  constructor(options: { batchSize?: number; flushIntervalMs?: number } = {}) {
+    this.batchSize     = options.batchSize     ?? 100;
+    this.flushIntervalMs = options.flushIntervalMs ?? 5_000;
     this.startBatchProcessor();
-    this.setupGracefulShutdown();
+    this.registerShutdownHooks();
   }
 
-  /**
-   * Log audit event
-   */
-  async logEvent(event: Omit<AuditEvent, 'id' | 'timestamp' | 'correlationId'> & { correlationId?: string }): Promise<void> {
-    const auditEvent: AuditEvent = {
+  // ── Core log method ─────────────────────────────────────────────────────────
+
+  async logEvent(
+    event: Omit<AuditEvent, 'id' | 'timestamp' | 'correlationId'> & { correlationId?: string },
+  ): Promise<void> {
+    const full: AuditEvent = {
       ...event,
-      id: this.generateEventId(),
-      timestamp: new Date(),
-      correlationId: event.correlationId || generateCorrelationId()
+      id:            this.generateEventId(),
+      correlationId: event.correlationId ?? generateCorrelationId(),
+      timestamp:     new Date(),
     };
 
-    // Add to buffer for batch processing
-    this.eventBuffer.push(auditEvent);
-
-    // Log to console immediately for critical events
-    if (auditEvent.severity === AuditSeverity.CRITICAL) {
-      logger.error(
-        `CRITICAL AUDIT EVENT: ${auditEvent.eventType}`,
-        'AUDIT_LOGGER',
-        auditEvent
-      );
+    // Immediate console output for CRITICAL events so they are never silently lost.
+    if (full.severity === AuditSeverity.CRITICAL) {
+      logger.error(`[AUDIT:CRITICAL] ${full.eventType}`, 'AUDIT_LOGGER', full);
     }
 
-    // Flush immediately if buffer is full
-    if (this.eventBuffer.length >= this.batchSize) {
-      await this.flushEvents();
+    this.buffer.push(full);
+
+    if (this.buffer.length >= this.batchSize) {
+      await this.flush();
     }
   }
 
-  /**
-   * Log verification started event
-   */
+  // ── Domain convenience methods ───────────────────────────────────────────────
+
   async logVerificationStarted(
     sessionId: string,
     propertyId: string,
     userId: string,
     verificationLayers: string[],
-    metadata: Record<string, any> = {}
+    details: Record<string, unknown> = {},
   ): Promise<void> {
     await this.logEvent({
-      eventType: AuditEventType.VERIFICATION_STARTED,
-      category: AuditCategory.VERIFICATION,
-      severity: AuditSeverity.MEDIUM,
-      userId,
-      sessionId,
-      propertyId,
-      service: 'land-verification',
-      operation: 'start_verification',
-      status: 'started',
-      details: {
-        verificationLayers,
-        ...metadata
-      },
-      metadata: this.extractMetadata()
+      eventType:  AuditEventType.VERIFICATION_STARTED,
+      category:   AuditCategory.VERIFICATION,
+      severity:   AuditSeverity.MEDIUM,
+      status:     'started',
+      service:    'land-verification',
+      operation:  'start_verification',
+      userId, sessionId, propertyId,
+      details:    { verificationLayers, ...details },
+      metadata:   this.extractMetadata(),
     });
   }
 
-  /**
-   * Log verification completed event
-   */
   async logVerificationCompleted(
     sessionId: string,
     propertyId: string,
     userId: string,
     duration: number,
-    results: Record<string, any>,
-    metadata: Record<string, any> = {}
+    results: Record<string, unknown>,
+    details: Record<string, unknown> = {},
   ): Promise<void> {
     await this.logEvent({
-      eventType: AuditEventType.VERIFICATION_COMPLETED,
-      category: AuditCategory.VERIFICATION,
-      severity: AuditSeverity.MEDIUM,
-      userId,
-      sessionId,
-      propertyId,
-      service: 'land-verification',
-      operation: 'complete_verification',
-      status: 'completed',
-      duration,
-      details: {
-        results,
-        ...metadata
-      },
-      metadata: this.extractMetadata()
+      eventType:  AuditEventType.VERIFICATION_COMPLETED,
+      category:   AuditCategory.VERIFICATION,
+      severity:   AuditSeverity.MEDIUM,
+      status:     'completed',
+      service:    'land-verification',
+      operation:  'complete_verification',
+      userId, sessionId, propertyId, duration,
+      details:    { results, ...details },
+      metadata:   this.extractMetadata(),
     });
   }
 
-  /**
-   * Log verification failed event
-   */
   async logVerificationFailed(
     sessionId: string,
     propertyId: string,
     userId: string,
     duration: number,
     error: Error,
-    metadata: Record<string, any> = {}
+    details: Record<string, unknown> = {},
   ): Promise<void> {
     await this.logEvent({
-      eventType: AuditEventType.VERIFICATION_FAILED,
-      category: AuditCategory.VERIFICATION,
-      severity: AuditSeverity.HIGH,
-      userId,
-      sessionId,
-      propertyId,
-      service: 'land-verification',
-      operation: 'verification_failure',
-      status: 'failed',
-      duration,
-      details: metadata,
-      error: {
-        code: (error as any).code || 'UNKNOWN_ERROR',
-        message: error.message,
-        stack: error.stack
-      },
-      metadata: this.extractMetadata()
+      eventType:  AuditEventType.VERIFICATION_FAILED,
+      category:   AuditCategory.VERIFICATION,
+      severity:   AuditSeverity.HIGH,
+      status:     'failed',
+      service:    'land-verification',
+      operation:  'verification_failure',
+      userId, sessionId, propertyId, duration,
+      details,
+      error:      this.serializeError(error),
+      metadata:   this.extractMetadata(),
     });
   }
 
-  /**
-   * Log government API call
-   */
   async logGovernmentApiCall(
     service: string,
     operation: string,
@@ -235,626 +237,424 @@ export class AuditLogger {
     duration: number,
     sessionId?: string,
     error?: Error,
-    metadata: Record<string, any> = {}
+    details: Record<string, unknown> = {},
   ): Promise<void> {
     await this.logEvent({
-      eventType: AuditEventType.GOVERNMENT_API_CALL,
-      category: AuditCategory.INTEGRATION,
-      severity: status === 'failed' ? AuditSeverity.HIGH : AuditSeverity.LOW,
-      sessionId,
-      service,
-      operation,
-      status,
-      duration,
-      details: metadata,
-      error: error ? {
-        code: (error as any).code || 'API_ERROR',
-        message: error.message,
-        stack: error.stack
-      } : undefined,
-      metadata: this.extractMetadata()
+      eventType:  AuditEventType.GOVERNMENT_API_CALL,
+      category:   AuditCategory.INTEGRATION,
+      severity:   status === 'failed' ? AuditSeverity.HIGH : AuditSeverity.LOW,
+      service, operation, status, duration, sessionId,
+      details,
+      error:      error ? this.serializeError(error) : undefined,
+      metadata:   this.extractMetadata(),
     });
   }
 
-  /**
-   * Log security event (Enhanced for SecurityIntegration)
-   */
   async logSecurityEvent(
     userId: string,
-    event: string,
-    details: Record<string, any> = {},
-    ip?: string,
-    userAgent?: string,
-    success: boolean = true,
-    message?: string
+    operation: string,
+    details: Record<string, unknown> = {},
+    options: { ip?: string; userAgent?: string; success?: boolean; message?: string } = {},
   ): Promise<void> {
+    const { ip, userAgent, success = true, message } = options;
     await this.logEvent({
-      eventType: AuditEventType.SECURITY_EVENT,
-      category: AuditCategory.SECURITY,
-      severity: success ? AuditSeverity.MEDIUM : AuditSeverity.HIGH,
-      userId,
-      service: 'security',
-      operation: event,
-      status: success ? 'completed' : 'failed',
-      details: {
-        ...details,
-        ip,
-        userAgent,
-        message
-      },
-      metadata: this.extractMetadata()
+      eventType:   AuditEventType.SECURITY_EVENT,
+      category:    AuditCategory.SECURITY,
+      severity:    success ? AuditSeverity.MEDIUM : AuditSeverity.HIGH,
+      status:      success ? 'completed' : 'failed',
+      service:     'security',
+      operation, userId, ipAddress: ip, userAgent,
+      details:     { ...details, message },
+      metadata:    this.extractMetadata(),
     });
   }
 
-  /**
-   * Log access event
-   */
   async logAccessEvent(
     userId: string,
     resourceType: string,
     resourceId: string,
     operation: string,
-    success: boolean = true,
-    errorMessage?: string,
-    ip?: string,
-    userAgent?: string
+    options: { success?: boolean; errorMessage?: string; ip?: string; userAgent?: string } = {},
   ): Promise<void> {
+    const { success = true, errorMessage, ip, userAgent } = options;
     await this.logEvent({
-      eventType: AuditEventType.DATA_ACCESS,
-      category: AuditCategory.SECURITY,
-      severity: success ? AuditSeverity.LOW : AuditSeverity.MEDIUM,
+      eventType:   AuditEventType.DATA_ACCESS,
+      category:    AuditCategory.SECURITY,
+      severity:    success ? AuditSeverity.LOW : AuditSeverity.MEDIUM,
+      status:      success ? 'completed' : 'failed',
+      service:     'access-control',
+      operation:   `${resourceType}_${operation}`,
       userId,
-      propertyId: resourceType === 'property' ? resourceId : undefined,
-      service: 'access-control',
-      operation: `${resourceType}_${operation}`,
-      status: success ? 'completed' : 'failed',
-      details: {
-        resourceType,
-        resourceId,
-        ip,
-        userAgent,
-        errorMessage
-      },
-      metadata: this.extractMetadata()
+      propertyId:  resourceType === 'property' ? resourceId : undefined,
+      ipAddress:   ip,
+      userAgent,
+      details:     { resourceType, resourceId, errorMessage },
+      metadata:    this.extractMetadata(),
     });
   }
 
-  /**
-   * Log session event
-   */
   async logSessionEvent(
     userId: string,
     sessionId: string,
     operation: string,
-    details: Record<string, any> = {},
-    success: boolean = true,
-    errorMessage?: string
+    details: Record<string, unknown> = {},
+    options: { success?: boolean; errorMessage?: string } = {},
   ): Promise<void> {
+    const { success = true, errorMessage } = options;
     await this.logEvent({
-      eventType: AuditEventType.LAYER_EXECUTED,
-      category: AuditCategory.USER_ACTION,
-      severity: AuditSeverity.LOW,
-      userId,
-      sessionId,
-      service: 'session-manager',
-      operation,
-      status: success ? 'completed' : 'failed',
-      details: {
-        ...details,
-        errorMessage
-      },
-      metadata: this.extractMetadata()
+      eventType:  AuditEventType.SESSION_ACTION,
+      category:   AuditCategory.USER_ACTION,
+      severity:   AuditSeverity.LOW,
+      status:     success ? 'completed' : 'failed',
+      service:    'session-manager',
+      operation, userId, sessionId,
+      details:    { ...details, errorMessage },
+      metadata:   this.extractMetadata(),
     });
   }
 
-  /**
-   * Log property event
-   */
   async logPropertyEvent(
     userId: string,
     propertyId: string,
     operation: string,
-    details: Record<string, any> = {},
-    success: boolean = true,
-    errorMessage?: string,
-    sessionId?: string
+    details: Record<string, unknown> = {},
+    options: { success?: boolean; errorMessage?: string; sessionId?: string } = {},
   ): Promise<void> {
+    const { success = true, errorMessage, sessionId } = options;
     await this.logEvent({
-      eventType: AuditEventType.DOCUMENT_PROCESSED,
-      category: AuditCategory.VERIFICATION,
-      severity: AuditSeverity.LOW,
-      userId,
-      propertyId,
-      sessionId,
-      service: 'property-service',
-      operation,
-      status: success ? 'completed' : 'failed',
-      details: {
-        ...details,
-        errorMessage
-      },
-      metadata: this.extractMetadata()
+      eventType:  AuditEventType.PROPERTY_ACTION,
+      category:   AuditCategory.VERIFICATION,
+      severity:   AuditSeverity.LOW,
+      status:     success ? 'completed' : 'failed',
+      service:    'property-service',
+      operation, userId, propertyId, sessionId,
+      details:    { ...details, errorMessage },
+      metadata:   this.extractMetadata(),
     });
   }
 
-  /**
-   * Log feedback event
-   */
   async logFeedbackEvent(
     userId: string,
     sessionId: string,
     operation: string,
-    details: Record<string, any> = {},
-    success: boolean = true,
-    errorMessage?: string
+    details: Record<string, unknown> = {},
+    options: { success?: boolean; errorMessage?: string } = {},
   ): Promise<void> {
+    const { success = true, errorMessage } = options;
     await this.logEvent({
-      eventType: AuditEventType.COMMUNITY_FEEDBACK,
-      category: AuditCategory.VERIFICATION,
-      severity: AuditSeverity.LOW,
-      userId,
-      sessionId,
-      service: 'community-intelligence',
-      operation,
-      status: success ? 'completed' : 'failed',
-      details: {
-        ...details,
-        errorMessage
-      },
-      metadata: this.extractMetadata()
+      eventType:  AuditEventType.COMMUNITY_FEEDBACK,
+      category:   AuditCategory.VERIFICATION,
+      severity:   AuditSeverity.LOW,
+      status:     success ? 'completed' : 'failed',
+      service:    'community-intelligence',
+      operation, userId, sessionId,
+      details:    { ...details, errorMessage },
+      metadata:   this.extractMetadata(),
     });
   }
 
-  /**
-   * Log report event
-   */
   async logReportEvent(
     userId: string,
     sessionId: string,
     operation: string,
-    details: Record<string, any> = {},
-    success: boolean = true,
-    errorMessage?: string
+    details: Record<string, unknown> = {},
+    options: { success?: boolean; errorMessage?: string } = {},
   ): Promise<void> {
+    const { success = true, errorMessage } = options;
     await this.logEvent({
-      eventType: AuditEventType.RISK_ASSESSMENT,
-      category: AuditCategory.VERIFICATION,
-      severity: AuditSeverity.MEDIUM,
-      userId,
-      sessionId,
-      service: 'reporting-service',
-      operation,
-      status: success ? 'completed' : 'failed',
-      details: {
-        ...details,
-        errorMessage
-      },
-      metadata: this.extractMetadata()
+      eventType:  AuditEventType.REPORT_GENERATED,
+      category:   AuditCategory.VERIFICATION,
+      severity:   AuditSeverity.MEDIUM,
+      status:     success ? 'completed' : 'failed',
+      service:    'reporting-service',
+      operation, userId, sessionId,
+      details:    { ...details, errorMessage },
+      metadata:   this.extractMetadata(),
     });
   }
 
-  /**
-   * Log system event
-   */
   async logSystemEvent(
     operation: string,
-    details: Record<string, any> = {},
-    success: boolean = true,
-    errorMessage?: string
+    details: Record<string, unknown> = {},
+    options: { success?: boolean; errorMessage?: string } = {},
   ): Promise<void> {
+    const { success = true, errorMessage } = options;
     await this.logEvent({
-      eventType: AuditEventType.SYSTEM_ERROR,
-      category: AuditCategory.SYSTEM,
-      severity: success ? AuditSeverity.LOW : AuditSeverity.HIGH,
-      service: 'system',
+      eventType:  success ? AuditEventType.SYSTEM_EVENT : AuditEventType.SYSTEM_ERROR,
+      category:   AuditCategory.SYSTEM,
+      severity:   success ? AuditSeverity.LOW : AuditSeverity.HIGH,
+      status:     success ? 'completed' : 'failed',
+      service:    'system',
       operation,
-      status: success ? 'completed' : 'failed',
-      details: {
-        ...details,
-        errorMessage
-      },
-      metadata: this.extractMetadata()
+      details:    { ...details, errorMessage },
+      metadata:   this.extractMetadata(),
     });
   }
 
-  /**
-   * Log data access event
-   */
-  async logDataAccess(
-    operation: string,
-    dataType: string,
-    userId?: string,
-    propertyId?: string,
-    details: Record<string, any> = {}
-  ): Promise<void> {
-    await this.logEvent({
-      eventType: AuditEventType.DATA_ACCESS,
-      category: AuditCategory.DATA,
-      severity: AuditSeverity.LOW,
-      userId,
-      propertyId,
-      service: 'data-access',
-      operation,
-      status: 'completed',
-      details: {
-        dataType,
-        ...details
-      },
-      metadata: this.extractMetadata()
-    });
-  }
-
-  /**
-   * Log system error
-   */
   async logSystemError(
     service: string,
     operation: string,
     error: Error,
-    severity: AuditSeverity = AuditSeverity.HIGH,
-    sessionId?: string,
-    metadata: Record<string, any> = {}
+    options: { severity?: AuditSeverity; sessionId?: string; details?: Record<string, unknown> } = {},
   ): Promise<void> {
+    const { severity = AuditSeverity.HIGH, sessionId, details = {} } = options;
     await this.logEvent({
-      eventType: AuditEventType.SYSTEM_ERROR,
-      category: AuditCategory.SYSTEM,
-      severity,
-      sessionId,
-      service,
-      operation,
-      status: 'failed',
-      details: metadata,
-      error: {
-        code: (error as any).code || 'SYSTEM_ERROR',
-        message: error.message,
-        stack: error.stack
-      },
-      metadata: this.extractMetadata()
+      eventType:  AuditEventType.SYSTEM_ERROR,
+      category:   AuditCategory.SYSTEM,
+      severity, status: 'failed',
+      service, operation, sessionId,
+      details,
+      error:      this.serializeError(error),
+      metadata:   this.extractMetadata(),
     });
   }
 
-  /**
-   * Query audit events
-   */
+  async logDataAccess(
+    operation: string,
+    dataType: string,
+    options: { userId?: string; propertyId?: string; details?: Record<string, unknown> } = {},
+  ): Promise<void> {
+    const { userId, propertyId, details = {} } = options;
+    await this.logEvent({
+      eventType:  AuditEventType.DATA_ACCESS,
+      category:   AuditCategory.DATA,
+      severity:   AuditSeverity.LOW,
+      status:     'completed',
+      service:    'data-access',
+      operation, userId, propertyId,
+      details:    { dataType, ...details },
+      metadata:   this.extractMetadata(),
+    });
+  }
+
+  // ── Query & Metrics ──────────────────────────────────────────────────────────
+
   async queryEvents(query: AuditQuery): Promise<AuditEvent[]> {
     try {
-      // Ensure any pending events are flushed
-      await this.flushEvents();
+      await this.flush();
 
-      let querySql: SQL = sql`SELECT * FROM audit_events WHERE 1=1`;
-      const params: any[] = [];
+      let q: SQL = sql`SELECT * FROM audit_events WHERE 1=1`;
 
-      if (query.startDate) {
-        querySql = sql`${querySql} AND timestamp >= ${query.startDate.toISOString()}`;
+      if (query.correlationId) q = sql`${q} AND correlation_id = ${query.correlationId}`;
+      if (query.userId)        q = sql`${q} AND user_id        = ${query.userId}`;
+      if (query.sessionId)     q = sql`${q} AND session_id     = ${query.sessionId}`;
+      if (query.propertyId)    q = sql`${q} AND property_id    = ${query.propertyId}`;
+      if (query.service)       q = sql`${q} AND service        = ${query.service}`;
+      if (query.status)        q = sql`${q} AND status         = ${query.status}`;
+      if (query.startDate)     q = sql`${q} AND timestamp >= ${query.startDate.toISOString()}`;
+      if (query.endDate)       q = sql`${q} AND timestamp <= ${query.endDate.toISOString()}`;
+
+      if (query.eventTypes?.length) {
+        q = sql`${q} AND event_type IN (${sql.join(query.eventTypes.map(t => sql`${t}`), sql`, `)})`;
+      }
+      if (query.categories?.length) {
+        q = sql`${q} AND category IN (${sql.join(query.categories.map(c => sql`${c}`), sql`, `)})`;
+      }
+      if (query.severities?.length) {
+        q = sql`${q} AND severity IN (${sql.join(query.severities.map(s => sql`${s}`), sql`, `)})`;
       }
 
-      if (query.endDate) {
-        querySql = sql`${querySql} AND timestamp <= ${query.endDate.toISOString()}`;
-      }
+      q = sql`${q} ORDER BY timestamp DESC`;
+      if (query.limit)  q = sql`${q} LIMIT  ${query.limit}`;
+      if (query.offset) q = sql`${q} OFFSET ${query.offset}`;
 
-      if (query.eventTypes && query.eventTypes.length > 0) {
-        querySql = sql`${querySql} AND event_type IN (${sql.join(query.eventTypes.map(t => sql`${t}`), sql`, `)})`;
-      }
-
-      if (query.categories && query.categories.length > 0) {
-        querySql = sql`${querySql} AND category IN (${sql.join(query.categories.map(c => sql`${c}`), sql`, `)})`;
-      }
-
-      if (query.severities && query.severities.length > 0) {
-        querySql = sql`${querySql} AND severity IN (${sql.join(query.severities.map(s => sql`${s}`), sql`, `)})`;
-      }
-
-      if (query.userId) {
-        querySql = sql`${querySql} AND user_id = ${query.userId}`;
-      }
-
-      if (query.sessionId) {
-        querySql = sql`${querySql} AND session_id = ${query.sessionId}`;
-      }
-
-      if (query.propertyId) {
-        querySql = sql`${querySql} AND property_id = ${query.propertyId}`;
-      }
-
-      if (query.service) {
-        querySql = sql`${querySql} AND service = ${query.service}`;
-      }
-
-      if (query.status) {
-        querySql = sql`${querySql} AND status = ${query.status}`;
-      }
-
-      if (query.correlationId) {
-        querySql = sql`${querySql} AND correlation_id = ${query.correlationId}`;
-      }
-
-      querySql = sql`${querySql} ORDER BY timestamp DESC`;
-
-      if (query.limit) {
-        querySql = sql`${querySql} LIMIT ${query.limit}`;
-      }
-
-      if (query.offset) {
-        querySql = sql`${querySql} OFFSET ${query.offset}`;
-      }
-
-      const results = await db.execute(querySql);
-      return this.mapDatabaseResults(results);
+      const rows = await db.execute(q);
+      return this.mapRows(rows as Record<string, unknown>[]);
     } catch (error) {
-      logger.error(
-        'Failed to query audit events',
-        'AUDIT_LOGGER',
-        { query },
-        error instanceof Error ? error : new Error(String(error))
-      );
+      logger.error('Failed to query audit events', 'AUDIT_LOGGER', { query },
+        error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
 
-  /**
-   * Get audit metrics
-   */
   async getMetrics(startDate?: Date, endDate?: Date): Promise<AuditMetrics> {
     try {
-      await this.flushEvents();
+      await this.flush();
 
-      let whereClause = '';
-      const params: any[] = [];
+      // Build a reusable date-range WHERE fragment.
+      const dateConditions: SQL[] = [];
+      if (startDate) dateConditions.push(sql`timestamp >= ${startDate.toISOString()}`);
+      if (endDate)   dateConditions.push(sql`timestamp <= ${endDate.toISOString()}`);
 
-      if (startDate || endDate) {
-        whereClause = 'WHERE ';
-        const conditions: string[] = [];
+      const withDateFilter = (base: SQL, extra?: SQL): SQL => {
+        const all = extra ? [...dateConditions, extra] : [...dateConditions];
+        return all.length
+          ? sql`${base} WHERE ${sql.join(all, sql` AND `)}`
+          : base;
+      };
 
-        if (startDate) {
-          conditions.push('timestamp >= ?');
-          params.push(startDate.toISOString());
-        }
+      const [
+        totalResult,
+        typeResults,
+        categoryResults,
+        severityResults,
+        durationResult,
+        errorResult,
+        topErrorResults,
+      ] = await Promise.all([
+        db.execute(withDateFilter(sql`SELECT COUNT(*) AS total FROM audit_events`)),
+        db.execute(sql`${withDateFilter(sql`SELECT event_type, COUNT(*) AS count FROM audit_events`)} GROUP BY event_type`),
+        db.execute(sql`${withDateFilter(sql`SELECT category, COUNT(*) AS count FROM audit_events`)} GROUP BY category`),
+        db.execute(sql`${withDateFilter(sql`SELECT severity, COUNT(*) AS count FROM audit_events`)} GROUP BY severity`),
+        db.execute(withDateFilter(sql`SELECT AVG(duration) AS avg_duration FROM audit_events`, sql`duration IS NOT NULL`)),
+        db.execute(withDateFilter(sql`SELECT COUNT(*) AS error_count FROM audit_events`, sql`status = 'failed'`)),
+        db.execute(sql`${withDateFilter(sql`SELECT error_code, COUNT(*) AS count FROM audit_events`, sql`error_code IS NOT NULL`)} GROUP BY error_code ORDER BY count DESC LIMIT 10`),
+      ]);
 
-        if (endDate) {
-          conditions.push('timestamp <= ?');
-          params.push(endDate.toISOString());
-        }
-
-        whereClause += conditions.join(' AND ');
-      }
-
-      // Get total events
-      let totalQuery: SQL = sql`SELECT COUNT(*) as total FROM audit_events`;
-      if (startDate || endDate) {
-        let conditions: SQL[] = [];
-        if (startDate) conditions.push(sql`timestamp >= ${startDate.toISOString()}`);
-        if (endDate) conditions.push(sql`timestamp <= ${endDate.toISOString()}`);
-        totalQuery = sql`${totalQuery} WHERE ${sql.join(conditions, sql` AND `)}`;
-      }
-      const totalResult = await db.execute(totalQuery);
-      const totalEvents = Number(totalResult[0]?.total || 0);
-
-      // Get events by type
-      let typeQuery: SQL = sql`SELECT event_type, COUNT(*) as count FROM audit_events`;
-      if (startDate || endDate) {
-        let conditions: SQL[] = [];
-        if (startDate) conditions.push(sql`timestamp >= ${startDate.toISOString()}`);
-        if (endDate) conditions.push(sql`timestamp <= ${endDate.toISOString()}`);
-        typeQuery = sql`${typeQuery} WHERE ${sql.join(conditions, sql` AND `)}`;
-      }
-      typeQuery = sql`${typeQuery} GROUP BY event_type`;
-      const typeResults = await db.execute(typeQuery);
-      const eventsByType = this.mapCountResults(typeResults);
-
-      // Get events by category
-      let categoryQuery: SQL = sql`SELECT category, COUNT(*) as count FROM audit_events`;
-      if (startDate || endDate) {
-        let conditions: SQL[] = [];
-        if (startDate) conditions.push(sql`timestamp >= ${startDate.toISOString()}`);
-        if (endDate) conditions.push(sql`timestamp <= ${endDate.toISOString()}`);
-        categoryQuery = sql`${categoryQuery} WHERE ${sql.join(conditions, sql` AND `)}`;
-      }
-      categoryQuery = sql`${categoryQuery} GROUP BY category`;
-      const categoryResults = await db.execute(categoryQuery);
-      const eventsByCategory = this.mapCountResults(categoryResults);
-
-      // Get events by severity
-      let severityQuery: SQL = sql`SELECT severity, COUNT(*) as count FROM audit_events`;
-      if (startDate || endDate) {
-        let conditions: SQL[] = [];
-        if (startDate) conditions.push(sql`timestamp >= ${startDate.toISOString()}`);
-        if (endDate) conditions.push(sql`timestamp <= ${endDate.toISOString()}`);
-        severityQuery = sql`${severityQuery} WHERE ${sql.join(conditions, sql` AND `)}`;
-      }
-      severityQuery = sql`${severityQuery} GROUP BY severity`;
-      const severityResults = await db.execute(severityQuery);
-      const eventsBySeverity = this.mapCountResults(severityResults);
-
-      // Get average duration
-      let durationQuery: SQL = sql`SELECT AVG(duration) as avg_duration FROM audit_events`;
-      let durationConditions: SQL[] = [sql`duration IS NOT NULL`];
-      if (startDate) durationConditions.push(sql`timestamp >= ${startDate.toISOString()}`);
-      if (endDate) durationConditions.push(sql`timestamp <= ${endDate.toISOString()}`);
-      durationQuery = sql`${durationQuery} WHERE ${sql.join(durationConditions, sql` AND `)}`;
-      const durationResult = await db.execute(durationQuery);
-      const averageDuration = Number(durationResult[0]?.avg_duration || 0);
-
-      // Get error rate
-      let errorQuery: SQL = sql`SELECT COUNT(*) as error_count FROM audit_events`;
-      let errorConditions: SQL[] = [sql`status = 'failed'`];
-      if (startDate) errorConditions.push(sql`timestamp >= ${startDate.toISOString()}`);
-      if (endDate) errorConditions.push(sql`timestamp <= ${endDate.toISOString()}`);
-      errorQuery = sql`${errorQuery} WHERE ${sql.join(errorConditions, sql` AND `)}`;
-      const errorResult = await db.execute(errorQuery);
-      const errorCount = Number(errorResult[0]?.error_count || 0);
-      const errorRate = totalEvents > 0 ? (errorCount / totalEvents) * 100 : 0;
-
-      // Get top errors
-      let topErrorQuery: SQL = sql`SELECT error_code, COUNT(*) as count FROM audit_events`;
-      let topErrorConditions: SQL[] = [sql`error_code IS NOT NULL`];
-      if (startDate) topErrorConditions.push(sql`timestamp >= ${startDate.toISOString()}`);
-      if (endDate) topErrorConditions.push(sql`timestamp <= ${endDate.toISOString()}`);
-      topErrorQuery = sql`${topErrorQuery} WHERE ${sql.join(topErrorConditions, sql` AND `)} GROUP BY error_code ORDER BY count DESC LIMIT 10`;
-      const topErrorResults = await db.execute(topErrorQuery);
-      const topErrors = topErrorResults.map((row: any) => ({
-        error: row.error_code,
-        count: Number(row.count)
-      }));
+      const totalEvents   = Number((totalResult[0] as Record<string, unknown>)?.total    ?? 0);
+      const errorCount    = Number((errorResult[0]  as Record<string, unknown>)?.error_count ?? 0);
+      const averageDuration = Number((durationResult[0] as Record<string, unknown>)?.avg_duration ?? 0);
 
       return {
         totalEvents,
-        eventsByType,
-        eventsByCategory,
-        eventsBySeverity,
+        eventsByType:     this.mapCountRows(typeResults     as Record<string, unknown>[], 'event_type'),
+        eventsByCategory: this.mapCountRows(categoryResults as Record<string, unknown>[], 'category'),
+        eventsBySeverity: this.mapCountRows(severityResults as Record<string, unknown>[], 'severity'),
         averageDuration,
-        errorRate,
-        topErrors
+        errorRate: totalEvents > 0 ? (errorCount / totalEvents) * 100 : 0,
+        topErrors: (topErrorResults as Record<string, unknown>[]).map(row => ({
+          error: String(row.error_code),
+          count: Number(row.count),
+        })),
       };
-
     } catch (error) {
-      logger.error(
-        'Failed to get audit metrics',
-        'AUDIT_LOGGER',
-        { startDate, endDate },
-        error instanceof Error ? error : new Error(String(error))
-      );
+      logger.error('Failed to get audit metrics', 'AUDIT_LOGGER', { startDate, endDate },
+        error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
 
-  /**
-   * Flush buffered events to database
-   */
-  private async flushEvents(): Promise<void> {
-    if (this.eventBuffer.length === 0) return;
+  // ── Flush & lifecycle ────────────────────────────────────────────────────────
 
-    const eventsToFlush = [...this.eventBuffer];
-    this.eventBuffer = [];
+  /** Flush the in-memory buffer to the database. Safe to call manually. */
+  async flush(): Promise<void> {
+    if (this.buffer.length === 0) return;
+
+    const batch = this.buffer.splice(0, this.buffer.length);
 
     try {
-      await this.batchInsertEvents(eventsToFlush);
-      
-      logger.debug(
-        `Flushed ${eventsToFlush.length} audit events to database`,
-        'AUDIT_LOGGER'
-      );
+      await this.batchInsert(batch);
+      logger.debug(`Flushed ${batch.length} audit events`, 'AUDIT_LOGGER');
     } catch (error) {
-      // Put events back in buffer on failure
-      this.eventBuffer.unshift(...eventsToFlush);
-      
-      logger.error(
-        'Failed to flush audit events to database',
-        'AUDIT_LOGGER',
-        { eventCount: eventsToFlush.length },
-        error instanceof Error ? error : new Error(String(error))
-      );
+      // Re-queue at the tail to preserve chronological order.
+      this.buffer.push(...batch);
+      logger.error('Failed to flush audit events', 'AUDIT_LOGGER',
+        { eventCount: batch.length },
+        error instanceof Error ? error : new Error(String(error)));
     }
   }
 
-  /**
-   * Batch insert events to database
-   */
-  private async batchInsertEvents(events: AuditEvent[]): Promise<void> {
+  async shutdown(): Promise<void> {
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+      this.flushTimer = undefined;
+    }
+    await this.flush();
+    logger.info('Audit logger shut down', 'AUDIT_LOGGER');
+  }
+
+  // ── Private helpers ──────────────────────────────────────────────────────────
+
+  private async batchInsert(events: AuditEvent[]): Promise<void> {
     if (events.length === 0) return;
 
-    const queryValues = events.map(event => sql`(
-      ${event.id}, ${event.correlationId}, ${event.timestamp.toISOString()}, ${event.eventType}, ${event.category}, ${event.severity},
-      ${event.userId || null}, ${event.sessionId || null}, ${event.propertyId || null}, ${event.service}, ${event.operation}, ${event.status},
-      ${event.duration || null}, ${JSON.stringify(event.details)}, ${event.error?.code || null}, ${event.error?.message || null}, ${event.error?.stack || null}, ${JSON.stringify(event.metadata)}
+    const values = events.map(e => sql`(
+      ${e.id}, ${e.correlationId}, ${e.timestamp.toISOString()},
+      ${e.eventType}, ${e.category}, ${e.severity},
+      ${e.userId ?? null}, ${e.sessionId ?? null}, ${e.propertyId ?? null},
+      ${e.service}, ${e.operation}, ${e.status},
+      ${e.duration ?? null}, ${e.ipAddress ?? null}, ${e.userAgent ?? null},
+      ${JSON.stringify(e.details)},
+      ${e.error?.code ?? null}, ${e.error?.message ?? null}, ${e.error?.stack ?? null},
+      ${JSON.stringify(e.metadata)}
     )`);
 
-    const insertQuery = sql`
+    await db.execute(sql`
       INSERT INTO audit_events (
-        id, correlation_id, timestamp, event_type, category, severity,
-        user_id, session_id, property_id, service, operation, status,
-        duration, details, error_code, error_message, error_stack, metadata
-      ) VALUES ${sql.join(queryValues, sql`, `)}
-    `;
-
-    await db.execute(insertQuery);
+        id, correlation_id, timestamp,
+        event_type, category, severity,
+        user_id, session_id, property_id,
+        service, operation, status,
+        duration, ip_address, user_agent,
+        details,
+        error_code, error_message, error_stack,
+        metadata
+      ) VALUES ${sql.join(values, sql`, `)}
+    `);
   }
 
-  /**
-   * Start batch processor
-   */
   private startBatchProcessor(): void {
-    this.flushTimer = setInterval(async () => {
-      await this.flushEvents();
-    }, this.flushInterval);
+    this.flushTimer = setInterval(() => { void this.flush(); }, this.flushIntervalMs);
   }
 
-  /**
-   * Setup graceful shutdown
-   */
-  private setupGracefulShutdown(): void {
-    const shutdown = async () => {
-      if (this.flushTimer) {
-        clearInterval(this.flushTimer);
-      }
-      await this.flushEvents();
-    };
-
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
-    process.on('beforeExit', shutdown);
+  private registerShutdownHooks(): void {
+    const handler = () => { void this.shutdown(); };
+    process.on('SIGINT',     handler);
+    process.on('SIGTERM',    handler);
+    process.on('beforeExit', handler);
   }
 
-  /**
-   * Generate unique event ID
-   */
   private generateEventId(): string {
     return `audit_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
-  /**
-   * Extract metadata from request context
-   */
-  private extractMetadata(): Record<string, any> {
-    // In a real implementation, this would extract from request context
+  private serializeError(error: Error): AuditError {
     return {
-      version: process.env.APP_VERSION || '1.0.0',
-      nodeVersion: process.version,
-      timestamp: new Date().toISOString()
+      code:    (error as Error & { code?: string }).code ?? 'UNKNOWN_ERROR',
+      message: error.message,
+      stack:   error.stack,
     };
   }
 
-  /**
-   * Map database results to audit events
-   */
-  private mapDatabaseResults(results: any[]): AuditEvent[] {
-    return results.map(row => ({
-      id: row.id,
-      correlationId: row.correlation_id,
-      timestamp: new Date(row.timestamp),
-      eventType: row.event_type,
-      category: row.category,
-      severity: row.severity,
-      userId: row.user_id,
-      sessionId: row.session_id,
-      propertyId: row.property_id,
-      service: row.service,
-      operation: row.operation,
-      status: row.status,
-      duration: row.duration,
-      details: JSON.parse(row.details || '{}'),
-      error: row.error_code ? {
-        code: row.error_code,
-        message: row.error_message,
-        stack: row.error_stack
+  private extractMetadata(): Record<string, unknown> {
+    return {
+      version:     process.env.APP_VERSION ?? '1.0.0',
+      nodeVersion: process.version,
+      timestamp:   new Date().toISOString(),
+    };
+  }
+
+  /** Map DB rows to strongly-typed AuditEvent objects. */
+  private mapRows(rows: Record<string, unknown>[]): AuditEvent[] {
+    return rows.map(r => ({
+      id:            String(r.id),
+      correlationId: String(r.correlation_id),
+      timestamp:     new Date(String(r.timestamp)),
+      eventType:     r.event_type     as AuditEventType,
+      category:      r.category       as AuditCategory,
+      severity:      r.severity       as AuditSeverity,
+      status:        r.status         as AuditEventStatus,
+      service:       String(r.service),
+      operation:     String(r.operation),
+      userId:        r.user_id     ? String(r.user_id)     : undefined,
+      sessionId:     r.session_id  ? String(r.session_id)  : undefined,
+      propertyId:    r.property_id ? String(r.property_id) : undefined,
+      duration:      r.duration    ? Number(r.duration)    : undefined,
+      ipAddress:     r.ip_address  ? String(r.ip_address)  : undefined,
+      userAgent:     r.user_agent  ? String(r.user_agent)  : undefined,
+      details:       JSON.parse(String(r.details  ?? '{}')),
+      error: r.error_code ? {
+        code:    String(r.error_code),
+        message: String(r.error_message),
+        stack:   r.error_stack ? String(r.error_stack) : undefined,
       } : undefined,
-      metadata: JSON.parse(row.metadata || '{}')
+      metadata: JSON.parse(String(r.metadata ?? '{}')),
     }));
   }
 
-  /**
-   * Map count results to object
-   */
-  private mapCountResults(results: any[]): Record<string, number> {
-    const mapped: Record<string, number> = {};
-    for (const row of results) {
-      const key = Object.keys(row).find(k => k !== 'count');
-      if (key) {
-        mapped[row[key]] = row.count;
-      }
-    }
-    return mapped;
+  /** Map `SELECT key, COUNT(*) AS count` rows into a plain object. */
+  private mapCountRows(
+    rows: Record<string, unknown>[],
+    keyColumn: string,
+  ): Record<string, number> {
+    return Object.fromEntries(
+      rows
+        .filter(r => r[keyColumn] != null)
+        .map(r => [String(r[keyColumn]), Number(r.count)]),
+    );
   }
 }
 
-// Export singleton instance
+// ─── Singleton ────────────────────────────────────────────────────────────────
+
 export const auditLogger = new AuditLogger();

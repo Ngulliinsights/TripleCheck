@@ -4,7 +4,7 @@
  */
 
 import { logger } from '../../infrastructure/observability/telemetry';
-import { LandVerificationErrorCode } from '../errors/LandVerificationErrors';
+import { LandVerificationErrorCode } from '../error-handling/LandVerificationErrors';
 
 export interface FallbackConfig {
   enabled: boolean;
