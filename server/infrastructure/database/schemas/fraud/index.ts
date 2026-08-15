@@ -1,11 +1,19 @@
 /**
  * Fraud Detection System Schemas
  * 
- * Contains schemas for fraud detection, case management,
- * and compliance reporting.
+ * PROVENANCE:
+ * - Initial design focused on real-time fraud detection with ML models and rule-based systems
+ * - Case management workflow added in v2 based on fraud investigation patterns
+ * - Known limitation: risk scoring assumes static thresholds; in practice, fraud patterns evolve
+ *   and require continuous model retraining
+ * 
+ * TRADE-OFFS:
+ * - Chose alert-level detection (per transaction) for immediate intervention capability
+ * - Used decimal for confidence (0.00-1.00) for precision; fraudScore uses integer (0-100) for simplicity
+ * - Investigation workflow assumes manual review capacity; no automated escalation mechanisms
  */
 
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
     pgTable,
     serial,
@@ -15,16 +23,21 @@ import {
     boolean,
     timestamp,
     json,
+    jsonb,
     pgEnum,
     decimal,
     index,
     uniqueIndex,
+    check,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Import core tables for relationships
 import { users, properties, transactions } from "../core";
+
+// Centralized helpers for consistent schema patterns
+import { checkConstraints } from "../helpers";
 
 // Fraud-related enums
 export const fraudAlertStatusEnum = pgEnum("fraud_alert_status", [
@@ -84,9 +97,9 @@ export const fraudAlerts = pgTable(
         riskScore: integer("risk_score").notNull(), // 0-100 risk score
         confidence: decimal("confidence", { precision: 3, scale: 2 }).notNull(), // 0.00-1.00
         detectionMethod: varchar("detection_method", { length: 100 }).notNull(), // 'ml_model', 'rule_based', 'manual', 'community_report'
-        detectionRules: json("detection_rules").$type<string[]>().default([]),
-        evidence: json("evidence").$type<Record<string, unknown>>().default({}),
-        affectedEntities: json("affected_entities").$type<Array<{
+        detectionRules: jsonb("detection_rules").$type<string[]>().default([]),
+        evidence: jsonb("evidence").$type<Record<string, unknown>>().default({}),
+        affectedEntities: jsonb("affected_entities").$type<Array<{
             type: string;
             id: number;
             impact: string;
@@ -97,6 +110,11 @@ export const fraudAlerts = pgTable(
         resolvedAt: timestamp("resolved_at"),
         resolutionNotes: text("resolution_notes"),
         falsePositiveReason: text("false_positive_reason"),
+        // NEW: Outcome tracking for learning and improvement
+        interventionType: varchar("intervention_type", { length: 100 }),
+        interventionOutcome: varchar("intervention_outcome", { length: 100 }),
+        modelVersion: varchar("model_version", { length: 50 }), // Track which ML model generated this
+        learningTags: varchar("learning_tags", { length: 100 }).array(), // For ML feedback
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at").defaultNow().notNull(),
         updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -116,6 +134,25 @@ export const fraudAlerts = pgTable(
         // Composite indexes
         index("fraud_alerts_status_severity_idx").on(table.status, table.severity),
         index("fraud_alerts_category_severity_idx").on(table.category, table.severity),
+        // Partial index for active high-risk alerts (optimizes alert queue)
+        index("fraud_alerts_active_high_risk_partial_idx").on(table.riskScore.desc(), table.createdAt.desc())
+            .where(sql`${table.isActive} = true AND ${table.status} = 'active' AND ${table.severity} IN ('high', 'critical')}`),
+        // Partial index for alerts requiring investigation (optimizes workload)
+        index("fraud_alerts_requires_investigation_partial_idx").on(table.riskScore.desc(), table.createdAt.desc())
+            .where(sql`${table.investigationRequired} = true AND ${table.status} = 'active'`),
+        // GIN indexes for JSONB array columns
+        index("fraud_alerts_detection_rules_idx").using("gin", table.detectionRules),
+        index("fraud_alerts_affected_entities_idx").using("gin", table.affectedEntities),
+        index("fraud_alerts_learning_tags_idx").using("gin", table.learningTags),
+        // Check constraints for data integrity
+        check(
+            "fraud_alerts_risk_score_range_check",
+            checkConstraints.percentage(table.riskScore, "risk_score")
+        ),
+        check(
+            "fraud_alerts_confidence_range_check",
+            checkConstraints.range(table.confidence, 0, 1, "confidence")
+        ),
     ]
 );
 
@@ -134,20 +171,20 @@ export const fraudCases = pgTable(
         primaryInvestigator: integer("primary_investigator")
             .references(() => users.id, { onDelete: "set null" })
             .notNull(),
-        secondaryInvestigators: json("secondary_investigators").$type<number[]>().default([]),
-        suspectedUsers: json("suspected_users").$type<number[]>().default([]),
-        affectedUsers: json("affected_users").$type<number[]>().default([]),
-        relatedProperties: json("related_properties").$type<number[]>().default([]),
-        relatedTransactions: json("related_transactions").$type<number[]>().default([]),
-        relatedAlerts: json("related_alerts").$type<number[]>().default([]),
-        evidence: json("evidence").$type<Array<{
+        secondaryInvestigators: jsonb("secondary_investigators").$type<number[]>().default([]),
+        suspectedUsers: jsonb("suspected_users").$type<number[]>().default([]),
+        affectedUsers: jsonb("affected_users").$type<number[]>().default([]),
+        relatedProperties: jsonb("related_properties").$type<number[]>().default([]),
+        relatedTransactions: jsonb("related_transactions").$type<number[]>().default([]),
+        relatedAlerts: jsonb("related_alerts").$type<number[]>().default([]),
+        evidence: jsonb("evidence").$type<Array<{
             type: string;
             description: string;
             url?: string;
             collectedAt: string;
             collectedBy: number;
         }>>().default([]),
-        timeline: json("timeline").$type<Array<{
+        timeline: jsonb("timeline").$type<Array<{
             timestamp: string;
             event: string;
             description: string;
@@ -159,7 +196,7 @@ export const fraudCases = pgTable(
         legalAction: boolean("legal_action").default(false).notNull(),
         legalActionDetails: text("legal_action_details"),
         complianceReported: boolean("compliance_reported").default(false).notNull(),
-        reportedToAuthorities: json("reported_to_authorities").$type<Array<{
+        reportedToAuthorities: jsonb("reported_to_authorities").$type<Array<{
             authority: string;
             reportDate: string;
             referenceNumber: string;
@@ -168,7 +205,7 @@ export const fraudCases = pgTable(
         closedAt: timestamp("closed_at"),
         resolution: text("resolution"),
         resolutionCategory: varchar("resolution_category", { length: 50 }), // 'confirmed_fraud', 'false_positive', 'insufficient_evidence'
-        preventiveMeasures: json("preventive_measures").$type<string[]>().default([]),
+        preventiveMeasures: jsonb("preventive_measures").$type<string[]>().default([]),
         isActive: boolean("is_active").default(true).notNull(),
         createdAt: timestamp("created_at").defaultNow().notNull(),
         updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -185,6 +222,26 @@ export const fraudCases = pgTable(
         // Composite indexes
         index("fraud_cases_status_priority_idx").on(table.status, table.priority),
         index("fraud_cases_category_severity_idx").on(table.category, table.severity),
+        // Partial index for active high-priority cases (optimizes investigator workload)
+        index("fraud_cases_active_priority_partial_idx").on(table.priority, table.openedAt.desc())
+            .where(sql`${table.isActive} = true AND ${table.status} IN ('pending', 'active') AND ${table.priority} IN ('high', 'urgent')}`),
+        // GIN indexes for JSONB array columns
+        index("fraud_cases_secondary_investigators_idx").using("gin", table.secondaryInvestigators),
+        index("fraud_cases_suspected_users_idx").using("gin", table.suspectedUsers),
+        index("fraud_cases_related_properties_idx").using("gin", table.relatedProperties),
+        index("fraud_cases_related_transactions_idx").using("gin", table.relatedTransactions),
+        index("fraud_cases_related_alerts_idx").using("gin", table.relatedAlerts),
+        index("fraud_cases_evidence_idx").using("gin", table.evidence),
+        index("fraud_cases_preventive_measures_idx").using("gin", table.preventiveMeasures),
+        // Check constraints for data integrity
+        check(
+            "fraud_cases_loss_non_negative_check",
+            sql`${table.estimatedLoss} IS NULL OR ${table.estimatedLoss} >= 0 AND ${table.actualLoss} IS NULL OR ${table.actualLoss} >= 0 AND ${table.recoveredAmount} IS NULL OR ${table.recoveredAmount} >= 0`
+        ),
+        check(
+            "fraud_cases_date_order_check",
+            checkConstraints.dateAfter(table.openedAt, table.closedAt, "case_duration")
+        ),
     ]
 );
 
@@ -198,7 +255,7 @@ export const fraudPatterns = pgTable(
         description: text("description").notNull(),
         category: fraudCategoryEnum("category").notNull(),
         patternType: varchar("pattern_type", { length: 50 }).notNull(), // 'behavioral', 'transactional', 'network', 'temporal'
-        detectionRules: json("detection_rules").$type<Record<string, unknown>>().notNull(),
+        detectionRules: jsonb("detection_rules").$type<Record<string, unknown>>().notNull(),
         mlModelId: varchar("ml_model_id", { length: 100 }),
         confidence: decimal("confidence", { precision: 3, scale: 2 }).notNull(), // 0.00-1.00
         accuracy: decimal("accuracy", { precision: 3, scale: 2 }), // Historical accuracy
@@ -220,6 +277,24 @@ export const fraudPatterns = pgTable(
         index("fraud_patterns_active_idx").on(table.isActive),
         index("fraud_patterns_last_triggered_idx").on(table.lastTriggered),
         index("fraud_patterns_created_by_idx").on(table.createdBy),
+        // Partial index for active high-accuracy patterns (optimizes detection)
+        index("fraud_patterns_active_high_accuracy_partial_idx").on(table.confidence.desc(), table.accuracy.desc())
+            .where(sql`${table.isActive} = true AND ${table.accuracy} >= 0.8`),
+        // GIN indexes for JSONB columns
+        index("fraud_patterns_detection_rules_idx").using("gin", table.detectionRules),
+        // Check constraints for data integrity
+        check(
+            "fraud_patterns_confidence_range_check",
+            checkConstraints.range(table.confidence, 0, 1, "confidence")
+        ),
+        check(
+            "fraud_patterns_accuracy_range_check",
+            checkConstraints.range(table.accuracy, 0, 1, "accuracy")
+        ),
+        check(
+            "fraud_patterns_fpr_range_check",
+            checkConstraints.range(table.falsePositiveRate, 0, 1, "false_positive_rate")
+        ),
     ]
 );
 
@@ -242,9 +317,9 @@ export const complianceReports = pgTable(
         totalLoss: decimal("total_loss", { precision: 12, scale: 2 }),
         recoveredAmount: decimal("recovered_amount", { precision: 12, scale: 2 }),
         affectedUsers: integer("affected_users").default(0).notNull(),
-        preventiveMeasures: json("preventive_measures").$type<string[]>().default([]),
-        recommendations: json("recommendations").$type<string[]>().default([]),
-        attachments: json("attachments").$type<string[]>().default([]),
+        preventiveMeasures: jsonb("preventive_measures").$type<string[]>().default([]),
+        recommendations: jsonb("recommendations").$type<string[]>().default([]),
+        attachments: jsonb("attachments").$type<string[]>().default([]),
         submittedBy: integer("submitted_by")
             .references(() => users.id, { onDelete: "set null" })
             .notNull(),
@@ -270,6 +345,26 @@ export const complianceReports = pgTable(
         // Composite indexes
         index("compliance_reports_status_due_date_idx").on(table.status, table.dueDate),
         index("compliance_reports_body_period_idx").on(table.regulatoryBody, table.reportingPeriod),
+        // Partial index for pending reports near due date (optimizes compliance workflow)
+        index("compliance_reports_pending_due_soon_partial_idx").on(table.dueDate.asc())
+            .where(sql`${table.status} = 'under_review' AND ${table.dueDate} <= NOW() + INTERVAL '7 days'`),
+        // GIN indexes for JSONB array columns
+        index("compliance_reports_preventive_measures_idx").using("gin", table.preventiveMeasures),
+        index("compliance_reports_recommendations_idx").using("gin", table.recommendations),
+        index("compliance_reports_attachments_idx").using("gin", table.attachments),
+        // Check constraints for data integrity
+        check(
+            "compliance_reports_date_order_check",
+            checkConstraints.dateAfter(table.periodStart, table.periodEnd, "reporting_period")
+        ),
+        check(
+            "compliance_reports_non_negative_incidents_check",
+            sql`${table.totalIncidents} >= 0 AND ${table.confirmedFraud} >= 0 AND ${table.falsePositives} >= 0 AND ${table.affectedUsers} >= 0`
+        ),
+        check(
+            "compliance_reports_loss_non_negative_check",
+            sql`${table.totalLoss} IS NULL OR ${table.totalLoss} >= 0 AND ${table.recoveredAmount} IS NULL OR ${table.recoveredAmount} >= 0`
+        ),
     ]
 );
 
@@ -382,4 +477,39 @@ export const fraudSchemas = {
     selectFraudPatternSchema,
     insertComplianceReportSchema,
     selectComplianceReportSchema,
+};
+
+// =============================================================================
+// TYPE EXPORTS
+// =============================================================================
+
+export type FraudAlert = typeof fraudAlerts.$inferSelect;
+export type NewFraudAlert = typeof fraudAlerts.$inferInsert;
+
+export type FraudCase = typeof fraudCases.$inferSelect;
+export type NewFraudCase = typeof fraudCases.$inferInsert;
+
+export type FraudPattern = typeof fraudPatterns.$inferSelect;
+export type NewFraudPattern = typeof fraudPatterns.$inferInsert;
+
+export type ComplianceReport = typeof complianceReports.$inferSelect;
+export type NewComplianceReport = typeof complianceReports.$inferInsert;
+
+// Domain-specific type aliases for common queries
+export type ActiveFraudAlert = FraudAlert & {
+  isActive: true;
+  status: "active";
+};
+
+export type HighRiskAlert = FraudAlert & {
+  severity: "high" | "critical";
+};
+
+export type ActiveFraudCase = FraudCase & {
+  isActive: true;
+  status: "pending" | "active";
+};
+
+export type ActiveFraudPattern = FraudPattern & {
+  isActive: true;
 };

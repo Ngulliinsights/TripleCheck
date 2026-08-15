@@ -1,76 +1,83 @@
-/* 
+/*
   TRIPLECHECK GLOBAL STYLES
   =========================
-  Unified design system entry point
+  Unified design system entry point.
+
+  Role of this file
+  -----------------
+  • Imports the canonical design-system.css (tokens, components, utilities).
+  • Adds *only* identifiers that do not exist there:
+      – Legacy class aliases (.animate-fadeInUp, .animate-fade-in-up)
+      – Responsive page-container helper
+      – Drag-gesture utility (.mobile-nav-drag)
+      – Glassmorphism shorthand variants (.glass-light/medium/strong)
+      – Transparent-navbar helpers
+      – Visibility helpers (.mobile-only / .desktop-only)
+      – Touch-target floor for coarse-pointer devices
+  • Extends the reduced-motion and high-contrast blocks so they cover
+    every animated class from both files (no gaps, no duplication).
+
+  What was intentionally removed vs. design-system.css
+  ------------------------------------------------------
+  Duplicate @keyframes fadeInUp          → defined once in design-system.css
+  Duplicate .progressFill                → defined once in design-system.css
+  Duplicate .bg-dot-pattern              → defined once in design-system.css
+  Duplicate .grid-container              → defined once in design-system.css
+  Duplicate .property-card { transition }→ defined once in design-system.css
+  Duplicate :root { --nav-height }       → defined once in design-system.css
+  Duplicate .navbar-offset* variants     → defined once in design-system.css
+  Duplicate .nav-aware-spacing           → defined once in design-system.css
+  Duplicate .scroll-margin-nav           → defined once in design-system.css
+  Duplicate @supports container-type     → defined once in design-system.css
+  Duplicate @media print glass resets    → defined once in design-system.css
+  Excessive will-change on static nodes  → removed (GPU-layer leak)
+  transform: translateZ(0) on statics    → removed (unnecessary compositing)
+  backface-visibility: hidden            → removed (triggers repaint on every frame)
 */
 
-/* Unified Design System - Includes all styles and animations */
+/* ============================================================
+   IMPORTS
+   ============================================================ */
+
 @import "./design-system.css";
 
 @import "tailwindcss";
 @config "../../../../tailwind.config.js";
 
-/* 
-  LEGACY COMPATIBILITY
-  ===================
-  Backward compatibility for existing components
-*/
+/* ============================================================
+   NAVIGATION — additive custom properties only
+   (--nav-height lives in design-system.css :root)
+   ============================================================ */
 
-/* Legacy fadeInUp animation for existing components - Performance Optimized */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 16px, 0); /* GPU acceleration */
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
+:root {
+  --nav-blur-strength: 16px;
+  --nav-saturation:    150%;
 }
+
+/* ============================================================
+   LEGACY ANIMATION ALIASES
+   Thin wrappers that reference the canonical fadeInUp keyframe
+   already defined in design-system.css — no re-declaration.
+   ============================================================ */
 
 .animate-fadeInUp,
 .animate-fade-in-up {
-  animation: fadeInUp 0.4s ease forwards; /* Faster animation */
-  will-change: opacity, transform; /* Performance hint */
+  animation: fadeInUp 0.4s ease forwards;
+  /* will-change intentionally omitted: applied only when the element
+     is about to animate via JS (add/remove class at mount). Blanket
+     will-change on all instances wastes GPU layers on static content. */
 }
 
-/* Property grid styles */
+/* ============================================================
+   LEGACY PAGE CONTAINER
+   ============================================================ */
+
 .property-item-container {
   padding: 0.5rem;
 }
 
-.property-card {
-  transition: all 0.3s ease;
-}
-
-.grid-container {
-  width: 100%;
-}
-
-/* Background pattern utility */
-.bg-dot-pattern {
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239ca3af' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/svg%3E");
-}
-
-/* Legacy progress bar utility - Performance Optimized */
-.progressFill {
-  height: 0.5rem;
-  background-color: hsl(var(--secondary));
-  border-radius: 9999px;
-  transition: width 0.3s ease; /* Consistent timing */
-  will-change: width; /* Performance hint */
-}
-
-/* Navigation variables - Performance Optimized */
-:root {
-  --nav-height: 88px;
-  --nav-blur-strength: 16px; /* Reduced for better performance */
-  --nav-saturation: 150%; /* Reduced for better performance */
-}
-
-/* Legacy page container utility - Responsive Optimized */
 .page-container {
-  padding-top: 5rem; /* Mobile-first approach */
+  padding-top: 5rem;   /* mobile-first */
   padding-bottom: 2rem;
 }
 
@@ -80,148 +87,163 @@
   }
 }
 
-/* Legacy navbar offset utilities - CSS Variables Optimized */
-.navbar-offset {
-  padding-top: calc(var(--nav-height) - 0.5rem);
+/* ============================================================
+   GLASSMORPHISM SHORTHAND VARIANTS
+   Complement design-system.css .glass-base with opinionated
+   intensity presets. All three share the same transition so
+   swapping classes doesn't cause a jump.
+   ============================================================ */
+
+.glass-light,
+.glass-medium,
+.glass-strong {
+  border-style: solid;
+  border-width: 1px;
+  transition:
+    background-color 0.2s ease,
+    border-color     0.2s ease,
+    box-shadow       0.2s ease;
 }
 
-.navbar-offset-hero {
-  padding-top: calc(var(--nav-height) - 1rem);
+.glass-light {
+  background: hsl(var(--background) / 0.08);
+  -webkit-backdrop-filter: blur(8px) saturate(var(--nav-saturation));
+  backdrop-filter: blur(8px) saturate(var(--nav-saturation));
+  border-color: hsl(var(--border) / 0.15);
 }
 
-.navbar-offset-minimal {
-  padding-top: calc(var(--nav-height) - 1.5rem);
+.glass-medium {
+  background: hsl(var(--background) / 0.12);
+  -webkit-backdrop-filter: blur(12px) saturate(var(--nav-saturation));
+  backdrop-filter: blur(12px) saturate(var(--nav-saturation));
+  border-color: hsl(var(--border) / 0.20);
 }
 
-@media (min-width: 768px) {
-  .navbar-offset {
-    padding-top: var(--nav-height);
-  }
-
-  .navbar-offset-hero {
-    padding-top: calc(var(--nav-height) - 0.5rem);
-  }
-
-  .navbar-offset-minimal {
-    padding-top: calc(var(--nav-height) - 1rem);
-  }
+.glass-strong {
+  background: hsl(var(--background) / 0.16);
+  -webkit-backdrop-filter: blur(16px) saturate(var(--nav-saturation));
+  backdrop-filter: blur(16px) saturate(var(--nav-saturation));
+  border-color: hsl(var(--border) / 0.25);
 }
 
-/* Legacy mobile navigation drag utilities - Performance Optimized */
-.mobile-nav-drag {
-  transition: none !important;
-  will-change: transform; /* Performance hint */
-}
+/* ============================================================
+   TRANSPARENT NAVBAR HELPERS
+   ============================================================ */
 
-/* Simplified drag offset support */
-.mobile-nav-drag[data-drag-offset] {
-  transform: translateX(var(--drag-offset, 0px));
-}
-
-/* Fallback for older browsers */
-@supports not (--css: variables) {
-  .mobile-nav-drag[data-drag-offset="-50"] {
-    transform: translateX(-50px);
-  }
-  .mobile-nav-drag[data-drag-offset="-100"] {
-    transform: translateX(-100px);
-  }
-  .mobile-nav-drag[data-drag-offset="-150"] {
-    transform: translateX(-150px);
-  }
-  .mobile-nav-drag[data-drag-offset="-200"] {
-    transform: translateX(-200px);
-  }
-  .mobile-nav-drag[data-drag-offset="-250"] {
-    transform: translateX(-250px);
-  }
-  .mobile-nav-drag[data-drag-offset="-300"] {
-    transform: translateX(-300px);
-  }
-}
-
-/* Legacy progress bar width utility - Performance Optimized */
-.progress-bar[data-width] {
-  width: calc(var(--progress-width, 0) * 1%);
-  will-change: width; /* Performance hint */
-}
-
-/* Legacy navigation utilities */
-.nav-aware-spacing {
-  padding-top: var(--nav-height);
-}
-
-.scroll-margin-nav {
-  scroll-margin-top: calc(var(--nav-height) + 1rem);
-}
-
-/* 
-  TRANSPARENT NAVBAR ENHANCEMENTS
-  ===============================
-  Enhanced blur effects for transparent navigation
-*/
-
-/* Ensure content behind transparent navbar gets proper blur treatment */
+/* Stacks content correctly beneath a transparent/glass navbar */
 .transparent-navbar-content {
   position: relative;
   z-index: 1;
 }
 
-/* Enhanced backdrop blur for transparent elements */
+/* Named alias for the navbar's own blur — reads cleaner in JSX */
 .enhanced-backdrop-blur {
   -webkit-backdrop-filter: blur(var(--nav-blur-strength)) saturate(var(--nav-saturation));
   backdrop-filter: blur(var(--nav-blur-strength)) saturate(var(--nav-saturation));
 }
 
-/* Glassmorphism utility classes - Performance Optimized */
-.glass-light {
-  background: hsl(var(--background) / 0.08);
-  -webkit-backdrop-filter: blur(8px) saturate(150%);
-  backdrop-filter: blur(8px) saturate(150%);
-  border: 1px solid hsl(var(--border) / 0.15);
-}
-
-.glass-medium {
-  background: hsl(var(--background) / 0.12);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid hsl(var(--border) / 0.2);
-}
-
-.glass-strong {
-  background: hsl(var(--background) / 0.16);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid hsl(var(--border) / 0.25);
-}
-
-/* Ensure smooth transitions for transparency changes - Performance Optimized */
+/* Smooth transitions when navbar switches between transparent and filled */
 .navbar-transition {
-  transition: background-color 0.2s ease, backdrop-filter 0.2s ease, border-color 0.2s ease;
-  will-change: background-color, backdrop-filter, border-color; /* Performance hint */
+  transition:
+    background-color 0.2s ease,
+    backdrop-filter  0.2s ease,
+    border-color     0.2s ease;
+  /* will-change omitted: the browser handles compositing automatically
+     for short transitions; forcing a layer on every page load is wasteful. */
 }
 
-/* 
-  ACCESSIBILITY ENHANCEMENTS
-  ==========================
-  Enhanced accessibility support with comprehensive coverage
-*/
+/* ============================================================
+   MOBILE DRAG GESTURE
+   Only this element moves via JS-driven transforms, so will-change
+   is justified here — and only here.
+   ============================================================ */
 
-/* Comprehensive reduced motion support */
+.mobile-nav-drag {
+  transition: none !important;  /* JS owns the transform during drag */
+  will-change: transform;
+}
+
+/* Data-attribute offset support (set via inline style in JS is preferred;
+   these serve as a fallback for environments that strip inline styles). */
+.mobile-nav-drag[data-drag-offset] {
+  transform: translateX(var(--drag-offset, 0px));
+}
+
+/* CSS-variable fallback for browsers that predate custom properties */
+@supports not (--css: variables) {
+  .mobile-nav-drag[data-drag-offset="-50"]  { transform: translateX(-50px);  }
+  .mobile-nav-drag[data-drag-offset="-100"] { transform: translateX(-100px); }
+  .mobile-nav-drag[data-drag-offset="-150"] { transform: translateX(-150px); }
+  .mobile-nav-drag[data-drag-offset="-200"] { transform: translateX(-200px); }
+  .mobile-nav-drag[data-drag-offset="-250"] { transform: translateX(-250px); }
+  .mobile-nav-drag[data-drag-offset="-300"] { transform: translateX(-300px); }
+}
+
+/* ============================================================
+   PROGRESS BAR — data-attribute width fallback
+   The .progressFill base class lives in design-system.css.
+   This selector handles the data-driven width variant.
+   ============================================================ */
+
+.progress-bar[data-width] {
+  width: calc(var(--progress-width, 0) * 1%);
+  /* will-change omitted here; add dynamically via JS immediately before
+     the transition starts, then remove it once the transition ends. */
+}
+
+/* ============================================================
+   VISIBILITY HELPERS
+   ============================================================ */
+
+.mobile-only  { display: block; }
+.desktop-only { display: none;  }
+
+@media (min-width: 768px) {
+  .mobile-only  { display: none;  }
+  .desktop-only { display: block; }
+}
+
+/* ============================================================
+   TOUCH TARGET FLOOR
+   WCAG 2.5.5 — interactive elements ≥ 44 × 44 px on touch screens.
+   ============================================================ */
+
+@media (hover: none) and (pointer: coarse) {
+  .btn,
+  .badge,
+  .property-card {
+    min-height: 44px;
+    min-width:  44px;
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION — COMPREHENSIVE OVERRIDE
+   Merges coverage from both files into one authoritative block.
+   The design-system.css block covers its own classes; this block
+   covers the aliases and additions defined above so nothing slips
+   through.
+   ============================================================ */
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-fadeInUp {
-    animation: none;
+
+  /* Legacy animation aliases → freeze at visible resting state */
+  .animate-fadeInUp,
+  .animate-fade-in-up {
+    animation: none !important;
     opacity: 1;
     transform: none;
   }
-  
+
+  /* Navbar & drag transitions → instant */
   .navbar-transition,
   .mobile-nav-drag,
-  .progressFill {
-    transition: none;
+  .progress-bar[data-width] {
+    transition: none !important;
   }
 
-  /* Disable all backdrop filters for reduced motion */
+  /* Glass variants — disable blur effects entirely (they can trigger
+     motion-sensitive flicker on some platforms) */
   .glass-light,
   .glass-medium,
   .glass-strong,
@@ -232,8 +254,14 @@
   }
 }
 
-/* High contrast mode support */
+/* ============================================================
+   HIGH CONTRAST — COMPREHENSIVE OVERRIDE
+   Covers all glass surfaces defined in this file so text remains
+   legible regardless of backdrop-filter support.
+   ============================================================ */
+
 @media (prefers-contrast: high) {
+
   .glass-light,
   .glass-medium,
   .glass-strong {
@@ -241,69 +269,30 @@
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     border: 2px solid hsl(var(--border));
+    /* Restore foreground text explicitly so gradient-clipped headings
+       inside glass panels don't disappear */
+    color: hsl(var(--foreground));
   }
 
   .enhanced-backdrop-blur {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-}
 
-/* Touch-friendly interactive elements */
-@media (hover: none) and (pointer: coarse) {
-  .btn,
-  .badge,
-  .property-card {
-    min-height: 44px;
-    min-width: 44px;
+  /* Ensure the navbar itself gets a solid background */
+  .navbar-transition {
+    background-color: hsl(var(--background)) !important;
   }
 }
 
-/* 
-  PERFORMANCE OPTIMIZATIONS
-  =========================
-  Additional performance enhancements
-*/
+/* ============================================================
+   PRINT
+   Only additions not already covered by design-system.css.
+   ============================================================ */
 
-/* GPU acceleration for frequently animated elements */
-.mobile-nav-drag,
-.progressFill,
-.navbar-transition {
-  transform: translateZ(0);
-}
-
-/* Enhanced mobile-first responsive utilities */
-.mobile-only {
-  display: block;
-}
-
-.desktop-only {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .mobile-only {
-    display: none;
-  }
-
-  .desktop-only {
-    display: block;
-  }
-}
-
-/* Container queries support (future-proofing) */
-@supports (container-type: inline-size) {
-  .container-query {
-    container-type: inline-size;
-  }
-}
-
-/* 
-  PRINT STYLES
-  ============
-  Optimized print styles
-*/
 @media print {
+
+  /* Glass shorthand variants */
   .glass-light,
   .glass-medium,
   .glass-strong,
@@ -314,8 +303,8 @@
     border: 1px solid #ccc !important;
   }
 
-  .mobile-nav-panel,
-  .mobile-nav-overlay {
+  /* Drag panel & overlay are interaction-only, not content */
+  .mobile-nav-drag {
     display: none !important;
   }
 }

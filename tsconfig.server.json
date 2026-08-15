@@ -23,6 +23,7 @@
     "noEmit": false,
     "baseUrl": ".",
     "downlevelIteration": true,
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["./server/*"],
       "@server/*": ["./server/*"],

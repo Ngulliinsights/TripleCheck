@@ -14,6 +14,7 @@ export * from './trust';
 export * from './fraud';
 export * from './communication';
 export * from './analytics';
+export * from './public-projects';
 
 // Re-export core tables for convenience
 export { 
@@ -155,6 +156,32 @@ export {
   selectAnalyticsMetricSchema
 } from './analytics';
 
+// Re-export public-projects tables for convenience
+export {
+  publicProjects,
+  propertyProjectOverlaps,
+  informationAsymmetryAlerts,
+  disclosureEvents,
+  projectMarketImpact,
+  // Relations
+  publicProjectsRelations,
+  propertyProjectOverlapsRelations,
+  informationAsymmetryAlertsRelations,
+  disclosureEventsRelations,
+  projectMarketImpactRelations,
+  // Schemas
+  insertPublicProjectSchema,
+  selectPublicProjectSchema,
+  insertPropertyProjectOverlapSchema,
+  selectPropertyProjectOverlapSchema,
+  insertInformationAsymmetryAlertSchema,
+  selectInformationAsymmetryAlertSchema,
+  insertDisclosureEventSchema,
+  selectDisclosureEventSchema,
+  insertProjectMarketImpactSchema,
+  selectProjectMarketImpactSchema
+} from './public-projects';
+
 // Import core tables first
 import {
   users,
@@ -195,6 +222,15 @@ import {
   communityFeedback,
   expertAssignments,
 } from './verification';
+
+// Import public-projects tables
+import {
+  publicProjects,
+  propertyProjectOverlaps,
+  informationAsymmetryAlerts,
+  disclosureEvents,
+  projectMarketImpact,
+} from './public-projects';
 
 // Import trust tables
 import {
@@ -267,6 +303,13 @@ export const allSchemas = {
   // Analytics tables
   analyticsEvents,
   analyticsMetrics,
+  
+  // Public-projects tables
+  publicProjects,
+  propertyProjectOverlaps,
+  informationAsymmetryAlerts,
+  disclosureEvents,
+  projectMarketImpact,
 };
 
 // Export all relations as a single object

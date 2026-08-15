@@ -1,11 +1,19 @@
 /**
  * Core Database Schemas
  * 
- * Contains the main entities: users, properties, reviews, favorites, etc.
- * This is moved from server/infrastructure/database/schemas/consolidated to the consolidated database directory.
+ * PROVENANCE:
+ * - Initial design focused on property listing and user management
+ * - Trust scoring system added in v2 based on community feedback patterns
+ * - Known limitation: trustScore assumes linear progression; in practice,
+ *   trust building is non-linear and context-dependent
+ * 
+ * TRADE-OFFS:
+ * - Chose property-level foreign keys for direct integration with listing workflow
+ * - Used serial IDs for simplicity; UUID migration considered for future distributed needs
+ * - Geolocation stored as coordinates only; no spatial indexing yet due to PostGIS dependency
  */
 
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -19,9 +27,13 @@ import {
   decimal,
   index,
   uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Centralized helpers for consistent schema patterns
+import { checkConstraints } from "../helpers";
 
 // Define enums for better type safety and consistency
 export const verificationStatusEnum = pgEnum("verification_status", [
@@ -134,6 +146,14 @@ export const users = pgTable(
       table.isActive,
       table.role
     ),
+    // Partial index for active users only (optimizes common queries)
+    activeUsersIdx: index("users_active_partial_idx").on(table.trustScore, table.createdAt)
+      .where(sql`${table.isActive} = true`),
+    // Check constraints for data integrity
+    check(
+      "users_trust_score_range_check",
+      checkConstraints.percentage(table.trustScore, "trust_score")
+    ),
   })
 );
 
@@ -190,6 +210,18 @@ export const properties = pgTable(
       table.location,
       table.price
     ),
+    // Partial index for active properties only (optimizes listing queries)
+    activePropertiesIdx: index("properties_active_partial_idx").on(table.price, table.createdAt.desc())
+      .where(sql`${table.isActive} = true`),
+    // Check constraints for data integrity
+    check(
+      "properties_price_positive_check",
+      checkConstraints.positive(table.price, "price")
+    ),
+    check(
+      "properties_date_range_check",
+      checkConstraints.dateAfter(table.availableFrom, table.availableUntil, "date_range")
+    ),
   })
 );
 
@@ -230,10 +262,22 @@ export const reviews = pgTable(
       table.propertyId,
       table.rating
     ),
+    // Partial index for active verified reviews only
+    activeVerifiedReviewsIdx: index("reviews_active_verified_partial_idx").on(table.rating, table.createdAt.desc())
+      .where(sql`${table.isActive} = true AND ${table.verified} = true`),
     // Unique constraint to prevent duplicate reviews
     uniqueUserPropertyIdx: uniqueIndex("reviews_user_property_unique").on(
       table.userId,
       table.propertyId
+    ),
+    // Check constraints for data integrity
+    ratingRangeCheck: check(
+      "reviews_rating_range_check",
+      checkConstraints.range(table.rating, 1, 5, "rating")
+    ),
+    nonNegativeCountsCheck: check(
+      "reviews_non_negative_counts_check",
+      sql`${table.helpfulCount} >= 0 AND ${table.reportCount} >= 0`
     ),
   })
 );
@@ -286,6 +330,9 @@ export const propertyViews = pgTable(
       table.propertyId,
       table.viewedAt
     ),
+    // Partial index for recent views only (optimizes analytics)
+    recentViewsIdx: index("property_views_recent_partial_idx").on(table.viewedAt.desc())
+      .where(sql`${table.viewedAt} > NOW() - INTERVAL '30 days'`),
   })
 );
 
@@ -295,6 +342,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   reviews: many(reviews),
   favorites: many(favorites),
   propertyViews: many(propertyViews),
+  transactions: many(transactions),
+  professionalProfile: many(professionals),
 }));
 
 export const propertiesRelations = relations(properties, ({ one, many }) => ({
@@ -431,6 +480,21 @@ export const transactions = pgTable(
       table.propertyId,
       table.transactionDate
     ),
+    // Partial index for pending transactions (optimizes workflow queries)
+    pendingTransactionsIdx: index("transactions_pending_partial_idx").on(table.transactionDate.desc())
+      .where(sql`${table.status} = 'pending'`),
+    // Partial index for suspicious transactions (optimizes fraud detection)
+    suspiciousTransactionsIdx: index("transactions_suspicious_partial_idx").on(table.fraudScore.desc(), table.transactionDate.desc())
+      .where(sql`${table.isSuspicious} = true`),
+    // Check constraints for data integrity
+    amountPositiveCheck: check(
+      "transactions_amount_positive_check",
+      checkConstraints.positive(table.amount, "amount")
+    ),
+    fraudScoreRangeCheck: check(
+      "transactions_fraud_score_range_check",
+      checkConstraints.percentage(table.fraudScore, "fraud_score")
+    ),
   })
 );
 
@@ -465,6 +529,9 @@ export const statistics = pgTable(
       table.metricType,
       table.periodType
     ),
+    // Partial index for active statistics only
+    activeStatisticsIdx: index("statistics_active_partial_idx").on(table.calculatedAt.desc())
+      .where(sql`${table.isActive} = true`),
     // Unique constraint for preventing duplicate metrics
     uniqueMetricIdx: uniqueIndex("statistics_unique_metric").on(
       table.metricType,
@@ -472,6 +539,11 @@ export const statistics = pgTable(
       table.periodType,
       table.periodStart,
       table.periodEnd
+    ),
+    // Check constraints for data integrity
+    periodOrderCheck: check(
+      "statistics_period_order_check",
+      checkConstraints.dateAfter(table.periodStart, table.periodEnd, "period_order")
     ),
   })
 );
@@ -581,10 +653,26 @@ export const professionals = pgTable(
       table.primarySpecialization,
       table.rating
     ),
+    // Partial index for active available professionals (optimizes search queries)
+    activeAvailableIdx: index("professionals_active_available_partial_idx").on(table.rating.desc(), table.responseTime)
+      .where(sql`${table.isActive} = true AND ${table.isAvailable} = true`),
+    // Check constraints for data integrity
+    ratingRangeCheck: check(
+      "professionals_rating_range_check",
+      checkConstraints.range(table.rating, 0, 5, "rating")
+    ),
+    experienceNonNegativeCheck: check(
+      "professionals_experience_non_negative_check",
+      checkConstraints.nonNegative(table.yearsOfExperience, "experience")
+    ),
+    responseTimePositiveCheck: check(
+      "professionals_response_time_positive_check",
+      checkConstraints.positive(table.responseTime, "response_time")
+    ),
   })
 );
 
-// Add relations for new tables
+// Define relationships for new tables
 export const transactionsRelations = relations(transactions, ({ one }) => ({
   user: one(users, {
     fields: [transactions.userId],
@@ -603,16 +691,6 @@ export const professionalsRelations = relations(professionals, ({ one }) => ({
   }),
 }));
 
-// Update user relations to include new tables
-export const updatedUsersRelations = relations(users, ({ many }) => ({
-  properties: many(properties),
-  reviews: many(reviews),
-  favorites: many(favorites),
-  propertyViews: many(propertyViews),
-  transactions: many(transactions),
-  professionalProfile: many(professionals),
-}));
-
 // Zod schemas for new tables
 export const insertTransactionSchema = createInsertSchema(transactions, {
   amount: (schema) => schema.regex(/^\d+(\.\d{1,2})?$/),
@@ -629,3 +707,45 @@ export const insertProfessionalSchema = createInsertSchema(professionals, {
 });
 
 export const selectProfessionalSchema = createSelectSchema(professionals);
+
+// =============================================================================
+// TYPE EXPORTS
+// =============================================================================
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+
+export type Property = typeof properties.$inferSelect;
+export type NewProperty = typeof properties.$inferInsert;
+
+export type Review = typeof reviews.$inferSelect;
+export type NewReview = typeof reviews.$inferInsert;
+
+export type Favorite = typeof favorites.$inferSelect;
+export type NewFavorite = typeof favorites.$inferInsert;
+
+export type PropertyView = typeof propertyViews.$inferSelect;
+export type NewPropertyView = typeof propertyViews.$inferInsert;
+
+export type Transaction = typeof transactions.$inferSelect;
+export type NewTransaction = typeof transactions.$inferInsert;
+
+export type Statistic = typeof statistics.$inferSelect;
+export type NewStatistic = typeof statistics.$inferInsert;
+
+export type Professional = typeof professionals.$inferSelect;
+export type NewProfessional = typeof professionals.$inferInsert;
+
+// Domain-specific type aliases for common queries
+export type ActiveProperty = Property & {
+  isActive: true;
+};
+
+export type ActiveUser = User & {
+  isActive: true;
+};
+
+export type VerifiedProfessional = Professional & {
+  verificationStatus: "verified";
+  isActive: true;
+};

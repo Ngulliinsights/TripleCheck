@@ -1,11 +1,19 @@
 /**
  * Verification Schemas
  * 
- * Contains schemas related to land verification, expert assignments,
- * and verification workflows.
+ * PROVENANCE:
+ * - Initial design focused on multi-layer property verification (registry, physical, community, government, legal, expert)
+ * - Expert coordination system added in v2 based on field research with Kenyan land surveyors
+ * - Known limitation: current system assumes all verification layers are equally applicable;
+ *   in practice, rural vs. urban properties have different verification priorities
+ * 
+ * TRADE-OFFS:
+ * - Chose session-based verification (per property) for integration with existing listing workflow
+ * - Risk assessment uses 0-100 scores for simplicity; in practice, risk is multi-dimensional
+ * - Community feedback uses reliability scores; no calibration mechanism for new reviewers
  */
 
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
     pgTable,
     serial,
@@ -15,16 +23,21 @@ import {
     boolean,
     timestamp,
     json,
+    jsonb,
     pgEnum,
     decimal,
     index,
     uniqueIndex,
+    check,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Import core tables for relationships
 import { users, properties, professionals } from "../core";
+
+// Centralized helpers for consistent schema patterns
+import { checkConstraints } from "../helpers";
 
 // Land verification specific enums
 export const landVerificationStatusEnum = pgEnum("land_verification_status", [
@@ -112,6 +125,22 @@ export const landVerificationSessions = pgTable(
         // Composite indexes for common queries
         index("land_verification_sessions_property_status_idx").on(table.propertyId, table.status),
         index("land_verification_sessions_user_status_idx").on(table.userId, table.status),
+        // Partial index for active sessions only (optimizes workflow queries)
+        index("land_verification_sessions_active_partial_idx").on(table.riskLevel, table.createdAt.desc())
+            .where(sql`${table.status} IN ('not_started', 'in_progress')`),
+        // Check constraints for data integrity
+        check(
+            "land_verification_sessions_risk_score_range_check",
+            checkConstraints.percentage(table.overallRiskScore, "risk_score")
+        ),
+        check(
+            "land_verification_sessions_confidence_range_check",
+            checkConstraints.range(table.confidence, 0, 1, "confidence")
+        ),
+        check(
+            "land_verification_sessions_date_order_check",
+            checkConstraints.dateAfter(table.estimatedCompletionDate, table.actualCompletionDate, "completion_date")
+        ),
     ]
 );
 
@@ -132,7 +161,7 @@ export const verificationLayers = pgTable(
         estimatedDuration: integer("estimated_duration"), // in hours
         actualDuration: integer("actual_duration"), // in hours
         assignedExpertId: integer("assigned_expert_id").references(() => professionals.id),
-        results: json("results").$type<Record<string, unknown>>().default({}),
+        results: jsonb("results").$type<Record<string, unknown>>().default({}),
         notes: text("notes"),
         createdAt: timestamp("created_at").defaultNow().notNull(),
         updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -145,8 +174,20 @@ export const verificationLayers = pgTable(
         // Composite indexes
         index("verification_layers_session_layer_idx").on(table.sessionId, table.layerType),
         index("verification_layers_session_status_idx").on(table.sessionId, table.status),
+        // Partial index for incomplete layers (optimizes workflow queries)
+        index("verification_layers_incomplete_partial_idx").on(table.layerType, table.startedAt)
+            .where(sql`${table.status} IN ('not_started', 'in_progress')`),
         // Unique constraint to prevent duplicate layers per session
         uniqueIndex("verification_layers_session_layer_unique").on(table.sessionId, table.layerType),
+        // Check constraints for data integrity
+        check(
+            "verification_layers_duration_non_negative_check",
+            checkConstraints.nonNegative(table.estimatedDuration, "estimated_duration")
+        ),
+        check(
+            "verification_layers_actual_duration_non_negative_check",
+            checkConstraints.nonNegative(table.actualDuration, "actual_duration")
+        ),
     ]
 );
 
@@ -180,6 +221,18 @@ export const riskFactors = pgTable(
         // Composite indexes
         index("risk_factors_session_category_idx").on(table.sessionId, table.category),
         index("risk_factors_session_severity_idx").on(table.sessionId, table.severity),
+        // Partial index for active high-severity risks (optimizes alert queries)
+        index("risk_factors_active_severity_partial_idx").on(table.category, table.confidence.desc())
+            .where(sql`${table.isActive} = true AND ${table.severity} IN ('high', 'critical')`),
+        // Check constraints for data integrity
+        check(
+            "risk_factors_confidence_range_check",
+            checkConstraints.range(table.confidence, 0, 1, "confidence")
+        ),
+        check(
+            "risk_factors_likelihood_range_check",
+            checkConstraints.range(table.likelihood, 0, 1, "likelihood")
+        ),
     ]
 );
 
@@ -195,11 +248,11 @@ export const governmentDesignations = pgTable(
             governmentDesignationTypeEnum("designation_type").notNull(),
         authority: varchar("authority", { length: 255 }).notNull(),
         designation: varchar("designation", { length: 255 }).notNull(),
-        restrictions: json("restrictions").$type<string[]>().default([]),
+        restrictions: jsonb("restrictions").$type<string[]>().default([]),
         bufferZone: integer("buffer_zone"), // in meters
         riskLevel: riskLevelEnum("risk_level").notNull(),
-        affectedArea: json("affected_area").$type<Record<string, unknown>>(), // GeoJSON or coordinate data
-        plannedChanges: json("planned_changes")
+        affectedArea: jsonb("affected_area").$type<Record<string, unknown>>(), // GeoJSON or coordinate data
+        plannedChanges: jsonb("planned_changes")
             .$type<Record<string, unknown>[]>()
             .default([]),
         lastVerified: timestamp("last_verified").defaultNow().notNull(),
@@ -217,6 +270,21 @@ export const governmentDesignations = pgTable(
         index("government_designations_active_idx").on(table.isActive),
         // Composite indexes
         index("government_designations_session_type_idx").on(table.sessionId, table.designationType),
+        // Partial index for active high-risk designations (optimizes alert queries)
+        index("government_designations_active_risk_partial_idx").on(table.designationType, table.lastVerified.desc())
+            .where(sql`${table.isActive} = true AND ${table.riskLevel} IN ('high', 'critical')`),
+        // GIN indexes for JSONB array columns
+        index("government_designations_restrictions_idx").using("gin", table.restrictions),
+        index("government_designations_planned_changes_idx").using("gin", table.plannedChanges),
+        // Check constraints for data integrity
+        check(
+            "government_designations_buffer_zone_non_negative_check",
+            checkConstraints.nonNegative(table.bufferZone, "buffer_zone")
+        ),
+        check(
+            "government_designations_date_order_check",
+            checkConstraints.dateAfter(table.lastVerified, table.validUntil, "validity_date")
+        ),
     ]
 );
 
@@ -234,10 +302,10 @@ export const communityFeedback = pgTable(
         contactInfo: varchar("contact_info", { length: 255 }), // Encrypted
         yearsInArea: integer("years_in_area"),
         ownershipHistory: text("ownership_history"),
-        knownDisputes: json("known_disputes").$type<string[]>().default([]),
-        landUsePatterns: json("land_use_patterns").$type<string[]>().default([]),
-        recentChanges: json("recent_changes").$type<string[]>().default([]),
-        concerns: json("concerns").$type<string[]>().default([]),
+        knownDisputes: jsonb("known_disputes").$type<string[]>().default([]),
+        landUsePatterns: jsonb("land_use_patterns").$type<string[]>().default([]),
+        recentChanges: jsonb("recent_changes").$type<string[]>().default([]),
+        concerns: jsonb("concerns").$type<string[]>().default([]),
         reliability: decimal("reliability", { precision: 3, scale: 2 }).default(
             "0.50"
         ), // 0.00-1.00
@@ -253,6 +321,18 @@ export const communityFeedback = pgTable(
         index("community_feedback_reliability_idx").on(table.reliability),
         index("community_feedback_recorded_at_idx").on(table.recordedAt),
         index("community_feedback_confidential_idx").on(table.isConfidential),
+        // Partial index for high-reliability feedback (optimizes quality assessment)
+        index("community_feedback_high_reliability_partial_idx").on(table.source, table.recordedAt.desc())
+            .where(sql`${table.reliability} >= 0.7`),
+        // Check constraints for data integrity
+        check(
+            "community_feedback_reliability_range_check",
+            checkConstraints.range(table.reliability, 0, 1, "reliability")
+        ),
+        check(
+            "community_feedback_years_non_negative_check",
+            checkConstraints.nonNegative(table.yearsInArea, "years_in_area")
+        ),
     ]
 );
 
@@ -290,6 +370,18 @@ export const expertAssignments = pgTable(
         index("expert_assignments_assigned_at_idx").on(table.assignedAt),
         // Composite indexes
         index("expert_assignments_session_expert_type_idx").on(table.sessionId, table.expertType),
+        // Partial index for active assignments (optimizes workload tracking)
+        index("expert_assignments_active_partial_idx").on(table.expertType, table.assignedAt.desc())
+            .where(sql`${table.status} IN ('assigned', 'accepted', 'in_progress')`),
+        // Check constraints for data integrity
+        check(
+            "expert_assignments_cost_positive_check",
+            checkConstraints.positive(table.cost, "cost")
+        ),
+        check(
+            "expert_assignments_date_order_check",
+            checkConstraints.dateAfter(table.expectedCompletionDate, table.actualCompletionDate, "completion_date")
+        ),
     ]
 );
 
@@ -421,4 +513,39 @@ export const verificationSchemas = {
     selectCommunityFeedbackSchema,
     insertExpertAssignmentSchema,
     selectExpertAssignmentSchema,
+};
+
+// =============================================================================
+// TYPE EXPORTS
+// =============================================================================
+
+export type LandVerificationSession = typeof landVerificationSessions.$inferSelect;
+export type NewLandVerificationSession = typeof landVerificationSessions.$inferInsert;
+
+export type VerificationLayer = typeof verificationLayers.$inferSelect;
+export type NewVerificationLayer = typeof verificationLayers.$inferInsert;
+
+export type RiskFactor = typeof riskFactors.$inferSelect;
+export type NewRiskFactor = typeof riskFactors.$inferInsert;
+
+export type GovernmentDesignation = typeof governmentDesignations.$inferSelect;
+export type NewGovernmentDesignation = typeof governmentDesignations.$inferInsert;
+
+export type CommunityFeedback = typeof communityFeedback.$inferSelect;
+export type NewCommunityFeedback = typeof communityFeedback.$inferInsert;
+
+export type ExpertAssignment = typeof expertAssignments.$inferSelect;
+export type NewExpertAssignment = typeof expertAssignments.$inferInsert;
+
+// Domain-specific type aliases for common queries
+export type ActiveVerificationSession = LandVerificationSession & {
+  status: "not_started" | "in_progress";
+};
+
+export type HighRiskSession = LandVerificationSession & {
+  riskLevel: "high" | "critical";
+};
+
+export type CompletedVerificationLayer = VerificationLayer & {
+  status: "completed";
 };

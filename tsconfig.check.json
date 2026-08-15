@@ -17,6 +17,7 @@
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["./server/*"],
       "@server/*": ["./server/*"],
